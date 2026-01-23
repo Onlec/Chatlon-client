@@ -1,0 +1,149 @@
+/* --- Basis Kleurenpalet & Containers --- */
+:root {
+  --chat-blue: #004E98;
+  --chat-bg: #E3EFFF;
+  --chat-border: #91B1D7;
+  --chat-header-grad: linear-gradient(to bottom, #7BAAF7, #4A89F3);
+}
+
+.chat-container {
+  width: 500px; /* Iets breder gemaakt voor de zijbalk */
+  height: 550px;
+  background-color: var(--chat-bg);
+  border: 2px solid var(--chat-border);
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+  margin: 20px auto;
+  overflow: hidden;
+}
+
+/* --- Header --- */
+.chat-header {
+  background: var(--chat-header-grad);
+  padding: 10px;
+  color: white;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #333;
+}
+
+.chat-username { font-weight: bold; margin-right: 5px; }
+.chat-status { font-size: 0.8em; color: #d1e3ff; }
+
+/* --- Nieuwe Layout Verdeling --- */
+.chat-window-layout {
+  display: flex;
+  flex: 1; /* Vult de rest van de container */
+  background-color: white;
+  overflow: hidden;
+}
+
+/* Linkerkant: Berichtenlijst + Input */
+.chat-main-section {
+  flex: 3; 
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--chat-border);
+  background-color: white;
+}
+
+/* Rechterkant: De zijbalk voor de avatar */
+.chat-sidebar-right {
+  flex: 1;
+  background-color: var(--chat-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px 10px;
+}
+
+/* --- Berichten Sectie --- */
+.messages {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-message {
+  margin-bottom: 10px;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.chat-message-sender {
+  font-weight: bold;
+  color: var(--chat-blue);
+  margin-right: 5px;
+}
+
+.chat-message-content {
+  color: #333;
+  display: inline;
+}
+
+/* --- Input Sectie --- */
+.chat-input-area {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-top: 1px solid var(--chat-border);
+  padding: 8px;
+}
+
+textarea {
+  border: none;
+  resize: none;
+  height: 50px;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.9em;
+}
+
+.chat-send-btn {
+  align-self: flex-end;
+  background: #f0f0f0;
+  border: 1px solid #ababab;
+  padding: 3px 15px;
+  cursor: pointer;
+  font-size: 0.8em;
+  border-radius: 3px;
+  margin-top: 5px;
+}
+
+.chat-send-btn:hover { background: #e0e0e0; }
+
+/* --- Avatar in de Zijbalk --- */
+.chat-display-picture-container {
+  width: 90px;
+  height: 90px;
+  border: 2px solid white;
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.15);
+  background-color: white;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.chat-display-picture-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.login-buttons { display: flex; gap: 10px; width: 80%; }
+.login-buttons button { flex: 1; }
+.logout-btn { 
+  margin-left: auto; 
+  background: red; 
+  color: white; 
+  border: none; 
+  cursor: pointer; 
+  font-weight: bold;
+  border-radius: 3px;
+}
+.secondary { background: #91B1D7 !important; }
+
