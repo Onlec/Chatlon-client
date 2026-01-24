@@ -2,9 +2,8 @@ import React, { useEffect, useState, useReducer, useRef } from 'react'
 import Gun from 'gun'
 import 'gun/sea'
 
-// Initialiseer Gun buiten de component
 const gun = Gun({
-  peers: ['https://chatlon-server.onrender.com/gun']
+  peers: [process.env.REACT_APP_GUN_URL]
 })
 const userAuth = gun.user().recall({storage: true})
 
@@ -96,11 +95,11 @@ function ChatWindow() {
       <div className="chat-login-container">
         <div className="chat-login-body">
           <div className="chat-logo-placeholder">👤</div>
-          <input placeholder="Gebruikersnaam" onChange={e => setUsername(e.target.value)} />
-          <input type="password" placeholder="Wachtwoord" onChange={e => setPassword(e.target.value)} />
+          <input className="xp-input" placeholder="Gebruikersnaam" onChange={e => setUsername(e.target.value)} />
+          <input className="xp-input" type="password" placeholder="Wachtwoord" onChange={e => setPassword(e.target.value)} />
           <div className="chat-login-buttons">
-            <button onClick={handleLogin}>Aanmelden</button>
-            <button onClick={handleSignUp} className="chat-secondary-btn">Registreren</button>
+            <button className="xp-button" onClick={handleLogin}>Aanmelden</button>
+            <button onClick={handleSignUp} className="xp-button chat-secondary-btn">Registreren</button>
           </div>
         </div>
       </div>
@@ -110,7 +109,7 @@ function ChatWindow() {
   return (
     <div className="chat-main-wrapper">
       <div className="chat-info-bar">
-        <span>Aangemeld als: {username || userAuth.is?.alias}</span>
+        <span>Aangemeld als: <strong>{username || userAuth.is?.alias}</strong></span>
         <button className="chat-logout-small" onClick={handleLogout}>Afmelden</button>
       </div>
 
@@ -146,10 +145,10 @@ function ChatWindow() {
             }
           }}
         />
-        <button onClick={sendMessage}>Verzenden</button>
+        <button className="xp-button" onClick={sendMessage}>Verzenden</button>
       </div>
     </div>
   )
 }
 
-export default ChatWindow
+export default ChatWindow;
