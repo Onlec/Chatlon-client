@@ -1,204 +1,180 @@
-import React, { useEffect, useState, useReducer, useRef } from 'react'
-import Gun from 'gun'
-import 'gun/sea'
+import React, { useEffect, useState, useReducer, useRef } from 'react';
+import Gun from 'gun';
+import 'gun/sea';
 
 const gun = Gun({
   peers: [process.env.REACT_APP_GUN_URL]
-})
-const userAuth = gun.user().recall({ storage: true })
-
-const currentState = { messages: [] }
+});
+const userAuth = gun.user().recall({ storage: true });
 
 const reducer = (state, message) => {
-  return { messages: [...state.messages, message] }
-}
+  if (state.messageMap[message.id]) return state;
+  const newMessageMap = { ...state.messageMap, [message.id]: message };
+  const sortedMessages = Object.values(newMessageMap).sort((a, b) => a.timeRef - b.timeRef);
+  return {
+    messageMap: newMessageMap,
+    messages: sortedMessages
+  };
+};
 
 function ChatWindow() {
-  const [messageText, setMessageText] = useState('')
-  const [state, dispatch] = useReducer(reducer, currentState)
-  const messagesEndRef = useRef(null)
+  const [messageText, setMessageText] = useState('');
+  const [state, dispatch] = useReducer(reducer, { messages: [], messageMap: {} });
+  const messagesEndRef = useRef(null);
+  const lastProcessedNudge = useRef(Date.now());
 
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-  // State voor de nudge en cooldown
-  const [isShaking, setIsShaking] = useState(false)
-  const [lastNudgeTime, setLastNudgeTime] = useState(0)
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
+  const [canNudge, setCanNudge] = useState(true);
 
   useEffect(() => {
-    const messagesRef = gun.get('MESSAGES')
-    messagesRef.map().on(m => {
-      if (m) {
+    const chatNode = gun.get('CHAT_MESSAGES');
+    
+    chatNode.map().on((data, id) => {
+      if (data && data.content) {
         dispatch({
-          sender: m.sender,
-          avatar: m.avatar,
-          content: m.content,
-          timestamp: m.timestamp
-        })
+          id: id,
+          sender: data.sender,
+          content: data.content,
+          timestamp: data.timestamp,
+          timeRef: data.timeRef || 0
+        });
       }
-    })
+    });
 
-    if (userAuth.is) {
-      setIsLoggedIn(true)
-    }
-  }, [])
+    if (userAuth.is) setIsLoggedIn(true);
 
-  // --- OPGESCHOONDE LISTENER VOOR NUDGES ---
-  useEffect(() => {
-    // We gebruiken geen variabele (zoals nudgeRef) om unused-var errors te voorkomen
-    gun.get('CHAT_NUDGES').get('time').on((data) => {
-      if (!data) return
+    const nudgeNode = gun.get('CHAT_NUDGES').get('time');
+    nudgeNode.on((data) => {
+      if (!data) return;
+      if (data > lastProcessedNudge.current) {
+        lastProcessedNudge.current = data;
+        new Audio('/nudge.mp3').play().catch(() => {});
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 600);
+      }
+    });
 
-      // Speel het legendarische MSN geluid af
-      const audio = new Audio('/nudge.mp3')
-      audio.volume = 0.5
-      audio.play().catch(e => console.log("Audio play blocked:", e))
-
-      setIsShaking(true)
-
-      // Stop de shake na 600ms (voor de echte MSN feel)
-      setTimeout(() => {
-        setIsShaking(false)
-      }, 600)
-    })
-
-    return () => gun.get('CHAT_NUDGES').get('time').off()
-  }, [])
+    return () => {
+      chatNode.off();
+      nudgeNode.off();
+    };
+  }, []);
 
   useEffect(() => {
-    scrollToBottom()
-  }, [state.messages])
-
-  // --- VERBETERDE VERZENDFUNCTIE VOOR NUDGE ---
-  const sendNudge = () => {
-    const now = Date.now()
-    // Cooldown van 5 seconden om spam te voorkomen
-    if (now - lastNudgeTime < 5000) {
-      return // Je zou hier eventueel een melding kunnen tonen
+    if (!canNudge) {
+      const timer = setTimeout(() => {
+        setCanNudge(true);
+      }, 5000);
+      return () => clearTimeout(timer);
     }
+  }, [canNudge]);
 
-    setLastNudgeTime(now)
-    gun.get('CHAT_NUDGES').put({ time: now })
-  }
-
-  const handleSignUp = () => {
-    userAuth.create(username, password, (ack) => {
-      if (ack.err) alert(ack.err)
-      else handleLogin()
-    })
-  }
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [state.messages]);
 
   const handleLogin = () => {
     userAuth.auth(username, password, (ack) => {
-      if (ack.err) alert(ack.err)
-      else setIsLoggedIn(true)
-    })
-  }
+      if (ack.err) alert(ack.err);
+      else setIsLoggedIn(true);
+    });
+  };
 
-  const handleLogout = () => {
-    userAuth.leave()
-    setIsLoggedIn(false)
-    window.location.reload()
-  }
+  const handleRegister = () => {
+    userAuth.create(username, password, (ack) => {
+      if (ack.err) alert(ack.err);
+      else alert("Account aangemaakt! Je kunt nu inloggen.");
+    });
+  };
 
   const sendMessage = () => {
-    if (!messageText.trim()) return
-    const messagesRef = gun.get('MESSAGES')
-
+    if (!messageText.trim()) return;
+    const now = Date.now();
     const messageObject = {
-      sender: username || userAuth.is?.alias,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username || userAuth.is?.alias}`,
+      sender: username || userAuth.is?.alias || 'Anoniem',
       content: messageText,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timeRef: now
+    };
+    
+    gun.get('CHAT_MESSAGES').set(messageObject);
+    setMessageText('');
+  };
 
-    messagesRef.set(messageObject)
-    setMessageText('')
-  }
+  const sendNudge = () => {
+    if (!canNudge) return;
+    const now = Date.now();
+    setCanNudge(false); 
+    gun.get('CHAT_NUDGES').put({ time: now });
+  };
 
-  const newMessagesArray = () => {
-    return state.messages.filter((value, index) => {
-      const _value = JSON.stringify(value)
-      return index === state.messages.findIndex(obj => JSON.stringify(obj) === _value)
-    })
-  }
-
+  // --- LOGIN SCHERM RENDER ---
   if (!isLoggedIn) {
     return (
       <div className="chat-login-container">
-        <div className="chat-login-body">
-          <div className="chat-logo-placeholder">👤</div>
-          <input className="xp-input" placeholder="Gebruikersnaam" onChange={e => setUsername(e.target.value)} />
-          <input className="xp-input" type="password" placeholder="Wachtwoord" onChange={e => setPassword(e.target.value)} />
-          <div className="chat-login-buttons">
-            <button className="xp-button" onClick={handleLogin}>Aanmelden</button>
-            <button onClick={handleSignUp} className="xp-button chat-secondary-btn">Registreren</button>
+        <div className="chat-login-header">
+          <div className="chat-login-banner">
+             <span className="chat-login-logo">👤</span>
+             <span className="chat-login-title">Chatlon Messenger</span>
           </div>
         </div>
+        <div className="chat-login-body">
+          <label>Aanmeldingsnaam:</label>
+          <input className="xp-input" value={username} onChange={e => setUsername(e.target.value)} />
+          
+          <label>Wachtwoord:</label>
+          <input className="xp-input" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+          
+          <div className="chat-login-actions">
+            <button className="xp-button" onClick={handleLogin}>Aanmelden</button>
+            <button className="xp-button secondary" onClick={handleRegister}>Registreren</button>
+          </div>
+        </div>
+        <div className="chat-login-footer">
+          <a href="#">Wachtwoord vergeten?</a>
+        </div>
       </div>
-    )
+    );
   }
 
+  // --- CHAT INTERFACE RENDER ---
   return (
-    /* nudge-active zorgt voor de shake animatie vanuit App.css */
     <div className={`chat-main-wrapper ${isShaking ? 'nudge-active' : ''}`}>
       <div className="chat-info-bar">
         <span>Aangemeld als: <strong>{username || userAuth.is?.alias}</strong></span>
-        <button className="chat-logout-small" onClick={handleLogout}>Afmelden</button>
       </div>
-
       <div className="chat-layout">
         <div className="chat-messages-area">
-          {newMessagesArray().map((msg, index) => (
-            <div key={index} className="chat-msg-row">
+          {state.messages.map((msg) => (
+            <div key={msg.id} className="chat-msg-row">
               <span className="chat-msg-sender">{msg.sender}:</span>
               <span className="chat-msg-text">{msg.content}</span>
+              <span className="chat-msg-time" style={{fontSize: '9px', color: '#999', marginLeft: '5px'}}>{msg.timestamp}</span>
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
-
         <aside className="chat-sidebar">
-          <img
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username || userAuth.is?.alias}`}
-            alt="avatar"
-            className="chat-avatar-img"
-          />
-          <button
-            className="xp-button nudge-btn"
-            onClick={sendNudge}
-            style={{ 
-              marginTop: '10px', 
-              width: '100%',
-              opacity: (Date.now() - lastNudgeTime < 5000) ? 0.6 : 1 
-            }}
+          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username || userAuth.is?.alias}`} alt="avatar" className="chat-avatar-img" />
+          <button 
+            className={`xp-button nudge-btn ${!canNudge ? 'disabled' : ''}`} 
+            onClick={sendNudge} 
+            disabled={!canNudge}
+            style={{ marginTop: '10px', width: '90%' }}
           >
             Nudge!
           </button>
         </aside>
       </div>
-
       <div className="chat-input-section">
-        <textarea
-          placeholder="Typ een bericht..."
-          value={messageText}
-          onChange={e => setMessageText(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              sendMessage();
-            }
-          }}
-        />
+        <textarea value={messageText} onChange={e => setMessageText(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())} />
         <button className="xp-button" onClick={sendMessage}>Verzenden</button>
       </div>
     </div>
-  )
+  );
 }
 
 export default ChatWindow;
