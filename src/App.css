@@ -138,7 +138,8 @@ div.window-frame.maximized {
   border: 1px solid #7F9DB9;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* CRUCIAAL: Voorkomt scrollbars van het schuddende kind-element */
+  overflow: hidden !important; 
 }
 
 /* --- 4. DE HANDMATIGE RESIZERS --- */
@@ -173,12 +174,16 @@ div.window-frame.maximized {
   background: linear-gradient(135deg, transparent 50%, #808080 50%, #808080 60%, transparent 60%, transparent 70%, #808080 70%, #808080 80%, transparent 80%);
 }
 
-/* --- 5. CHAT INHOUD HERSTEL --- */
+/* --- 5. CHAT INHOUD & NUDGE FIX --- */
 .chat-main-wrapper {
   display: flex;
   flex-direction: column;
   height: 100%;
   background-color: #ECE9D8;
+  /* Extra beveiliging tegen scrollbars */
+  overflow: hidden !important;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .chat-info-bar {
@@ -201,6 +206,8 @@ div.window-frame.maximized {
   padding: 10px;
   overflow-y: auto;
   font-size: 13px;
+  scrollbar-color: #C1D2EE #E2E2E2; 
+  scrollbar-width: auto; 
 }
 
 .chat-sidebar {
@@ -290,6 +297,7 @@ div.window-frame.maximized {
   padding: 0 10px;
 }
 
+/* --- 7. XP ELEMENTEN & SCROLLBARS --- */
 .xp-button {
   padding: 4px 12px;
   background: #ECE9D8;
@@ -310,4 +318,30 @@ div.window-frame.maximized {
   padding: 3px;
   font-family: 'Tahoma', sans-serif;
   font-size: 12px;
+}
+
+.chat-messages-area::-webkit-scrollbar { width: 16px; }
+.chat-messages-area::-webkit-scrollbar-track { background-color: #E2E2E2; border-left: 1px solid #AFAFAF; }
+.chat-messages-area::-webkit-scrollbar-thumb { background-color: #C1D2EE; border: 1px solid #7F9DB9; box-shadow: inset 1px 1px 0px #FFF; }
+.chat-messages-area::-webkit-scrollbar-button:single-button { background-color: #ECE9D8; display: block; border: 1px solid #7F9DB9; height: 16px; width: 16px; }
+
+/* --- 8. DE ULTIEME MSN NUDGE --- */
+.nudge-active {
+  animation: msn-shake 0.1s linear infinite !important;
+  position: relative; 
+  z-index: 999;
+  will-change: transform;
+}
+
+@keyframes msn-shake {
+  0% { transform: translate(2px, 1px); }
+  20% { transform: translate(-2px, -2px); }
+  40% { transform: translate(-2px, 1px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(-1px, -1px); }
+  100% { transform: translate(1px, -2px); }
+}
+
+.nudge-btn {
+  transition: opacity 0.3s;
 }
