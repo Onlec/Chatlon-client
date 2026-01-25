@@ -8,24 +8,14 @@ function App() {
   const [isChatMinimized, setIsChatMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [isStartOpen, setIsStartOpen] = useState(false);
+  const [isChatLoggedIn, setIsChatLoggedIn] = useState(false);
 
-  const closeStart = () => setIsStartOpen(false);
-
-  // Gebruik deze functies in de JSX hieronder
-  const toggleMinimize = () => {
-    setIsChatMinimized(!isChatMinimized);
-  };
-
-  const openChat = () => {
-    setIsChatOpen(true);
-    setIsChatMinimized(false);
-    closeStart(); // Sluit ook het startmenu als je via daar de chat opent
-  };
+  const toggleMinimize = () => setIsChatMinimized(!isChatMinimized);
+  const openChat = () => { setIsChatOpen(true); setIsChatMinimized(false); setIsStartOpen(false); };
 
   return (
-    <div className="desktop" onClick={closeStart}>
+    <div className="desktop" onClick={() => setIsStartOpen(false)}>
       <div className="shortcuts-area">
-        {/* Hier gebruiken we nu openChat */}
         <div className="shortcut" onDoubleClick={openChat}>
           <img src="favicon.ico" alt="Chatlon" className="shortcut-icon" />
           <span className="shortcut-label">Chatlon Messenger</span>
@@ -36,14 +26,14 @@ function App() {
         {isChatOpen && (
           <div style={{ display: isChatMinimized ? 'none' : 'block' }}>
             <Window 
-              title="Chatlon" 
+              title={isChatLoggedIn ? "Chatlon Messenger" : "Aanmelden"} 
+              type={isChatLoggedIn ? "chat" : "login"}
               isMaximized={isMaximized}
               onMaximize={() => setIsMaximized(!isMaximized)}
               onClose={() => setIsChatOpen(false)} 
-              // Hier gebruiken we de bestaande state setter of de functie
               onMinimize={() => setIsChatMinimized(true)}
             >
-              <ChatWindow />
+              <ChatWindow onLoginStatusChange={(status) => setIsChatLoggedIn(status)} />
             </Window>
           </div>
         )}
@@ -55,10 +45,8 @@ function App() {
             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="user" className="start-user-img" />
             <span className="start-user-name">Administrator</span>
           </div>
-          
           <div className="start-menu-main">
             <div className="start-left-col">
-              {/* Hier gebruiken we nu ook openChat */}
               <div className="start-item" onClick={openChat}>
                 <img src="favicon.ico" alt="icon" />
                 <span>Chatlon Messenger</span>
@@ -67,35 +55,26 @@ function App() {
             <div className="start-right-col">
               <div className="start-item-gray">My Documents</div>
               <div className="start-item-gray">My Computer</div>
-              <div className="start-item-gray">Control Panel</div>
             </div>
           </div>
-
           <div className="start-menu-footer">
-            <button className="logoff-btn" onClick={() => window.location.reload()}>Log Off</button>
-            <button className="shutdown-btn">Turn Off Computer</button>
+             <button className="logoff-btn" onClick={() => window.location.reload()}>Log Off</button>
           </div>
         </div>
       )}
 
       <div className="taskbar">
-        <button 
-          className={`start-btn ${isStartOpen ? 'pressed' : ''}`} 
-          onClick={(e) => { e.stopPropagation(); setIsStartOpen(!isStartOpen); }}
-        >
+        <button className={`start-btn ${isStartOpen ? 'pressed' : ''}`} onClick={(e) => { e.stopPropagation(); setIsStartOpen(!isStartOpen); }}>
           <span className="start-icon">🏁</span> Start
         </button>
         <div className="taskbar-items">
           {isChatOpen && (
-            /* Hier gebruiken we nu toggleMinimize */
             <div className={`taskbar-tab ${!isChatMinimized ? 'active' : ''}`} onClick={toggleMinimize}>
               <span className="taskbar-icon">👤</span> Chatlon
             </div>
           )}
         </div>
-        <div className="systray">
-          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </div>
+        <div className="systray">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
       </div>
     </div>
   );
