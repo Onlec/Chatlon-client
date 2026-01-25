@@ -15,7 +15,7 @@ const reducer = (state, message) => {
 function ChatWindow({ onLoginStatusChange }) {
   const [messageText, setMessageText] = useState('');
   const [state, dispatch] = useReducer(reducer, { messages: [], messageMap: {} });
-  const messagesEndRef = useRef(null);
+  const messagesAreaRef = useRef(null);
   const lastProcessedNudge = useRef(Date.now());
 
   const [username, setUsername] = useState('');
@@ -34,7 +34,14 @@ function ChatWindow({ onLoginStatusChange }) {
 
     if (userAuth.is) {
       setIsLoggedIn(true);
+      setUsername(userAuth.is.alias);
       onLoginStatusChange(true);
+      // Scroll naar beneden na korte delay bij auto-login
+      setTimeout(() => {
+        if (messagesAreaRef.current) {
+          messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+        }
+      }, 300);
     }
 
     const nudgeNode = gun.get('CHAT_NUDGES').get('time');
@@ -50,7 +57,9 @@ function ChatWindow({ onLoginStatusChange }) {
   }, [onLoginStatusChange]);
 
   useEffect(() => {
-    if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+    if (messagesAreaRef.current) {
+      messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+    }
   }, [state.messages]);
 
   const handleLogin = () => {
@@ -58,7 +67,14 @@ function ChatWindow({ onLoginStatusChange }) {
       if (ack.err) alert(ack.err);
       else {
         setIsLoggedIn(true);
+        setUsername(userAuth.is.alias);
         onLoginStatusChange(true);
+        // Scroll naar beneden na korte delay zodat berichten geladen zijn
+        setTimeout(() => {
+          if (messagesAreaRef.current) {
+            messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+          }
+        }, 300);
       }
     });
   };
@@ -86,7 +102,7 @@ function ChatWindow({ onLoginStatusChange }) {
     return (
       <div className="chat-login-container">
         <div className="chat-login-banner">
-          <span className="chat-login-logo">👤</span>
+          <span className="chat-login-logo">💤</span>
           <span className="chat-login-title">Chatlon Messenger</span>
         </div>
         <div className="chat-login-body">
@@ -109,14 +125,13 @@ function ChatWindow({ onLoginStatusChange }) {
         <span>Aangemeld als: <strong>{username || userAuth.is?.alias}</strong></span>
       </div>
       <div className="chat-layout">
-        <div className="chat-messages-area">
+        <div className="chat-messages-area" ref={messagesAreaRef}>
           {state.messages.map((msg) => (
             <div key={msg.id} style={{ marginBottom: '4px' }}>
               <strong>{msg.sender}:</strong> {msg.content}
               <span style={{fontSize: '9px', color: '#999', marginLeft: '5px'}}>{msg.timestamp}</span>
             </div>
           ))}
-          <div ref={messagesEndRef} />
         </div>
         <aside className="chat-sidebar">
           <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username || userAuth.is?.alias}`} alt="avatar" className="chat-avatar-img" />

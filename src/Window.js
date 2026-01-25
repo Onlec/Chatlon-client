@@ -6,7 +6,15 @@ function Window({ title, children, isMaximized, onMaximize, onClose, onMinimize,
   const [size, setSize] = useState({ width: 450, height: 500 });
 
   const handleMouseDown = (e) => {
-    if (e.target.closest('.window-controls') || isMaximized) return;
+    if (e.target.closest('.window-controls')) return;
+    
+    if (e.detail === 2) {
+      onMaximize();
+      return;
+    }
+
+    if (isMaximized) return;
+
     const win = windowRef.current;
     const rect = win.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
