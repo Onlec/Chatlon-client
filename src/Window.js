@@ -1,15 +1,42 @@
 import React, { useState, useRef } from 'react';
-import Draggable from 'react-draggable';
 
-const Window = ({ title, children, onClose, onMinimize, onMaximize, isMaximized }) => {
-  const nodeRef = useRef(null);
-  const [pos, setPos] = useState({ x: 50, y: 50 });
+function Window({ title, children, isMaximized, onMaximize, onClose, onMinimize }) {
+  const windowRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  // We houden de grootte bij in een state
   const [size, setSize] = useState({ width: 450, height: 500 });
 
-  const handleDrag = (e, data) => {
-    setPos({ x: data.x, y: data.y });
+  // --- SLEEP LOGICA ---
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.window-controls') || isMaximized) return;
+
+    const win = windowRef.current;
+    const rect = win.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    const handleMouseMove = (moveEvent) => {
+      setIsDragging(true);
+      let newX = moveEvent.clientX - offsetX;
+      let newY = moveEvent.clientY - offsetY;
+      if (newY < 0) newY = 0;
+
+      win.style.left = `${newX}px`;
+      win.style.top = `${newY}px`;
+      win.style.transform = 'none';
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
   };
 
+  // --- RESIZE LOGICA ---
   const startResizing = (direction) => (mouseDownEvent) => {
     mouseDownEvent.preventDefault();
     mouseDownEvent.stopPropagation();
@@ -43,31 +70,22 @@ const Window = ({ title, children, onClose, onMinimize, onMaximize, isMaximized 
   };
 
   return (
-  <Draggable 
-    nodeRef={nodeRef} 
-    handle=".window-header" 
-    bounds="parent"
-    disabled={isMaximized}
-    position={isMaximized ? { x: 0, y: 0 } : pos}
-    onStop={handleDrag}
-  >
     <div 
-      className={`window-frame ${isMaximized ? 'maximized' : ''}`} 
-      ref={nodeRef}
-      style={{
+      ref={windowRef}
+      className={`window-frame ${isMaximized ? 'maximized' : ''}`}
+      style={{ 
+        left: '100px',
+        top: '50px',
         width: isMaximized ? '100vw' : size.width,
         height: isMaximized ? 'calc(100vh - 30px)' : size.height,
-        position: isMaximized ? 'fixed' : 'absolute',
-        transform: isMaximized ? 'none' : `translate(${pos.x}px, ${pos.y}px)`,
-        zIndex: isMaximized ? 9999 : 10,
-        boxSizing: 'border-box'
+        zIndex: isDragging ? 1000 : 100,
+        position: isMaximized ? 'fixed' : 'absolute'
       }}
     >
-      {/* DE INHOUD */}
       <div className="window-inner-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div className="window-header">
+        <div className="window-header" onMouseDown={handleMouseDown} style={{ userSelect: 'none' }}>
           <div className="window-title-section">
-            <span className="window-icon">👤</span>
+            <span className="window-icon" style={{marginRight: '5px'}}>👤</span>
             <span className="window-title">{title}</span>
           </div>
           <div className="window-controls">
@@ -76,12 +94,12 @@ const Window = ({ title, children, onClose, onMinimize, onMaximize, isMaximized 
             <button className="win-btn close" onClick={onClose}>X</button>
           </div>
         </div>
-        <div className="window-content" style={{ flexGrow: 1, overflow: 'auto' }}>
+        <div className="window-content" style={{ flexGrow: 1, overflow: 'hidden' }}>
           {children}
         </div>
       </div>
 
-      {/* DE RESIZERS (Buiten de inner container voor betere bereikbaarheid) */}
+      {/* De onzichtbare klikzones voor het resizen (Sectie 4 uit je CSS) */}
       {!isMaximized && (
         <>
           <div className="resizer-e" onMouseDown={startResizing('e')} />
@@ -90,8 +108,7 @@ const Window = ({ title, children, onClose, onMinimize, onMaximize, isMaximized 
         </>
       )}
     </div>
-  </Draggable>
   );
-};
+}
 
 export default Window;
