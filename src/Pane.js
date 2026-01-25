@@ -1,22 +1,24 @@
 import React, { useState, useRef } from 'react';
 
-function Window({ title, children, isMaximized, onMaximize, onClose, onMinimize, type }) {
-  const windowRef = useRef(null);
+function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, type }) {
+  const paneRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [size, setSize] = useState({ width: 450, height: 500 });
 
   const handleMouseDown = (e) => {
-    if (e.target.closest('.window-controls')) return;
+    if (e.target.closest('.pane-controls')) return;
     
+    // Check voor dubbelklik
     if (e.detail === 2) {
       onMaximize();
       return;
     }
-
+    
+    // Voorkom dragging als maximized
     if (isMaximized) return;
-
-    const win = windowRef.current;
-    const rect = win.getBoundingClientRect();
+    
+    const pane = paneRef.current;
+    const rect = pane.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
 
@@ -25,9 +27,9 @@ function Window({ title, children, isMaximized, onMaximize, onClose, onMinimize,
       let newX = moveEvent.clientX - offsetX;
       let newY = moveEvent.clientY - offsetY;
       if (newY < 0) newY = 0;
-      win.style.left = `${newX}px`;
-      win.style.top = `${newY}px`;
-      win.style.transform = 'none';
+      pane.style.left = `${newX}px`;
+      pane.style.top = `${newY}px`;
+      pane.style.transform = 'none';
     };
 
     const handleMouseUp = () => {
@@ -65,8 +67,8 @@ function Window({ title, children, isMaximized, onMaximize, onClose, onMinimize,
 
   return (
     <div 
-      ref={windowRef}
-      className={`window-frame type-${type} ${isMaximized ? 'maximized' : ''}`}
+      ref={paneRef}
+      className={`pane-frame type-${type} ${isMaximized ? 'maximized' : ''}`}
       style={{ 
         left: '100px', top: '50px',
         width: isMaximized ? '100vw' : size.width,
@@ -75,19 +77,19 @@ function Window({ title, children, isMaximized, onMaximize, onClose, onMinimize,
         position: isMaximized ? 'fixed' : 'absolute'
       }}
     >
-      <div className="window-inner-container">
-        <div className="window-header" onMouseDown={handleMouseDown}>
-          <div className="window-title-section">
-            <span className="window-icon">👤</span>
-            <span className="window-title">{title}</span>
+      <div className="pane-inner-container">
+        <div className="pane-header" onMouseDown={handleMouseDown}>
+          <div className="pane-title-section">
+            <span className="pane-icon">💤</span>
+            <span className="pane-title">{title}</span>
           </div>
-          <div className="window-controls">
+          <div className="pane-controls">
             <button className="win-btn minimize" onClick={onMinimize}>_</button>
-            <button className="win-btn maximize" onClick={onMaximize}>{isMaximized ? '❐' : '□'}</button>
+            <button className="win-btn maximize" onClick={onMaximize}>{isMaximized ? '❐' : '▢'}</button>
             <button className="win-btn close" onClick={onClose}>X</button>
           </div>
         </div>
-        <div className="window-content">
+        <div className="pane-content">
           {children}
         </div>
       </div>
@@ -102,4 +104,4 @@ function Window({ title, children, isMaximized, onMaximize, onClose, onMinimize,
   );
 }
 
-export default Window;
+export default Pane;

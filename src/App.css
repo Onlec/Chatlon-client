@@ -15,7 +15,7 @@ body, html {
   position: relative;
 }
 
-.window-layer {
+.pane-layer {
   position: absolute;
   top: 0;
   left: 0;
@@ -67,7 +67,7 @@ body, html {
 }
 
 /* --- 3. HET VENSTER FRAME --- */
-.window-frame {
+.pane-frame {
   background-color: #ECE9D8;
   border: 1px solid #0054E3;
   box-shadow: 
@@ -86,7 +86,7 @@ body, html {
   min-height: 450px;
 }
 
-div.window-frame.maximized {
+div.pane-frame.maximized {
   width: 100vw !important;
   height: calc(100vh - 30px) !important;
   top: 0 !important;
@@ -98,14 +98,14 @@ div.window-frame.maximized {
   z-index: 9999;
 }
 
-.window-inner-container {
+.pane-inner-container {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
 }
 
-.window-header {
+.pane-header {
   background: linear-gradient(to bottom, #0058e6 0%, #2596f3 9%, #0058e6 18%, #0058e6 92%, #0046ad 100%);
   padding: 4px 8px;
   display: flex;
@@ -118,7 +118,7 @@ div.window-frame.maximized {
   user-select: none;
 }
 
-.window-controls {
+.pane-controls {
   display: flex;
   gap: 2px;
 }
@@ -140,7 +140,7 @@ div.window-frame.maximized {
 .maximize { background: #3f8cf3; font-size: 14px; }
 .close { background: #e81123; }
 
-.window-content {
+.pane-content {
   flex-grow: 1;
   background-color: white;
   margin: 2px;
@@ -348,9 +348,9 @@ div.window-frame.maximized {
   text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
 }
 
-/* --- 7. XP ELEMENTEN --- */
+/* --- 7. CLASSIC OS ELEMENTEN --- */
 
-.xp-button {
+.dx-button {
   padding: 4px 12px;
   background: linear-gradient(to bottom, #ECE9D8 0%, #F5F4F2 50%, #ECE9D8 100%);
   border: 1px solid;
@@ -364,12 +364,12 @@ div.window-frame.maximized {
     inset -1px -1px 0 #9C9C9C;
 }
 
-.xp-button:hover {
+.dx-button:hover {
   background: linear-gradient(to bottom, #FFF6D9 0%, #FFEFB8 50%, #FFF6D9 100%);
   border-color: #F9B14D;
 }
 
-.xp-button:active:not(.disabled) {
+.dx-button:active:not(.disabled) {
   background: linear-gradient(to bottom, #D8D0C8 0%, #E8E4DC 50%, #D8D0C8 100%);
   box-shadow: 
     inset 1px 1px 2px #808080,
@@ -427,15 +427,15 @@ div.window-frame.maximized {
   background-color: #DDD9D0 !important;
 }
 
-/* --- 9. DE NUDGE ANIMATIE --- */
+/* --- 9. DE SHAKE ANIMATIE --- */
 
 .nudge-active {
-  animation: msn-shake 0.1s linear 6 !important;
+  animation: chat-shake 0.1s linear 6 !important;
   position: relative;
   z-index: 999;
 }
 
-@keyframes msn-shake {
+@keyframes chat-shake {
   0% { transform: translate(2px, 1px); }
   25% { transform: translate(-2px, -2px); }
   50% { transform: translate(-1px, 2px); }
@@ -497,7 +497,7 @@ div.window-frame.maximized {
   font-weight: bold;
 }
 
-.xp-input {
+.dx-input {
   border: 1px solid #7F9DB9;
   padding: 3px 4px;
   font-size: 12px;
@@ -506,7 +506,7 @@ div.window-frame.maximized {
   background: white;
 }
 
-.xp-input:focus {
+.dx-input:focus {
   border-color: #0066CC;
   box-shadow: 0 0 2px rgba(0,102,204,0.5);
 }
@@ -517,7 +517,7 @@ div.window-frame.maximized {
   margin-top: 10px;
 }
 
-.xp-button.secondary {
+.dx-button.secondary {
   background: linear-gradient(to bottom, #F0F0F0 0%, #FAFAFA 50%, #F0F0F0 100%);
 }
 
@@ -536,7 +536,7 @@ div.window-frame.maximized {
   color: #0066CC;
 }
 
-/* --- 11. START MENU XP STIJL --- */
+/* --- 11. START MENU STIJL --- */
 
 .start-menu {
   position: absolute;
@@ -647,4 +647,222 @@ div.window-frame.maximized {
 
 .logoff-btn:hover, .shutdown-btn:hover { 
   text-decoration: underline; 
+}
+
+/* --- 12. NOTEPAD STYLING --- */
+
+.notepad-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: white;
+}
+
+.notepad-menubar {
+  background: #ECE9D8;
+  border-bottom: 1px solid #919B9C;
+  display: flex;
+  gap: 2px;
+  padding: 2px 4px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.notepad-menu-item {
+  padding: 3px 8px;
+  cursor: default;
+  user-select: none;
+}
+
+.notepad-menu-item:hover {
+  background: #316AC5;
+  color: white;
+}
+
+.notepad-textarea {
+  flex: 1;
+  border: none;
+  padding: 4px;
+  font-family: 'Lucida Console', 'Courier New', monospace;
+  font-size: 13px;
+  resize: none;
+  outline: none;
+  line-height: 1.4;
+  background: white;
+}
+
+.notepad-textarea:disabled {
+  background: #F0F0F0;
+  color: #808080;
+}
+
+/* --- 13. PANES dX LOGIN SCREEN --- */
+
+.login-screen {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(to bottom, #5A84CB 0%, #2952A3 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+}
+
+.login-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+}
+
+.login-logo {
+  margin-bottom: 60px;
+}
+
+.dx-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.dx-logo-text {
+  font-size: 18px;
+  color: white;
+  font-weight: normal;
+  letter-spacing: 2px;
+}
+
+.dx-logo-windows {
+  font-size: 42px;
+  color: white;
+  font-weight: bold;
+  letter-spacing: 1px;
+  line-height: 0.9;
+}
+
+.dx-logo-xp {
+  font-size: 52px;
+  color: #FFB900;
+  font-weight: bold;
+  font-style: italic;
+  letter-spacing: 3px;
+  margin-left: 60px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.login-box {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 30px 40px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  min-width: 380px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.login-instruction {
+  font-size: 12px;
+  color: #003399;
+  margin: 0;
+  font-weight: bold;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.login-field label {
+  font-size: 11px;
+  font-weight: bold;
+  color: #000;
+}
+
+.dx-login-input {
+  padding: 6px 8px;
+  border: 1px solid #7F9DB9;
+  font-size: 13px;
+  font-family: 'Tahoma', sans-serif;
+  outline: none;
+}
+
+.dx-login-input:focus {
+  border-color: #0066CC;
+  box-shadow: 0 0 3px rgba(0,102,204,0.5);
+}
+
+.login-error {
+  background: #FFE6E6;
+  border: 1px solid #CC0000;
+  color: #CC0000;
+  padding: 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.login-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.login-btn {
+  min-width: 120px;
+  padding: 6px 20px;
+}
+
+.login-footer {
+  text-align: center;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #D0D0D0;
+}
+
+.login-footer a {
+  font-size: 11px;
+  color: #003399;
+  text-decoration: none;
+}
+
+.login-footer a:hover {
+  text-decoration: underline;
+}
+
+.login-bottom {
+  margin-top: 40px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.login-options {
+  display: flex;
+  gap: 15px;
+}
+
+.login-option-btn {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.login-option-btn:hover {
+  background: rgba(255,255,255,0.3);
 }
