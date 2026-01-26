@@ -82,8 +82,22 @@ body, html {
   pointer-events: auto;
   top: 0;
   left: 0;
+}
+
+/* Specifieke minimum groottes per type */
+.pane-frame.type-chat {
   min-width: 600px; 
   min-height: 450px;
+}
+
+.pane-frame.type-notepad {
+  min-width: 300px;
+  min-height: 250px;
+}
+
+.pane-frame.type-calculator {
+  min-width: 280px;
+  min-height: 320px;
 }
 
 div.pane-frame.maximized {
@@ -865,4 +879,104 @@ div.pane-frame.maximized {
 
 .login-option-btn:hover {
   background: rgba(255,255,255,0.3);
+}
+
+/* --- 14. REKENMACHINE STYLING --- */
+
+.calculator-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #ECE9D8;
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+}
+
+.calculator-menubar {
+  background: #ECE9D8;
+  border-bottom: 1px solid #919B9C;
+  display: flex;
+  gap: 2px;
+  padding: 2px 4px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.calculator-menu-item {
+  padding: 3px 8px;
+  cursor: default;
+  user-select: none;
+}
+
+.calculator-menu-item:hover {
+  background: #316AC5;
+  color: white;
+}
+
+.calculator-display {
+  background: white;
+  border: 2px inset #808080;
+  margin: 8px;
+  padding: 8px;
+  text-align: right;
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.calculator-display-text {
+  font-size: 22px;
+  font-weight: bold;
+  color: #000;
+  font-family: 'Courier New', monospace;
+}
+
+.calculator-buttons {
+  padding: 0 8px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calculator-row {
+  display: flex;
+  gap: 4px;
+}
+
+.calc-btn {
+  flex: 1;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  border: 1px outset #fff;
+  background: linear-gradient(to bottom, #ECE9D8 0%, #D8D0C8 100%);
+  cursor: pointer;
+  font-family: 'Tahoma', sans-serif;
+  min-width: 40px;
+  min-height: 28px;
+}
+
+.calc-btn:active {
+  border: 1px inset #808080;
+  background: linear-gradient(to bottom, #D8D0C8 0%, #ECE9D8 100%);
+}
+
+.calc-btn.memory {
+  background: linear-gradient(to bottom, #D4D0C8 0%, #C8C0B8 100%);
+  color: #8B0000;
+}
+
+.calc-btn.function {
+  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
+  color: #000080;
+}
+
+.calc-btn.operator {
+  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
+  color: #CC0000;
+}
+
+.calc-btn.equals {
+  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
+  color: #CC0000;
 }

@@ -1,24 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import Pane from './Pane'; 
-import ChatPane from './ChatPane'; 
-import NotepadPane from './NotepadPane';
 import LoginScreen from './LoginScreen';
 import { gun, user } from './gun';
+import { paneConfig, getInitialPaneState } from './paneConfig';
 import './App.css';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
-  
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isChatMinimized, setIsChatMinimized] = useState(false);
-  const [isChatMaximized, setIsChatMaximized] = useState(false);
-  
-  const [isNotepadOpen, setIsNotepadOpen] = useState(false);
-  const [isNotepadMinimized, setIsNotepadMinimized] = useState(false);
-  const [isNotepadMaximized, setIsNotepadMaximized] = useState(false);
-  
   const [isStartOpen, setIsStartOpen] = useState(false);
+  
+  // Generiek pane management
+  const [panes, setPanes] = useState(getInitialPaneState());
+  const [paneOrder, setPaneOrder] = useState([]);
+  const [activePane, setActivePane] = useState(null);
+  const [savedSizes, setSavedSizes] = useState({}); // Onthoud pane groottes per sessie
+  const [savedPositions, setSavedPositions] = useState({}); // Onthoud pane posities per sessie
+  const [cascadeOffset, setCascadeOffset] = useState(0); // Voor getrapt openen
 
   useEffect(() => {
     // Check if user is already logged in
@@ -37,13 +35,106 @@ function App() {
     user.leave();
     setIsLoggedIn(false);
     setCurrentUser('');
-    setIsChatOpen(false);
-    setIsNotepadOpen(false);
+    setPanes(getInitialPaneState());
+    setPaneOrder([]);
+    setActivePane(null);
     window.location.reload();
   };
 
-  const openChat = () => { setIsChatOpen(true); setIsChatMinimized(false); setIsStartOpen(false); };
-  const openNotepad = () => { setIsNotepadOpen(true); setIsNotepadMinimized(false); setIsStartOpen(false); };
+  // Generieke pane functies
+  const openPane = (paneName) => {
+    setPanes(prev => ({
+      ...prev,
+      [paneName]: { ...prev[paneName], isOpen: true, isMinimized: false }
+    }));
+    setIsStartOpen(false);
+    if (!paneOrder.includes(paneName)) {
+      setPaneOrder([...paneOrder, paneName]);
+    }
+    setActivePane(paneName);
+    
+    // Als er geen opgeslagen positie is, gebruik cascade offset
+    if (!savedPositions[paneName]) {
+      setCascadeOffset(prev => (prev + 30) % 150); // Reset na 5 vensters
+    }
+  };
+
+  const closePane = (paneName) => {
+    setPanes(prev => ({
+      ...prev,
+      [paneName]: { isOpen: false, isMinimized: false, isMaximized: false }
+    }));
+    setPaneOrder(prev => prev.filter(p => p !== paneName));
+    if (activePane === paneName) {
+      const remaining = paneOrder.filter(p => p !== paneName);
+      setActivePane(remaining[remaining.length - 1] || null);
+    }
+  };
+
+  const minimizePane = (paneName) => {
+    setPanes(prev => ({
+      ...prev,
+      [paneName]: { ...prev[paneName], isMinimized: true }
+    }));
+  };
+
+  const toggleMaximizePane = (paneName) => {
+    setPanes(prev => ({
+      ...prev,
+      [paneName]: { ...prev[paneName], isMaximized: !prev[paneName].isMaximized }
+    }));
+  };
+
+  const focusPane = (paneName) => {
+    setActivePane(paneName);
+  };
+
+  const handleTaskbarClick = (paneName) => {
+    const pane = panes[paneName];
+    if (pane.isMinimized) {
+      setPanes(prev => ({
+        ...prev,
+        [paneName]: { ...prev[paneName], isMinimized: false }
+      }));
+      setActivePane(paneName);
+    } else if (activePane === paneName) {
+      minimizePane(paneName);
+    } else {
+      setActivePane(paneName);
+    }
+  };
+
+  const getZIndex = (paneName) => {
+    if (activePane === paneName) return 1000;
+    const index = paneOrder.indexOf(paneName);
+    return 100 + index;
+  };
+
+  const handleSizeChange = (paneName, newSize) => {
+    setSavedSizes(prev => ({
+      ...prev,
+      [paneName]: newSize
+    }));
+  };
+
+  const handlePositionChange = (paneName, newPosition) => {
+    setSavedPositions(prev => ({
+      ...prev,
+      [paneName]: newPosition
+    }));
+  };
+
+  const getInitialPosition = (paneName) => {
+    // Als er een opgeslagen positie is, gebruik die
+    if (savedPositions[paneName]) {
+      return savedPositions[paneName];
+    }
+    // Anders gebruik cascade offset
+    return {
+      left: 100 + cascadeOffset,
+      top: 50 + cascadeOffset
+    };
+  };
 
   if (!isLoggedIn) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
@@ -52,47 +143,46 @@ function App() {
   return (
     <div className="desktop" onClick={() => setIsStartOpen(false)}>
       <div className="shortcuts-area">
-        <div className="shortcut" onDoubleClick={openChat}>
-          <img src="favicon.ico" alt="Chatlon" className="shortcut-icon" />
-          <span className="shortcut-label">Chatlon Messenger</span>
-        </div>
-        
-        <div className="shortcut" onDoubleClick={openNotepad}>
-          <span className="shortcut-icon" style={{ fontSize: '32px' }}>📝</span>
-          <span className="shortcut-label">Kladblok</span>
-        </div>
+        {Object.entries(paneConfig).map(([paneName, config]) => (
+          <div key={paneName} className="shortcut" onDoubleClick={() => openPane(paneName)}>
+            {config.desktopIcon.endsWith('.ico') || config.desktopIcon.endsWith('.png') ? (
+              <img src={config.desktopIcon} alt={config.desktopLabel} className="shortcut-icon" />
+            ) : (
+              <span className="shortcut-icon" style={{ fontSize: '32px' }}>{config.desktopIcon}</span>
+            )}
+            <span className="shortcut-label">{config.desktopLabel}</span>
+          </div>
+        ))}
       </div>
 
       <div className="pane-layer">
-        {isChatOpen && (
-          <div style={{ display: isChatMinimized ? 'none' : 'block' }}>
-            <Pane 
-              title="Chatlon Messenger"
-              type="chat"
-              isMaximized={isChatMaximized}
-              onMaximize={() => setIsChatMaximized(!isChatMaximized)}
-              onClose={() => setIsChatOpen(false)} 
-              onMinimize={() => setIsChatMinimized(true)}
-            >
-              <ChatPane />
-            </Pane>
-          </div>
-        )}
+        {Object.entries(paneConfig).map(([paneName, config]) => {
+          const pane = panes[paneName];
+          if (!pane.isOpen) return null;
 
-        {isNotepadOpen && (
-          <div style={{ display: isNotepadMinimized ? 'none' : 'block' }}>
-            <Pane 
-              title="Naamloos - Kladblok" 
-              type="notepad"
-              isMaximized={isNotepadMaximized}
-              onMaximize={() => setIsNotepadMaximized(!isNotepadMaximized)}
-              onClose={() => setIsNotepadOpen(false)} 
-              onMinimize={() => setIsNotepadMinimized(true)}
-            >
-              <NotepadPane />
-            </Pane>
-          </div>
-        )}
+          const Component = config.component;
+          
+          return (
+            <div key={paneName} style={{ display: pane.isMinimized ? 'none' : 'block' }}>
+              <Pane 
+                title={config.title}
+                type={paneName}
+                isMaximized={pane.isMaximized}
+                onMaximize={() => toggleMaximizePane(paneName)}
+                onClose={() => closePane(paneName)}
+                onMinimize={() => minimizePane(paneName)}
+                onFocus={() => focusPane(paneName)}
+                zIndex={getZIndex(paneName)}
+                savedSize={savedSizes[paneName]}
+                onSizeChange={(newSize) => handleSizeChange(paneName, newSize)}
+                initialPosition={getInitialPosition(paneName)}
+                onPositionChange={(newPosition) => handlePositionChange(paneName, newPosition)}
+              >
+                <Component />
+              </Pane>
+            </div>
+          );
+        })}
       </div>
 
       {isStartOpen && (
@@ -103,14 +193,16 @@ function App() {
           </div>
           <div className="start-menu-main">
             <div className="start-left-col">
-              <div className="start-item" onClick={openChat}>
-                <img src="favicon.ico" alt="icon" />
-                <span>Chatlon Messenger</span>
-              </div>
-              <div className="start-item" onClick={openNotepad}>
-                <span style={{ fontSize: '24px' }}>📝</span>
-                <span>Kladblok</span>
-              </div>
+              {Object.entries(paneConfig).map(([paneName, config]) => (
+                <div key={paneName} className="start-item" onClick={() => openPane(paneName)}>
+                  {config.desktopIcon.endsWith('.ico') || config.desktopIcon.endsWith('.png') ? (
+                    <img src={config.desktopIcon} alt="icon" style={{ width: '24px', height: '24px' }} />
+                  ) : (
+                    <span style={{ fontSize: '24px' }}>{config.desktopIcon}</span>
+                  )}
+                  <span>{config.desktopLabel}</span>
+                </div>
+              ))}
             </div>
             <div className="start-right-col">
               <div className="start-item-gray">My Documents</div>
@@ -128,16 +220,21 @@ function App() {
           <span className="start-icon">🪟</span> Start
         </button>
         <div className="taskbar-items">
-          {isChatOpen && (
-            <div className={`taskbar-tab ${!isChatMinimized ? 'active' : ''}`} onClick={() => setIsChatMinimized(!isChatMinimized)}>
-              <span className="taskbar-icon">💬</span> Chatlon
-            </div>
-          )}
-          {isNotepadOpen && (
-            <div className={`taskbar-tab ${!isNotepadMinimized ? 'active' : ''}`} onClick={() => setIsNotepadMinimized(!isNotepadMinimized)}>
-              <span className="taskbar-icon">📝</span> Kladblok
-            </div>
-          )}
+          {paneOrder.map((paneName) => {
+            const pane = panes[paneName];
+            const config = paneConfig[paneName];
+            if (!pane.isOpen) return null;
+
+            return (
+              <div 
+                key={paneName}
+                className={`taskbar-tab ${!pane.isMinimized && activePane === paneName ? 'active' : ''}`} 
+                onClick={() => handleTaskbarClick(paneName)}
+              >
+                <span className="taskbar-icon">{config.icon}</span> {config.label}
+              </div>
+            );
+          })}
         </div>
         <div className="systray">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
       </div>

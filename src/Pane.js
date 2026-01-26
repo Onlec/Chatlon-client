@@ -1,11 +1,41 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { paneConfig } from './paneConfig';
 
-function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, type }) {
+function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, onFocus, zIndex, type, savedSize, onSizeChange, initialPosition, onPositionChange }) {
   const paneRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [size, setSize] = useState({ width: 450, height: 500 });
+  const hasInitialized = useRef(false);
+  
+  // Get config for this pane type
+  const config = paneConfig[type] || {};
+  const defaultSize = config.defaultSize || { width: 450, height: 500 };
+  const minSize = config.minSize || { width: 250, height: 200 };
+  
+  // Gebruik savedSize als die er is, anders defaultSize
+  const [size, setSize] = useState(savedSize || defaultSize);
+  
+  // Gebruik initialPosition voor positie - ALLEEN bij mount
+  const [position, setPosition] = useState(initialPosition || { left: 100, top: 50 });
+
+  // Update size als savedSize verandert (bij heropenen)
+  useEffect(() => {
+    if (savedSize) {
+      setSize(savedSize);
+    }
+  }, [savedSize]);
+
+  // Update position ALLEEN als de pane nog niet geïnitialiseerd is
+  useEffect(() => {
+    if (!hasInitialized.current && initialPosition) {
+      setPosition(initialPosition);
+      hasInitialized.current = true;
+    }
+  }, [initialPosition]);
 
   const handleMouseDown = (e) => {
+    // Focus pane wanneer erop geklikt wordt
+    if (onFocus) onFocus();
+    
     if (e.target.closest('.pane-controls')) return;
     
     // Check voor dubbelklik
@@ -27,6 +57,10 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, t
       let newX = moveEvent.clientX - offsetX;
       let newY = moveEvent.clientY - offsetY;
       if (newY < 0) newY = 0;
+      
+      const newPosition = { left: newX, top: newY };
+      setPosition(newPosition);
+      
       pane.style.left = `${newX}px`;
       pane.style.top = `${newY}px`;
       pane.style.transform = 'none';
@@ -34,6 +68,11 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, t
 
     const handleMouseUp = () => {
       setIsDragging(false);
+      // Sla positie op bij einde van drag
+      if (onPositionChange) {
+        const rect = pane.getBoundingClientRect();
+        onPositionChange({ left: rect.left, top: rect.top });
+      }
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -52,9 +91,11 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, t
     const onMouseMove = (mouseMoveEvent) => {
       let newWidth = startWidth;
       let newHeight = startHeight;
-      if (direction.includes('e')) newWidth = Math.max(300, startWidth + (mouseMoveEvent.pageX - startX));
-      if (direction.includes('s')) newHeight = Math.max(300, startHeight + (mouseMoveEvent.pageY - startY));
-      setSize({ width: newWidth, height: newHeight });
+      if (direction.includes('e')) newWidth = Math.max(minSize.width, startWidth + (mouseMoveEvent.pageX - startX));
+      if (direction.includes('s')) newHeight = Math.max(minSize.height, startHeight + (mouseMoveEvent.pageY - startY));
+      const newSize = { width: newWidth, height: newHeight };
+      setSize(newSize);
+      if (onSizeChange) onSizeChange(newSize);
     };
 
     const onMouseUp = () => {
@@ -70,12 +111,15 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, t
       ref={paneRef}
       className={`pane-frame type-${type} ${isMaximized ? 'maximized' : ''}`}
       style={{ 
-        left: '100px', top: '50px',
+        left: isMaximized ? 0 : position.left,
+        top: isMaximized ? 0 : position.top,
         width: isMaximized ? '100vw' : size.width,
         height: isMaximized ? 'calc(100vh - 30px)' : size.height,
-        zIndex: isDragging ? 1000 : 100,
-        position: isMaximized ? 'fixed' : 'absolute'
+        zIndex: zIndex || (isDragging ? 1000 : 100),
+        position: isMaximized ? 'fixed' : 'absolute',
+        transform: 'none'
       }}
+      onMouseDown={() => onFocus && onFocus()}
     >
       <div className="pane-inner-container">
         <div className="pane-header" onMouseDown={handleMouseDown}>
