@@ -1,8 +1,19 @@
 import ChatPane from './ChatPane';
 import NotepadPane from './NotepadPane';
 import CalculatorPane from './CalculatorPane';
+import ContactsPane from './ContactsPane';
 
 const paneConfig = {
+  contacts: {
+    title: 'Chatlon Messenger',
+    icon: '👥',
+    component: ContactsPane,
+    label: 'Contacten',
+    defaultSize: { width: 240, height: 500 },
+    minSize: { width: 200, height: 400 },
+    desktopIcon: 'favicon.ico',
+    desktopLabel: 'Chatlon Messenger'
+  },
   chat: {
     title: 'Chatlon Messenger',
     icon: '💬',
@@ -10,8 +21,8 @@ const paneConfig = {
     label: 'Chatlon',
     defaultSize: { width: 450, height: 500 },
     minSize: { width: 600, height: 450 },
-    desktopIcon: 'favicon.ico', // img src
-    desktopLabel: 'Chatlon Messenger'
+    desktopIcon: 'favicon.ico',
+    desktopLabel: 'Gesprek'
   },
   notepad: {
     title: 'Naamloos - Kladblok',

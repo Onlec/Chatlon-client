@@ -23,6 +23,8 @@ function App() {
     if (user.is) {
       setIsLoggedIn(true);
       setCurrentUser(user.is.alias);
+      // Open contactenlijst automatisch bij login
+      setTimeout(() => openPane('contacts'), 100);
     }
   }, []);
 

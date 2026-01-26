@@ -85,6 +85,11 @@ body, html {
 }
 
 /* Specifieke minimum groottes per type */
+.pane-frame.type-contacts {
+  min-width: 200px;
+  min-height: 400px;
+}
+
 .pane-frame.type-chat {
   min-width: 600px; 
   min-height: 450px;
@@ -979,4 +984,226 @@ div.pane-frame.maximized {
 .calc-btn.equals {
   background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
   color: #CC0000;
+}
+
+/* --- 15. MSN MESSENGER CONTACTENLIJST --- */
+
+.contacts-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #ECE9D8;
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+}
+
+.contacts-menubar {
+  background: #ECE9D8;
+  border-bottom: 1px solid #919B9C;
+  display: flex;
+  gap: 2px;
+  padding: 2px 4px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.contacts-menu-item {
+  padding: 3px 8px;
+  cursor: default;
+  user-select: none;
+}
+
+.contacts-menu-item:hover {
+  background: #316AC5;
+  color: white;
+}
+
+.contacts-user-section {
+  background: linear-gradient(to bottom, #FFFFFF 0%, #E8F2FD 100%);
+  border-bottom: 1px solid #7F9DB9;
+  padding: 12px;
+  flex-shrink: 0;
+}
+
+.contacts-user-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.contacts-user-avatar {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #7F9DB9;
+  border-radius: 2px;
+}
+
+.contacts-user-details {
+  flex: 1;
+}
+
+.contacts-user-name {
+  font-weight: bold;
+  font-size: 13px;
+  color: #003399;
+  margin-bottom: 2px;
+}
+
+.contacts-personal-message {
+  font-size: 11px;
+  color: #666;
+  font-style: italic;
+  cursor: text;
+  padding: 2px;
+  border: 1px solid transparent;
+}
+
+.contacts-personal-message:hover {
+  border: 1px solid #7F9DB9;
+  background: white;
+}
+
+.contacts-personal-message-input {
+  width: 100%;
+  font-size: 11px;
+  font-style: italic;
+  padding: 2px;
+  border: 1px solid #7F9DB9;
+  outline: none;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.contacts-status-selector {
+  margin-top: 8px;
+}
+
+.contacts-status-current {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-left: 3px solid #7AC142;
+  padding-left: 8px;
+}
+
+.contacts-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.contacts-status-dropdown {
+  border: 1px solid #7F9DB9;
+  padding: 2px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  background: white;
+  cursor: pointer;
+}
+
+.contacts-list-section {
+  flex: 1;
+  overflow-y: auto;
+  background: white;
+}
+
+.contacts-category-header {
+  background: linear-gradient(to bottom, #E8F2FD 0%, #D0E4F7 100%);
+  border-bottom: 1px solid #7F9DB9;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #003399;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.contacts-category-header:hover {
+  background: linear-gradient(to bottom, #D0E4F7 0%, #B8D6F0 100%);
+}
+
+.contacts-category-header.collapsed {
+  opacity: 0.7;
+}
+
+.contacts-category-icon {
+  font-size: 8px;
+  color: #666;
+}
+
+.contacts-list {
+  padding: 4px 0;
+}
+
+.contacts-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 11px;
+  color: #666;
+  font-style: italic;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  position: relative;
+  border-bottom: 1px solid #F0F0F0;
+}
+
+.contact-item:hover {
+  background: linear-gradient(to right, #FFFACD 0%, #FFF9C4 100%);
+}
+
+.contact-avatar {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #7F9DB9;
+  border-radius: 2px;
+}
+
+.contact-info {
+  flex: 1;
+}
+
+.contact-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: #000;
+}
+
+.contact-status {
+  font-size: 10px;
+  color: #666;
+  font-style: italic;
+}
+
+.contact-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.contacts-bottom-banner {
+  background: linear-gradient(to bottom, #FFFFFF 0%, #E8F2FD 100%);
+  border-top: 1px solid #7F9DB9;
+  padding: 8px;
+  text-align: center;
+  font-size: 10px;
+  color: #003399;
+  flex-shrink: 0;
+}
+
+.contacts-ad-space {
+  cursor: pointer;
+}
+
+.contacts-ad-space:hover {
+  text-decoration: underline;
 }
