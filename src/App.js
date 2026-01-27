@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Pane from './Pane'; 
 import LoginScreen from './LoginScreen';
+import ConversationPane from './ConversationPane';
 import { gun, user } from './gun';
 import { paneConfig, getInitialPaneState } from './paneConfig';
 import './App.css';
@@ -17,6 +18,7 @@ function App() {
   const [savedSizes, setSavedSizes] = useState({}); // Onthoud pane groottes per sessie
   const [savedPositions, setSavedPositions] = useState({}); // Onthoud pane posities per sessie
   const [cascadeOffset, setCascadeOffset] = useState(0); // Voor getrapt openen
+  const [conversations, setConversations] = useState({}); // Dynamische conversation panes
 
   useEffect(() => {
     // Check if user is already logged in
@@ -92,7 +94,29 @@ function App() {
   };
 
   const handleTaskbarClick = (paneName) => {
+    // Check of het een conversation is
+    if (paneName.startsWith('conv_')) {
+      const conv = conversations[paneName];
+      if (!conv) return;
+      
+      if (conv.isMinimized) {
+        setConversations(prev => ({
+          ...prev,
+          [paneName]: { ...prev[paneName], isMinimized: false }
+        }));
+        setActivePane(paneName);
+      } else if (activePane === paneName) {
+        minimizeConversation(paneName);
+      } else {
+        setActivePane(paneName);
+      }
+      return;
+    }
+
+    // Normale pane
     const pane = panes[paneName];
+    if (!pane) return;
+    
     if (pane.isMinimized) {
       setPanes(prev => ({
         ...prev,
@@ -138,6 +162,69 @@ function App() {
     };
   };
 
+  // Open een conversation met een contact
+  const openConversation = (contactName) => {
+    const convId = `conv_${contactName}`;
+    
+    // Als conversation niet bestaat, voeg toe aan conversations state
+    if (!conversations[convId]) {
+      setConversations(prev => ({
+        ...prev,
+        [convId]: {
+          contactName,
+          isOpen: true,
+          isMinimized: false,
+          isMaximized: false
+        }
+      }));
+      
+      // Voeg toe aan pane order
+      if (!paneOrder.includes(convId)) {
+        setPaneOrder([...paneOrder, convId]);
+      }
+      
+      // Increment cascade offset
+      if (!savedPositions[convId]) {
+        setCascadeOffset(prev => (prev + 30) % 150);
+      }
+    } else {
+      // Als het al bestaat, open en focus
+      setConversations(prev => ({
+        ...prev,
+        [convId]: { ...prev[convId], isOpen: true, isMinimized: false }
+      }));
+    }
+    
+    setActivePane(convId);
+  };
+
+  const closeConversation = (convId) => {
+    setConversations(prev => {
+      const updated = { ...prev };
+      delete updated[convId];
+      return updated;
+    });
+    setPaneOrder(prev => prev.filter(p => p !== convId));
+    if (activePane === convId) {
+      const remaining = paneOrder.filter(p => p !== convId);
+      setActivePane(remaining[remaining.length - 1] || null);
+    }
+  };
+
+  const minimizeConversation = (convId) => {
+    setConversations(prev => ({
+      ...prev,
+      [convId]: { ...prev[convId], isMinimized: true }
+    }));
+  };
+
+  const toggleMaximizeConversation = (convId) => {
+    setConversations(prev => ({
+      ...prev,
+      [convId]: { ...prev[convId], isMaximized: !prev[convId].isMaximized }
+    }));
+  };
+
   if (!isLoggedIn) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
@@ -158,6 +245,7 @@ function App() {
       </div>
 
       <div className="pane-layer">
+        {/* Normale panes */}
         {Object.entries(paneConfig).map(([paneName, config]) => {
           const pane = panes[paneName];
           if (!pane.isOpen) return null;
@@ -180,7 +268,37 @@ function App() {
                 initialPosition={getInitialPosition(paneName)}
                 onPositionChange={(newPosition) => handlePositionChange(paneName, newPosition)}
               >
-                <Component />
+                {paneName === 'contacts' ? (
+                  <Component onOpenConversation={openConversation} />
+                ) : (
+                  <Component />
+                )}
+              </Pane>
+            </div>
+          );
+        })}
+
+        {/* Dynamische conversation panes */}
+        {Object.entries(conversations).map(([convId, conv]) => {
+          if (!conv.isOpen) return null;
+          
+          return (
+            <div key={convId} style={{ display: conv.isMinimized ? 'none' : 'block' }}>
+              <Pane 
+                title={`Gesprek met ${conv.contactName}`}
+                type="conversation"
+                isMaximized={conv.isMaximized}
+                onMaximize={() => toggleMaximizeConversation(convId)}
+                onClose={() => closeConversation(convId)}
+                onMinimize={() => minimizeConversation(convId)}
+                onFocus={() => focusPane(convId)}
+                zIndex={getZIndex(convId)}
+                savedSize={savedSizes[convId]}
+                onSizeChange={(newSize) => handleSizeChange(convId, newSize)}
+                initialPosition={getInitialPosition(convId)}
+                onPositionChange={(newPosition) => handlePositionChange(convId, newPosition)}
+              >
+                <ConversationPane contactName={conv.contactName} />
               </Pane>
             </div>
           );
@@ -223,9 +341,26 @@ function App() {
         </button>
         <div className="taskbar-items">
           {paneOrder.map((paneName) => {
+            // Check of het een conversation is
+            if (paneName.startsWith('conv_')) {
+              const conv = conversations[paneName];
+              if (!conv) return null;
+
+              return (
+                <div 
+                  key={paneName}
+                  className={`taskbar-tab ${!conv.isMinimized && activePane === paneName ? 'active' : ''}`} 
+                  onClick={() => handleTaskbarClick(paneName)}
+                >
+                  <span className="taskbar-icon">💬</span> {conv.contactName}
+                </div>
+              );
+            }
+
+            // Normale pane
             const pane = panes[paneName];
             const config = paneConfig[paneName];
-            if (!pane.isOpen) return null;
+            if (!pane || !pane.isOpen) return null;
 
             return (
               <div 

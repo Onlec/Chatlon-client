@@ -90,6 +90,11 @@ body, html {
   min-height: 400px;
 }
 
+.pane-frame.type-conversation {
+  min-width: 450px;
+  min-height: 350px;
+}
+
 .pane-frame.type-chat {
   min-width: 600px; 
   min-height: 450px;
@@ -1206,4 +1211,199 @@ div.pane-frame.maximized {
 
 .contacts-ad-space:hover {
   text-decoration: underline;
+}
+
+/* --- 16. KLASSIEKE MSN MESSENGER CONVERSATION WINDOW --- */
+
+.msn-conversation {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #ECE9D8;
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+}
+
+.msn-menubar {
+  background: #ECE9D8;
+  border-bottom: 1px solid #919B9C;
+  display: flex;
+  gap: 2px;
+  padding: 2px 4px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.msn-menu-item {
+  padding: 3px 8px;
+  cursor: default;
+  user-select: none;
+}
+
+.msn-menu-item:hover {
+  background: #316AC5;
+  color: white;
+}
+
+.msn-toolbar {
+  background: #F0F0F0;
+  border-bottom: 1px solid #919B9C;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.msn-toolbar-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  font-size: 9px;
+  color: #000;
+}
+
+.msn-toolbar-btn:hover {
+  background: #E0E0E0;
+  border: 1px solid #A0A0A0;
+}
+
+.msn-toolbar-icon {
+  font-size: 16px;
+}
+
+.msn-toolbar-label {
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.msn-toolbar-separator {
+  width: 1px;
+  height: 30px;
+  background: #919B9C;
+  margin: 0 4px;
+}
+
+.msn-chat-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background: white;
+}
+
+.msn-left-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #D4D0C8;
+  min-width: 0;
+}
+
+.msn-messages-display {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  background: white;
+  font-size: 12px;
+}
+
+.msn-input-container {
+  border-top: 1px solid #D4D0C8;
+  background: white;
+  flex-shrink: 0;
+}
+
+.msn-input-toolbar {
+  background: #F0F0F0;
+  border-bottom: 1px solid #D4D0C8;
+  padding: 2px 4px;
+  display: flex;
+  gap: 2px;
+}
+
+.msn-input-tool {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.msn-input-tool:hover:not(:disabled) {
+  background: #E0E0E0;
+  border: 1px solid #A0A0A0;
+}
+
+.msn-input-tool:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.msn-input-text {
+  width: 100%;
+  min-height: 60px;
+  max-height: 120px;
+  border: none;
+  padding: 6px;
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+  font-size: 12px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.msn-right-column {
+  width: 120px;
+  background: #F0F0F0;
+  border-left: 1px solid #D4D0C8;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  flex-shrink: 0;
+}
+
+.msn-avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.msn-avatar-label {
+  font-size: 10px;
+  color: #666;
+  font-weight: bold;
+}
+
+.msn-display-picture {
+  width: 96px;
+  height: 96px;
+  border: 2px solid #7F9DB9;
+  background: white;
+  padding: 2px;
+}
+
+/* Scrollbar voor MSN messages */
+.msn-messages-display::-webkit-scrollbar {
+  width: 16px;
+}
+
+.msn-messages-display::-webkit-scrollbar-track {
+  background: #F0F0F0;
+  border-left: 1px solid #D4D0C8;
+}
+
+.msn-messages-display::-webkit-scrollbar-thumb {
+  background: #C1C1C1;
+  border: 1px solid #999;
+}
+
+.msn-messages-display::-webkit-scrollbar-thumb:hover {
+  background: #A8A8A8;
 }

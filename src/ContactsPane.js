@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { gun, user } from './gun';
 
-function ContactsPane({ onOpenChat }) {
+function ContactsPane({ onOpenConversation }) {
   const [myStatus, setMyStatus] = useState('online');
   const [personalMessage, setPersonalMessage] = useState('');
   const [isEditingMessage, setIsEditingMessage] = useState(false);
@@ -136,7 +136,7 @@ function ContactsPane({ onOpenChat }) {
               <div 
                 key={contact.name}
                 className="contact-item"
-                onDoubleClick={() => onOpenChat && onOpenChat(contact.name)}
+                onDoubleClick={() => onOpenConversation && onOpenConversation(contact.name)}
               >
                 <img src={contact.avatar} alt={contact.name} className="contact-avatar" />
                 <div className="contact-info">

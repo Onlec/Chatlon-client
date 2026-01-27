@@ -8,8 +8,8 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, o
   
   // Get config for this pane type
   const config = paneConfig[type] || {};
-  const defaultSize = config.defaultSize || { width: 450, height: 500 };
-  const minSize = config.minSize || { width: 250, height: 200 };
+  const defaultSize = config.defaultSize || (type === 'conversation' ? { width: 450, height: 400 } : { width: 450, height: 500 });
+  const minSize = config.minSize || (type === 'conversation' ? { width: 450, height: 350 } : { width: 250, height: 200 });
   
   // Gebruik savedSize als die er is, anders defaultSize
   const [size, setSize] = useState(savedSize || defaultSize);
