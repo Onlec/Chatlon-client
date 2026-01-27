@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useReducer, useRef } from 'react';
 import { gun, user } from './gun';
+import { convertEmoticons, getEmoticonCategories } from './emoticons';
 
 const reducer = (state, message) => {
   if (state.messageMap[message.id]) return state;
@@ -23,6 +24,8 @@ function ConversationPane({ contactName }) {
   const [canNudge, setCanNudge] = useState(true);
   const [username, setUsername] = useState('');
   const sessionStartTime = useRef(Date.now());
+  const [showEmoticonPicker, setShowEmoticonPicker] = useState(false);
+  const emoticonPickerRef = useRef(null);
 
   useEffect(() => {
     if (user.is) {
@@ -73,6 +76,20 @@ function ConversationPane({ contactName }) {
     }
   }, [state.messages]);
 
+  // Close emoticon picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emoticonPickerRef.current && !emoticonPickerRef.current.contains(event.target)) {
+        setShowEmoticonPicker(false);
+      }
+    };
+
+    if (showEmoticonPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showEmoticonPicker]);
+
   const sendMessage = () => {
     if (!messageText.trim()) return;
     const currentUser = user.is?.alias;
@@ -104,6 +121,11 @@ function ConversationPane({ contactName }) {
     });
     
     setTimeout(() => setCanNudge(true), 5000);
+  };
+
+  const insertEmoticon = (emoticonText) => {
+    setMessageText(prev => prev + emoticonText + ' ');
+    setShowEmoticonPicker(false);
   };
 
   return (
@@ -165,8 +187,8 @@ function ConversationPane({ contactName }) {
                 <div style={{ color: '#666', fontSize: '10px', marginBottom: '2px' }}>
                   <strong>{msg.sender}</strong> zegt ({msg.timestamp}):
                 </div>
-                <div style={{ paddingLeft: '10px' }}>
-                  {msg.content}
+                <div style={{ paddingLeft: '10px', wordWrap: 'break-word' }}>
+                  {convertEmoticons(msg.content)}
                 </div>
               </div>
             ))}
@@ -176,7 +198,36 @@ function ConversationPane({ contactName }) {
           <div className="msn-input-container">
             <div className="msn-input-toolbar">
               <button className="msn-input-tool" title="Lettertype">A</button>
-              <button className="msn-input-tool" title="Emoticons">😊</button>
+              <div style={{ position: 'relative' }}>
+                <button 
+                  className="msn-input-tool" 
+                  title="Emoticons"
+                  onClick={() => setShowEmoticonPicker(!showEmoticonPicker)}
+                >
+                  😊
+                </button>
+                {showEmoticonPicker && (
+                  <div className="emoticon-picker" ref={emoticonPickerRef}>
+                    {Object.entries(getEmoticonCategories()).map(([category, emoticons]) => (
+                      <div key={category} className="emoticon-category">
+                        <div className="emoticon-category-title">{category}</div>
+                        <div className="emoticon-grid">
+                          {emoticons.map((emo) => (
+                            <button
+                              key={emo.text}
+                              className="emoticon-item"
+                              onClick={() => insertEmoticon(emo.text)}
+                              title={emo.text}
+                            >
+                              {emo.emoji}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button className="msn-input-tool" title="Knipoog">😉</button>
               <button className="msn-input-tool" title="Voice clip">🎤</button>
               <button className="msn-input-tool" title="Nudge" onClick={sendNudge} disabled={!canNudge}>⚡</button>

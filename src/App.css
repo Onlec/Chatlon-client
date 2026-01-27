@@ -1407,3 +1407,65 @@ div.pane-frame.maximized {
 .msn-messages-display::-webkit-scrollbar-thumb:hover {
   background: #A8A8A8;
 }
+
+/* --- 17. EMOTICON PICKER --- */
+
+.emoticon-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 4px;
+  background: white;
+  border: 1px solid #7F9DB9;
+  border-radius: 4px;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+  padding: 8px;
+  z-index: 1000;
+  min-width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.emoticon-category {
+  margin-bottom: 12px;
+}
+
+.emoticon-category:last-child {
+  margin-bottom: 0;
+}
+
+.emoticon-category-title {
+  font-size: 10px;
+  font-weight: bold;
+  color: #003399;
+  margin-bottom: 6px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #E0E0E0;
+}
+
+.emoticon-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.emoticon-item {
+  background: white;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 6px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+  width: 40px;
+  height: 40px;
+}
+
+.emoticon-item:hover {
+  background: #E8F2FD;
+  border-color: #7F9DB9;
+  transform: scale(1.1);
+}
