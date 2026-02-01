@@ -2,6 +2,9 @@ import ChatPane from './ChatPane';
 import NotepadPane from './NotepadPane';
 import CalculatorPane from './CalculatorPane';
 import ContactsPane from './ContactsPane';
+import PaintPane from './PaintPane';
+import BrowserPane from './BrowserPane';
+import MediaPane from './MediaPane';
 
 const paneConfig = {
   contacts: {
@@ -31,7 +34,7 @@ const paneConfig = {
     label: 'Kladblok',
     defaultSize: { width: 500, height: 400 },
     minSize: { width: 300, height: 250 },
-    desktopIcon: '📝', // emoji
+    desktopIcon: '📝',
     desktopLabel: 'Kladblok'
   },
   calculator: {
@@ -41,8 +44,38 @@ const paneConfig = {
     label: 'Rekenmachine',
     defaultSize: { width: 280, height: 320 },
     minSize: { width: 280, height: 320 },
-    desktopIcon: '🔢', // emoji
+    desktopIcon: '🔢',
     desktopLabel: 'Rekenmachine'
+  },
+  paint: {
+    title: 'Naamloos - Macrohard PaneT',
+    icon: '🎨',
+    component: PaintPane,
+    label: 'PaneT',
+    defaultSize: { width: 700, height: 550 },
+    minSize: { width: 500, height: 400 },
+    desktopIcon: '🎨',
+    desktopLabel: 'Macrohard PaneT'
+  },
+  browser: {
+    title: 'Internet Adventurer',
+    icon: '🌐',
+    component: BrowserPane,
+    label: 'Internet Adventurer',
+    defaultSize: { width: 800, height: 600 },
+    minSize: { width: 600, height: 450 },
+    desktopIcon: '🌐',
+    desktopLabel: 'Internet Adventurer'
+  },
+  media: {
+    title: 'Panes Media Player',
+    icon: '🎵',
+    component: MediaPane,
+    label: 'Media Player',
+    defaultSize: { width: 850, height: 600 },
+    minSize: { width: 600, height: 500 },
+    desktopIcon: '🎵',
+    desktopLabel: 'Panes Media Player'
   }
 };
 

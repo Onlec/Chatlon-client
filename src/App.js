@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Pane from './Pane'; 
 import LoginScreen from './LoginScreen';
 import ConversationPane from './ConversationPane';
+import ToastNotification from './ToastNotification';
 import { gun, user } from './gun';
 import { paneConfig, getInitialPaneState } from './paneConfig';
 import './App.css';
@@ -19,20 +20,261 @@ function App() {
   const [savedPositions, setSavedPositions] = useState({}); // Onthoud pane posities per sessie
   const [cascadeOffset, setCascadeOffset] = useState(0); // Voor getrapt openen
   const [conversations, setConversations] = useState({}); // Dynamische conversation panes
+  const conversationsRef = useRef({}); // Ref voor real-time access
+  const activePaneRef = useRef(null); // Ref voor real-time access
+  
+  // Sync refs wanneer state verandert
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+  
+  useEffect(() => {
+    activePaneRef.current = activePane;
+  }, [activePane]);
+  
+  const [toasts, setToasts] = useState([]); // Toast notificaties
+  const [messageListeners, setMessageListeners] = useState({}); // Tracking van message listeners
+  const messageListenersRef = useRef({}); // Ref voor synchrone access
+  const [friendRequestListener, setFriendRequestListener] = useState(null); // Tracking van friend request listener
+  const [shownToasts, setShownToasts] = useState(new Set()); // Track welke toasts al getoond zijn
+  const shownToastsRef = useRef(new Set()); // Ref voor synchrone duplicate check
+
+  // Sync messageListeners ref
+  useEffect(() => {
+    messageListenersRef.current = messageListeners;
+  }, [messageListeners]);
 
   useEffect(() => {
-    // Check if user is already logged in
-    if (user.is) {
-      setIsLoggedIn(true);
-      setCurrentUser(user.is.alias);
-      // Open contactenlijst automatisch bij login
-      setTimeout(() => openPane('contacts'), 100);
+    console.log('[App] useEffect running, checking user.is:', !!user.is);
+    
+    // Simple check functie
+    const initializeUser = () => {
+      if (user.is && user.is.alias) {
+        console.log('[App] User is logged in:', user.is.alias);
+        setIsLoggedIn(true);
+        setCurrentUser(user.is.alias);
+        setTimeout(() => openPane('contacts'), 100);
+        setupMessageListeners();
+        setupFriendRequestListener();
+        return true;
+      }
+      return false;
+    };
+    
+    // Probeer direct
+    if (initializeUser()) {
+      return;
     }
+    
+    // Anders poll elke 100ms voor max 2 seconden
+    console.log('[App] Waiting for Gun auth...');
+    let attempts = 0;
+    const pollInterval = setInterval(() => {
+      attempts++;
+      if (initializeUser() || attempts > 20) {
+        clearInterval(pollInterval);
+        if (attempts > 20) {
+          console.log('[App] Auth timeout - showing login screen');
+        }
+      }
+    }, 100);
+    
+    return () => clearInterval(pollInterval);
   }, []);
 
+  const setupFriendRequestListener = () => {
+    if (!user.is) return;
+    
+    const currentUsername = user.is.alias;
+    const listenerStartTime = Date.now();
+    
+    console.log('[App] Setting up friend request listener for:', currentUsername);
+    
+    // Luister naar nieuwe vriendenverzoeken in public space
+    gun.get('friendRequests').get(currentUsername).map().on((requestData, requestId) => {
+      console.log('[App] Friend request data received:', requestData?.from, requestData?.status);
+      
+      if (requestData && requestData.from && requestData.status === 'pending') {
+        const requestTimestamp = requestData.timestamp || 0;
+        
+        // Check of verzoek VOOR listener start was (oude verzoeken)
+        if (requestTimestamp < listenerStartTime) {
+          console.log('[App] Old friend request (before listener start), skipping');
+          return;
+        }
+        
+        console.log('[App] NEW friend request, showing toast');
+        // Toon toast notificatie
+        showToast({
+          from: requestData.from,
+          message: 'wil je toevoegen als contact',
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${requestData.from}`,
+          type: 'friendRequest',
+          requestId: requestId
+        });
+      }
+    });
+  };
+
+  const setupMessageListeners = () => {
+    if (!user.is) return;
+    
+    const currentUsername = user.is.alias;
+    
+    console.log('[App] Setting up message listeners for:', currentUsername);
+    
+    // Luister naar contactenlijst om listeners te starten voor elk contact
+    user.get('contacts').map().on((contactData) => {
+      if (contactData && contactData.status === 'accepted') {
+        const contactName = contactData.username;
+        const chatRoomId = getChatRoomId(currentUsername, contactName);
+        
+        // Als we AL een listener hebben voor dit contact, SKIP! (gebruik REF voor synchrone check)
+        if (messageListenersRef.current[chatRoomId]) {
+          console.log('[App] Listener already exists for:', chatRoomId);
+          return;
+        }
+        
+        console.log('[App] Setting up NEW listener for:', chatRoomId);
+        
+        // Timestamp WANNEER deze specifieke listener start
+        const thisListenerStartTime = Date.now();
+        console.log('[App] Listener start time for', contactName, ':', new Date(thisListenerStartTime));
+        
+        const chatNode = gun.get(chatRoomId);
+        
+        chatNode.map().on((data, id) => {
+          if (data && data.content && data.sender === contactName) {
+            // Alleen tonen als bericht NIEUW is (verstuurd NA deze listener start)
+            const messageTimestamp = data.timeRef || 0;
+            
+            console.log('[App] Message from:', contactName, 'timestamp:', new Date(messageTimestamp), 'listenerStart:', new Date(thisListenerStartTime));
+            
+            // Check of bericht VOOR deze listener start was (oude berichten)
+            if (messageTimestamp < thisListenerStartTime) {
+              console.log('[App] Old message (before this listener start), skipping');
+              return;
+            }
+            
+            console.log('[App] NEW message received from:', contactName);
+            
+            // Check of conversation venster open en in focus is (gebruik refs voor real-time data)
+            const convId = `conv_${contactName}`;
+            const conv = conversationsRef.current[convId];
+            
+            console.log('[App] DEBUG - Full conv object:', conv);
+            console.log('[App] DEBUG - conversationsRef.current:', conversationsRef.current);
+            console.log('[App] DEBUG - activePaneRef.current:', activePaneRef.current);
+            
+            const isConvOpen = conv && conv.isOpen && !conv.isMinimized;
+            const isConvActive = activePaneRef.current === convId;
+            
+            console.log('[App] DEBUG - isConvOpen:', isConvOpen);
+            console.log('[App] DEBUG - isConvActive:', isConvActive);
+            console.log('[App] DEBUG - conv?.isOpen:', conv?.isOpen);
+            console.log('[App] DEBUG - conv?.isMinimized:', conv?.isMinimized);
+            
+            // Toon toast ALLEEN als chat NIET BEIDE open EN actief is
+            // Chat moet BEIDE open zijn EN actief zijn om toast te blokkeren
+            const shouldShowToast = !(isConvOpen && isConvActive);
+            
+            console.log('[App] DEBUG - shouldShowToast:', shouldShowToast);
+            
+            if (shouldShowToast) {
+              console.log('[App] ✅ Showing toast for message from:', contactName);
+              showToast({
+                from: contactName,
+                message: data.content,
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${contactName}`,
+                contactName: contactName,
+                type: 'message',
+                messageId: id // Gebruik message ID voor duplicate check
+              });
+            } else {
+              console.log('[App] ❌ Skipping toast - conversation is open AND active');
+            }
+          }
+        });
+        
+        // Markeer dat we een listener hebben voor dit chatroom (update BOTH state and ref)
+        setMessageListeners(prev => {
+          const updated = {
+            ...prev,
+            [chatRoomId]: true
+          };
+          messageListenersRef.current = updated; // Sync ref immediately
+          return updated;
+        });
+      }
+    });
+  };
+
+  const getChatRoomId = (user1, user2) => {
+    const sorted = [user1, user2].sort();
+    return `CHAT_${sorted[0]}_${sorted[1]}`;
+  };
+
+  const showToast = (toastData) => {
+    console.log('[App] showToast called:', toastData.from, toastData.type);
+    
+    // Maak unieke ID voor deze toast
+    const toastKey = toastData.messageId 
+      ? `msg_${toastData.messageId}` // Voor berichten: gebruik message ID
+      : `${toastData.from}_${toastData.type}_${toastData.requestId}`; // Voor friend requests
+    
+    console.log('[App] Toast key:', toastKey);
+    
+    // Check of we deze toast al hebben laten zien (gebruik REF voor synchrone check!)
+    if (shownToastsRef.current.has(toastKey)) {
+      console.log('[App] Toast already shown, skipping:', toastKey);
+      return;
+    }
+    
+    // Markeer als getoond in REF (direct, synchroon)
+    shownToastsRef.current.add(toastKey);
+    console.log('[App] Toast marked as shown:', toastKey);
+    
+    const toastId = `toast_${Date.now()}_${Math.random()}`;
+    
+    // Speel notificatie geluid ALLEEN als het echt een nieuwe toast is
+    new Audio('/nudge.mp3').play().catch(() => {}); 
+    
+    setToasts(prev => {
+      console.log('[App] Toasts before:', prev.length);
+      const newToasts = [...prev, {
+        id: toastId,
+        ...toastData
+      }];
+      console.log('[App] Toasts after:', newToasts.length);
+      return newToasts;
+    });
+  };
+
+  const removeToast = (toastId) => {
+    setToasts(prev => prev.filter(t => t.id !== toastId));
+  };
+
+  const handleToastClick = (toast) => {
+    if (toast.type === 'message') {
+      // Open conversation met contact
+      openConversation(toast.contactName);
+    } else if (toast.type === 'friendRequest') {
+      // Open contactenlijst zodat gebruiker het verzoek kan zien
+      openPane('contacts');
+    }
+  };
+
   const handleLoginSuccess = (username) => {
+    console.log('[App] Login success:', username);
     setIsLoggedIn(true);
     setCurrentUser(username);
+    
+    // Start listeners NA succesvolle login
+    setTimeout(() => {
+      console.log('[App] Starting listeners after login...');
+      setupMessageListeners();
+      setupFriendRequestListener();
+    }, 500);
   };
 
   const handleLogoff = () => {
@@ -166,6 +408,8 @@ function App() {
   const openConversation = (contactName) => {
     const convId = `conv_${contactName}`;
     
+    console.log('[App] Opening conversation with:', contactName);
+    
     // Als conversation niet bestaat, voeg toe aan conversations state
     if (!conversations[convId]) {
       setConversations(prev => ({
@@ -196,12 +440,16 @@ function App() {
     }
     
     setActivePane(convId);
+    
+    console.log('[App] Conversation opened, conversations state:', conversations);
   };
 
   const closeConversation = (convId) => {
+    console.log('[App] Closing conversation:', convId);
     setConversations(prev => {
       const updated = { ...prev };
       delete updated[convId];
+      console.log('[App] Conversations after close:', updated);
       return updated;
     });
     setPaneOrder(prev => prev.filter(p => p !== convId));
@@ -212,10 +460,15 @@ function App() {
   };
 
   const minimizeConversation = (convId) => {
-    setConversations(prev => ({
-      ...prev,
-      [convId]: { ...prev[convId], isMinimized: true }
-    }));
+    console.log('[App] Minimizing conversation:', convId);
+    setConversations(prev => {
+      const updated = {
+        ...prev,
+        [convId]: { ...prev[convId], isMinimized: true }
+      };
+      console.log('[App] Conversations after minimize:', updated);
+      return updated;
+    });
   };
 
   const toggleMaximizeConversation = (convId) => {
@@ -374,6 +627,18 @@ function App() {
           })}
         </div>
         <div className="systray">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+      </div>
+
+      {/* Toast notificaties */}
+      <div className="toast-container">
+        {toasts.map((toast) => (
+          <ToastNotification
+            key={toast.id}
+            toast={toast}
+            onClose={removeToast}
+            onClick={handleToastClick}
+          />
+        ))}
       </div>
     </div>
   );

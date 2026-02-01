@@ -32,6 +32,13 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, o
     }
   }, [initialPosition]);
 
+  // Reset hasInitialized bij unmount
+  useEffect(() => {
+    return () => {
+      hasInitialized.current = false;
+    };
+  }, []);
+
   const handleMouseDown = (e) => {
     // Focus pane wanneer erop geklikt wordt
     if (onFocus) onFocus();
