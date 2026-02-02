@@ -64,6 +64,10 @@ function ConversationPane({ contactName }) {
     
     const chatNode = gun.get(chatRoomId);
     
+    // BELANGRIJK: Gebruik een TAG zodat we alleen DEZE listener kunnen verwijderen
+    // Anders verwijdert chatNode.off() ook de App.js listener!
+    const convListenerTag = {};
+    
     chatNode.map().on((data, id) => {
       if (data && data.content && data.timeRef) {
         dispatch({ 
@@ -74,9 +78,11 @@ function ConversationPane({ contactName }) {
           timeRef: data.timeRef 
         });
       }
-    });
+    }, convListenerTag); // TAG toegevoegd!
 
     const nudgeNode = gun.get(`NUDGE_${chatRoomId}`);
+    const nudgeListenerTag = {};
+    
     nudgeNode.on((data) => {
       if (data && data.time && data.time > lastProcessedNudge.current) {
         if (data.from === contactName) {
@@ -86,10 +92,12 @@ function ConversationPane({ contactName }) {
           setTimeout(() => setIsShaking(false), 600);
         }
       }
-    });
+    }, nudgeListenerTag); // TAG toegevoegd!
 
     // Typing indicator
     const typingNode = gun.get(`TYPING_${chatRoomId}`);
+    const typingListenerTag = {};
+    
     typingNode.on((data) => {
       if (data && data.isTyping && data.user === contactName) {
         const now = Date.now();
@@ -110,7 +118,7 @@ function ConversationPane({ contactName }) {
           clearTimeout(typingTimeoutRef.current);
         }
       }
-    });
+    }, typingListenerTag); // TAG toegevoegd!
     
     // Bij unmount: sla huidige tijd op als "last seen"
     return () => { 
@@ -118,9 +126,12 @@ function ConversationPane({ contactName }) {
       localStorage.setItem(lastSeenKey, now.toString());
       console.log('[ConversationPane] Saved last seen time:', new Date(now));
       
-      chatNode.off(); 
-      nudgeNode.off();
-      typingNode.off();
+      // BELANGRIJK: Verwijder alleen ONZE listeners, niet alle listeners!
+      // chatNode.off() zou ook de App.js toast listener verwijderen!
+      chatNode.map().off(convListenerTag);
+      nudgeNode.off(nudgeListenerTag);
+      typingNode.off(typingListenerTag);
+      
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }

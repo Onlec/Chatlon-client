@@ -103,7 +103,20 @@ function App() {
           return;
         }
         
-        console.log('[App] NEW friend request, showing toast');
+        console.log('[App] NEW friend request, checking if already shown');
+        
+        // Check duplicate met timestamp
+        const toastKey = `friendreq_${requestData.from}_${requestTimestamp}`;
+        
+        if (shownToastsRef.current.has(toastKey)) {
+          console.log('[App] Friend request toast already shown, skipping');
+          return;
+        }
+        
+        // Markeer als getoond
+        shownToastsRef.current.add(toastKey);
+        console.log('[App] Showing friend request toast');
+        
         // Toon toast notificatie
         showToast({
           from: requestData.from,
@@ -144,55 +157,88 @@ function App() {
         const chatNode = gun.get(chatRoomId);
         
         chatNode.map().on((data, id) => {
-          if (data && data.content && data.sender === contactName) {
-            // Alleen tonen als bericht NIEUW is (verstuurd NA deze listener start)
-            const messageTimestamp = data.timeRef || 0;
+          // VEILIGHEIDSCHECK 1: Valideer data
+          if (!data || !data.content || !data.sender || !data.timeRef) {
+            console.log('[App] Invalid message data, skipping');
+            return;
+          }
+          
+          // VEILIGHEIDSCHECK 2: Voorkom self-messaging (dubbele check)
+          const currentUser = user.is?.alias;
+          if (!currentUser) {
+            console.log('[App] User not logged in, skipping');
+            return;
+          }
+          
+          if (data.sender === currentUser) {
+            console.log('[App] Self-message, skipping');
+            return;
+          }
+          
+          // VEILIGHEIDSCHECK 3: Alleen berichten van het juiste contact
+          if (data.sender !== contactName) {
+            console.log('[App] Message from wrong contact, skipping');
+            return;
+          }
+          
+          const messageTimestamp = data.timeRef;
+          
+          console.log('[App] Message from:', contactName, 'timestamp:', new Date(messageTimestamp), 'listenerStart:', new Date(thisListenerStartTime));
+          
+          // Check of bericht VOOR deze listener start was (oude berichten)
+          if (messageTimestamp < thisListenerStartTime) {
+            console.log('[App] Old message (before this listener start), skipping');
+            return;
+          }
+          
+          console.log('[App] NEW message received from:', contactName);
+          
+          // Check of conversation venster open en in focus is (gebruik refs voor real-time data)
+          const convId = `conv_${contactName}`;
+          const conv = conversationsRef.current[convId];
+          
+          console.log('[App] DEBUG - Full conv object:', conv);
+          console.log('[App] DEBUG - conversationsRef.current:', conversationsRef.current);
+          console.log('[App] DEBUG - activePaneRef.current:', activePaneRef.current);
+          
+          const isConvOpen = conv && conv.isOpen && !conv.isMinimized;
+          const isConvActive = activePaneRef.current === convId;
+          
+          console.log('[App] DEBUG - isConvOpen:', isConvOpen);
+          console.log('[App] DEBUG - isConvActive:', isConvActive);
+          console.log('[App] DEBUG - conv?.isOpen:', conv?.isOpen);
+          console.log('[App] DEBUG - conv?.isMinimized:', conv?.isMinimized);
+          
+          // Toon toast ALLEEN als chat NIET BEIDE open EN actief is
+          const shouldShowToast = !(isConvOpen && isConvActive);
+          
+          console.log('[App] DEBUG - shouldShowToast:', shouldShowToast);
+          
+          if (shouldShowToast) {
+            console.log('[App] ✅ Showing toast for message from:', contactName);
             
-            console.log('[App] Message from:', contactName, 'timestamp:', new Date(messageTimestamp), 'listenerStart:', new Date(thisListenerStartTime));
+            // DUPLICATE CHECK: Gebruik timestamp + contactName
+            // Gun kan hetzelfde bericht meerdere keren triggeren
+            const toastKey = `${contactName}_${messageTimestamp}`;
             
-            // Check of bericht VOOR deze listener start was (oude berichten)
-            if (messageTimestamp < thisListenerStartTime) {
-              console.log('[App] Old message (before this listener start), skipping');
+            if (shownToastsRef.current.has(toastKey)) {
+              console.log('[App] Toast for this timestamp already shown, skipping');
               return;
             }
             
-            console.log('[App] NEW message received from:', contactName);
+            // Markeer als getoond
+            shownToastsRef.current.add(toastKey);
             
-            // Check of conversation venster open en in focus is (gebruik refs voor real-time data)
-            const convId = `conv_${contactName}`;
-            const conv = conversationsRef.current[convId];
-            
-            console.log('[App] DEBUG - Full conv object:', conv);
-            console.log('[App] DEBUG - conversationsRef.current:', conversationsRef.current);
-            console.log('[App] DEBUG - activePaneRef.current:', activePaneRef.current);
-            
-            const isConvOpen = conv && conv.isOpen && !conv.isMinimized;
-            const isConvActive = activePaneRef.current === convId;
-            
-            console.log('[App] DEBUG - isConvOpen:', isConvOpen);
-            console.log('[App] DEBUG - isConvActive:', isConvActive);
-            console.log('[App] DEBUG - conv?.isOpen:', conv?.isOpen);
-            console.log('[App] DEBUG - conv?.isMinimized:', conv?.isMinimized);
-            
-            // Toon toast ALLEEN als chat NIET BEIDE open EN actief is
-            // Chat moet BEIDE open zijn EN actief zijn om toast te blokkeren
-            const shouldShowToast = !(isConvOpen && isConvActive);
-            
-            console.log('[App] DEBUG - shouldShowToast:', shouldShowToast);
-            
-            if (shouldShowToast) {
-              console.log('[App] ✅ Showing toast for message from:', contactName);
-              showToast({
-                from: contactName,
-                message: data.content,
-                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${contactName}`,
-                contactName: contactName,
-                type: 'message',
-                messageId: id // Gebruik message ID voor duplicate check
-              });
-            } else {
-              console.log('[App] ❌ Skipping toast - conversation is open AND active');
-            }
+            showToast({
+              from: contactName,
+              message: data.content,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${contactName}`,
+              contactName: contactName,
+              type: 'message',
+              messageId: id
+            });
+          } else {
+            console.log('[App] ❌ Skipping toast - conversation is open AND active');
           }
         });
         
@@ -217,26 +263,13 @@ function App() {
   const showToast = (toastData) => {
     console.log('[App] showToast called:', toastData.from, toastData.type);
     
-    // Maak unieke ID voor deze toast
-    const toastKey = toastData.messageId 
-      ? `msg_${toastData.messageId}` // Voor berichten: gebruik message ID
-      : `${toastData.from}_${toastData.type}_${toastData.requestId}`; // Voor friend requests
-    
-    console.log('[App] Toast key:', toastKey);
-    
-    // Check of we deze toast al hebben laten zien (gebruik REF voor synchrone check!)
-    if (shownToastsRef.current.has(toastKey)) {
-      console.log('[App] Toast already shown, skipping:', toastKey);
-      return;
-    }
-    
-    // Markeer als getoond in REF (direct, synchroon)
-    shownToastsRef.current.add(toastKey);
-    console.log('[App] Toast marked as shown:', toastKey);
-    
+    // De duplicate check is al gedaan in de message listener
+    // Hier hoeven we alleen nog de toast toe te voegen
     const toastId = `toast_${Date.now()}_${Math.random()}`;
     
-    // Speel notificatie geluid ALLEEN als het echt een nieuwe toast is
+    console.log('[App] Adding toast:', toastId);
+    
+    // Speel notificatie geluid
     new Audio('/nudge.mp3').play().catch(() => {}); 
     
     setToasts(prev => {
