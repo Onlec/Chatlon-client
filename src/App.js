@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import Pane from './Pane'; 
 import LoginScreen from './LoginScreen';
 import ConversationPane from './ConversationPane';
+import BootSequence from './BootSequence';
 import ToastNotification from './ToastNotification';
 import { gun, user } from './gun';
 import { paneConfig, getInitialPaneState } from './paneConfig';
 import './App.css';
 
 function App() {
+  const [hasBooted, setHasBooted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
   const [isStartOpen, setIsStartOpen] = useState(false);
@@ -134,125 +136,154 @@ function App() {
     
     const currentUsername = user.is.alias;
     
-    console.log('[App] Setting up message listeners for:', currentUsername);
+    console.log('[App] Setting up session-based message listeners for:', currentUsername);
     
-    // Luister naar contactenlijst om listeners te starten voor elk contact
+    // Luister naar contactenlijst
     user.get('contacts').map().on((contactData) => {
       if (contactData && contactData.status === 'accepted') {
         const contactName = contactData.username;
-        const chatRoomId = getChatRoomId(currentUsername, contactName);
+        const pairId = getContactPairId(currentUsername, contactName);
         
-        // Als we AL een listener hebben voor dit contact, SKIP! (gebruik REF voor synchrone check)
-        if (messageListenersRef.current[chatRoomId]) {
-          console.log('[App] Listener already exists for:', chatRoomId);
+        // Als we AL een listener hebben voor dit contact pair, SKIP!
+        if (messageListenersRef.current[pairId]) {
+          console.log('[App] Session listener already exists for:', pairId);
           return;
         }
         
-        console.log('[App] Setting up NEW listener for:', chatRoomId);
+        console.log('[App] Setting up NEW session listener for:', pairId);
         
-        // Timestamp WANNEER deze specifieke listener start
-        const thisListenerStartTime = Date.now();
-        console.log('[App] Listener start time for', contactName, ':', new Date(thisListenerStartTime));
+        // Luister naar de ACTIVE_SESSIONS node voor dit contact pair
+        let currentSessionListener = null;
         
-        const chatNode = gun.get(chatRoomId);
-        
-        chatNode.map().on((data, id) => {
-          // VEILIGHEIDSCHECK 1: Valideer data
-          if (!data || !data.content || !data.sender || !data.timeRef) {
-            console.log('[App] Invalid message data, skipping');
+        gun.get('ACTIVE_SESSIONS').get(pairId).on((sessionData) => {
+          if (!sessionData || !sessionData.sessionId) {
+            console.log('[App] No active session for:', pairId);
+            // Cleanup oude listener als sessie dood is
+            if (currentSessionListener) {
+              currentSessionListener();
+              currentSessionListener = null;
+            }
             return;
           }
           
-          // VEILIGHEIDSCHECK 2: Voorkom self-messaging (dubbele check)
-          const currentUser = user.is?.alias;
-          if (!currentUser) {
-            console.log('[App] User not logged in, skipping');
-            return;
+          const activeSessionId = sessionData.sessionId;
+          
+          // Parse openBy van JSON string
+          let openBy = [];
+          try {
+            openBy = sessionData.openBy ? JSON.parse(sessionData.openBy) : [];
+          } catch (e) {
+            // Fallback voor oude data
+            openBy = Array.isArray(sessionData.openBy) ? sessionData.openBy : [sessionData.openBy];
           }
           
-          if (data.sender === currentUser) {
-            console.log('[App] Self-message, skipping');
-            return;
+          console.log('[App] Active session for', pairId, ':', activeSessionId);
+          console.log('[App] Session open by:', openBy);
+          
+          // Cleanup oude session listener als er een nieuwe sessie is
+          if (currentSessionListener) {
+            console.log('[App] Cleaning up old session listener');
+            currentSessionListener();
           }
           
-          // VEILIGHEIDSCHECK 3: Alleen berichten van het juiste contact
-          if (data.sender !== contactName) {
-            console.log('[App] Message from wrong contact, skipping');
-            return;
-          }
+          // Timestamp wanneer DEZE listener start (voor deze specifieke sessie)
+          const thisListenerStartTime = Date.now();
+          console.log('[App] Session listener start time:', new Date(thisListenerStartTime));
           
-          const messageTimestamp = data.timeRef;
+          // Setup nieuwe listener voor deze actieve sessie
+          const chatNode = gun.get(activeSessionId);
           
-          console.log('[App] Message from:', contactName, 'timestamp:', new Date(messageTimestamp), 'listenerStart:', new Date(thisListenerStartTime));
-          
-          // Check of bericht VOOR deze listener start was (oude berichten)
-          if (messageTimestamp < thisListenerStartTime) {
-            console.log('[App] Old message (before this listener start), skipping');
-            return;
-          }
-          
-          console.log('[App] NEW message received from:', contactName);
-          
-          // Check of conversation venster open en in focus is (gebruik refs voor real-time data)
-          const convId = `conv_${contactName}`;
-          const conv = conversationsRef.current[convId];
-          
-          console.log('[App] DEBUG - Full conv object:', conv);
-          console.log('[App] DEBUG - conversationsRef.current:', conversationsRef.current);
-          console.log('[App] DEBUG - activePaneRef.current:', activePaneRef.current);
-          
-          const isConvOpen = conv && conv.isOpen && !conv.isMinimized;
-          const isConvActive = activePaneRef.current === convId;
-          
-          console.log('[App] DEBUG - isConvOpen:', isConvOpen);
-          console.log('[App] DEBUG - isConvActive:', isConvActive);
-          console.log('[App] DEBUG - conv?.isOpen:', conv?.isOpen);
-          console.log('[App] DEBUG - conv?.isMinimized:', conv?.isMinimized);
-          
-          // Toon toast ALLEEN als chat NIET BEIDE open EN actief is
-          const shouldShowToast = !(isConvOpen && isConvActive);
-          
-          console.log('[App] DEBUG - shouldShowToast:', shouldShowToast);
-          
-          if (shouldShowToast) {
-            console.log('[App] ✅ Showing toast for message from:', contactName);
-            
-            // DUPLICATE CHECK: Gebruik timestamp + contactName
-            // Gun kan hetzelfde bericht meerdere keren triggeren
-            const toastKey = `${contactName}_${messageTimestamp}`;
-            
-            if (shownToastsRef.current.has(toastKey)) {
-              console.log('[App] Toast for this timestamp already shown, skipping');
+          chatNode.map().on((data, id) => {
+            // VEILIGHEIDSCHECK 1: Valideer data
+            if (!data || !data.content || !data.sender || !data.timeRef) {
               return;
             }
             
-            // Markeer als getoond
-            shownToastsRef.current.add(toastKey);
+            // VEILIGHEIDSCHECK 2: Voorkom self-messaging
+            const currentUser = user.is?.alias;
+            if (!currentUser || data.sender === currentUser) {
+              return;
+            }
             
-            showToast({
-              from: contactName,
-              message: data.content,
-              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${contactName}`,
-              contactName: contactName,
-              type: 'message',
-              messageId: id
-            });
-          } else {
-            console.log('[App] ❌ Skipping toast - conversation is open AND active');
-          }
+            // VEILIGHEIDSCHECK 3: Alleen berichten van het juiste contact
+            if (data.sender !== contactName) {
+              return;
+            }
+            
+            const messageTimestamp = data.timeRef;
+            
+            console.log('[App] Message in session', activeSessionId, 'from:', contactName, 'timestamp:', new Date(messageTimestamp));
+            
+            // Check of bericht VOOR deze listener start was (oude berichten)
+            if (messageTimestamp < thisListenerStartTime) {
+              console.log('[App] Old message (before this session listener start), skipping toast');
+              return;
+            }
+            
+            console.log('[App] NEW message received from:', contactName, 'in session');
+            
+            // Check of conversation venster open en in focus is
+            const convId = `conv_${contactName}`;
+            const conv = conversationsRef.current[convId];
+            
+            const isConvOpen = conv && conv.isOpen && !conv.isMinimized;
+            const isConvActive = activePaneRef.current === convId;
+            
+            // Toon toast ALLEEN als chat NIET BEIDE open EN actief is
+            const shouldShowToast = !(isConvOpen && isConvActive);
+            
+            console.log('[App] shouldShowToast:', shouldShowToast, '(isConvOpen:', isConvOpen, ', isConvActive:', isConvActive, ')');
+            
+            if (shouldShowToast) {
+              console.log('[App] ✅ Showing toast for message from:', contactName);
+              
+              // DUPLICATE CHECK: Gebruik timestamp + contactName + sessionId
+              const toastKey = `${contactName}_${messageTimestamp}_${activeSessionId}`;
+              
+              if (shownToastsRef.current.has(toastKey)) {
+                console.log('[App] Toast for this message already shown, skipping');
+                return;
+              }
+              
+              // Markeer als getoond
+              shownToastsRef.current.add(toastKey);
+              
+              showToast({
+                from: contactName,
+                message: data.content,
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${contactName}`,
+                contactName: contactName,
+                type: 'message',
+                messageId: id,
+                sessionId: activeSessionId
+              });
+            } else {
+              console.log('[App] ❌ Skipping toast - conversation is open AND active');
+            }
+          });
+          
+          // Store cleanup function
+          currentSessionListener = () => {
+            chatNode.off();
+          };
         });
         
-        // Markeer dat we een listener hebben voor dit chatroom (update BOTH state and ref)
+        // Markeer dat we een listener hebben voor dit contact pair
         setMessageListeners(prev => {
           const updated = {
             ...prev,
-            [chatRoomId]: true
+            [pairId]: true
           };
-          messageListenersRef.current = updated; // Sync ref immediately
+          messageListenersRef.current = updated;
           return updated;
         });
       }
     });
+  };
+
+  const getContactPairId = (user1, user2) => {
+    const sorted = [user1, user2].sort();
+    return `${sorted[0]}_${sorted[1]}`;
   };
 
   const getChatRoomId = (user1, user2) => {
@@ -510,6 +541,10 @@ function App() {
       [convId]: { ...prev[convId], isMaximized: !prev[convId].isMaximized }
     }));
   };
+
+  if (!hasBooted) {
+    return <BootSequence onBootComplete={() => setHasBooted(true)} />;
+  }
 
   if (!isLoggedIn) {
     return <LoginScreen onLoginSuccess={handleLoginSuccess} />;

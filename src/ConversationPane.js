@@ -9,10 +9,10 @@ const reducer = (state, message) => {
   return { messageMap: newMessageMap, messages: sortedMessages };
 };
 
-// Helper om consistente chat room ID te maken (alfabetisch gesorteerd)
-const getChatRoomId = (user1, user2) => {
+// Helper om contact pair ID te maken (alfabetisch gesorteerd)
+const getContactPairId = (user1, user2) => {
   const sorted = [user1, user2].sort();
-  return `CHAT_${sorted[0]}_${sorted[1]}`;
+  return `${sorted[0]}_${sorted[1]}`;
 };
 
 function ConversationPane({ contactName }) {
@@ -29,10 +29,11 @@ function ConversationPane({ contactName }) {
   const typingTimeoutRef = useRef(null);
   const lastTypingSignal = useRef(0);
   
-  // TWEE TIMESTAMPS:
-  const [sessionStartTime, setSessionStartTime] = useState(null); // Grens tussen oud/nieuw
-  const [lastSeenMessageTime, setLastSeenMessageTime] = useState(null); // Voor "nieuwe berichten" streep
-  const hasScrolledToNew = useRef(false);
+  // Sessie tracking
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const sessionListenerRef = useRef(null);
+  const chatListenerRef = useRef(null);
+  const hasInitializedSession = useRef(false); // Guard tegen dubbele init
 
   useEffect(() => {
     if (user.is) {
@@ -42,34 +43,137 @@ function ConversationPane({ contactName }) {
     const currentUser = user.is?.alias;
     if (!currentUser) return;
 
-    const chatRoomId = getChatRoomId(currentUser, contactName);
-    
-    // Laad last seen timestamp uit localStorage (van vorige sessie)
-    const lastSeenKey = `lastSeen_${chatRoomId}`;
-    const savedLastSeen = localStorage.getItem(lastSeenKey);
-    
-    if (savedLastSeen) {
-      const lastSeenTimestamp = parseInt(savedLastSeen);
-      setLastSeenMessageTime(lastSeenTimestamp);
-      setSessionStartTime(lastSeenTimestamp); // Alles voor lastSeen = oud (grijs)
-      console.log('[ConversationPane] Last seen from previous session:', new Date(lastSeenTimestamp));
-      console.log('[ConversationPane] Messages before this time will be grey');
-    } else {
-      // Eerste keer openen - gebruik huidige tijd
-      const now = Date.now();
-      setSessionStartTime(now);
-      setLastSeenMessageTime(now);
-      console.log('[ConversationPane] First time opening - session start:', new Date(now));
+    // GUARD: Voorkom dubbele execution door React Strict Mode
+    if (hasInitializedSession.current) {
+      console.log('[ConversationPane] Session already initialized, skipping');
+      return;
     }
+
+    const pairId = getContactPairId(currentUser, contactName);
     
-    const chatNode = gun.get(chatRoomId);
-    
-    // BELANGRIJK: Gebruik een TAG zodat we alleen DEZE listener kunnen verwijderen
-    // Anders verwijdert chatNode.off() ook de App.js listener!
-    const convListenerTag = {};
+    console.log('[ConversationPane] Opening chat with:', contactName);
+    console.log('[ConversationPane] Checking for active session at:', `ACTIVE_SESSIONS/${pairId}`);
+
+    // Markeer als geïnitialiseerd
+    hasInitializedSession.current = true;
+
+    // DEBOUNCE: Wacht even voordat we sessie maken (voorkom race condition)
+    const sessionCheckTimeout = setTimeout(() => {
+      // Check of er een actieve sessie bestaat
+      gun.get('ACTIVE_SESSIONS').get(pairId).once((sessionData) => {
+        const now = Date.now();
+        
+        if (sessionData && sessionData.sessionId) {
+          // Er bestaat een actieve sessie - join deze
+          const existingSessionId = sessionData.sessionId;
+          
+          // Parse openBy van JSON string naar array
+          let openByArray = [];
+          try {
+            openByArray = sessionData.openBy ? JSON.parse(sessionData.openBy) : [];
+          } catch (e) {
+            // Fallback voor oude data
+            openByArray = Array.isArray(sessionData.openBy) ? sessionData.openBy : [sessionData.openBy];
+          }
+          
+          console.log('[ConversationPane] Found active session:', existingSessionId);
+          console.log('[ConversationPane] Currently open by:', openByArray);
+          
+          setCurrentSessionId(existingSessionId);
+          
+          // Voeg jezelf toe aan openBy array
+          if (!openByArray.includes(currentUser)) {
+            openByArray.push(currentUser);
+            
+            // UPDATE: Gebruik individuele fields om Gun array error te vermijden
+            const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
+            sessionNode.get('sessionId').put(existingSessionId);
+            sessionNode.get('openBy').put(JSON.stringify(openByArray)); // Store als JSON string
+            sessionNode.get('lastActivity').put(now);
+            
+            console.log('[ConversationPane] Joined session, openBy updated:', openByArray);
+          }
+        } else {
+          // Geen actieve sessie - maak nieuwe
+          const newSessionId = `CHAT_${pairId}_${now}`;
+          console.log('[ConversationPane] No active session found, creating new:', newSessionId);
+          
+          setCurrentSessionId(newSessionId);
+          
+          // UPDATE: Gebruik individuele fields om Gun array error te vermijden
+          const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
+          sessionNode.get('sessionId').put(newSessionId);
+          sessionNode.get('openBy').put(JSON.stringify([currentUser])); // Store als JSON string
+          sessionNode.get('lastActivity').put(now);
+          
+          console.log('[ConversationPane] Created new session');
+        }
+      });
+    }, 150); // 150ms debounce (iets langer voor betere Gun sync)
+
+    // Cleanup bij unmount
+    return () => {
+      clearTimeout(sessionCheckTimeout);
+      hasInitializedSession.current = false; // Reset guard
+      
+      if (currentUser && pairId && currentSessionId) {
+        console.log('[ConversationPane] Closing chat, removing self from openBy');
+        
+        // Haal jezelf uit de openBy array
+        gun.get('ACTIVE_SESSIONS').get(pairId).once((sessionData) => {
+          if (sessionData && sessionData.openBy) {
+            // Parse openBy van JSON string
+            let openByArray = [];
+            try {
+              openByArray = JSON.parse(sessionData.openBy);
+            } catch (e) {
+              openByArray = Array.isArray(sessionData.openBy) ? sessionData.openBy : [sessionData.openBy];
+            }
+            
+            const updatedOpenBy = openByArray.filter(u => u !== currentUser);
+            
+            if (updatedOpenBy.length > 0) {
+              // Er zijn nog anderen in de sessie
+              const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
+              sessionNode.get('sessionId').put(sessionData.sessionId);
+              sessionNode.get('openBy').put(JSON.stringify(updatedOpenBy));
+              sessionNode.get('lastActivity').put(Date.now());
+              
+              console.log('[ConversationPane] Removed self, session still active by:', updatedOpenBy);
+            } else {
+              // Niemand meer in sessie - markeer als dood (null de data)
+              gun.get('ACTIVE_SESSIONS').get(pairId).put(null);
+              console.log('[ConversationPane] Session closed (no one left)');
+            }
+          }
+        });
+      }
+      
+      // Cleanup listeners
+      if (chatListenerRef.current) {
+        chatListenerRef.current();
+      }
+      if (sessionListenerRef.current) {
+        sessionListenerRef.current();
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [contactName]);
+
+  // Luister naar berichten in de huidige sessie
+  useEffect(() => {
+    if (!currentSessionId || !user.is) return;
+
+    const currentUser = user.is.alias;
+    console.log('[ConversationPane] Setting up message listener for session:', currentSessionId);
+
+    const chatNode = gun.get(currentSessionId);
     
     chatNode.map().on((data, id) => {
       if (data && data.content && data.timeRef) {
+        console.log('[ConversationPane] Received message in session:', data.sender, data.content);
         dispatch({ 
           id, 
           sender: data.sender, 
@@ -78,10 +182,10 @@ function ConversationPane({ contactName }) {
           timeRef: data.timeRef 
         });
       }
-    }, convListenerTag); // TAG toegevoegd!
+    });
 
-    const nudgeNode = gun.get(`NUDGE_${chatRoomId}`);
-    const nudgeListenerTag = {};
+    // Nudge listener voor deze sessie
+    const nudgeNode = gun.get(`NUDGE_${currentSessionId}`);
     
     nudgeNode.on((data) => {
       if (data && data.time && data.time > lastProcessedNudge.current) {
@@ -92,11 +196,10 @@ function ConversationPane({ contactName }) {
           setTimeout(() => setIsShaking(false), 600);
         }
       }
-    }, nudgeListenerTag); // TAG toegevoegd!
+    });
 
-    // Typing indicator
-    const typingNode = gun.get(`TYPING_${chatRoomId}`);
-    const typingListenerTag = {};
+    // Typing indicator voor deze sessie
+    const typingNode = gun.get(`TYPING_${currentSessionId}`);
     
     typingNode.on((data) => {
       if (data && data.isTyping && data.user === contactName) {
@@ -118,96 +221,31 @@ function ConversationPane({ contactName }) {
           clearTimeout(typingTimeoutRef.current);
         }
       }
-    }, typingListenerTag); // TAG toegevoegd!
-    
-    // Bij unmount: sla huidige tijd op als "last seen"
-    return () => { 
-      const now = Date.now();
-      localStorage.setItem(lastSeenKey, now.toString());
-      console.log('[ConversationPane] Saved last seen time:', new Date(now));
-      
-      // BELANGRIJK: Verwijder alleen ONZE listeners, niet alle listeners!
-      // chatNode.off() zou ook de App.js toast listener verwijderen!
-      chatNode.map().off(convListenerTag);
-      nudgeNode.off(nudgeListenerTag);
-      typingNode.off(typingListenerTag);
-      
+    });
+
+    // BELANGRIJK: Sla cleanup functie op in ref
+    chatListenerRef.current = () => {
+      chatNode.off();
+      nudgeNode.off();
+      typingNode.off();
+    };
+
+    return () => {
+      // Cleanup listeners via ref
+      if (chatListenerRef.current) {
+        chatListenerRef.current();
+        chatListenerRef.current = null;
+      }
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
     };
-  }, [contactName]);
+  }, [currentSessionId, contactName]);
 
   useEffect(() => {
     if (!messagesAreaRef.current) return;
-    
-    // Altijd scroll naar beneden bij nieuwe berichten
-    if (state.messages.length > 0) {
-      const lastMessage = state.messages[state.messages.length - 1];
-      
-      // Als het laatste bericht van de huidige gebruiker is, scroll altijd naar beneden
-      if (lastMessage.sender === username) {
-        messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
-        return;
-      }
-      
-      // Als er nieuwe berichten zijn en we nog niet gescrolld hebben
-      if (lastSeenMessageTime && !hasScrolledToNew.current) {
-        // Zoek het eerste nieuwe bericht
-        const firstNewMessageIndex = state.messages.findIndex(msg => msg.timeRef > lastSeenMessageTime);
-        
-        if (firstNewMessageIndex > 0) {
-          // Scroll naar de "nieuwe berichten" divider
-          setTimeout(() => {
-            const divider = document.querySelector('.new-messages-divider');
-            if (divider) {
-              divider.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              hasScrolledToNew.current = true;
-            }
-          }, 100);
-        } else {
-          // Geen nieuwe berichten, scroll naar beneden
-          messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
-        }
-      } else if (!lastSeenMessageTime) {
-        // Eerste keer openen, scroll naar beneden
-        messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
-      }
-    }
-  }, [state.messages, lastSeenMessageTime, username]);
-  
-  // MARKEER BERICHTEN ALS GELEZEN - met throttling
-  useEffect(() => {
-    let scrollTimeout;
-    
-    const markAsRead = () => {
-      // Clear previous timeout
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
-      
-      // Set new timeout - alleen markeren na 500ms scroll inactiviteit
-      scrollTimeout = setTimeout(() => {
-        if (state.messages.length > 0) {
-          const latestTime = Math.max(...state.messages.map(m => m.timeRef));
-          if (!lastSeenMessageTime || latestTime > lastSeenMessageTime) {
-            setLastSeenMessageTime(latestTime);
-          }
-        }
-      }, 500);
-    };
-    
-    const scrollArea = messagesAreaRef.current;
-    if (scrollArea) {
-      scrollArea.addEventListener('scroll', markAsRead);
-      return () => {
-        scrollArea.removeEventListener('scroll', markAsRead);
-        if (scrollTimeout) {
-          clearTimeout(scrollTimeout);
-        }
-      };
-    }
-  }, [state.messages, lastSeenMessageTime]);
+    messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+  }, [state.messages]);
 
   // Close emoticon picker when clicking outside
   useEffect(() => {
@@ -224,14 +262,15 @@ function ConversationPane({ contactName }) {
   }, [showEmoticonPicker]);
 
   const sendMessage = () => {
-    if (!messageText.trim()) return;
+    if (!messageText.trim() || !currentSessionId) return;
     const currentUser = user.is?.alias;
     if (!currentUser) return;
 
     const now = Date.now();
-    const chatRoomId = getChatRoomId(currentUser, contactName);
     
-    gun.get(chatRoomId).set({
+    console.log('[ConversationPane] Sending message to session:', currentSessionId);
+    
+    gun.get(currentSessionId).set({
       sender: currentUser,
       content: messageText,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -239,28 +278,27 @@ function ConversationPane({ contactName }) {
     });
     
     // Stop typing indicator bij verzenden
-    gun.get(`TYPING_${chatRoomId}`).put({
+    gun.get(`TYPING_${currentSessionId}`).put({
       user: currentUser,
       isTyping: false,
       timestamp: now
     });
     
-    // Update last seen - alle berichten tot nu zijn "gelezen"
-    setLastSeenMessageTime(now);
-    localStorage.setItem(`lastSeen_${chatRoomId}`, now.toString());
+    // Update lastActivity van sessie
+    const pairId = getContactPairId(currentUser, contactName);
+    gun.get('ACTIVE_SESSIONS').get(pairId).get('lastActivity').put(now);
     
     setMessageText('');
   };
 
   const sendNudge = () => {
-    if (!canNudge) return;
+    if (!canNudge || !currentSessionId) return;
     const currentUser = user.is?.alias;
     if (!currentUser) return;
 
     setCanNudge(false);
-    const chatRoomId = getChatRoomId(currentUser, contactName);
     
-    gun.get(`NUDGE_${chatRoomId}`).put({ 
+    gun.get(`NUDGE_${currentSessionId}`).put({ 
       time: Date.now(),
       from: currentUser 
     });
@@ -278,14 +316,13 @@ function ConversationPane({ contactName }) {
     setMessageText(newText);
     
     const currentUser = user.is?.alias;
-    if (!currentUser) return;
+    if (!currentUser || !currentSessionId) return;
     
     const now = Date.now();
-    const chatRoomId = getChatRoomId(currentUser, contactName);
     
     // Stuur typing signal (throttled - max 1x per seconde)
     if (now - lastTypingSignal.current > 1000) {
-      gun.get(`TYPING_${chatRoomId}`).put({
+      gun.get(`TYPING_${currentSessionId}`).put({
         user: currentUser,
         isTyping: newText.length > 0,
         timestamp: now
@@ -346,73 +383,34 @@ function ConversationPane({ contactName }) {
             {state.messages.length === 0 && (
               <div style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '11px', fontStyle: 'italic' }}>
                 Je bent nu in gesprek met {contactName}
+                {currentSessionId && (
+                  <div style={{ marginTop: '5px', fontSize: '9px', color: '#999' }}>
+                    Sessie: {currentSessionId.split('_').pop()}
+                  </div>
+                )}
               </div>
             )}
-            {state.messages.map((msg, index) => {
-              // BEPAAL MESSAGE STATE:
-              const isOld = sessionStartTime && msg.timeRef < sessionStartTime; // Van vorige sessie
-              const isNewUnread = lastSeenMessageTime && msg.timeRef > lastSeenMessageTime; // Ongelezen
-              // Als niet oud en niet nieuw → huidige sessie, al gelezen
-              
-              const prevMsg = index > 0 ? state.messages[index - 1] : null;
-              const showDivider = lastSeenMessageTime && 
-                                  isNewUnread && 
-                                  (!prevMsg || prevMsg.timeRef <= lastSeenMessageTime);
-              
+            {state.messages.map((msg) => {
               return (
-                <React.Fragment key={msg.id}>
-                  {showDivider && (
-                    <div className="new-messages-divider" style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      margin: '12px 0',
-                      padding: '8px 0'
-                    }}>
-                      <div style={{
-                        flex: 1,
-                        height: '1px',
-                        background: 'linear-gradient(to right, transparent, #FFB900, transparent)'
-                      }}></div>
-                      <span style={{
-                        padding: '0 12px',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        color: '#FFB900',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                      }}>
-                        Nieuwe berichten
-                      </span>
-                      <div style={{
-                        flex: 1,
-                        height: '1px',
-                        background: 'linear-gradient(to right, transparent, #FFB900, transparent)'
-                      }}></div>
-                    </div>
-                  )}
+                <div key={msg.id} style={{ 
+                  marginBottom: '8px', 
+                  fontSize: '12px'
+                }}>
                   <div style={{ 
-                    marginBottom: '8px', 
-                    fontSize: '12px',
-                    opacity: isOld ? 0.5 : 1, // Oude berichten zijn grijs
-                    transition: 'opacity 0.3s'
+                    color: '#666', 
+                    fontSize: '10px', 
+                    marginBottom: '2px'
                   }}>
-                    <div style={{ 
-                      color: isNewUnread ? '#003399' : (isOld ? '#999' : '#666'), 
-                      fontSize: '10px', 
-                      marginBottom: '2px',
-                      fontWeight: isNewUnread ? 'bold' : 'normal'
-                    }}>
-                      <strong>{msg.sender}</strong> zegt ({msg.timestamp}):
-                    </div>
-                    <div style={{ 
-                      paddingLeft: '10px', 
-                      wordWrap: 'break-word',
-                      color: isNewUnread ? '#000' : (isOld ? '#999' : '#000')
-                    }}>
-                      {convertEmoticons(msg.content)}
-                    </div>
+                    <strong>{msg.sender}</strong> zegt ({msg.timestamp}):
                   </div>
-                </React.Fragment>
+                  <div style={{ 
+                    paddingLeft: '10px', 
+                    wordWrap: 'break-word',
+                    color: '#000'
+                  }}>
+                    {convertEmoticons(msg.content)}
+                  </div>
+                </div>
               );
             })}
             {isContactTyping && (
