@@ -61,7 +61,7 @@ function LoginScreen({ onLoginSuccess }) {
         <div className="login-logo">
           <div className="dx-logo">
             <span className="dx-logo-text">Macrohard</span>
-            <span className="dx-logo-windows">Panes</span>
+            <span className="dx-logo-panes">Panes</span>
             <span className="dx-logo-xp">dX</span>
           </div>
         </div>

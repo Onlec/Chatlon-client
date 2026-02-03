@@ -1,4 +1,4 @@
-// Klassieke Chat (voorheen MSN) Messenger emoticons
+// Klassieke Chat Messenger emoticons
 export const emoticons = {
   // Basis smileys
   ':)': '🙂',

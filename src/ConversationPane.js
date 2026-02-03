@@ -332,54 +332,54 @@ function ConversationPane({ contactName }) {
   };
 
   return (
-    <div className={`msn-conversation ${isShaking ? 'nudge-active' : ''}`}>
+    <div className={`chat-conversation ${isShaking ? 'nudge-active' : ''}`}>
       {/* Menubar */}
-      <div className="msn-menubar">
-        <span className="msn-menu-item">Bestand</span>
-        <span className="msn-menu-item">Bewerken</span>
-        <span className="msn-menu-item">Acties</span>
-        <span className="msn-menu-item">Extra</span>
-        <span className="msn-menu-item">Help</span>
+      <div className="chat-menubar">
+        <span className="chat-menu-item">Bestand</span>
+        <span className="chat-menu-item">Bewerken</span>
+        <span className="chat-menu-item">Acties</span>
+        <span className="chat-menu-item">Extra</span>
+        <span className="chat-menu-item">Help</span>
       </div>
 
       {/* Toolbar met icoontjes */}
-      <div className="msn-toolbar">
-        <button className="msn-toolbar-btn" title="Uitnodigen">
-          <span className="msn-toolbar-icon">👥</span>
-          <span className="msn-toolbar-label">Uitnodigen</span>
+      <div className="chat-toolbar">
+        <button className="chat-toolbar-btn" title="Uitnodigen">
+          <span className="chat-toolbar-icon">👥</span>
+          <span className="chat-toolbar-label">Uitnodigen</span>
         </button>
-        <button className="msn-toolbar-btn" title="Bestand verzenden">
-          <span className="msn-toolbar-icon">📎</span>
-          <span className="msn-toolbar-label">Bestand</span>
+        <button className="chat-toolbar-btn" title="Bestand verzenden">
+          <span className="chat-toolbar-icon">📎</span>
+          <span className="chat-toolbar-label">Bestand</span>
         </button>
-        <button className="msn-toolbar-btn" title="Video">
-          <span className="msn-toolbar-icon">🎥</span>
-          <span className="msn-toolbar-label">Video</span>
+        <button className="chat-toolbar-btn" title="Video">
+          <span className="chat-toolbar-icon">🎥</span>
+          <span className="chat-toolbar-label">Video</span>
         </button>
-        <button className="msn-toolbar-btn" title="Spraak">
-          <span className="msn-toolbar-icon">🎤</span>
-          <span className="msn-toolbar-label">Spraak</span>
+        <button className="chat-toolbar-btn" title="Spraak">
+          <span className="chat-toolbar-icon">🎤</span>
+          <span className="chat-toolbar-label">Spraak</span>
         </button>
-        <button className="msn-toolbar-btn" title="Activiteiten">
-          <span className="msn-toolbar-icon">🎮</span>
-          <span className="msn-toolbar-label">Activiteiten</span>
+        <button className="chat-toolbar-btn" title="Activiteiten">
+          <span className="chat-toolbar-icon">🎮</span>
+          <span className="chat-toolbar-label">Activiteiten</span>
         </button>
-        <button className="msn-toolbar-btn" title="Spelletjes">
-          <span className="msn-toolbar-icon">🎲</span>
-          <span className="msn-toolbar-label">Spelletjes</span>
+        <button className="chat-toolbar-btn" title="Spelletjes">
+          <span className="chat-toolbar-icon">🎲</span>
+          <span className="chat-toolbar-label">Spelletjes</span>
         </button>
-        <div className="msn-toolbar-separator"></div>
-        <button className="msn-toolbar-btn" title="Blokkeren">
-          <span className="msn-toolbar-icon">🚫</span>
+        <div className="chat-toolbar-separator"></div>
+        <button className="chat-toolbar-btn" title="Blokkeren">
+          <span className="chat-toolbar-icon">🚫</span>
         </button>
       </div>
 
       {/* Main chat area - 2 kolommen */}
-      <div className="msn-chat-container">
+      <div className="chat-chat-container">
         {/* Linker kolom - Messages */}
-        <div className="msn-left-column">
+        <div className="chat-left-column">
           {/* Messages display */}
-          <div className="msn-messages-display" ref={messagesAreaRef}>
+          <div className="chat-messages-display" ref={messagesAreaRef}>
             {state.messages.length === 0 && (
               <div style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '11px', fontStyle: 'italic' }}>
                 Je bent nu in gesprek met {contactName}
@@ -421,12 +421,12 @@ function ConversationPane({ contactName }) {
           </div>
 
           {/* Input area met toolbar */}
-          <div className="msn-input-container">
-            <div className="msn-input-toolbar">
-              <button className="msn-input-tool" title="Lettertype">A</button>
+          <div className="chat-input-container">
+            <div className="chat-input-toolbar">
+              <button className="chat-input-tool" title="Lettertype">A</button>
               <div style={{ position: 'relative' }}>
                 <button 
-                  className="msn-input-tool" 
+                  className="chat-input-tool" 
                   title="Emoticons"
                   onClick={() => setShowEmoticonPicker(!showEmoticonPicker)}
                 >
@@ -454,14 +454,14 @@ function ConversationPane({ contactName }) {
                   </div>
                 )}
               </div>
-              <button className="msn-input-tool" title="Knipoog">😉</button>
-              <button className="msn-input-tool" title="Voice clip">🎤</button>
-              <button className="msn-input-tool" title="Nudge" onClick={sendNudge} disabled={!canNudge}>⚡</button>
-              <button className="msn-input-tool" title="Afbeelding">🖼️</button>
-              <button className="msn-input-tool" title="Achtergrond">🎨</button>
+              <button className="chat-input-tool" title="Knipoog">😉</button>
+              <button className="chat-input-tool" title="Voice clip">🎤</button>
+              <button className="chat-input-tool" title="Nudge" onClick={sendNudge} disabled={!canNudge}>⚡</button>
+              <button className="chat-input-tool" title="Afbeelding">🖼️</button>
+              <button className="chat-input-tool" title="Achtergrond">🎨</button>
             </div>
             <textarea 
-              className="msn-input-text"
+              className="chat-input-text"
               value={messageText} 
               onChange={handleTyping}
               onKeyDown={(e) => { 
@@ -476,22 +476,22 @@ function ConversationPane({ contactName }) {
         </div>
 
         {/* Rechter kolom - Avatars */}
-        <div className="msn-right-column">
-          <div className="msn-avatar-container">
-            <div className="msn-avatar-label">Contact:</div>
+        <div className="chat-right-column">
+          <div className="chat-avatar-container">
+            <div className="chat-avatar-label">Contact:</div>
             <img 
               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${contactName}`} 
               alt={contactName} 
-              className="msn-display-picture"
+              className="chat-display-picture"
             />
           </div>
           
-          <div className="msn-avatar-container" style={{ marginTop: 'auto' }}>
-            <div className="msn-avatar-label">Jij:</div>
+          <div className="chat-avatar-container" style={{ marginTop: 'auto' }}>
+            <div className="chat-avatar-label">Jij:</div>
             <img 
               src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`} 
               alt={username} 
-              className="msn-display-picture"
+              className="chat-display-picture"
             />
           </div>
         </div>

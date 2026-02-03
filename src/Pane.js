@@ -135,9 +135,9 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, o
             <span className="pane-title">{title}</span>
           </div>
           <div className="pane-controls">
-            <button className="win-btn minimize" onClick={onMinimize}>_</button>
-            <button className="win-btn maximize" onClick={onMaximize}>{isMaximized ? '❐' : '▢'}</button>
-            <button className="win-btn close" onClick={onClose}>X</button>
+            <button className="pane-btn minimize" onClick={onMinimize}>_</button>
+            <button className="pane-btn maximize" onClick={onMaximize}>{isMaximized ? '❐' : '▢'}</button>
+            <button className="pane-btn close" onClick={onClose}>X</button>
           </div>
         </div>
         <div className="pane-content">

@@ -123,7 +123,7 @@ const logoRows = String.raw`
   // Fadeout stage - complete boot
   useEffect(() => {
     if (stage === 'fadeout') {
-      // Play Windows XP startup sound
+      // Play Panes dX startup sound
       if (audioRef.current) {
         audioRef.current.play().catch(() => {});
       }
@@ -177,13 +177,13 @@ const logoRows = String.raw`
         </div>
       )}
 
-      {/* Windows XP Boot Stage */}
+      {/* Panes dX Boot Stage */}
       {stage === 'xpboot' && (
-        <div className="boot-xp">
-          <div className="boot-xp-content">
-            <div className="boot-xp-logo">
+        <div className="boot-dx">
+          <div className="boot-dx-content">
+            <div className="boot-dx-logo">
               <svg width="300" height="100" viewBox="0 0 300 100">
-                {/* Windows XP Logo - simplified version */}
+                {/* Panes dX Logo - simplified version */}
                 <defs>
                   <linearGradient id="red-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" style={{ stopColor: '#FF0000', stopOpacity: 0.8 }} />
@@ -214,7 +214,7 @@ const logoRows = String.raw`
                   Macrohard
                 </text>
                 
-                {/* Windows XP text */}
+                {/* Panes dX text */}
                 <text x="160" y="65" fontFamily="Trebuchet MS, Arial, sans-serif" fontSize="24" fill="#fff" fontWeight="bold">
                   Panes
                 </text>
@@ -229,9 +229,9 @@ const logoRows = String.raw`
               </svg>
             </div>
             
-            <div className="boot-xp-loading">
-              <div className="boot-xp-bar">
-                <div className="boot-xp-bar-inner"></div>
+            <div className="boot-dx-loading">
+              <div className="boot-dx-bar">
+                <div className="boot-dx-bar-inner"></div>
               </div>
             </div>
           </div>
