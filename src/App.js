@@ -3,10 +3,9 @@
  * Chatlon App - Main Component
  * 
  * Orchestreert alle hooks en rendert de desktop omgeving.
- * Na refactor: ~200 regels in plaats van ~500+
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Pane from './Pane';
 import LoginScreen from './LoginScreen';
 import ConversationPane from './ConversationPane';
@@ -29,6 +28,9 @@ function App() {
   const [hasBooted, setHasBooted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
+  
+  // FIX: Track of we al geïnitialiseerd zijn om dubbele openPane te voorkomen
+  const hasInitializedRef = useRef(false);
 
   // ============================================
   // HOOKS
@@ -95,14 +97,29 @@ function App() {
   // AUTO-LOGIN CHECK
   // ============================================
   useEffect(() => {
+    // FIX: Guard tegen dubbele uitvoering
+    if (hasInitializedRef.current) {
+      console.log('[App] Already initialized, skipping');
+      return;
+    }
+
     console.log('[App] Checking for existing session...');
 
     const initializeUser = () => {
       if (user.is && user.is.alias) {
+        // FIX: Alleen 1x initialiseren
+        if (hasInitializedRef.current) return true;
+        hasInitializedRef.current = true;
+        
         console.log('[App] User already logged in:', user.is.alias);
         setIsLoggedIn(true);
         setCurrentUser(user.is.alias);
-        setTimeout(() => openPane('contacts'), 100);
+        
+        // FIX: Gebruik setTimeout buiten React cycle
+        setTimeout(() => {
+          openPane('contacts');
+        }, 100);
+        
         return true;
       }
       return false;
@@ -121,7 +138,7 @@ function App() {
     }, 100);
 
     return () => clearInterval(pollInterval);
-  }, [openPane]);
+  }, []); // FIX: Lege dependency array - alleen bij mount
 
   // ============================================
   // HANDLERS
@@ -129,6 +146,7 @@ function App() {
   
   const handleLoginSuccess = (username) => {
     console.log('[App] Login success:', username);
+    hasInitializedRef.current = true; // FIX: Markeer als geïnitialiseerd
     setIsLoggedIn(true);
     setCurrentUser(username);
     setTimeout(() => openPane('contacts'), 100);
@@ -142,6 +160,9 @@ function App() {
     cleanupListeners();
     resetShownToasts();
     resetAll();
+    
+    // FIX: Reset initialized flag
+    hasInitializedRef.current = false;
     
     // Logout
     user.leave();
@@ -198,7 +219,7 @@ function App() {
         {/* Normal Panes */}
         {Object.entries(paneConfig).map(([paneName, config]) => {
           const pane = panes[paneName];
-          if (!pane.isOpen) return null;
+          if (!pane || !pane.isOpen) return null;
 
           const Component = config.component;
 
@@ -219,7 +240,12 @@ function App() {
                 onPositionChange={(newPosition) => handlePositionChange(paneName, newPosition)}
               >
                 {paneName === 'contacts' ? (
-                  <Component onOpenConversation={openConversation} />
+                  <Component 
+                    onOpenConversation={openConversation}
+                    // FIX: Pass presence props to ContactsPane
+                    userStatus={userStatus}
+                    onStatusChange={handleStatusChange}
+                  />
                 ) : (
                   <Component />
                 )}
@@ -230,7 +256,7 @@ function App() {
 
         {/* Conversation Panes */}
         {Object.entries(conversations).map(([convId, conv]) => {
-          if (!conv.isOpen) return null;
+          if (!conv || !conv.isOpen) return null;
 
           return (
             <div key={convId} style={{ display: conv.isMinimized ? 'none' : 'block' }}>

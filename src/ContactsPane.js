@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { gun, user } from './gun';
 import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
 
-function ContactsPane({ onOpenConversation }) {
-  const [myStatus, setMyStatus] = useState('online');
+function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange }) {
+  // FIX: Gebruik props als ze beschikbaar zijn, anders lokale state
+  const [localStatus, setLocalStatus] = useState('online');
+  const myStatus = propUserStatus || localStatus;
+  
   const [personalMessage, setPersonalMessage] = useState('');
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [contacts, setContacts] = useState([]);
+  const [contactPresence, setContactPresence] = useState({}); // FIX: Track presence per contact
   const [pendingRequests, setPendingRequests] = useState([]);
   const [currentUser, setCurrentUser] = useState('');
   const [showAddContact, setShowAddContact] = useState(false);
@@ -34,6 +38,16 @@ function ContactsPane({ onOpenConversation }) {
               avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${contactData.username}`,
               status: 'online'
             }];
+          });
+
+          // FIX: Setup presence listener voor dit contact
+          gun.get('PRESENCE').get(contactData.username).on((presenceData) => {
+            if (presenceData) {
+              setContactPresence(prev => ({
+                ...prev,
+                [contactData.username]: presenceData
+              }));
+            }
           });
         }
       });
@@ -65,10 +79,23 @@ function ContactsPane({ onOpenConversation }) {
         }
       });
     }
+
+    // Cleanup
+    return () => {
+      // Cleanup presence listeners
+      contacts.forEach(contact => {
+        gun.get('PRESENCE').get(contact.username).off();
+      });
+    };
   }, []);
 
   const handleStatusChange = (newStatus) => {
-    setMyStatus(newStatus);
+    // FIX: Gebruik prop handler als beschikbaar
+    if (propOnStatusChange) {
+      propOnStatusChange(newStatus);
+    } else {
+      setLocalStatus(newStatus);
+    }
   };
 
   const handlePersonalMessageSave = () => {
@@ -168,7 +195,28 @@ function ContactsPane({ onOpenConversation }) {
   };
 
   // Gebruik STATUS_OPTIONS van presenceUtils.js
-  const currentStatus = STATUS_OPTIONS.find(s => s.value === myStatus);
+  const currentStatus = STATUS_OPTIONS.find(s => s.value === myStatus) || STATUS_OPTIONS[0];
+
+  // FIX: Sorteer contacten op online status
+  const sortedContacts = [...contacts].sort((a, b) => {
+    const aPresence = getPresenceStatus(contactPresence[a.username]);
+    const bPresence = getPresenceStatus(contactPresence[b.username]);
+    const aOnline = aPresence.value !== 'offline';
+    const bOnline = bPresence.value !== 'offline';
+    if (aOnline && !bOnline) return -1;
+    if (!aOnline && bOnline) return 1;
+    return 0;
+  });
+
+  const onlineContacts = sortedContacts.filter(c => {
+    const presence = getPresenceStatus(contactPresence[c.username]);
+    return presence.value !== 'offline';
+  });
+
+  const offlineContacts = sortedContacts.filter(c => {
+    const presence = getPresenceStatus(contactPresence[c.username]);
+    return presence.value === 'offline';
+  });
 
   return (
     <div className="contacts-container">
@@ -290,14 +338,14 @@ function ContactsPane({ onOpenConversation }) {
                   onClick={() => handleAcceptRequest(request)}
                   style={{ fontSize: '10px', padding: '2px 6px' }}
                 >
-                  âœ“
+                  ✓
                 </button>
                 <button 
                   className="dx-button secondary" 
                   onClick={() => handleDeclineRequest(request)}
                   style={{ fontSize: '10px', padding: '2px 6px' }}
                 >
-                  âœ—
+                  ✗
                 </button>
               </div>
             </div>
@@ -307,45 +355,72 @@ function ContactsPane({ onOpenConversation }) {
 
       {/* Contact lijst */}
       <div className="contacts-list-section">
+        {/* Online contacten */}
         <div className="contacts-category-header">
-          <span className="contacts-category-icon">â–¼</span>
-          <span className="contacts-category-name">Online ({contacts.length})</span>
+          <span className="contacts-category-icon">▼</span>
+          <span className="contacts-category-name">Online ({onlineContacts.length})</span>
         </div>
         
         <div className="contacts-list">
-          {contacts.length === 0 ? (
+          {onlineContacts.length === 0 && offlineContacts.length === 0 ? (
             <div className="contacts-empty">
               Voeg contacten toe om te beginnen met chatten!
             </div>
           ) : (
-            contacts.map((contact) => (
-              <div 
-                key={contact.username}
-                className="contact-item"
-                onDoubleClick={() => onOpenConversation && onOpenConversation(contact.username)}
-              >
-                <img src={contact.avatar} alt={contact.username} className="contact-avatar" />
-                <div className="contact-info">
-                  <div className="contact-name">{contact.username}</div>
-                  <div className="contact-status">Online</div>
+            onlineContacts.map((contact) => {
+              const presence = getPresenceStatus(contactPresence[contact.username]);
+              return (
+                <div 
+                  key={contact.username}
+                  className="contact-item"
+                  onDoubleClick={() => onOpenConversation && onOpenConversation(contact.username)}
+                >
+                  <img src={contact.avatar} alt={contact.username} className="contact-avatar" />
+                  <div className="contact-info">
+                    <div className="contact-name">{contact.username}</div>
+                    <div className="contact-status">{presence.label}</div>
+                  </div>
+                  <span className="contact-status-dot" style={{ backgroundColor: presence.color }}></span>
                 </div>
-                <span className="contact-status-dot" style={{ backgroundColor: '#7AC142' }}></span>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
         {/* Offline categorie */}
         <div className="contacts-category-header collapsed">
-          <span className="contacts-category-icon">â–¶</span>
-          <span className="contacts-category-name">Offline (0)</span>
+          <span className="contacts-category-icon">▶</span>
+          <span className="contacts-category-name">Offline ({offlineContacts.length})</span>
         </div>
+        
+        {offlineContacts.length > 0 && (
+          <div className="contacts-list">
+            {offlineContacts.map((contact) => {
+              const presence = getPresenceStatus(contactPresence[contact.username]);
+              return (
+                <div 
+                  key={contact.username}
+                  className="contact-item"
+                  style={{ opacity: 0.6 }}
+                  onDoubleClick={() => onOpenConversation && onOpenConversation(contact.username)}
+                >
+                  <img src={contact.avatar} alt={contact.username} className="contact-avatar" />
+                  <div className="contact-info">
+                    <div className="contact-name">{contact.username}</div>
+                    <div className="contact-status">{presence.label}</div>
+                  </div>
+                  <span className="contact-status-dot" style={{ backgroundColor: presence.color }}></span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Bottom banner */}
       <div className="contacts-bottom-banner">
         <div className="contacts-ad-space">
-          ðŸŽ® Speel games â€¢ ðŸŽµ Deel muziek â€¢ ðŸ“¸ Deel foto's
+          🎮 Speel games • 🎵 Deel muziek • 📸 Deel foto's
         </div>
       </div>
     </div>
