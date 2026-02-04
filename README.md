@@ -57,6 +57,9 @@ src/ (17 JavaScript files - Claude focus area)
 │   ├── usePresence.js
 │   ├── usePaneManager.js
 │   └── useMessageListeners.js
+├── utils/                  # Utility functions (2 files)
+│   ├── chatUtils.js        # Chat/conversation helper functions
+│   └── presenceUtils.js    # Presence/status constants and helpers
 ├── emoticons.js        # Classic emoticon conversion
 └── archief/            # Legacy/backup files
 
@@ -68,6 +71,16 @@ public/
 ├── manifest.json       # PWA manifest
 ├── nudge.mp3           # Nudge notification sound
 └── robots.txt          # Search engine config
+
+docs/                   # Project documentation (6 files)
+├── ARCHITECTURE.md     # Technical architecture guide
+├── USAGE.md            # User manual & development guide
+├── CONTRIBUTING.md     # Development rules & AI workflow
+├── CHANGELOG.md        # Version history & session logs
+├── KNOWN_ISSUES.md     # Bug tracker & issue templates
+└── SESSION_LOG.md      # Informal session notes
+
+README.md               # This file (project overview)
 ```
 
 ### Gun Server (separate repository: `gun-server`)
@@ -129,6 +142,7 @@ Sessions persist via `recall({ storage: true })`.
 | `gun.get('CHAT_{user1}_{user2}')` | Private messages (sorted alphabetically) | Set |
 | `gun.get('NUDGE_{chatRoomId}')` | Nudge signals | Object |
 | `gun.get('TYPING_{chatRoomId}')` | Typing indicators | Object |
+| `gun.get('presence/{username}')` | Presence/status heartbeat | Object |
 | `gun.get('CHAT_MESSAGES')` | Public chat room (legacy) | Set |
 | `gun.get('CHAT_NUDGES')` | Public chat nudges | Object |
 
@@ -154,8 +168,9 @@ Sessions persist via `recall({ storage: true })`.
 
 ### Presence
 - Status stored locally (online/away/busy/offline)
-- No server-side presence heartbeat currently
-- Contact list shows all accepted contacts as "online"
+- Heartbeat system via Gun.js for true presence detection
+- Contact list shows actual online/offline status
+- Auto-away after inactivity timeout
 
 ---
 
@@ -170,6 +185,7 @@ Sessions persist via `recall({ storage: true })`.
 | Read receipts | ✅ Local (localStorage based) |
 | "New messages" divider | ✅ Working |
 | Message history | ✅ Persisted in Gun |
+| True presence detection | ✅ Heartbeat system implemented |
 | Winks | ❌ Not implemented |
 | Games | ❌ Not implemented |
 | Voice chat | ❌ Not implemented |
@@ -314,7 +330,6 @@ Why: Branding consistency
 - [ ] Update manifest.json with Chatlon branding
 
 ### Features
-- [ ] True online/offline presence detection
 - [ ] Group chat support
 - [ ] Winks support
 - [ ] Games support
