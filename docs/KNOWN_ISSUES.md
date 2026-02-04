@@ -2,7 +2,21 @@
 
 This file is AI-critical memory.
 Do not delete entries unless confirmed fixed.
+NEW_SECTION:
+## 🤖 Claude Priority Queue
 
+Issues are organized by priority for Claude development sessions:
+
+### HIGH Priority (Immediate Claude attention)
+*Issues that break core functionality*
+
+### MEDIUM Priority (Next Claude session)  
+*Issues that impair features but don't block usage*
+
+### LOW Priority (When requested or convenient)
+*Minor improvements and cleanup tasks*
+
+---
 ---
 
 ## Status Reference
@@ -358,44 +372,59 @@ Fix should check if click target is actually outside, not just any mousedown eve
 
 ---
 
-## Template for new bugs
+## 📝 Issue Templates
 
-```
-## BUG-XXX — Short description
+### For Claude Sessions:
+```markdown
+## BUG-XXX — [Component]: Brief description
 
-**STATUS:** open | investigating | blocked | workaround | fixed-awaiting-release | fixed | wont-fix
-
-**SEVERITY:** critical | high | medium | low
-
-**AREA:** window-manager | gun-sync | presence | chat-ui | notifications | [pane-name]
+**STATUS:** open
+**SEVERITY:** [critical | high | medium | low]  
+**CLAUDE PRIORITY:** [HIGH | MEDIUM | LOW]
+**AREA:** [window-manager | gun-sync | presence | chat-ui | notifications | component-name]
 
 **SYMPTOM:**
-What the user sees.
+What the user experiences.
 
 **REPRO STEPS:**
-1. step
-2. step
-3. step
+1. Clear steps to reproduce
+2. Expected vs actual behavior
 
-**SUSPECTED CAUSE:**
-Technical hypothesis.
+**FILES AFFECTED:**
+- src/ComponentName.js - Line XX (suspected location)
+- src/App.css - Section XX (if styling related)
 
-**FILES:**
-- src/...
-- src/...
+**CLAUDE INSTRUCTIONS:**
+- Search these specific lines first
+- Check for [specific pattern/issue]
+- DO NOT change [specific constraint]
 
-**BLOCKED BY:** (if status is blocked)
-What needs to happen first.
+**TECHNICAL NOTES:**
+Implementation details that might help debugging.
+```
 
-**WORKAROUND:** (if status is workaround)
-Temporary solution.
+### For Feature Requests:
+```markdown
+## FEAT-XXX — [Component]: Feature name
 
-**FIX APPLIED:** (if status is fixed)
-What was done to fix it.
+**STATUS:** open
+**CLAUDE PRIORITY:** [HIGH | MEDIUM | LOW]
+**AREA:** [component-name]
 
-**AI WARNING:**
-What the AI must NOT do when fixing this.
+**DESCRIPTION:**
+Clear explanation of desired feature.
 
-**FOLLOW-UP:**
-Next steps if any.
+**ACCEPTANCE CRITERIA:**
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+**FILES TO MODIFY:**
+- src/ComponentName.js - Add feature logic
+- src/App.css - Add styling  
+- src/paneConfig.js - Register if new pane
+
+**CLAUDE NOTES:**
+- Follow existing pattern in [similar component]
+- Use [specific approach] for consistency
+- Test with [specific scenario]
 ```

@@ -408,6 +408,110 @@ const paneConfig = {
 
 That's it! The window manager handles the rest automatically.
 
+NEW_BLOCK:
+## AI Development Rules (Critical)
+
+### Claude-Specific Workflow
+
+#### Response Format for Code Changes:
+```markdown
+## 📂 File Analysis: src/example.js
+
+**Scope**: [Single line / Multiple lines / New feature]
+**Impact**: [Low / Medium / High]
+**Testing needed**: [Manual test steps]
+
+### Changes Required:
+
+**Line 42**:
+- **Current**: `const oldCode = true;`
+- **New**: `const newCode = false;`  
+- **Reason**: [Brief explanation]
+
+**Line 58** (if multiple changes):
+- **Current**: `// old comment`
+- **New**: `// updated comment`
+- **Reason**: [Brief explanation]
+
+### Dependencies:
+- [ ] Update tests (if any)
+- [ ] Update documentation (if schema change)
+- [ ] Manual testing required
+
+**Ready to proceed?** (Y/N)
+```
+
+#### For New Features:
+```markdown
+## 🆕 Feature Implementation Plan
+
+**Component**: NewFeaturePane.js
+**Integration**: Add to paneConfig.js
+**Styling**: Add section to App.css
+
+### Files to Create:
+1. **src/NewFeaturePane.js** - Main component logic
+2. **CSS section** - In App.css under "/* XX. NEW FEATURE */"
+
+### Files to Modify:
+1. **src/paneConfig.js** - Register new pane type
+2. **ARCHITECTURE.md** - Document any new Gun schema paths
+
+### Implementation Order:
+1. Create component with basic structure
+2. Add CSS styling following XP guidelines
+3. Register in paneConfig.js
+4. Test desktop icon and window operations
+
+**Proceed with implementation?** (Y/N)
+```
+
+### Multi-AI Collaboration Rules
+
+#### Claude (Code Generation):
+- **Primary role**: Writing and modifying JavaScript/CSS code
+- **Output style**: Line-specific changes, complete new files only when necessary
+- **Always**: Search project knowledge before coding
+- **Never**: Output partial snippets or "// ... rest unchanged"
+
+#### ChatGPT/Gemini (Debugging & Testing):
+- **Primary role**: Error resolution, testing, optimization
+- **Input**: Receives Claude's changes + context
+- **Focus**: Runtime issues, browser compatibility, edge cases
+- **Handoff format**: Complete file changes + test scenarios
+
+#### Human (Coordination):  
+- **Role**: Reviews all proposed changes, sets priorities
+- **Approves**: Multi-file modifications before implementation
+- **Documents**: Final decisions in CHANGELOG.md
+- **Manages**: KNOWN_ISSUES.md priority queue
+
+### AI Handoff Protocol
+
+1. **Claude completes modification** → Provides exact changes + reasoning
+2. **Human reviews and approves** → May request adjustments
+3. **Claude applies changes** → Updates files with approved modifications  
+4. **If issues arise** → Hand off to ChatGPT/Gemini with context
+5. **Final documentation** → Update CHANGELOG.md with details
+
+### Code Quality Standards for AI
+
+#### Always Required:
+- [ ] Gun subscriptions have cleanup (`return () => node.off()`)
+- [ ] Refs used for values accessed in Gun callbacks  
+- [ ] XP styling guidelines followed in CSS
+- [ ] Functional components with hooks (no classes)
+- [ ] Single CSS file maintained (no splitting)
+- [ ] Branding consistency (Panes/dX/Macrohard/Chatlon)
+
+#### Never Acceptable:
+- [ ] New Gun instances (use existing from gun.js)
+- [ ] External state management libraries
+- [ ] Modern CSS frameworks (Tailwind, etc.)
+- [ ] TypeScript additions (pure JavaScript project)
+- [ ] Window state management outside App.js
+- [ ] References to Windows/XP/Microsoft/MSN branding
+
 ---
 
 ## Commit Rules

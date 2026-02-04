@@ -1,15 +1,6 @@
-# Chatlon
-
-Chatlon is a nostalgic Panes dX–style realtime chat experience inspired by classic chat messengers of the early 2000s.
-The project recreates the full retro desktop-style interface with functional applications, built on modern web technology with Gun.js for decentralized realtime sync.
-
-**Branding:** This project uses parody branding:
-| Original | Chatlon Equivalent |
-|----------|-------------------|
-| Windows | Panes |
-| XP | dX |
-| Microsoft | Macrohard |
-| MSN Messenger | Chatlon |
+# 🔹 Chatlon | Early-2000s Chat Recreation
+**Real-time nostalgic messaging with modern tech** | React + Gun.js  
+Parody branding: Windows→Panes, XP→dX, Microsoft→Macrohard, MSN→Chatlon
 
 ---
 
@@ -44,24 +35,30 @@ The project recreates the full retro desktop-style interface with functional app
 ## 🗂 Project Structure
 
 ```
-src/
-├── App.js              # Main desktop shell + window manager
-├── App.css             # All XP styling (single CSS file)
-├── BootSequence.js     # Panes dX boot animation (POST screen)
-├── BrowserPane.js      # Fake "Internet Adventurer" with popups
-├── CalculatorPane.js   # Working calculator
-├── ChatPane.js         # Public chat room (legacy)
-├── ContactsPane.js     # MSN-style contact list + friend requests
-├── ConversationPane.js # 1-on-1 chat windows
-├── emoticons.js        # Classic MSN emoticon conversion
-├── gun.js              # Gun instance + user authentication
-├── LoginScreen.js      # Panes dX-style login with Gun SEA auth
-├── MediaPane.js        # Audio player with visualizations
-├── NotepadPane.js      # Functional notepad with Gun persistence
-├── PaintPane.js        # Canvas-based paint application
-├── Pane.js             # Generic window frame component
-├── paneConfig.js       # Window type registry
-└── ToastNotification.js # Chatlon-style popup notifications
+src/ (17 JavaScript files - Claude focus area)
+├── App.js              # ⭐ HIGHEST: Main desktop shell (~350 lines)
+├── paneConfig.js       # ⭐ HIGH: Window type registry (~80 lines)
+├── gun.js              # ⭐ HIGH: Gun instance + auth (~40 lines)
+├── App.css             # ⭐ MEDIUM: All XP styling (~1000+ lines)
+├── components/
+│   ├── BootSequence.js     # Boot animation
+│   ├── ContactsPane.js     # Contact management
+│   ├── ConversationPane.js # 1-on-1 chat windows
+│   ├── MediaPane.js        # Audio player
+│   ├── BrowserPane.js      # Satirical browser
+│   ├── PaintPane.js        # Canvas paint app
+│   ├── CalculatorPane.js   # Working calculator
+│   ├── NotepadPane.js      # Text editor
+│   ├── LoginScreen.js      # Authentication UI
+│   ├── Pane.js             # Generic window frame
+│   └── ToastNotification.js # Popup notifications
+├── hooks/                  # Custom React hooks (4 files)
+│   ├── useToasts.js
+│   ├── usePresence.js
+│   ├── usePaneManager.js
+│   └── useMessageListeners.js
+├── emoticons.js        # Classic emoticon conversion
+└── archief/            # Legacy/backup files
 
 public/
 ├── favicon.ico         # App icon (TODO: replace with Chatlon logo)
@@ -267,16 +264,44 @@ This project uses **Gun.js eventual consistency**.
 
 ---
 
-## 🤖 AI Collaboration Mode
+## 🤖 Claude Development Workflow
 
-This project is designed to be worked on by multiple AI tools.
+### For Claude Sessions:
+**Repository**: Connected via GitHub Project Knowledge  
+**Response Format**: Line-specific replacements ONLY  
+**Current Priority**: Maintenance and feature additions
 
-**Rules:**
-- Always output complete files, never partial snippets
-- Never change folder structure without approval
-- Never add dependencies without asking
-- Document all Gun schema changes
-- Follow CONTRIBUTING.md strictly
+#### Claude Instructions Template:
+```markdown
+File: src/example.js
+Line: 42
+Old: const windowsRef = useRef(null);
+New: const panesRef = useRef(null);
+Why: Branding consistency
+```
+
+#### Key Files for Modifications:
+1. **src/App.js** - Desktop shell, window manager, auth flow
+2. **src/paneConfig.js** - Register new panes/applications  
+3. **src/gun.js** - Database configuration
+4. **src/components/*.js** - Individual application logic
+
+#### What Claude Should NOT Output:
+- ❌ Complete files (wastes message limits)
+- ❌ "// ... rest unchanged" snippets
+- ❌ Assumptions about variable naming
+- ❌ Multiple files in single response
+
+#### What Claude SHOULD Output:
+- ✅ Exact line numbers and targeted changes
+- ✅ Clear reasoning for modifications
+- ✅ Single-file focused modifications
+- ✅ Wait for approval on multi-file changes
+
+### Current Status:
+- **Codebase**: 17 JS files, ~1500 total lines
+- **Known Issues**: See KNOWN_ISSUES.md for current bugs
+- **Priority Queue**: Managed in KNOWN_ISSUES.md
 
 ---
 

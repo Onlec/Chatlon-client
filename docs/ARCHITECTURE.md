@@ -1,680 +1,302 @@
-# Chatlon — Architecture
+```markdown
+NEW_FILE_CONTENT:
+# 📋 Chatlon Architecture - Claude Development Reference
 
-## Overview
+## 🎯 Primary Modification Targets
 
-Chatlon is a nostalgic Panes dX–style realtime chat environment inspired by classic chat messengers.  
-The system is built as a modern React web application with a retro desktop UI metaphor.
+| File | Priority | Lines | Claude Focus | Modification Frequency |
+|------|----------|-------|--------------|----------------------|
+| `src/App.js` | ⭐ HIGHEST | ~350 | Desktop shell, auth, window manager | High |
+| `src/paneConfig.js` | ⭐ HIGH | ~80 | New pane registration | Medium |
+| `src/gun.js` | ⭐ HIGH | ~40 | Database config, networking | Low |
+| `src/App.css` | ⭐ MEDIUM | ~1000+ | UI styling, XP theme | Medium |
+| `src/components/` | 🔧 MEDIUM | Varies | Individual pane logic | Medium |
+| `src/hooks/` | 🔧 LOW | ~100 each | React state management | Low |
 
-**Branding Note:** This project uses parody branding throughout:
-- Windows → **Panes**
-- XP → **dX**
-- Microsoft → **Macrohard**
-- MSN Messenger → **Chatlon** (or just "chat")
+## 🏗️ Code Modification Workflow
 
-Never reference the original brand names in code, UI text, or documentation.
+### Single-File Changes (Preferred):
+```markdown
+## 📂 Proposed Change
 
-The architecture consists of:
+**File**: src/ComponentName.js
+**Scope**: [Bug fix / Feature addition / Refactor]
+**Impact**: [Low / Medium / High]
 
-- **Client** — React application (UI + state + Gun client)
-- **Server** — Gun.js relay/persistence node (separate repo)
+### Modification Required:
+**Line 42**:
+- **Current**: `const windowsRef = useRef(null);`
+- **Replace with**: `const panesRef = useRef(null);`
+- **Reason**: Branding consistency
 
-Realtime data synchronization is handled through Gun.js instead of a traditional REST API.
-
----
-
-## System Topology
-
-```
-┌─────────────────────────────┐
-│  Client (React on Vercel)   │
-│  - Window Manager           │
-│  - Chat UI                  │
-│  - Gun.js Client            │
-└──────────────┬──────────────┘
-               │ WebSocket
-               ▼
-┌─────────────────────────────┐
-│  Gun Relay Server (Render)  │
-│  - Persistence Layer        │
-│  - Peer Routing             │
-└──────────────┬──────────────┘
-               │ Optional
-               ▼
-┌─────────────────────────────┐
-│  Gun Mesh Network           │
-│  - Additional Peers         │
-└─────────────────────────────┘
+**Ready to apply?** (Y/N)
 ```
 
-Characteristics:
+### Multi-File Changes:
+1. **List ALL affected files first**
+2. **Show detailed changes for each file**
+3. **Get explicit approval before proceeding**
+4. **Update CHANGELOG.md with entry**
 
-- Peer-based realtime sync
-- Eventual consistency (last-write-wins)
-- No central authoritative REST backend
-- Client subscribes directly to Gun data graph
-- SEA (Security, Encryption, Authorization) for user auth
+## 🗂️ Component Architecture
 
----
-
-## Core Architectural Principles
-
-1. **Gun.js is the source of truth** for all shared data
-2. **React renders derived state only** — no duplicating Gun data
-3. **UI mimics Windows XP desktop** behavior exactly
-4. **Windows are first-class entities** managed centrally
-5. **Realtime over request/response** — no polling
-6. **Presence is soft-state** (ephemeral, best-effort)
-
----
-
-## Client Architecture
-
-### Layer Overview
-
+### Core System Files:
 ```
-┌─────────────────────────────────────────────────┐
-│              BootSequence.js                     │
-│  (Panes dX boot animation - POST screen)         │
-├─────────────────────────────────────────────────┤
-│                   App.js                         │
-│  (Desktop Shell + Window Manager + State)        │
-├─────────────────────────────────────────────────┤
-│                  Pane.js                         │
-│  (Generic Window Frame - drag, resize, controls) │
-├─────────────────────────────────────────────────┤
-│              Application Panes                   │
-│  ContactsPane │ ConversationPane │ NotepadPane   │
-│  CalculatorPane │ PaintPane │ BrowserPane │ etc  │
-├─────────────────────────────────────────────────┤
-│                   gun.js                         │
-│  (Shared Gun instance + user authentication)     │
-└─────────────────────────────────────────────────┘
+src/App.js - CENTRAL HUB
+├── Window Manager (state: panes, conversations)
+├── Authentication (Gun SEA integration)
+├── Desktop Shell (taskbar, start menu, desktop)
+├── Toast System (notifications)
+└── Hooks Integration (all custom hooks)
+
+src/paneConfig.js - PANE REGISTRY
+└── Centralized configuration for all window types
+
+src/gun.js - DATA LAYER
+└── Single Gun instance shared across all components
+
+src/App.css - UI LAYER
+└── Complete XP styling system
 ```
 
-### Component Categories
-
-**Desktop System (App.js)**
-- Desktop container with background
-- Window manager (open/close/minimize/maximize/focus)
-- Taskbar with window tabs
-- Start menu
-- Toast notification container
-- Cascade positioning for new windows
-
-**Window Frame (Pane.js)**
-- XP-style title bar with icon
-- Window controls (minimize, maximize, close)
-- Drag handling (header mousedown)
-- Resize handling (corner/edge resizers)
-- Z-index management (receives from parent)
-- Size/position persistence callbacks
-
-**Application Panes**
-- Self-contained functionality
-- Receive props from window manager
-- Connect to Gun independently
-- Follow XP UI conventions
-
-**Shared Services (gun.js)**
+### Pane Components Pattern:
 ```javascript
-export const gun = Gun({ peers: [process.env.REACT_APP_GUN_URL] });
-export const user = gun.user().recall({ storage: true });
-```
-
----
-
-## Window Manager Architecture
-
-### State Structure (App.js)
-
-```javascript
-// Static pane types (from paneConfig.js)
-const [panes, setPanes] = useState({
-  contacts: { isOpen: false, isMinimized: false, isMaximized: false },
-  notepad: { isOpen: false, isMinimized: false, isMaximized: false },
-  // ... etc
-});
-
-// Dynamic conversation windows
-const [conversations, setConversations] = useState({
-  // conv_username: { contactName, isOpen, isMinimized, isMaximized }
-});
-
-// Z-order tracking
-const [paneOrder, setPaneOrder] = useState([]); // Array of pane IDs
-const [activePane, setActivePane] = useState(null);
-
-// Size/position persistence (session only)
-const [savedSizes, setSavedSizes] = useState({});
-const [savedPositions, setSavedPositions] = useState({});
-const [cascadeOffset, setCascadeOffset] = useState(0);
-```
-
-### Window Lifecycle
-
-```
-openPane(name)
-  → Add to panes state (isOpen: true)
-  → Add to paneOrder array
-  → Set as activePane
-  → Calculate cascade position if new
-
-closePane(name)
-  → Remove from panes state
-  → Remove from paneOrder
-  → Update activePane to previous
-
-minimizePane(name)
-  → Set isMinimized: true
-  → Window hidden but in taskbar
-
-focusPane(name)
-  → Set as activePane
-  → Gets highest z-index
-```
-
-### Z-Index Calculation
-
-```javascript
-const getZIndex = (paneName) => {
-  if (activePane === paneName) return 1000;
-  const index = paneOrder.indexOf(paneName);
-  return 100 + index;
-};
-```
-
-### Pane Configuration (paneConfig.js)
-
-```javascript
-const paneConfig = {
-  contacts: {
-    title: 'Chatlon Messenger',
-    icon: '👥',
-    component: ContactsPane,
-    label: 'Contacten',
-    defaultSize: { width: 240, height: 500 },
-    minSize: { width: 200, height: 400 },
-    desktopIcon: 'favicon.ico',
-    desktopLabel: 'Chatlon Messenger'
-  },
-  // ... other panes
-};
-```
-
----
-
-## State Architecture
-
-### State Types & Ownership
-
-| State Type | Location | Example |
-|------------|----------|---------|
-| **UI State** | React useState | Window position, focus, drag state |
-| **Session State** | React useState | Saved sizes, cascade offset |
-| **Shared Realtime** | Gun.js | Messages, contacts, profiles |
-| **Derived State** | Computed | Unread counts, sorted messages |
-| **Persistent Local** | localStorage | Last seen timestamps |
-
-### State Rules
-
-1. **Gun data is never duplicated** as authoritative React state
-2. React components **subscribe** to Gun nodes via `.on()`
-3. Subscriptions **must be cleaned up** on unmount (`.off()`)
-4. Use **refs for real-time access** in callbacks (avoid stale closures)
-5. **localStorage** only for truly local data (last seen times)
-
-### Example: Message Subscription Pattern
-
-```javascript
-// ConversationPane.js
-useEffect(() => {
-  const chatNode = gun.get(chatRoomId);
+// Standard pane structure
+function MyPane({ /* minimal props */ }) {
+  // Local state only - no global state management
+  const [localState, setLocalState] = useState();
   
-  chatNode.map().on((data, id) => {
-    if (data && data.content) {
-      dispatch({ id, ...data });
-    }
-  });
-  
-  return () => chatNode.off(); // Cleanup!
-}, [chatRoomId]);
-```
+  // Gun subscriptions with cleanup
+  useEffect(() => {
+    const node = gun.get('path');
+    node.on(callback);
+    return () => node.off();
+  }, []);
 
----
-
-## Gun.js Data Architecture
-
-### Complete Data Graph
-
-```
-gun (root)
-│
-├── users (implicit via SEA)
-│   └── ~{publicKey}
-│       ├── alias: "username"
-│       ├── contacts/
-│       │   └── {contactUsername}
-│       │       ├── username: string
-│       │       ├── status: "accepted"
-│       │       └── timestamp: number
-│       ├── personalMessage: string
-│       ├── notepad: { content: string }
-│       └── sentRequests/
-│           └── {requestId}: { to, status, timestamp }
-│
-├── friendRequests/
-│   └── {targetUsername}/
-│       └── {requestId}
-│           ├── from: string
-│           ├── status: "pending" | "accepted" | "declined"
-│           └── timestamp: number
-│
-├── contactSync/
-│   └── {targetUsername}/
-│       └── {contactUsername}
-│           ├── username: string
-│           ├── addedBy: string
-│           └── timestamp: number
-│
-├── CHAT_{user1}_{user2}/ (alphabetically sorted)
-│   └── {messageId}
-│       ├── sender: string
-│       ├── content: string
-│       ├── timestamp: string (display: "14:30")
-│       └── timeRef: number (Unix ms)
-│
-├── NUDGE_{chatRoomId}
-│   ├── time: number
-│   └── from: string
-│
-├── TYPING_{chatRoomId}
-│   ├── user: string
-│   ├── isTyping: boolean
-│   └── timestamp: number
-│
-├── CHAT_MESSAGES/ (public room - legacy)
-│   └── {messageId}: { sender, content, timestamp, timeRef }
-│
-└── CHAT_NUDGES (public room - legacy)
-    └── time: number
-```
-
-### Chat Room ID Generation
-
-```javascript
-const getChatRoomId = (user1, user2) => {
-  const sorted = [user1, user2].sort();
-  return `CHAT_${sorted[0]}_${sorted[1]}`;
-};
-// Example: CHAT_alice_bob (always consistent regardless of who initiates)
-```
-
-### Data Characteristics
-
-| Data | Mutability | Persistence | Notes |
-|------|------------|-------------|-------|
-| Messages | Append-only | Permanent | Never deleted |
-| Profiles | Mutable | Permanent | User-controlled |
-| Contacts | Mutable | Permanent | Add/remove |
-| Friend Requests | Mutable | Permanent | Status changes |
-| Typing | Ephemeral | None | 3-4 second TTL |
-| Nudge | Ephemeral | None | Timestamp comparison |
-| Presence | N/A | None | Not yet implemented |
-
----
-
-## Identity & Authentication
-
-### Gun SEA Integration
-
-```javascript
-// gun.js
-import Gun from 'gun';
-import 'gun/sea';
-
-export const gun = Gun({ peers: [process.env.REACT_APP_GUN_URL] });
-export const user = gun.user().recall({ storage: true });
-```
-
-### Authentication Flow
-
-```javascript
-// Registration
-user.create(username, password, (ack) => {
-  if (ack.err) { /* handle error */ }
-  else { /* auto-login */ }
-});
-
-// Login
-user.auth(username, password, (ack) => {
-  if (ack.err) { /* handle error */ }
-  else { /* success: user.is contains identity */ }
-});
-
-// Session restore (automatic)
-// recall({ storage: true }) restores from localStorage
-
-// Logout
-user.leave();
-```
-
-### Identity Access
-
-```javascript
-if (user.is) {
-  const username = user.is.alias;
-  const publicKey = user.is.pub;
+  return (
+    <div className="my-pane-container">
+      {/* Standard menubar */}
+      <div className="my-pane-menubar">...</div>
+      {/* Main content */}
+      <div className="my-pane-content">...</div>
+    </div>
+  );
 }
 ```
 
-### Key Storage
+## 📊 Gun.js Data Schema
 
-- Private keys stored in localStorage by Gun SEA
-- Session persists across page refreshes
-- No server-side session management
+### Current Schema (LOCKED - Do not modify without documentation):
 
----
-
-## Chat Model
-
-### 1-on-1 Conversations
-
-- Chat room ID derived from both usernames (alphabetically sorted)
-- Both users read/write to same Gun path
-- Messages ordered by `timeRef` (Unix timestamp)
-- No explicit "conversation" entity — just messages
-
-### Message Flow
-
+#### Private User Data:
 ```
-User A types message
-    ↓
-gun.get(chatRoomId).set({ sender, content, timestamp, timeRef })
-    ↓
-Gun syncs to relay server
-    ↓
-User B's .on() callback fires
-    ↓
-React state updates via reducer
-    ↓
-UI re-renders with new message
+user.get('contacts/{username}') - Contact list
+user.get('personalMessage') - Status message
+user.get('notepad') - Notepad content
+user.get('sentRequests/{id}') - Sent friend requests
 ```
 
-### Typing Indicator
+#### Public Shared Data:
+```
+gun.get('friendRequests/{username}/{id}') - Incoming friend requests
+gun.get('contactSync/{username}/{contact}') - Contact synchronization
+gun.get('CHAT_{user1}_{user2}') - Private messages (alphabetically sorted)
+gun.get('NUDGE_{chatRoomId}') - Nudge signals
+gun.get('TYPING_{chatRoomId}') - Typing indicators
+gun.get('presence/{username}') - Presence/status heartbeat
+```
 
+### Schema Modification Rules:
+- ❌ **NEVER** change existing paths without updating this document
+- ❌ **NEVER** assume paths exist - always check data validity
+- ✅ **ALWAYS** use consistent ID generation (e.g., getChatRoomId)
+- ✅ **ALWAYS** include timestamps for message ordering
+
+## 🔧 Adding New Features
+
+### New Pane Type:
+1. **Create component**: `src/NewPane.js`
+2. **Add CSS section**: In `src/App.css` 
+3. **Register pane**: In `src/paneConfig.js`
+4. **Test integration**: Open via desktop icon
+
+### New Gun Schema Path:
+1. **Document purpose**: Why this path is needed
+2. **Update this file**: Add to schema table above
+3. **Consider privacy**: Private (`user.get`) vs Public (`gun.get`)
+4. **Test data flow**: Write and read operations
+
+### New Message Type:
+1. **Extend message structure**: Add fields to existing schema
+2. **Update rendering**: In ConversationPane.js
+3. **Consider backwards compatibility**: Handle missing fields
+
+## 🚨 Critical Architecture Rules
+
+### DO NOT:
+- Create new Gun instances (use `import { gun, user } from './gun'`)
+- Manage window state outside App.js
+- Use external state management (Redux, Zustand, etc.)
+- Add CSS frameworks (Tailwind, Bootstrap, etc.)
+- Split App.css into multiple files
+- Use TypeScript (project is pure JavaScript)
+- Add complex build tools (project uses Create React App)
+
+### DO:
+- **Read existing patterns** before implementing new features
+- **Use refs for Gun callback values** (avoid stale closures)
+- **Clean up Gun subscriptions** with useEffect return functions
+- **Follow XP visual guidelines** in all styling
+- **Maintain single CSS file** architecture
+- **Use functional components** with hooks (no classes)
+
+## 📱 Window Management System
+
+### Window State Structure:
 ```javascript
-// Sender (throttled to 1/second)
-gun.get(`TYPING_${chatRoomId}`).put({
-  user: username,
-  isTyping: true,
-  timestamp: Date.now()
-});
-
-// Receiver
-typingNode.on((data) => {
-  if (data.user === contactName && Date.now() - data.timestamp < 4000) {
-    setIsContactTyping(true);
+// In App.js state
+panes: {
+  [paneName]: {
+    isOpen: boolean,
+    isMinimized: boolean,
+    isMaximized: boolean,
+    position: { x: number, y: number },
+    size: { width: number, height: number }
   }
-});
-```
+}
 
-### Nudge System
-
-```javascript
-// Sender
-gun.get(`NUDGE_${chatRoomId}`).put({ 
-  time: Date.now(),
-  from: username 
-});
-
-// Receiver (with duplicate prevention)
-nudgeNode.on((data) => {
-  if (data.time > lastProcessedNudge.current && data.from === contactName) {
-    lastProcessedNudge.current = data.time;
-    // Trigger shake animation + sound
+conversations: {
+  [convId]: {
+    isOpen: boolean,
+    isMinimized: boolean,
+    isMaximized: boolean,
+    contactName: string,
+    position: { x: number, y: number },
+    size: { width: number, height: number }
   }
-});
+}
 ```
 
----
+### Window Operations:
+- **Open**: Update state + add to paneOrder
+- **Close**: Remove from state + paneOrder
+- **Focus**: Move to end of paneOrder array
+- **Minimize**: Set isMinimized flag
+- **Maximize**: Set isMaximized flag + full viewport size
 
-## Notification System
+## 🎨 XP Styling System
 
-### Toast Notifications (App.js)
-
-```javascript
-const [toasts, setToasts] = useState([]);
-const shownToastsRef = useRef(new Set()); // Duplicate prevention
-
-const showToast = (toastData) => {
-  const toastKey = /* unique key based on type + ID */;
-  
-  if (shownToastsRef.current.has(toastKey)) return;
-  shownToastsRef.current.add(toastKey);
-  
-  // Play sound
-  new Audio('/nudge.mp3').play().catch(() => {});
-  
-  setToasts(prev => [...prev, { id: toastId, ...toastData }]);
-};
-```
-
-### Toast Types
-
-| Type | Trigger | Action on Click |
-|------|---------|-----------------|
-| `message` | New message while conv closed | Open conversation |
-| `friendRequest` | New friend request | Open contacts |
-
-### Message Listener Setup
-
-- Listeners created per contact when contacts load
-- Ref tracking prevents duplicate listeners
-- `listenerStartTimeRef` filters old messages
-- Only shows toast if conversation not active
-
----
-
-## Styling Architecture
-
-### Single CSS File (App.css)
-
-All styles in one file, organized by section:
-
-1. Desktop basis
-2. Desktop icons (shortcuts)
-3. Window frame (pane-frame)
-4. Resizers
-5. Chat layout
-6. Taskbar
-7. Classic OS elements (dx-button, dx-input)
-8. Scrollbars
-9. Shake animation
-10. Login screen
-11. Start menu
-12. Notepad
-13. Panes dX login
-14. Calculator
-15. Contacts (MSN style)
-16. Conversation window
-17. Emoticon picker
-18. Typing indicator
-19. Friend requests
-20. Toast notifications
-21. Paint
-22. Browser
-23. Media player
-
-### Panes dX Design Tokens
-
+### Core Design Tokens:
 ```css
-/* Colors */
---panes-blue: #0058e6;
---panes-blue-light: #2596f3;
---panes-gray: #ECE9D8;
---panes-border: #7F9DB9;
---panes-green: #7AC142;
+/* Title bars */
+background: linear-gradient(to right, #0058e6 0%, #2596f3 100%);
 
-/* Title bar gradient */
-background: linear-gradient(to bottom, 
-  #0058e6 0%, #2596f3 9%, #0058e6 18%, 
-  #0058e6 92%, #0046ad 100%);
+/* Window chrome */
+background: #ECE9D8;
+border: 1px solid #7F9DB9;
 
-/* Button style */
+/* Buttons */
 background: linear-gradient(to bottom, #ECE9D8 0%, #F5F4F2 50%, #ECE9D8 100%);
+border: 1px solid;
 border-color: #FFFFFF #808080 #808080 #FFFFFF;
+
+/* Typography */
+font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+font-size: 11px; /* UI elements */
+font-size: 12px; /* Chat messages */
 ```
 
----
+### Component Styling Pattern:
+1. **Container class**: `.component-container`
+2. **Menubar class**: `.component-menubar` 
+3. **Content class**: `.component-content`
+4. **Element classes**: `.component-button`, `.component-input`, etc.
 
-## Deployment Architecture
+## 🐛 Common Issues & Solutions
 
-### Client (Vercel)
-
-```
-Build Command: npm run build
-Output Directory: build/
-Environment Variables (configured in Vercel dashboard):
-  - REACT_APP_GUN_URL: https://chatlon-server.onrender.com/gun
-```
-
-### Server (Render)
-
-**Repository:** `gun-server` (separate repo)
-
-**Server code (`index.js`):**
+### Stale Closure in Gun Callbacks:
 ```javascript
-const express = require('express')
-const app = express()
-const port = process.env.PORT || 5050;
-const Gun = require('gun')
-app.use(Gun.serve)
-const server = app.listen(port, () => {
-  console.log(`Gun server running on port ${port}🔥`)
-})
-Gun({ web: server })
+// ❌ Wrong: uses stale state
+useEffect(() => {
+  gun.get('path').on((data) => {
+    console.log(someState); // Stale!
+  });
+}, []);
+
+// ✅ Correct: uses ref
+const someStateRef = useRef();
+useEffect(() => {
+  someStateRef.current = someState;
+}, [someState]);
+
+useEffect(() => {
+  gun.get('path').on((data) => {
+    console.log(someStateRef.current); // Fresh!
+  });
+}, []);
 ```
 
-**Structure:**
+### Memory Leaks from Gun Subscriptions:
+```javascript
+// ❌ Wrong: no cleanup
+useEffect(() => {
+  gun.get('path').on(callback);
+}, []);
+
+// ✅ Correct: with cleanup
+useEffect(() => {
+  const node = gun.get('path');
+  node.on(callback);
+  return () => node.off();
+}, []);
 ```
-gun-server/
-├── node_modules/
-├── radata/             # Gun persistence data (auto-created)
-├── .gitignore
-├── index.js            # Server entry point
-├── package.json
-└── package-lock.json
+
+### Window Position Reset:
+```javascript
+// ✅ Correct: use hasInitialized ref
+const hasInitialized = useRef(false);
+const [position, setPosition] = useState(initialPosition);
+
+useEffect(() => {
+  if (!hasInitialized.current) {
+    hasInitialized.current = true;
+    return;
+  }
+  // Safe to update position now
+}, [position]);
 ```
 
-**Render configuration:**
-- **URL:** `https://chatlon-server.onrender.com/gun`
-- **Build Command:** `npm install`
-- **Start Command:** `node index.js`
-- Persistent disk mounted (preserves `radata/`)
-- WebSocket support enabled
-- CORS configured for client origin
+## 📈 Performance Considerations
+
+### Gun.js Optimization:
+- Use `.get()` for single values, `.map()` for collections
+- Minimize subscription scope (specific paths vs broad listeners)
+- Clean up subscriptions to prevent memory leaks
+- Batch related operations when possible
+
+### React Optimization:
+- Use `useMemo` for expensive calculations
+- Use `useCallback` for stable function references
+- Avoid unnecessary re-renders with proper dependency arrays
+- Keep component state minimal and local
+
+### CSS Performance:
+- Single CSS file reduces HTTP requests
+- Use class-based styling vs inline styles
+- Minimize complex selectors and deep nesting
+- Leverage CSS cascade effectively
+
+## 📚 Further Reading
+
+- **USAGE.md** - User-facing feature documentation
+- **CONTRIBUTING.md** - Development workflow and rules
+- **KNOWN_ISSUES.md** - Current bugs and their status
+- **CHANGELOG.md** - Version history and changes
+- **SESSION_LOG.md** - AI session notes and context
 
 ---
 
-## Configuration
-
-### Environment Variables
-
-| Variable | File | Value |
-|----------|------|-------|
-| `REACT_APP_GUN_URL` | `.env` (production) | `https://chatlon-server.onrender.com/gun` |
-| `REACT_APP_GUN_URL` | `.env.local` (development) | `http://127.0.0.1:5050/gun` |
-
-**Note:** `.env.local` overrides `.env` during local development.
-
-### URLs
-
-| Environment | Client | Gun Server |
-|-------------|--------|------------|
-| Production | Vercel | `https://chatlon-server.onrender.com/gun` |
-| Development | `http://localhost:3000` | `http://127.0.0.1:5050/gun` |
-
-### Runtime Configuration
-
-- Gun peers configured at instantiation in `gun.js`
-- No feature flags currently
-- Debug logging via console.log (remove for production)
+*This document is the authoritative technical reference for Claude development sessions.*
+```
 
 ---
-
-## Extension Points
-
-### Safe to Extend
-
-- New pane types (add to paneConfig.js)
-- New emoticons (emoticons.js)
-- New XP UI controls (CSS classes)
-- Additional toolbar buttons
-- Sound effects
-
-### Requires Design Review
-
-- Gun schema changes (affects all clients)
-- Window manager modifications
-- Authentication flow changes
-- New shared state patterns
-
----
-
-## AI Invariants (DO NOT BREAK)
-
-These are architectural rules that must never be violated:
-
-| Invariant | Reason |
-|-----------|--------|
-| Gun message nodes are append-only | Data integrity, no history rewriting |
-| No mutation of historical messages | Gun conflict resolution breaks |
-| Window focus is managed centrally in App.js | Prevents focus fighting between components |
-| Pane registration only via paneConfig.js | Single source of truth for window types |
-| No new global state outside App.js | State fragmentation causes sync bugs |
-| Single Gun instance from gun.js only | Multiple instances cause data splits |
-| Refs for values used in Gun callbacks | Prevents stale closure bugs |
-| Timestamps required on all messages | Ordering and deduplication depends on it |
-| Friend requests in public Gun space | Private space not readable by other users |
-
-**If you think you need to break one of these, stop and discuss first.**
-
----
-
-## Anti-Patterns (Do Not Introduce)
-
-- ❌ Replacing Gun with REST without full redesign
-- ❌ Adding Redux/Zustand/MobX without approval
-- ❌ Flattening desktop window model to modals
-- ❌ Introducing CSS frameworks (Tailwind, Bootstrap)
-- ❌ Moving realtime logic to polling
-- ❌ Storing Gun data in React state as source of truth
-- ❌ Multiple Gun instances
-- ❌ Using Windows/XP/Microsoft/MSN in code, comments, or UI text
-
----
-
-## Known Tradeoffs
-
-| Tradeoff | Implication |
-|----------|-------------|
-| Eventual consistency | Messages may briefly appear out of order |
-| Last-write-wins | No conflict resolution for simultaneous edits |
-| No server presence | Can't detect true online/offline status |
-| Client-side auth only | Username uniqueness not guaranteed |
-| Single CSS file | Large but simple to maintain |
-
----
-
-## AI Collaboration Notes
-
-This project is edited by multiple AI systems.
-
-**Requirements:**
-
-1. Always output **complete files** when modifying code
-2. Never silently change Gun schema paths
-3. Never rename folders without approval
-4. Document architectural changes in this file
-5. Test all Gun subscriptions have cleanup
-6. Verify refs are used for callback state access

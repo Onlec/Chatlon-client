@@ -4,6 +4,47 @@ Alle noemenswaardige wijzigingen aan het Chatlon project.
 
 ---
 
+NEW_SECTION:
+
+---
+
+## Template for Claude Sessions
+```markdown
+### [YYYY-MM-DD] - Claude Session: [Brief Description]
+**TYPE:** [CODE_CHANGE / BUG_FIX / FEATURE_ADD / REFACTOR]  
+**AREA:** [component-name / system-area]  
+**SUMMARY:** One-line description of what was accomplished
+
+**WHY:** Business/technical justification for the change
+
+**FILES MODIFIED:**
+- `src/ComponentName.js` - Line XX: [specific change description]
+- `src/App.css` - Section XX: [styling changes]
+- `src/paneConfig.js` - Added: [new pane registration]
+
+**CLAUDE IMPLEMENTATION NOTES:**
+- Used [pattern/approach] for consistency with existing code
+- Followed [specific guideline] from CONTRIBUTING.md
+- Tested [specific scenarios] during development
+
+**FOLLOW-UP REQUIRED:**
+- [ ] Manual testing by human
+- [ ] Documentation update needed
+- [ ] Additional features to consider
+
+**ARCHITECTURE IMPACT:** [none / low / medium / high]  
+**DATA/SCHEMA IMPACT:** [none / additive / breaking]
+
+---
+```
+
+### Entry Guidelines for AI Sessions:
+- **One entry per session**, regardless of number of files changed
+- **Focus on WHY**, not just what files were touched
+- **Include specific line numbers** for major changes
+- **Note any deviations** from standard patterns
+- **Flag follow-up requirements** clearly
+
 ## [Unreleased] - Branding Cleanup
 
 **TYPE:** refactor

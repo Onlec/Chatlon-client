@@ -80,6 +80,62 @@ Gun({ web: server })
 
 ---
 
+NEW_SECTION:
+## 👨‍💻 Working with Claude on Chatlon
+
+### 🎯 Efficient Development Requests
+
+**Instead of**: "Fix the chat system"  
+**Try**: "In ConversationPane.js, the typing indicator doesn't clear - check lines 150-160"
+
+**Instead of**: "Add new feature to contacts"  
+**Try**: "Add a 'Block Contact' button to ContactsPane - follow the existing 'Add Contact' pattern"
+
+### 📋 What to Expect from Claude
+
+Claude will respond with:
+```markdown
+## 📂 Proposed Changes
+
+**File**: src/ConversationPane.js
+**Impact**: Low (bug fix)
+
+### Modification Required:
+**Line 156**:
+- **Current**: `setTypingIndicator(true);`
+- **New**: `setTypingIndicator('');`
+- **Reason**: Clear string instead of boolean
+
+Ready to apply changes? (Y/N)
+```
+
+### 🚫 What Claude Won't Do
+- Output complete files (inefficient for message limits)
+- Make assumptions about implementation details
+- Change multiple files without explicit approval
+- Modify Gun.js schema without documentation updates
+
+### ✅ What Claude Will Do
+- Search project knowledge for current implementation
+- Provide exact line numbers for changes
+- Explain reasoning for each modification  
+- Follow existing code patterns and conventions
+- Update documentation when making schema changes
+
+### 🎯 Best Practices for Claude Requests
+
+1. **Be specific about the problem location**
+2. **Reference existing similar functionality**  
+3. **Mention any constraints or requirements**
+4. **Ask for line-by-line changes, not complete rewrites**
+
+### 📊 Repository Context for Claude
+
+- **Total files**: 17 JavaScript files (~1500 lines total)
+- **Core files**: App.js (350 lines), paneConfig.js (80 lines), gun.js (40 lines)
+- **Architecture**: Single CSS file, functional React components, Gun.js backend
+- **Current priority**: Maintenance and incremental feature additions
+
 ## User Flow
 
 ### First Time User
