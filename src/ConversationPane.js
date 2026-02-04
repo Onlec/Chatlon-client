@@ -86,6 +86,14 @@ function ConversationPane({ contactName }) {
     const handleSessionUpdate = (sessionData) => {
       const now = Date.now();
       
+      console.log('[ConversationPane] 🔄 handleSessionUpdate called:', {
+        sessionData,
+        hasSessionId: !!(sessionData && sessionData.sessionId),
+        currentUser,
+        contactName,
+        pairId
+      });
+
       if (sessionData && sessionData.sessionId) {
         // Er bestaat een actieve sessie
         const existingSessionId = sessionData.sessionId;
@@ -102,19 +110,19 @@ function ConversationPane({ contactName }) {
         console.log('[ConversationPane] Currently open by:', openByArray);
         console.log('[ConversationPane] Last activity:', sessionData.lastActivity);
         
-        // FIX: Check of de sessie recent actief was (binnen laatste 5 minuten)
+        // NEW LOGIC: Check of er überhaupt nog iemand in de sessie zit
+        const sessionHasUsers = openByArray.length > 0;
+        const otherUserInSession = openByArray.some(u => u !== currentUser);
         const sessionAge = now - (sessionData.lastActivity || 0);
-        const isRecentSession = sessionAge < 300000; // 5 minuten
+        const isVeryOldSession = sessionAge > 86400000; // 24 uur = definitief oud
         
-        console.log('[ConversationPane] Session age:', sessionAge, 'ms, is recent:', isRecentSession);
+        console.log('[ConversationPane] Session has users:', sessionHasUsers);
+        console.log('[ConversationPane] Other user in session:', otherUserInSession);
+        console.log('[ConversationPane] Session age:', sessionAge, 'ms, very old:', isVeryOldSession);
         
-        // FIX: Check of de andere user nog in de sessie zit
-        const otherUserStillInSession = openByArray.some(u => u !== currentUser);
-        console.log('[ConversationPane] Other user still in session:', otherUserStillInSession);
-        
-        // FIX: Als sessie recent is EN de andere user zit er nog in, hergebruik de sessie
-        if (isRecentSession && otherUserStillInSession) {
-          console.log('[ConversationPane] ✅ Rejoining existing session (other user still active)');
+        // NEW: Hergebruik sessie als er nog users zijn EN sessie niet extreem oud is
+        if (sessionHasUsers && !isVeryOldSession) {
+          console.log('[ConversationPane] ✅ Rejoining existing session (session still has users)');
           
           // Voeg jezelf toe als je er nog niet in zit
           if (!openByArray.includes(currentUser)) {
@@ -133,6 +141,12 @@ function ConversationPane({ contactName }) {
             if (prev !== existingSessionId) {
               console.log('[ConversationPane] Switching to existing session:', existingSessionId);
               const sessionTimestamp = parseInt(existingSessionId.split('_').pop()) || 0;
+              console.log('[ConversationPane] 🕐 Setting sessionStartTime:', {
+                existingSessionId,
+                sessionTimestamp,
+                now: Date.now(),
+                age: Date.now() - sessionTimestamp
+              });
               setSessionStartTime(sessionTimestamp);
               // GEEN dispatch({ type: 'RESET' }) - we willen oude berichten behouden!
               return existingSessionId;
@@ -141,9 +155,9 @@ function ConversationPane({ contactName }) {
           });
           
         } else {
-          // Sessie is oud OF niemand anders is er meer in - maak nieuwe
-          console.log('[ConversationPane] ❌ Creating new session (session is old or empty)');
-          console.log('[ConversationPane] Reason: isRecentSession=', isRecentSession, ', otherUserInSession=', otherUserStillInSession);
+          // Sessie is leeg OF extreem oud - maak nieuwe
+          console.log('[ConversationPane] ❌ Creating new session (session empty or very old)');
+          console.log('[ConversationPane] Reason: sessionHasUsers=', sessionHasUsers, ', isVeryOldSession=', isVeryOldSession);
           
           const newSessionId = `CHAT_${pairId}_${now}`;
           setCurrentSessionId(newSessionId);
@@ -249,11 +263,22 @@ function ConversationPane({ contactName }) {
 
   // Luister naar berichten in de huidige sessie
   useEffect(() => {
-    if (!currentSessionId || !user.is || !sessionStartTime) return;
+    if (!currentSessionId || !user.is || !sessionStartTime) {
+      console.log('[ConversationPane] 🚫 Message listener NOT starting:', {
+        currentSessionId: !!currentSessionId,
+        userIs: !!user.is,
+        sessionStartTime: !!sessionStartTime
+      });
+      return;
+    }
 
     const currentUser = user.is.alias;
-    console.log('[ConversationPane] Setting up message listener for session:', currentSessionId);
-    console.log('[ConversationPane] Session start time:', sessionStartTime);
+    console.log('[ConversationPane] 🎧 Setting up message listener:', {
+      currentSessionId,
+      sessionStartTime,
+      currentUser,
+      contactName
+    });
 
     // Cleanup oude listener
     if (chatListenerRef.current) {
@@ -267,20 +292,47 @@ function ConversationPane({ contactName }) {
     const processedMessages = new Set();
     
     chatNode.map().on((data, id) => {
-      if (!data || !data.content || !data.timeRef) return;
+      console.log('[ConversationPane] 🎧 Raw message data:', {
+        id,
+        sender: data?.sender,
+        content: data?.content?.substring(0, 30),
+        timeRef: data?.timeRef,
+        sessionStartTime,
+        currentSessionId
+      });
+
+      if (!data || !data.content || !data.timeRef) {
+        console.log('[ConversationPane] ❌ Invalid message data, skipping');
+        return;
+      }
       
       // Skip als al verwerkt
-      if (processedMessages.has(id)) return;
+      if (processedMessages.has(id)) {
+        console.log('[ConversationPane] ⏭️ Already processed message:', id);
+        return;
+      }
       processedMessages.add(id);
       
       // Filter berichten die VOOR de sessie start time zijn
       const messageTime = data.timeRef;
+      const timeDiff = messageTime - sessionStartTime;
       if (messageTime < sessionStartTime - 1000) {
-        console.log('[ConversationPane] Skipping old message:', messageTime, '<', sessionStartTime);
+        console.log('[ConversationPane] ⏰ Skipping old message:', {
+          messageTime,
+          sessionStartTime,
+          timeDiff,
+          threshold: sessionStartTime - 1000
+        });
         return;
       }
       
-      console.log('[ConversationPane] Received message:', data.sender, data.content.substring(0, 20));
+      console.log('[ConversationPane] ✅ Received NEW message:', {
+        id,
+        sender: data.sender,
+        content: data.content.substring(0, 20),
+        timeRef: data.timeRef,
+        timeDiff
+      });
       
       dispatch({ 
         id, 
@@ -370,7 +422,16 @@ function ConversationPane({ contactName }) {
   const sendMessage = () => {
     if (!messageText.trim() || !currentSessionId) return;
     const currentUser = user.is?.alias;
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('[ConversationPane] ❌ No current user');
+      return;
+    }
+
+    console.log('[ConversationPane] 🎬 Starting session management:', {
+      currentUser,
+      contactName,
+      hasInitialized: hasInitializedSession.current
+    });
 
     const now = Date.now();
     
