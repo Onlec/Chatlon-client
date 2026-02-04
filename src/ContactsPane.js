@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { gun, user } from './gun';
+import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
 
 function ContactsPane({ onOpenConversation }) {
   const [myStatus, setMyStatus] = useState('online');
@@ -166,14 +167,8 @@ function ContactsPane({ onOpenConversation }) {
     setPendingRequests(prev => prev.filter(r => r.id !== request.id));
   };
 
-  const statusOptions = [
-    { value: 'online', label: 'Online', color: '#7AC142' },
-    { value: 'away', label: 'Afwezig', color: '#FFB900' },
-    { value: 'busy', label: 'Bezet', color: '#E74856' },
-    { value: 'appear-offline', label: 'Offline weergeven', color: '#8C8C8C' }
-  ];
-
-  const currentStatus = statusOptions.find(s => s.value === myStatus);
+  // Gebruik STATUS_OPTIONS van presenceUtils.js
+  const currentStatus = STATUS_OPTIONS.find(s => s.value === myStatus);
 
   return (
     <div className="contacts-container">
@@ -232,7 +227,7 @@ function ContactsPane({ onOpenConversation }) {
               value={myStatus}
               onChange={(e) => handleStatusChange(e.target.value)}
             >
-              {statusOptions.map(opt => (
+              {STATUS_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
@@ -295,14 +290,14 @@ function ContactsPane({ onOpenConversation }) {
                   onClick={() => handleAcceptRequest(request)}
                   style={{ fontSize: '10px', padding: '2px 6px' }}
                 >
-                  ✓
+                  âœ“
                 </button>
                 <button 
                   className="dx-button secondary" 
                   onClick={() => handleDeclineRequest(request)}
                   style={{ fontSize: '10px', padding: '2px 6px' }}
                 >
-                  ✗
+                  âœ—
                 </button>
               </div>
             </div>
@@ -313,7 +308,7 @@ function ContactsPane({ onOpenConversation }) {
       {/* Contact lijst */}
       <div className="contacts-list-section">
         <div className="contacts-category-header">
-          <span className="contacts-category-icon">▼</span>
+          <span className="contacts-category-icon">â–¼</span>
           <span className="contacts-category-name">Online ({contacts.length})</span>
         </div>
         
@@ -342,7 +337,7 @@ function ContactsPane({ onOpenConversation }) {
 
         {/* Offline categorie */}
         <div className="contacts-category-header collapsed">
-          <span className="contacts-category-icon">▶</span>
+          <span className="contacts-category-icon">â–¶</span>
           <span className="contacts-category-name">Offline (0)</span>
         </div>
       </div>
@@ -350,7 +345,7 @@ function ContactsPane({ onOpenConversation }) {
       {/* Bottom banner */}
       <div className="contacts-bottom-banner">
         <div className="contacts-ad-space">
-          🎮 Speel games • 🎵 Deel muziek • 📸 Deel foto's
+          ðŸŽ® Speel games â€¢ ðŸŽµ Deel muziek â€¢ ðŸ“¸ Deel foto's
         </div>
       </div>
     </div>

@@ -235,7 +235,7 @@ function App() {
             console.log('[App] shouldShowToast:', shouldShowToast, '(isConvOpen:', isConvOpen, ', isConvActive:', isConvActive, ')');
             
             if (shouldShowToast) {
-              console.log('[App] ✅ Showing toast for message from:', contactName);
+              console.log('[App] âœ… Showing toast for message from:', contactName);
               
               // DUPLICATE CHECK: Gebruik timestamp + contactName + sessionId
               const toastKey = `${contactName}_${messageTimestamp}_${activeSessionId}`;
@@ -258,7 +258,7 @@ function App() {
                 sessionId: activeSessionId
               });
             } else {
-              console.log('[App] ❌ Skipping toast - conversation is open AND active');
+              console.log('[App] âŒ Skipping toast - conversation is open AND active');
             }
           });
           
@@ -658,7 +658,7 @@ function App() {
 
       <div className="taskbar">
         <button className={`start-btn ${isStartOpen ? 'pressed' : ''}`} onClick={(e) => { e.stopPropagation(); setIsStartOpen(!isStartOpen); }}>
-          <span className="start-icon">🪟</span> Start
+          <span className="start-icon">ðŸªŸ</span> Start
         </button>
         <div className="taskbar-items">
           {paneOrder.map((paneName) => {
@@ -673,7 +673,7 @@ function App() {
                   className={`taskbar-tab ${!conv.isMinimized && activePane === paneName ? 'active' : ''}`} 
                   onClick={() => handleTaskbarClick(paneName)}
                 >
-                  <span className="taskbar-icon">💬</span> {conv.contactName}
+                  <span className="taskbar-icon">ðŸ’¬</span> {conv.contactName}
                 </div>
               );
             }
