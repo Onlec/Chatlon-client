@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useReducer, useRef } from 'react';
 import { gun, user } from './gun';
 import { convertEmoticons, getEmoticonCategories } from './emoticons';
+import { getContactPairId } from './utils/chatUtils';
 
 const reducer = (state, message) => {
   if (state.messageMap[message.id]) return state;
@@ -9,11 +10,6 @@ const reducer = (state, message) => {
   return { messageMap: newMessageMap, messages: sortedMessages };
 };
 
-// Helper om contact pair ID te maken (alfabetisch gesorteerd)
-const getContactPairId = (user1, user2) => {
-  const sorted = [user1, user2].sort();
-  return `${sorted[0]}_${sorted[1]}`;
-};
 
 function ConversationPane({ contactName }) {
   const [messageText, setMessageText] = useState('');
