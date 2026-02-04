@@ -4,12 +4,12 @@ import { convertEmoticons, getEmoticonCategories } from './emoticons';
 import { getContactPairId } from './utils/chatUtils';
 
 const reducer = (state, action) => {
-  // FIX: Support voor RESET action
+  // Support voor RESET action
   if (action.type === 'RESET') {
     return { messages: [], messageMap: {} };
   }
   
-  // FIX: Support voor SET_MESSAGES action (bulk load)
+  // Support voor SET_MESSAGES action (bulk load)
   if (action.type === 'SET_MESSAGES') {
     const newMessageMap = {};
     action.messages.forEach(msg => {
@@ -44,11 +44,11 @@ function ConversationPane({ contactName }) {
   
   // Sessie tracking
   const [currentSessionId, setCurrentSessionId] = useState(null);
-  const [sessionStartTime, setSessionStartTime] = useState(null); // FIX: Track wanneer sessie startte
+  const [sessionStartTime, setSessionStartTime] = useState(null);
   const sessionListenerRef = useRef(null);
   const chatListenerRef = useRef(null);
   const hasInitializedSession = useRef(false);
-  const mountTimeRef = useRef(Date.now()); // FIX: Track mount time
+  const mountTimeRef = useRef(Date.now());
 
   useEffect(() => {
     if (user.is) {
@@ -74,12 +74,15 @@ function ConversationPane({ contactName }) {
     // Markeer als geïnitialiseerd
     hasInitializedSession.current = true;
 
-    // FIX: Reset messages bij nieuwe sessie
-    dispatch({ type: 'RESET' });
+    // Reset messages bij nieuwe mount (maar niet bij session rejoin)
+    // Dit wordt later bepaald in handleSessionUpdate
 
-    // FIX: Gebruik .on() in plaats van .once() om sessie updates te volgen
+    // Gebruik .on() in plaats van .once() om sessie updates te volgen
     const activeSessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
     
+    // ===================================================================
+    // FIX BUG 2: SESSION PERSISTENCE LOGIC
+    // ===================================================================
     const handleSessionUpdate = (sessionData) => {
       const now = Date.now();
       
@@ -97,43 +100,73 @@ function ConversationPane({ contactName }) {
         
         console.log('[ConversationPane] Session update:', existingSessionId);
         console.log('[ConversationPane] Currently open by:', openByArray);
+        console.log('[ConversationPane] Last activity:', sessionData.lastActivity);
         
-        // FIX: Check of dit een NIEUWE sessie is (niet onze eigen net aangemaakte)
-        const sessionTimestamp = parseInt(existingSessionId.split('_').pop()) || 0;
+        // FIX: Check of de sessie recent actief was (binnen laatste 5 minuten)
+        const sessionAge = now - (sessionData.lastActivity || 0);
+        const isRecentSession = sessionAge < 300000; // 5 minuten
         
-        // Als de sessie is aangemaakt NA onze mount, en we zitten er niet in, join
-        if (!openByArray.includes(currentUser)) {
-          openByArray.push(currentUser);
+        console.log('[ConversationPane] Session age:', sessionAge, 'ms, is recent:', isRecentSession);
+        
+        // FIX: Check of de andere user nog in de sessie zit
+        const otherUserStillInSession = openByArray.some(u => u !== currentUser);
+        console.log('[ConversationPane] Other user still in session:', otherUserStillInSession);
+        
+        // FIX: Als sessie recent is EN de andere user zit er nog in, hergebruik de sessie
+        if (isRecentSession && otherUserStillInSession) {
+          console.log('[ConversationPane] ✅ Rejoining existing session (other user still active)');
+          
+          // Voeg jezelf toe als je er nog niet in zit
+          if (!openByArray.includes(currentUser)) {
+            openByArray.push(currentUser);
+            
+            const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
+            sessionNode.get('sessionId').put(existingSessionId);
+            sessionNode.get('openBy').put(JSON.stringify(openByArray));
+            sessionNode.get('lastActivity').put(now);
+            
+            console.log('[ConversationPane] Added self to session, new openBy:', openByArray);
+          }
+          
+          // Update state - ZONDER messages te resetten (want we joinen bestaande sessie)
+          setCurrentSessionId(prev => {
+            if (prev !== existingSessionId) {
+              console.log('[ConversationPane] Switching to existing session:', existingSessionId);
+              const sessionTimestamp = parseInt(existingSessionId.split('_').pop()) || 0;
+              setSessionStartTime(sessionTimestamp);
+              // GEEN dispatch({ type: 'RESET' }) - we willen oude berichten behouden!
+              return existingSessionId;
+            }
+            return prev;
+          });
+          
+        } else {
+          // Sessie is oud OF niemand anders is er meer in - maak nieuwe
+          console.log('[ConversationPane] ❌ Creating new session (session is old or empty)');
+          console.log('[ConversationPane] Reason: isRecentSession=', isRecentSession, ', otherUserInSession=', otherUserStillInSession);
+          
+          const newSessionId = `CHAT_${pairId}_${now}`;
+          setCurrentSessionId(newSessionId);
+          setSessionStartTime(now);
+          
+          // NU wel messages resetten - nieuwe sessie
+          dispatch({ type: 'RESET' });
           
           const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
-          sessionNode.get('sessionId').put(existingSessionId);
-          sessionNode.get('openBy').put(JSON.stringify(openByArray));
+          sessionNode.get('sessionId').put(newSessionId);
+          sessionNode.get('openBy').put(JSON.stringify([currentUser]));
           sessionNode.get('lastActivity').put(now);
           
-          console.log('[ConversationPane] Joined existing session');
+          console.log('[ConversationPane] Created new session:', newSessionId);
         }
-        
-        // Update state alleen als sessie veranderd is
-        setCurrentSessionId(prev => {
-          if (prev !== existingSessionId) {
-            console.log('[ConversationPane] Switching to session:', existingSessionId);
-            // FIX: Reset messages bij sessie switch
-            dispatch({ type: 'RESET' });
-            setSessionStartTime(sessionTimestamp);
-            return existingSessionId;
-          }
-          return prev;
-        });
         
       } else {
         // Geen actieve sessie - maak nieuwe
         const newSessionId = `CHAT_${pairId}_${now}`;
-        console.log('[ConversationPane] Creating new session:', newSessionId);
+        console.log('[ConversationPane] No session exists, creating new:', newSessionId);
         
         setCurrentSessionId(newSessionId);
         setSessionStartTime(now);
-        
-        // FIX: Reset messages voor nieuwe sessie
         dispatch({ type: 'RESET' });
         
         const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
@@ -145,7 +178,7 @@ function ConversationPane({ contactName }) {
       }
     };
 
-    // FIX: Kleine delay, dan start listening
+    // Kleine delay, dan start listening
     const initTimeout = setTimeout(() => {
       // Eerst een check doen
       activeSessionNode.once(handleSessionUpdate);
@@ -164,13 +197,15 @@ function ConversationPane({ contactName }) {
       activeSessionNode.off();
     };
 
-    // Cleanup bij unmount
+    // ===================================================================
+    // FIX BUG 2: CLEANUP BIJ UNMOUNT - UPDATE LASTACTIVITY
+    // ===================================================================
     return () => {
       clearTimeout(initTimeout);
       hasInitializedSession.current = false;
       
       if (currentUser && pairId) {
-        console.log('[ConversationPane] Closing chat, removing self from openBy');
+        console.log('[ConversationPane] Closing chat, updating session status');
         
         // Haal jezelf uit de openBy array
         gun.get('ACTIVE_SESSIONS').get(pairId).once((sessionData) => {
@@ -183,24 +218,17 @@ function ConversationPane({ contactName }) {
             }
             
             const updatedOpenBy = openByArray.filter(u => u !== currentUser);
+            const now = Date.now();
+            
+            const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
+            sessionNode.get('sessionId').put(sessionData.sessionId); // Behoud sessie ID
+            sessionNode.get('openBy').put(JSON.stringify(updatedOpenBy));
+            sessionNode.get('lastActivity').put(now); // FIX: Update timestamp zodat sessie recent blijft
             
             if (updatedOpenBy.length > 0) {
-              const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
-              sessionNode.get('sessionId').put(sessionData.sessionId);
-              sessionNode.get('openBy').put(JSON.stringify(updatedOpenBy));
-              sessionNode.get('lastActivity').put(Date.now());
-              
-              console.log('[ConversationPane] Removed self, session still active by:', updatedOpenBy);
+              console.log('[ConversationPane] ✅ Removed self, session still active by:', updatedOpenBy);
             } else {
-              // FIX: Markeer sessie als gesloten, maar verwijder niet
-              // Dit voorkomt dat oude berichten weer verschijnen
-              gun.get('ACTIVE_SESSIONS').get(pairId).put({
-                sessionId: null,
-                openBy: null,
-                lastActivity: Date.now(),
-                closedAt: Date.now()
-              });
-              console.log('[ConversationPane] Session closed (no one left)');
+              console.log('[ConversationPane] ⚠️ Last user left, session now empty but still recent');
             }
           }
         });
@@ -235,19 +263,17 @@ function ConversationPane({ contactName }) {
 
     const chatNode = gun.get(currentSessionId);
     
-    // FIX: Track welke message IDs we al hebben verwerkt
+    // Track welke message IDs we al hebben verwerkt
     const processedMessages = new Set();
     
     chatNode.map().on((data, id) => {
       if (!data || !data.content || !data.timeRef) return;
       
-      // FIX: Skip als al verwerkt
+      // Skip als al verwerkt
       if (processedMessages.has(id)) return;
       processedMessages.add(id);
       
-      // FIX: Filter berichten die VOOR de sessie start time zijn
-      // Dit voorkomt dat oude berichten van een vorige sessie verschijnen
-      // We gebruiken een kleine marge (1 seconde) voor clock sync issues
+      // Filter berichten die VOOR de sessie start time zijn
       const messageTime = data.timeRef;
       if (messageTime < sessionStartTime - 1000) {
         console.log('[ConversationPane] Skipping old message:', messageTime, '<', sessionStartTime);
@@ -350,7 +376,7 @@ function ConversationPane({ contactName }) {
     
     console.log('[ConversationPane] Sending message to session:', currentSessionId);
     
-    // FIX: Gebruik unieke key voor bericht
+    // Gebruik unieke key voor bericht
     const messageKey = `${currentUser}_${now}_${Math.random().toString(36).substr(2, 9)}`;
     
     gun.get(currentSessionId).get(messageKey).put({
@@ -468,7 +494,7 @@ function ConversationPane({ contactName }) {
                 Je bent nu in gesprek met {contactName}
                 {currentSessionId && (
                   <div style={{ marginTop: '5px', fontSize: '9px', color: '#999' }}>
-                    Nieuwe sessie gestart
+                    Sessie: {currentSessionId.substring(currentSessionId.length - 13)}
                   </div>
                 )}
               </div>

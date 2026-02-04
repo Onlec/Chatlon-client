@@ -89,7 +89,17 @@ export function getPresenceStatus(presence) {
     };
   }
 
-  // Gebruiker heeft specifieke status ingesteld
+  // FIX BUG 1: Gebruiker heeft "appear-offline" ingesteld - toon als offline
+  // Dit zorgt ervoor dat gebruiker bij Offline categorie staat met "Offline" label
+  if (presence.status === 'appear-offline') {
+    return {
+      value: 'offline',
+      label: 'Offline',
+      color: '#8C8C8C'
+    };
+  }
+
+  // Gebruiker heeft andere specifieke status ingesteld
   if (presence.status && presence.status !== 'online') {
     const statusOption = STATUS_OPTIONS.find(opt => opt.value === presence.status);
     if (statusOption) {
