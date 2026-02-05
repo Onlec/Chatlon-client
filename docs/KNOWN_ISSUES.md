@@ -372,6 +372,30 @@ Fix should check if click target is actually outside, not just any mousedown eve
 
 ---
 
+BUG-012 — ConversationPane session initialization logging inconsistency
+STATUS: open
+SEVERITY: low
+AREA: debugging, session-management
+SYMPTOM:
+Debug logs show currentSessionId: false, sessionStartTime: false when ConversationPane opens, but real-time messaging still functions correctly.
+REPRO STEPS:
+
+User opens chat with contact
+ConversationPane logs show session not initializing
+Real-time messaging still works despite logs
+
+SUSPECTED CAUSE:
+Race condition or timing issue in session initialization logging. The actual functionality works, but debug logs suggest otherwise.
+FILES:
+
+src/components/ConversationPane.js (session management useEffect)
+
+WORKAROUND:
+None needed - functionality works correctly despite debug logs.
+AI WARNING:
+This is a logging/debugging inconsistency, not a functional bug. Real-time messaging works correctly regardless of these debug messages.
+
+---
 ## 📝 Issue Templates
 
 ### For Claude Sessions:

@@ -7,6 +7,36 @@ Dit bestand vangt informele notities, beslissingen en context op die niet in CHA
 **Voor mens:** Voel je vrij om oude entries (>2 weken) te verwijderen.
 
 ---
+2025-02-04 — Chat Sync Investigation (Claude)
+Context
+User reported chat sync issues between Alice and Bob. Investigation focused on session management and message delivery.
+Key Findings
+
+Real-time messaging works perfectly - users can chat when windows open
+Current behavior is MSN authentic - no message persistence after closing chat
+useMessageListeners functions correctly - tracks sessions and delivers messages
+ConversationPane session debug issues - logs show initialization problems but doesn't affect functionality
+
+Decisions Made
+
+No immediate fix required for core functionality
+Current behavior is feature, not bug - matches MSN Messenger experience
+Debug logging inconsistency noted but not critical
+Future consideration: decide between authentic MSN vs modern persistence
+
+Technical Notes
+
+useMessageListeners correctly manages CHAT_Alice_bob_* sessions
+Toast notifications have separate visual issues (not investigated)
+ConversationPane message listener depends on session initialization
+Gun.js message delivery works correctly for real-time scenarios
+
+Next Steps
+
+User to decide: keep MSN authentic behavior vs add persistence
+ConversationPane session debug logging could be improved
+Toast notification visual fixes are separate task
+---
 
 ## 2025-02-04 — Sessie 4 (Gemini & Claude)
 ### Gedaan

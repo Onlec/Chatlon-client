@@ -4,29 +4,16 @@ import { convertEmoticons, getEmoticonCategories } from './emoticons';
 import { getContactPairId } from './utils/chatUtils';
 
 const reducer = (state, action) => {
-  // Support voor RESET action
   if (action.type === 'RESET') {
     return { messages: [], messageMap: {} };
   }
   
-  // Support voor SET_MESSAGES action (bulk load)
-  if (action.type === 'SET_MESSAGES') {
-    const newMessageMap = {};
-    action.messages.forEach(msg => {
-      newMessageMap[msg.id] = msg;
-    });
-    const sortedMessages = Object.values(newMessageMap).sort((a, b) => a.timeRef - b.timeRef);
-    return { messageMap: newMessageMap, messages: sortedMessages };
-  }
-  
-  // Default: add single message
   const message = action;
   if (state.messageMap[message.id]) return state;
   const newMessageMap = { ...state.messageMap, [message.id]: message };
   const sortedMessages = Object.values(newMessageMap).sort((a, b) => a.timeRef - b.timeRef);
   return { messageMap: newMessageMap, messages: sortedMessages };
 };
-
 
 function ConversationPane({ contactName }) {
   const [messageText, setMessageText] = useState('');
@@ -44,12 +31,12 @@ function ConversationPane({ contactName }) {
   
   // Sessie tracking
   const [currentSessionId, setCurrentSessionId] = useState(null);
-  const [sessionStartTime, setSessionStartTime] = useState(null);
-  const sessionListenerRef = useRef(null);
+  const sessionStartTimeRef = useRef(null);
   const chatListenerRef = useRef(null);
-  const hasInitializedSession = useRef(false);
-  const mountTimeRef = useRef(Date.now());
+  const sessionListenerRef = useRef(null);
+  const hasInitializedRef = useRef(false);
 
+  // Hoofdeffect: Sessie initialisatie - OPTIE A: Simpele "oudste wint" logica
   useEffect(() => {
     if (user.is) {
       setUsername(user.is.alias);
@@ -58,226 +45,121 @@ function ConversationPane({ contactName }) {
     const currentUser = user.is?.alias;
     if (!currentUser) return;
 
-    // GUARD: Voorkom dubbele execution door React Strict Mode
-    if (hasInitializedSession.current) {
-      console.log('[ConversationPane] Session already initialized, skipping');
+    // Guard tegen dubbele initialisatie (React Strict Mode)
+    if (hasInitializedRef.current) {
+      console.log('[ConversationPane] Already initialized, skipping');
       return;
     }
+    hasInitializedRef.current = true;
 
     const pairId = getContactPairId(currentUser, contactName);
-    const mountTime = Date.now();
-    mountTimeRef.current = mountTime;
+    const now = Date.now();
+    const mySessionId = `CHAT_${pairId}_${now}`;
     
     console.log('[ConversationPane] Opening chat with:', contactName);
-    console.log('[ConversationPane] Mount time:', mountTime);
+    console.log('[ConversationPane] My proposed session:', mySessionId);
 
-    // Markeer als geïnitialiseerd
-    hasInitializedSession.current = true;
+    // Reset messages - altijd schone lei bij openen
+    dispatch({ type: 'RESET' });
 
-    // Reset messages bij nieuwe mount (maar niet bij session rejoin)
-    // Dit wordt later bepaald in handleSessionUpdate
+    // Check bestaande sessie en bepaal welke wint (oudste)
+    gun.get('ACTIVE_SESSIONS').get(pairId).once((existingSession) => {
+      console.log('[ConversationPane] Existing session check:', existingSession);
+      
+      if (existingSession && existingSession.sessionId) {
+        const existingTimestamp = parseInt(existingSession.sessionId.split('_').pop()) || 0;
+        
+        console.log('[ConversationPane] Comparing timestamps:', {
+          existing: existingTimestamp,
+          mine: now,
+          existingIsOlder: existingTimestamp < now
+        });
+        
+        if (existingTimestamp < now && existingTimestamp > 0) {
+          // Bestaande sessie is ouder → join die
+          console.log('[ConversationPane] ✅ Joining older session:', existingSession.sessionId);
+          setCurrentSessionId(existingSession.sessionId);
+          sessionStartTimeRef.current = existingTimestamp;
+        } else {
+          // Mijn sessie is ouder of gelijk → gebruik mijn sessie
+          console.log('[ConversationPane] ✅ Using my session (older or no valid existing):', mySessionId);
+          gun.get('ACTIVE_SESSIONS').get(pairId).put({ sessionId: mySessionId });
+          setCurrentSessionId(mySessionId);
+          sessionStartTimeRef.current = now;
+        }
+      } else {
+        // Geen bestaande sessie → maak nieuwe
+        console.log('[ConversationPane] ✅ No existing session, creating:', mySessionId);
+        gun.get('ACTIVE_SESSIONS').get(pairId).put({ sessionId: mySessionId });
+        setCurrentSessionId(mySessionId);
+        sessionStartTimeRef.current = now;
+      }
+    });
 
-    // Gebruik .on() in plaats van .once() om sessie updates te volgen
+    // Luister naar sessie updates (als andere user een nieuwere/oudere sessie maakt)
     const activeSessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
     
-    // ===================================================================
-    // FIX BUG 2: SESSION PERSISTENCE LOGIC
-    // ===================================================================
-    const handleSessionUpdate = (sessionData) => {
-      const now = Date.now();
+    activeSessionNode.on((sessionData) => {
+      if (!sessionData || !sessionData.sessionId) return;
       
-      console.log('[ConversationPane] 🔄 handleSessionUpdate called:', {
-        sessionData,
-        hasSessionId: !!(sessionData && sessionData.sessionId),
-        currentUser,
-        contactName,
-        pairId
-      });
-
-      if (sessionData && sessionData.sessionId) {
-        // Er bestaat een actieve sessie
-        const existingSessionId = sessionData.sessionId;
-        
-        // Parse openBy van JSON string naar array
-        let openByArray = [];
-        try {
-          openByArray = sessionData.openBy ? JSON.parse(sessionData.openBy) : [];
-        } catch (e) {
-          openByArray = Array.isArray(sessionData.openBy) ? sessionData.openBy : [sessionData.openBy];
-        }
-        
-        console.log('[ConversationPane] Session update:', existingSessionId);
-        console.log('[ConversationPane] Currently open by:', openByArray);
-        console.log('[ConversationPane] Last activity:', sessionData.lastActivity);
-        
-        // NEW LOGIC: Check of er überhaupt nog iemand in de sessie zit
-        const sessionHasUsers = openByArray.length > 0;
-        const otherUserInSession = openByArray.some(u => u !== currentUser);
-        const sessionAge = now - (sessionData.lastActivity || 0);
-        const isVeryOldSession = sessionAge > 86400000; // 24 uur = definitief oud
-        
-        console.log('[ConversationPane] Session has users:', sessionHasUsers);
-        console.log('[ConversationPane] Other user in session:', otherUserInSession);
-        console.log('[ConversationPane] Session age:', sessionAge, 'ms, very old:', isVeryOldSession);
-        
-        // NEW: Hergebruik sessie als er nog users zijn EN sessie niet extreem oud is
-        if (sessionHasUsers && !isVeryOldSession) {
-          console.log('[ConversationPane] ✅ Rejoining existing session (session still has users)');
-          
-          // Voeg jezelf toe als je er nog niet in zit
-          if (!openByArray.includes(currentUser)) {
-            openByArray.push(currentUser);
-            
-            const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
-            sessionNode.get('sessionId').put(existingSessionId);
-            sessionNode.get('openBy').put(JSON.stringify(openByArray));
-            sessionNode.get('lastActivity').put(now);
-            
-            console.log('[ConversationPane] Added self to session, new openBy:', openByArray);
-          }
-          
-          // Update state - ZONDER messages te resetten (want we joinen bestaande sessie)
-          setCurrentSessionId(prev => {
-            if (prev !== existingSessionId) {
-              console.log('[ConversationPane] Switching to existing session:', existingSessionId);
-              const sessionTimestamp = parseInt(existingSessionId.split('_').pop()) || 0;
-              console.log('[ConversationPane] 🕐 Setting sessionStartTime:', {
-                existingSessionId,
-                sessionTimestamp,
-                now: Date.now(),
-                age: Date.now() - sessionTimestamp
-              });
-              setSessionStartTime(sessionTimestamp);
-              // GEEN dispatch({ type: 'RESET' }) - we willen oude berichten behouden!
-              return existingSessionId;
-            }
-            return prev;
-          });
-          
-        } else {
-          // Sessie is leeg OF extreem oud - maak nieuwe
-          console.log('[ConversationPane] ❌ Creating new session (session empty or very old)');
-          console.log('[ConversationPane] Reason: sessionHasUsers=', sessionHasUsers, ', isVeryOldSession=', isVeryOldSession);
-          
-          const newSessionId = `CHAT_${pairId}_${now}`;
-          setCurrentSessionId(newSessionId);
-          setSessionStartTime(now);
-          
-          // NU wel messages resetten - nieuwe sessie
-          dispatch({ type: 'RESET' });
-          
-          const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
-          sessionNode.get('sessionId').put(newSessionId);
-          sessionNode.get('openBy').put(JSON.stringify([currentUser]));
-          sessionNode.get('lastActivity').put(now);
-          
-          console.log('[ConversationPane] Created new session:', newSessionId);
-        }
-        
-      } else {
-        // Geen actieve sessie - maak nieuwe
-        const newSessionId = `CHAT_${pairId}_${now}`;
-        console.log('[ConversationPane] No session exists, creating new:', newSessionId);
-        
-        setCurrentSessionId(newSessionId);
-        setSessionStartTime(now);
-        dispatch({ type: 'RESET' });
-        
-        const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
-        sessionNode.get('sessionId').put(newSessionId);
-        sessionNode.get('openBy').put(JSON.stringify([currentUser]));
-        sessionNode.get('lastActivity').put(now);
-        
-        console.log('[ConversationPane] Created new session');
-      }
-    };
-
-    // Kleine delay, dan start listening
-    const initTimeout = setTimeout(() => {
-      // Eerst een check doen
-      activeSessionNode.once(handleSessionUpdate);
+      const incomingSessionId = sessionData.sessionId;
+      const incomingTimestamp = parseInt(incomingSessionId.split('_').pop()) || 0;
       
-      // Dan blijven luisteren naar updates
-      activeSessionNode.on((data) => {
-        // Alleen reageren op echte updates (niet onze eigen writes)
-        if (data && data.sessionId) {
-          handleSessionUpdate(data);
+      setCurrentSessionId(current => {
+        if (!current) return incomingSessionId;
+        
+        const currentTimestamp = parseInt(current.split('_').pop()) || 0;
+        
+        // Alleen switchen als incoming sessie OUDER is
+        if (incomingTimestamp < currentTimestamp && incomingTimestamp > 0) {
+          console.log('[ConversationPane] 🔄 Switching to older session:', incomingSessionId);
+          sessionStartTimeRef.current = incomingTimestamp;
+          dispatch({ type: 'RESET' }); // Reset bij sessie switch
+          return incomingSessionId;
         }
+        
+        return current;
       });
-    }, 100);
+    });
 
-    // Store session listener cleanup
     sessionListenerRef.current = () => {
       activeSessionNode.off();
     };
 
-    // ===================================================================
-    // FIX BUG 2: CLEANUP BIJ UNMOUNT - UPDATE LASTACTIVITY
-    // ===================================================================
+    // Cleanup bij unmount - OPTIE A: Geen cleanup nodig!
     return () => {
-      clearTimeout(initTimeout);
-      hasInitializedSession.current = false;
+      hasInitializedRef.current = false;
       
-      if (currentUser && pairId) {
-        console.log('[ConversationPane] Closing chat, updating session status');
-        
-        // Haal jezelf uit de openBy array
-        gun.get('ACTIVE_SESSIONS').get(pairId).once((sessionData) => {
-          if (sessionData && sessionData.openBy) {
-            let openByArray = [];
-            try {
-              openByArray = JSON.parse(sessionData.openBy);
-            } catch (e) {
-              openByArray = Array.isArray(sessionData.openBy) ? sessionData.openBy : [sessionData.openBy];
-            }
-            
-            const updatedOpenBy = openByArray.filter(u => u !== currentUser);
-            const now = Date.now();
-            
-            const sessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
-            sessionNode.get('sessionId').put(sessionData.sessionId); // Behoud sessie ID
-            sessionNode.get('openBy').put(JSON.stringify(updatedOpenBy));
-            sessionNode.get('lastActivity').put(now); // FIX: Update timestamp zodat sessie recent blijft
-            
-            if (updatedOpenBy.length > 0) {
-              console.log('[ConversationPane] ✅ Removed self, session still active by:', updatedOpenBy);
-            } else {
-              console.log('[ConversationPane] ⚠️ Last user left, session now empty but still recent');
-            }
-          }
-        });
-      }
-      
-      // Cleanup listeners
-      if (chatListenerRef.current) {
-        chatListenerRef.current();
-      }
       if (sessionListenerRef.current) {
         sessionListenerRef.current();
+        sessionListenerRef.current = null;
+      }
+      if (chatListenerRef.current) {
+        chatListenerRef.current();
+        chatListenerRef.current = null;
       }
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+      
+      console.log('[ConversationPane] Closed chat - no cleanup needed (Option A)');
     };
   }, [contactName]);
 
-  // Luister naar berichten in de huidige sessie
+  // Effect: Luister naar berichten in de huidige sessie
   useEffect(() => {
-    if (!currentSessionId || !user.is || !sessionStartTime) {
-      console.log('[ConversationPane] 🚫 Message listener NOT starting:', {
-        currentSessionId: !!currentSessionId,
-        userIs: !!user.is,
-        sessionStartTime: !!sessionStartTime
-      });
+    if (!currentSessionId || !user.is) {
+      console.log('[ConversationPane] Message listener NOT starting - no session or user');
       return;
     }
 
     const currentUser = user.is.alias;
+    const sessionStartTime = sessionStartTimeRef.current || Date.now();
+    
     console.log('[ConversationPane] 🎧 Setting up message listener:', {
       currentSessionId,
       sessionStartTime,
-      currentUser,
-      contactName
+      currentUser
     });
 
     // Cleanup oude listener
@@ -287,52 +169,21 @@ function ConversationPane({ contactName }) {
     }
 
     const chatNode = gun.get(currentSessionId);
-    
-    // Track welke message IDs we al hebben verwerkt
     const processedMessages = new Set();
     
     chatNode.map().on((data, id) => {
-      console.log('[ConversationPane] 🎧 Raw message data:', {
-        id,
-        sender: data?.sender,
-        content: data?.content?.substring(0, 30),
-        timeRef: data?.timeRef,
-        sessionStartTime,
-        currentSessionId
-      });
-
-      if (!data || !data.content || !data.timeRef) {
-        console.log('[ConversationPane] ❌ Invalid message data, skipping');
-        return;
-      }
+      if (!data || !data.content || !data.timeRef) return;
       
-      // Skip als al verwerkt
-      if (processedMessages.has(id)) {
-        console.log('[ConversationPane] ⏭️ Already processed message:', id);
-        return;
-      }
+      if (processedMessages.has(id)) return;
       processedMessages.add(id);
       
-      // Filter berichten die VOOR de sessie start time zijn
-      const messageTime = data.timeRef;
-      const timeDiff = messageTime - sessionStartTime;
-      if (messageTime < sessionStartTime - 1000) {
-        console.log('[ConversationPane] ⏰ Skipping old message:', {
-          messageTime,
-          sessionStartTime,
-          timeDiff,
-          threshold: sessionStartTime - 1000
-        });
+      // Filter berichten van voor sessie start
+      if (data.timeRef < sessionStartTime - 1000) {
+        console.log('[ConversationPane] ⏭️ Skipping old message:', id);
         return;
       }
       
-      console.log('[ConversationPane] ✅ Received NEW message:', {
-        id,
-        sender: data.sender,
-        content: data.content.substring(0, 20),
-        timeRef: data.timeRef,
-        timeDiff
-      });
+      console.log('[ConversationPane] ✅ New message:', data.sender, data.content.substring(0, 20));
       
       dispatch({ 
         id, 
@@ -343,9 +194,8 @@ function ConversationPane({ contactName }) {
       });
     });
 
-    // Nudge listener voor deze sessie
+    // Nudge listener
     const nudgeNode = gun.get(`NUDGE_${currentSessionId}`);
-    
     nudgeNode.on((data) => {
       if (data && data.time && data.time > lastProcessedNudge.current) {
         if (data.from === contactName) {
@@ -357,9 +207,8 @@ function ConversationPane({ contactName }) {
       }
     });
 
-    // Typing indicator voor deze sessie
+    // Typing indicator
     const typingNode = gun.get(`TYPING_${currentSessionId}`);
-    
     typingNode.on((data) => {
       if (data && data.isTyping && data.user === contactName) {
         const now = Date.now();
@@ -382,7 +231,6 @@ function ConversationPane({ contactName }) {
       }
     });
 
-    // Store cleanup functie
     chatListenerRef.current = () => {
       chatNode.off();
       nudgeNode.off();
@@ -394,18 +242,16 @@ function ConversationPane({ contactName }) {
         chatListenerRef.current();
         chatListenerRef.current = null;
       }
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
     };
-  }, [currentSessionId, sessionStartTime, contactName]);
+  }, [currentSessionId, contactName]);
 
+  // Auto-scroll bij nieuwe berichten
   useEffect(() => {
     if (!messagesAreaRef.current) return;
     messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
   }, [state.messages]);
 
-  // Close emoticon picker when clicking outside
+  // Emoticon picker click outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (emoticonPickerRef.current && !emoticonPickerRef.current.contains(event.target)) {
@@ -422,23 +268,12 @@ function ConversationPane({ contactName }) {
   const sendMessage = () => {
     if (!messageText.trim() || !currentSessionId) return;
     const currentUser = user.is?.alias;
-    if (!currentUser) {
-      console.log('[ConversationPane] ❌ No current user');
-      return;
-    }
-
-    console.log('[ConversationPane] 🎬 Starting session management:', {
-      currentUser,
-      contactName,
-      hasInitialized: hasInitializedSession.current
-    });
+    if (!currentUser) return;
 
     const now = Date.now();
+    const messageKey = `${currentUser}_${now}_${Math.random().toString(36).substr(2, 9)}`;
     
     console.log('[ConversationPane] Sending message to session:', currentSessionId);
-    
-    // Gebruik unieke key voor bericht
-    const messageKey = `${currentUser}_${now}_${Math.random().toString(36).substr(2, 9)}`;
     
     gun.get(currentSessionId).get(messageKey).put({
       sender: currentUser,
@@ -447,16 +282,12 @@ function ConversationPane({ contactName }) {
       timeRef: now
     });
     
-    // Stop typing indicator bij verzenden
+    // Stop typing indicator
     gun.get(`TYPING_${currentSessionId}`).put({
       user: currentUser,
       isTyping: false,
       timestamp: now
     });
-    
-    // Update lastActivity van sessie
-    const pairId = getContactPairId(currentUser, contactName);
-    gun.get('ACTIVE_SESSIONS').get(pairId).get('lastActivity').put(now);
     
     setMessageText('');
   };
@@ -490,7 +321,6 @@ function ConversationPane({ contactName }) {
     
     const now = Date.now();
     
-    // Stuur typing signal (throttled - max 1x per seconde)
     if (now - lastTypingSignal.current > 1000) {
       gun.get(`TYPING_${currentSessionId}`).put({
         user: currentUser,
@@ -512,7 +342,7 @@ function ConversationPane({ contactName }) {
         <span className="chat-menu-item">Help</span>
       </div>
 
-      {/* Toolbar met icoontjes */}
+      {/* Toolbar */}
       <div className="chat-toolbar">
         <button className="chat-toolbar-btn" title="Uitnodigen">
           <span className="chat-toolbar-icon">👥</span>
@@ -544,11 +374,10 @@ function ConversationPane({ contactName }) {
         </button>
       </div>
 
-      {/* Main chat area - 2 kolommen */}
+      {/* Main chat area */}
       <div className="chat-chat-container">
         {/* Linker kolom - Messages */}
         <div className="chat-left-column">
-          {/* Messages display */}
           <div className="chat-messages-display" ref={messagesAreaRef}>
             {state.messages.length === 0 && (
               <div style={{ padding: '20px', textAlign: 'center', color: '#666', fontSize: '11px', fontStyle: 'italic' }}>
@@ -560,29 +389,16 @@ function ConversationPane({ contactName }) {
                 )}
               </div>
             )}
-            {state.messages.map((msg) => {
-              return (
-                <div key={msg.id} style={{ 
-                  marginBottom: '8px', 
-                  fontSize: '12px'
-                }}>
-                  <div style={{ 
-                    color: '#666', 
-                    fontSize: '10px', 
-                    marginBottom: '2px'
-                  }}>
-                    <strong>{msg.sender}</strong> zegt ({msg.timestamp}):
-                  </div>
-                  <div style={{ 
-                    paddingLeft: '10px', 
-                    wordWrap: 'break-word',
-                    color: '#000'
-                  }}>
-                    {convertEmoticons(msg.content)}
-                  </div>
+            {state.messages.map((msg) => (
+              <div key={msg.id} style={{ marginBottom: '8px', fontSize: '12px' }}>
+                <div style={{ color: '#666', fontSize: '10px', marginBottom: '2px' }}>
+                  <strong>{msg.sender}</strong> zegt ({msg.timestamp}):
                 </div>
-              );
-            })}
+                <div style={{ paddingLeft: '10px', wordWrap: 'break-word', color: '#000' }}>
+                  {convertEmoticons(msg.content)}
+                </div>
+              </div>
+            ))}
             {isContactTyping && (
               <div className="typing-indicator">
                 <em>{contactName} is aan het typen...</em>
@@ -590,7 +406,7 @@ function ConversationPane({ contactName }) {
             )}
           </div>
 
-          {/* Input area met toolbar */}
+          {/* Input area */}
           <div className="chat-input-container">
             <div className="chat-input-toolbar">
               <button className="chat-input-tool" title="Lettertype">A</button>

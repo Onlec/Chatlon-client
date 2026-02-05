@@ -4,8 +4,83 @@ Alle noemenswaardige wijzigingen aan het Chatlon project.
 
 ---
 
-NEW_SECTION:
+## [2025-02-05] - Session System Refactor (Optie A)
 
+**TYPE:** refactor  
+**AREA:** conversation-pane, message-listeners, session-management  
+**SUMMARY:** Volledige herziening van het sessie systeem naar "oudste sessie wint" logica zonder cleanup requirements.
+
+**WHY:**  
+Het vorige sessie systeem had meerdere problemen:
+- `openBy` array tracking was complex en foutgevoelig
+- Cleanup bij browser/tab sluiten werd nooit uitgevoerd (users sluiten gewoon de tab)
+- Zombie sessies bleven bestaan in Gun.js
+- Race conditions bij gelijktijdig openen
+
+**OPLOSSING - OPTIE A:**  
+Simpele "oudste sessie wint" logica:
+1. Bij openen chat: maak sessie met huidige timestamp
+2. Check of er al een sessie bestaat
+3. Oudste timestamp wint - join die sessie
+4. Geen cleanup nodig bij sluiten
+
+**FILES TOUCHED:**
+- `src/ConversationPane.js` - Volledig herschreven sessie logica (~30 regels ipv ~80)
+- `src/hooks/useMessageListeners.js` - Aangepast voor nieuwe sessie logica
+
+**BELANGRIJKSTE WIJZIGINGEN:**
+
+### ConversationPane.js
+- Verwijderd: `openBy` array tracking
+- Verwijderd: Cleanup bij unmount (put(null), openBy updates)
+- Verwijderd: Complexe sessie validatie
+- Toegevoegd: Simpele timestamp vergelijking
+- Toegevoegd: Auto-switch naar oudere sessie via `.on()` listener
+
+### useMessageListeners.js
+- Verwijderd: `openBy` parsing en validatie
+- Toegevoegd: `listenerCreatedAt` timestamp
+- Toegevoegd: Filter voor stale sessies (ouder dan listener - 5s)
+
+**ARCHITECTURE IMPACT:** medium
+- ACTIVE_SESSIONS schema vereenvoudigd: alleen `{ sessionId: string }`
+- Geen `openBy` of `lastActivity` meer nodig
+
+**DATA/SCHEMA IMPACT:** 
+```
+// OUD
+gun.get('ACTIVE_SESSIONS').get(pairId) = {
+  sessionId: string,
+  openBy: string[] | string,  // VERWIJDERD
+  lastActivity: number        // VERWIJDERD
+}
+
+// NIEUW
+gun.get('ACTIVE_SESSIONS').get(pairId) = {
+  sessionId: string  // Bevat timestamp: CHAT_Alice_bob_1700000000000
+}
+```
+
+**GEDRAG:**
+| Scenario | Resultaat |
+|----------|-----------|
+| Alice opent chat (Bob offline) | Alice maakt sessie met haar timestamp |
+| Bob opent chat later | Bob ziet oudere sessie → joint Alice's sessie |
+| Beide sluiten chat | Geen cleanup, sessie data blijft |
+| Beide openen opnieuw | Nieuwe sessies, oudste wint weer |
+| Login na lange tijd | Oude sessies genegeerd (filter in listener) |
+
+**AI NOTES:**
+- MSN-authentiek gedrag: chat is altijd leeg bij openen (geen message persistence)
+- Geen presence check nodig voor sessie logica
+- "Offline weergeven" modus blijft werken (geen presence dependency)
+- Gun.js persisteert oude sessie data, maar wordt genegeerd door timestamp filter
+
+**FOLLOW-UP:**
+- [ ] Implementeer: Chat geminimaliseerd openen + oranje knipperen bij nieuw bericht
+- [ ] Implementeer: Toast bij nieuw bericht wanneer chat niet gefocust
+
+---
 ---
 
 [2025-02-04] - Chat Session Sync Debug & Resolution
