@@ -396,6 +396,108 @@ AI WARNING:
 This is a logging/debugging inconsistency, not a functional bug. Real-time messaging works correctly regardless of these debug messages.
 
 ---
+
+## FEAT-002 — Chat Popup bij Nieuw Bericht
+
+**STATUS:** open  
+**CLAUDE PRIORITY:** HIGH  
+**AREA:** message-listeners, pane-manager, taskbar
+
+**DESCRIPTION:**
+Wanneer een gebruiker een bericht ontvangt terwijl de chat niet open of niet gefocust is, moet de chat geminimaliseerd openen en oranje knipperen in de taakbalk.
+
+**GEWENST GEDRAG:**
+
+| Situatie | Actie |
+|----------|-------|
+| Chat niet open | Open geminimaliseerd + oranje knipperen + toast |
+| Chat open maar geminimaliseerd | Oranje knipperen + toast |
+| Chat open maar niet gefocust | Oranje knipperen + toast |
+| Chat open EN gefocust | Geen toast, geen knipperen |
+
+**ACCEPTANCE CRITERIA:**
+- [ ] Chat opent geminimaliseerd bij nieuw bericht (als niet open)
+- [ ] Taskbar item knippert oranje bij nieuw bericht
+- [ ] Knipperen stopt wanneer chat wordt gefocust
+- [ ] Toast verschijnt bij nieuw bericht (als chat niet gefocust)
+- [ ] Werkt voor alle statussen: online, bezet, afwezig, offline weergeven
+
+**FILES TO MODIFY:**
+- `src/hooks/useMessageListeners.js` - Trigger voor nieuw bericht detectie
+- `src/hooks/usePaneManager.js` - Nieuwe functie: `openConversationMinimized()`
+- `src/App.js` - Taskbar rendering met knipperen state
+- `src/App.css` - Oranje knipperen animatie
+
+**TECHNISCHE AANPAK:**
+
+### 1. usePaneManager.js
+```javascript
+const openConversationMinimized = useCallback((contactName) => {
+  const convId = `conv_${contactName}`;
+  setConversations(prev => ({
+    ...prev,
+    [convId]: {
+      contactName,
+      isOpen: true,
+      isMinimized: true,  // Direct geminimaliseerd
+      isMaximized: false,
+      isFlashing: true    // Nieuwe state voor knipperen
+    }
+  }));
+}, []);
+```
+
+### 2. useMessageListeners.js
+```javascript
+// Bij nieuw bericht, in plaats van alleen toast:
+if (shouldShowToast) {
+  showToast({ ... });
+  
+  // Open chat geminimaliseerd als niet open
+  if (!conv || !conv.isOpen) {
+    openConversationMinimized(contactName);
+  } else {
+    // Chat is open maar niet gefocust - alleen flashen
+    setConversationFlashing(contactName, true);
+  }
+}
+```
+
+### 3. App.css
+```css
+@keyframes taskbar-flash {
+  0%, 100% { background-color: #0831d9; }
+  50% { background-color: #ff6b00; }
+}
+
+.taskbar-item.flashing {
+  animation: taskbar-flash 0.5s ease-in-out infinite;
+}
+```
+
+### 4. App.js (Taskbar)
+```javascript
+{Object.entries(conversations).map(([convId, conv]) => (
+  <button
+    className={`taskbar-item ${conv.isFlashing ? 'flashing' : ''}`}
+    onClick={() => {
+      focusConversation(convId);
+      setConversationFlashing(convId, false); // Stop flash bij focus
+    }}
+  >
+    {conv.contactName}
+  </button>
+))}
+```
+
+**CLAUDE NOTES:**
+- `isFlashing` state moet worden toegevoegd aan conversation object
+- Flash moet stoppen bij: focus, of na X seconden timeout
+- Moet ook werken als user "offline weergeven" status heeft
+- Test met meerdere berichten snel achter elkaar
+
+---
+
 ## 📝 Issue Templates
 
 ### For Claude Sessions:

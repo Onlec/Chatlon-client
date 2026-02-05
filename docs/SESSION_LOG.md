@@ -5,7 +5,60 @@ Dit bestand vangt informele notities, beslissingen en context op die niet in CHA
 
 **Voor AI's:** Lees dit bestand aan het begin van elke sessie voor recente context.
 **Voor mens:** Voel je vrij om oude entries (>2 weken) te verwijderen.
+---
+## 2025-02-05 — Sessie 5 (Claude)
 
+### Context
+- Debugging van real-time messaging problemen
+- Alice zag oude sessie data bij openen chat terwijl Bob offline was
+- `openBy` array bevatte zombie users die nooit werden opgeruimd
+
+### Probleem Analyse
+1. **Cleanup gebeurt nooit** - Users sluiten browser/tab zonder graceful shutdown
+2. **Gun.js persisteert alles** - Oude `openBy` data blijft bestaan
+3. **Race conditions** - `.on()` listener triggered meerdere keren bij sessie check
+4. **Presence check risicovol** - Zou "offline weergeven" functie breken
+
+### Oplossing: Optie A - "Oudste Sessie Wint"
+Na meerdere iteraties gekozen voor de simpelste aanpak:
+- Elke chat open = nieuwe sessie met timestamp
+- Vergelijk timestamps, oudste wint
+- Geen cleanup nodig
+- Geen `openBy` tracking nodig
+
+### Gedaan
+- ✅ ConversationPane.js volledig herschreven
+- ✅ useMessageListeners.js aangepast
+- ✅ Verwijderd: openBy array tracking
+- ✅ Verwijderd: put(null) cleanup
+- ✅ Verwijderd: lastActivity tracking
+- ✅ Toegevoegd: Simpele timestamp vergelijking
+- ✅ Toegevoegd: Stale sessie filter in listeners
+- ✅ Getest: Real-time messaging werkt correct
+
+### Beslissingen
+- **Geen presence check voor sessies** - "Offline weergeven" moet blijven werken
+- **Geen cleanup bij sluiten** - Users sluiten gewoon de tab, cleanup wordt nooit uitgevoerd
+- **MSN-authentiek gedrag** - Chat is leeg bij elke open (geen message persistence)
+- **5 seconden marge** - Sessies ouder dan (listenerCreatedAt - 5s) worden genegeerd
+
+### Notities voor volgende sessie
+Volgende feature: **Chat popup bij nieuw bericht**
+- Als Bob online/bezet/afwezig/offline-weergeven staat
+- Alice stuurt bericht
+- Bij Bob: chat opent geminimaliseerd + oranje knipperen in taakbalk + toast
+
+Dit vereist waarschijnlijk:
+- Aanpassing in `useMessageListeners.js` of `App.js`
+- Nieuwe functie: `openConversationMinimized(contactName)`
+- Taskbar knipperen animatie (CSS + state)
+- Check of chat al open is (zo ja, alleen knipperen als niet gefocust)
+
+### Files Modified
+- `src/ConversationPane.js`
+- `src/hooks/useMessageListeners.js`
+
+---
 ---
 2025-02-04 — Chat Sync Investigation (Claude)
 Context
