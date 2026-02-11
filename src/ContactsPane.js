@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { gun, user } from './gun';
 import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
 import { log } from './utils/debug';
+import { createListenerManager } from './utils/gunListenerManager';
+
 
 function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange }) {
   // FIX: Gebruik props als ze beschikbaar zijn, anders lokale state
@@ -17,6 +19,8 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   const [showAddContact, setShowAddContact] = useState(false);
   const [searchUsername, setSearchUsername] = useState('');
   const [searchError, setSearchError] = useState('');
+  const listenersRef = useRef(createListenerManager());
+  
 
   useEffect(() => {
     if (user.is) {
@@ -42,14 +46,18 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
           });
 
           // FIX: Setup presence listener voor dit contact
-          gun.get('PRESENCE').get(contactData.username).on((presenceData) => {
-            if (presenceData) {
-              setContactPresence(prev => ({
-                ...prev,
-                [contactData.username]: presenceData
-              }));
-            }
-          });
+          if (!listenersRef.current.has(contactData.username)) {
+            const node = gun.get('PRESENCE').get(contactData.username);
+            node.on((presenceData) => {
+              if (presenceData) {
+                setContactPresence(prev => ({
+                  ...prev,
+                  [contactData.username]: presenceData
+                }));
+              }
+            });
+            listenersRef.current.add(contactData.username, node);
+          }
         }
       });
 
@@ -83,10 +91,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
 
     // Cleanup
     return () => {
-      // Cleanup presence listeners
-      contacts.forEach(contact => {
-        gun.get('PRESENCE').get(contact.username).off();
-      });
+      listenersRef.current.cleanup();
     };
   }, []);
 

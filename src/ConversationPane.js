@@ -3,6 +3,7 @@ import { gun, user } from './gun';
 import { convertEmoticons, getEmoticonCategories } from './emoticons';
 import { getContactPairId } from './utils/chatUtils';
 import { log } from './utils/debug';
+import { createListenerManager } from './utils/gunListenerManager';
 // ============================================
 // 1. REDUCER (Berichten logica)
 // ============================================
@@ -35,6 +36,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const lastTypingSignal = useRef(0);
   const windowOpenTimeRef = useRef(Date.now());
   const prevMsgCountRef = useRef(0);
+  const chatListenersRef = useRef(createListenerManager());
 
   // --- Gun.js Handlers ---
   const sendMessage = useCallback(() => {
@@ -116,7 +118,11 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       }
     });
-    return () => { chatNode.off(); nudgeNode.off(); typingNode.off(); };
+    chatListenersRef.current.add('chat', chatNode);
+    chatListenersRef.current.add('nudge', nudgeNode);
+    chatListenersRef.current.add('typing', typingNode);
+
+    return () => { chatListenersRef.current.cleanup(); };
   }, [currentSessionId, contactName, lastNotificationTime]);
 
   // Scroll effect

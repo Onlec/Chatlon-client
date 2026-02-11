@@ -12,6 +12,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { gun, user } from '../gun';
 import { getContactPairId, getAvatarUrl } from '../utils/chatUtils';
 import { log } from '../utils/debug';
+import { createListenerManager } from '../utils/gunListenerManager';
 
 /**
  * Hook voor message en friend request listeners.
@@ -27,8 +28,7 @@ export function useMessageListeners({
   onNotification
 }) {
   // Tracking refs
-  const messageListenersRef = useRef({});
-  const friendRequestListenerRef = useRef(null);
+  const listenersRef = useRef(createListenerManager());
   const listenerStartTimeRef = useRef(null);
   const activeSessionsRef = useRef({});
 
@@ -93,9 +93,7 @@ export function useMessageListeners({
       });
     });
 
-    friendRequestListenerRef.current = () => {
-      friendRequestsNode.off();
-    };
+    listenersRef.current.add('friendRequests', friendRequestsNode);
   }, [currentUser, showToast, shownToastsRef]);
 
   /**
@@ -104,7 +102,7 @@ export function useMessageListeners({
    */
   const setupContactMessageListener = useCallback((contactName, pairId) => {
   // 1. Voorkom dubbele listeners per contact (Ref blijft bestaan tussen renders)
-  if (messageListenersRef.current[pairId]) {
+  if (listenersRef.current.has(pairId)) {
     return;
   }
 
@@ -162,7 +160,7 @@ export function useMessageListeners({
   });
 
   // Markeer als actief zonder cleanup toe te voegen
-  messageListenersRef.current[pairId] = { persistent: true };
+  listenersRef.current.add(pairId, activeSessionNode);
   
 }, [onMessage, isConversationActive, showToast]); // Alleen herscheppen als deze functies veranderen
   /**
@@ -190,18 +188,7 @@ export function useMessageListeners({
    */
   const cleanup = useCallback(() => {
     log('[useMessageListeners] 🧹 Cleaning up all listeners');
-
-    if (friendRequestListenerRef.current) {
-      friendRequestListenerRef.current();
-      friendRequestListenerRef.current = null;
-    }
-
-    Object.values(messageListenersRef.current).forEach(listener => {
-      if (listener.cleanup) {
-        listener.cleanup();
-      }
-    });
-    messageListenersRef.current = {};
+    listenersRef.current.cleanup();
     activeSessionsRef.current = {};
   }, []);
 
@@ -210,7 +197,7 @@ useEffect(() => {
   if (!isLoggedIn || !currentUser) return;
 
   // Alleen opstarten als er nog geen listeners zijn
-  if (Object.keys(messageListenersRef.current).length === 0) {
+  if (listenersRef.current.size === 0) {
     log('[useMessageListeners] 🚀 Initializing persistent listeners...');
     setupMessageListeners();
     setupFriendRequestListener();
@@ -224,7 +211,7 @@ useEffect(() => {
     cleanup,
     setupMessageListeners,
     setupFriendRequestListener,
-    messageListenersRef,
+    listenersRef,
     activeSessionsRef
   };
 }

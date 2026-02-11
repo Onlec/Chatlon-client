@@ -191,7 +191,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   // ============================================
   
   const handleLoginSuccess = (username) => {
-    log(('[App] Login success:', username);
+    log('[App] Login success:', username);
     hasInitializedRef.current = true; // FIX: Markeer als geïnitialiseerd
     setIsLoggedIn(true);
     setCurrentUser(username);

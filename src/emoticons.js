@@ -1,170 +1,78 @@
-// Klassieke Chat Messenger emoticons
-export const emoticons = {
-  // Basis smileys
-  ':)': '🙂',
-  ':-)': '🙂',
-  ':D': '😃',
-  ':-D': '😃',
-  ':(': '☹️',
-  ':-(': '☹️',
-  ';)': '😉',
-  ';-)': '😉',
-  ':P': '😛',
-  ':-P': '😛',
-  ':p': '😛',
-  ':-p': '😛',
-  ':o': '😮',
-  ':O': '😮',
-  ':-O': '😮',
-  ':|': '😐',
-  ':-|': '😐',
-  ':*': '😘',
-  ':-*': '😘',
-  ':s': '😕',
-  ':S': '😕',
-  ':-s': '😕',
-  ':-S': '😕',
-  ':$': '😳',
-  ':-$': '😳',
-  '8)': '😎',
-  '8-)': '😎',
-  '(@)': '🐱',
-  ':@': '😡',
-  ':-@': '😡',
-  ':^)': '🤔',
-  '8-|': '🤓',
-  '+o(': '🤢',
-  
-  // Speciale emoties & Gebaren
-  '(a)': '😇',
-  '(A)': '😇',
-  '(6)': '😈',
-  '(d)': '😈',
-  '(D)': '😈',
-  '(z)': '😴',
-  '(Z)': '😴',
-  '(x)': '🤐',
-  '(X)': '🤐',
-  '(y)': '👍',
-  '(Y)': '👍',
-  '(n)': '👎',
-  '(N)': '👎',
-  '(h)': '😍',
-  '(H)': '😍',
-  '(k)': '💋',
-  '(K)': '💋',
-  '(g)': '🎁',
-  '(G)': '🎁',
-  '(f)': '🌹',
-  '(F)': '🌹',
-  '(w)': '🥀',
-  '(W)': '🥀',
-  '(})': '🤗',
+// NEW — Categorieën als single source of truth
 
-  // Liefde & Symbolen
-  '<3': '❤️',
-  '</3': '💔',
-  '(l)': '❤️',
-  '(L)': '❤️',
-  '(u)': '💔',
-  '(U)': '💔',
-  '(*)': '⭐',
-  '(#)': '☀️',
-  '(s)': '🌙',
-  '(r)': '🌈',
-  '(R)': '🌈',
-
-  // Eten, Drinken & Objecten
-  '(^)': '🎂',
-  '(b)': '🍺',
-  '(B)': '🍺',
-  '(c)': '☕',
-  '(C)': '☕',
-  '(pi)': '🍕',
-  '(PI)': '🍕',
-  '(so)': '⚽',
-  '(SO)': '⚽',
-  '(mp)': '📱',
-  '(MP)': '📱',
-  '(e)': '📧',
-  '(E)': '📧',
-  '(mo)': '💰',
-  '(MO)': '💰',
-  '(t)': '☎️',
-  '(T)': '☎️',
-  '(um)': '☂️',
-  '(ip)': '💡',
-  
-  // Vervoer
-  '(au)': '🚗',
-  '(ap)': '✈️',
-
-  // Afkortingen
-  'lol': '😂',
-  'LOL': '😂',
-  '(ll)': '😂',
-  'brb': '⏰',
-  'BRB': '⏰'
+/** Primaire data: categorieën met emoticon mappings */
+export const EMOTICON_CATEGORIES = {
+  'Smileys': {
+    ':)': '🙂', ':-)': '🙂', ':D': '😃', ':-D': '😃',
+    ':(': '☹️', ':-(': '☹️', ';)': '😉', ';-)': '😉',
+    ':P': '😛', ':-P': '😛', ':p': '😛', ':-p': '😛',
+    ':o': '😮', ':O': '😮', ':-O': '😮',
+    ':|': '😐', ':-|': '😐', ':*': '😘', ':-*': '😘',
+    ':s': '😕', ':S': '😕', ':-s': '😕', ':-S': '😕',
+    ':$': '😳', ':-$': '😳', '8)': '😎', '8-)': '😎',
+    ':@': '😡', ':-@': '😡', ':^)': '🤔', '8-|': '🤓',
+    '+o(': '🤢'
+  },
+  'Speciaal': {
+    '(a)': '😇', '(A)': '😇', '(6)': '😈', '(d)': '😈', '(D)': '😈',
+    '(z)': '😴', '(Z)': '😴', '(x)': '🤐', '(X)': '🤐',
+    '(h)': '😍', '(H)': '😍', '(@)': '🐱', '(})': '🤗'
+  },
+  'Harten & Gebaren': {
+    '<3': '❤️', '</3': '💔',
+    '(l)': '❤️', '(L)': '❤️', '(u)': '💔', '(U)': '💔',
+    '(y)': '👍', '(Y)': '👍', '(n)': '👎', '(N)': '👎',
+    '(k)': '💋', '(K)': '💋', '(g)': '🎁', '(G)': '🎁',
+    '(f)': '🌹', '(F)': '🌹', '(w)': '🥀', '(W)': '🥀'
+  },
+  'Objecten': {
+    '(*)': '⭐', '(#)': '☀️', '(s)': '🌙', '(r)': '🌈', '(R)': '🌈',
+    '(^)': '🎂', '(b)': '🍺', '(B)': '🍺', '(c)': '☕', '(C)': '☕',
+    '(pi)': '🍕', '(PI)': '🍕', '(so)': '⚽', '(SO)': '⚽',
+    '(mp)': '📱', '(MP)': '📱', '(e)': '📧', '(E)': '📧',
+    '(mo)': '💰', '(MO)': '💰', '(t)': '☎️', '(T)': '☎️',
+    '(um)': '☂️', '(ip)': '💡', '(au)': '🚗', '(ap)': '✈️'
+  },
+  'Afkortingen': {
+    'lol': '😂', 'LOL': '😂', '(ll)': '😂',
+    'brb': '⏰', 'BRB': '⏰'
+  }
 };
 
-// Convert text emoticons to emoji
+/** Afgeleide flat map — gegenereerd uit categorieën */
+export const emoticons = Object.values(EMOTICON_CATEGORIES)
+  .reduce((acc, cat) => ({ ...acc, ...cat }), {});
+
+/** Gesorteerde keys voor conversion (langste eerst) */
+const sortedKeys = Object.keys(emoticons).sort((a, b) => b.length - a.length);
+
+/** Convert text emoticons naar emoji */
 export const convertEmoticons = (text) => {
   if (!text) return '';
   let result = text;
-  
-  const sortedKeys = Object.keys(emoticons).sort((a, b) => b.length - a.length);
-  
   sortedKeys.forEach(key => {
     const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    // Matcher die kijkt naar spaties of begin/eind van regel
     const regex = new RegExp(`(^|\\s)${escapedKey}(?=\\s|$)`, 'g');
     result = result.replace(regex, `$1${emoticons[key]}`);
   });
-  
   return result;
 };
 
-// Get emoticon list for picker (georganiseerd per categorie)
+/** Categorieën voor de picker UI */
 export const getEmoticonCategories = () => {
-  return {
-    'Smileys': [
-      { text: ':)', emoji: '🙂' },
-      { text: ':D', emoji: '😃' },
-      { text: ':(', emoji: '☹️' },
-      { text: ';)', emoji: '😉' },
-      { text: ':P', emoji: '😛' },
-      { text: ':$', emoji: '😳' },
-      { text: '8)', emoji: '😎' },
-      { text: ':@', emoji: '😡' },
-      { text: '(z)', emoji: '😴' }
-    ],
-    'Speciaal': [
-      { text: '(a)', emoji: '😇' },
-      { text: '(6)', emoji: '😈' },
-      { text: '(h)', emoji: '😍' },
-      { text: '(x)', emoji: '🤐' },
-      { text: '8-|', emoji: '🤓' },
-      { text: '+o(', emoji: '🤢' }
-    ],
-    'Harten & Gebaren': [
-      { text: '<3', emoji: '❤️' },
-      { text: '</3', emoji: '💔' },
-      { text: '(y)', emoji: '👍' },
-      { text: '(n)', emoji: '👎' },
-      { text: '(k)', emoji: '💋' },
-      { text: '(g)', emoji: '🎁' }
-    ],
-    'Objecten': [
-      { text: '(f)', emoji: '🌹' },
-      { text: '(^)', emoji: '🎂' },
-      { text: '(c)', emoji: '☕' },
-      { text: '(b)', emoji: '🍺' },
-      { text: '(pi)', emoji: '🍕' },
-      { text: '(so)', emoji: '⚽' },
-      { text: '(mp)', emoji: '📱' },
-      { text: '(mo)', emoji: '💰' }
-    ]
-  };
+  const result = {};
+  Object.entries(EMOTICON_CATEGORIES).forEach(([category, mappings]) => {
+    // Deduplicate op emoji (toon alleen de kortste variant)
+    const seen = new Set();
+    result[category] = Object.entries(mappings)
+      .filter(([, emoji]) => {
+        if (seen.has(emoji)) return false;
+        seen.add(emoji);
+        return true;
+      })
+      .map(([text, emoji]) => ({ text, emoji }));
+  });
+  return result;
 };
 
 export default emoticons;

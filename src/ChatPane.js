@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useReducer, useRef } from 'react';
 import { gun, user } from './gun';
 import { log } from './utils/debug';
+import { createListenerManager } from './utils/gunListenerManager';
 
 const reducer = (state, message) => {
   if (state.messageMap[message.id]) return state;
@@ -17,6 +18,7 @@ function ChatPane() {
   const [isShaking, setIsShaking] = useState(false);
   const [canNudge, setCanNudge] = useState(true);
   const [username, setUsername] = useState('');
+  const listenersRef = useRef(createListenerManager());
 
   useEffect(() => {
     const chatNode = gun.get('CHAT_MESSAGES');
@@ -45,7 +47,10 @@ function ChatPane() {
         setTimeout(() => setIsShaking(false), 600);
       }
     });
-    return () => { chatNode.off(); nudgeNode.off(); };
+    listenersRef.current.add('chat', chatNode);
+    listenersRef.current.add('nudge', nudgeNode);
+
+    return () => { listenersRef.current.cleanup(); };
   }, []);
 
   useEffect(() => {
