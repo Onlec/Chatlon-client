@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { log } from './utils/debug';
 
 function CalculatorPane() {
   const [display, setDisplay] = useState('0');

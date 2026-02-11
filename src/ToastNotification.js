@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { log } from './utils/debug';
 
 function ToastNotification({ toast, onClose, onClick }) {
   const [isClosing, setIsClosing] = useState(false);

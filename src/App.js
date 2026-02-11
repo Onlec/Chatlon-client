@@ -14,6 +14,7 @@ import ToastNotification from './ToastNotification';
 import { gun, user } from './gun';
 import { paneConfig } from './paneConfig';
 import './App.css';
+import { log } from './utils/debug';
 
 // Hooks
 import { useToasts } from './hooks/useToasts';

@@ -5,6 +5,7 @@ import ContactsPane from './ContactsPane';
 import PaintPane from './PaintPane';
 import BrowserPane from './BrowserPane';
 import MediaPane from './MediaPane';
+import { log } from './utils/debug';
 
 const paneConfig = {
   contacts: {

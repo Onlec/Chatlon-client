@@ -2,7 +2,7 @@ import React, { useEffect, useState, useReducer, useRef, useCallback } from 'rea
 import { gun, user } from './gun';
 import { convertEmoticons, getEmoticonCategories } from './emoticons';
 import { getContactPairId } from './utils/chatUtils';
-
+import { log } from './utils/debug';
 // ============================================
 // 1. REDUCER (Berichten logica)
 // ============================================

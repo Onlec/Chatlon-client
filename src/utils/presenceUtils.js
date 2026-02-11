@@ -4,7 +4,7 @@
  * Bevat constanten en functies voor presence/status management.
  * Gebruikt door App.js (logica) en ContactsPane.js (UI).
  */
-
+import { log } from './debug';
 // ============================================
 // TIMING CONSTANTEN
 // ============================================

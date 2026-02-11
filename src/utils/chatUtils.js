@@ -6,6 +6,7 @@
  * Gebruikt door App.js, ConversationPane.js, en andere chat-gerelateerde componenten.
  */
 
+import { log } from './debug';
 /**
  * Genereert een uniek contact pair ID (alfabetisch gesorteerd).
  * Zorgt ervoor dat dezelfde twee users altijd dezelfde ID krijgen,

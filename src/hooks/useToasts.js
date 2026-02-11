@@ -7,6 +7,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
+import { log } from '../utils/debug';
 
 /**
  * @typedef {Object} Toast

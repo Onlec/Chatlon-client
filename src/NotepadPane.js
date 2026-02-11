@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { gun, user } from './gun';
+import { log } from './utils/debug';
 
 function NotepadPane() {
   const [text, setText] = useState('');

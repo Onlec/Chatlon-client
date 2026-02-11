@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { log } from './utils/debug';
 
 function BrowserPane() {
   const [url, setUrl] = useState('http://www.yoctol.com');

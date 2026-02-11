@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useReducer, useRef } from 'react';
 import { gun, user } from './gun';
+import { log } from './utils/debug';
 
 const reducer = (state, message) => {
   if (state.messageMap[message.id]) return state;

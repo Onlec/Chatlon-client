@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { gun, user } from './gun';
 import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
+import { log } from './utils/debug';
 
 function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange }) {
   // FIX: Gebruik props als ze beschikbaar zijn, anders lokale state

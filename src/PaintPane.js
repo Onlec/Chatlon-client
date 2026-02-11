@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { log } from './utils/debug';
 
 function PaintPane() {
   const canvasRef = useRef(null);

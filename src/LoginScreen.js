@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { gun, user } from './gun';
+import { log } from './utils/debug';
 
 function LoginScreen({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
