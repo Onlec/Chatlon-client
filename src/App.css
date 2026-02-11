@@ -3072,3 +3072,83 @@ div.pane-frame.maximized {
   width: 100%;
   height: 100%;
 }
+
+.taskbar-tab.unread {
+  background: #f0ad4e !important; /* XP Oranje kleur */
+  background: linear-gradient(to bottom, #feb85b 0%, #f0ad4e 100%) !important;
+  border-left: 1px solid #ffcc7a !important;
+  border-top: 1px solid #ffcc7a !important;
+  box-shadow: inset -1px -1px #8a6d3b !important;
+  color: white !important;
+  animation: xp_blink 2s infinite;
+}
+
+@keyframes xp_blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* --- 22. LEGACY MESSAGES  --- */
+
+/* De container voor een oud bericht */
+.chat-message.legacy {
+  opacity: 0.6;
+  filter: grayscale(40%); /* Subtieler dan 100% voor betere leesbaarheid */
+  border-left: 2px solid #D4D0C8; /* Een 'oude' verticale lijn */
+  margin-left: 2px;
+  background-color: rgba(236, 233, 216, 0.2); /* Heel licht XP-beige */
+}
+
+.legacy .message-header {
+  color: #808080 !important;
+}
+
+.legacy .message-content {
+  color: #555 !important;
+  font-style: italic;
+}
+
+/* De visuele scheidingslijn tussen 'Sessie' en 'Geschiedenis' */
+.history-divider {
+  position: relative;
+  text-align: center;
+  margin: 20px 0; /* Genoeg ruimte om hem te zien */
+  height: 1px;
+  clear: both;
+}
+
+.history-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  border-top: 1px dotted #7F9DB9; /* De gestippelde MSN lijn */
+  z-index: 1;
+}
+
+.history-divider span {
+  position: relative;
+  z-index: 2;
+  background: white; 
+  padding: 0 10px;
+  font-size: 11px;
+  color: #7F9DB9;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.load-more-btn {
+  width: 100%;
+  background: #f0f0f0;
+  border: 1px dashed #ccc;
+  color: #666;
+  padding: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+
+.load-more-btn:hover {
+  background: #e0e0e0;
+  color: #333;
+}

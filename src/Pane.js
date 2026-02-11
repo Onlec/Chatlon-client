@@ -122,7 +122,7 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, o
         top: isMaximized ? 0 : position.top,
         width: isMaximized ? '100vw' : size.width,
         height: isMaximized ? 'calc(100vh - 30px)' : size.height,
-        zIndex: zIndex || (isDragging ? 1000 : 100),
+        zIndex: zIndex,
         position: isMaximized ? 'fixed' : 'absolute',
         transform: 'none'
       }}

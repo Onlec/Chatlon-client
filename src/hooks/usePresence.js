@@ -59,7 +59,7 @@ export function usePresence(isLoggedIn, currentUser) {
     };
 
     gun.get('PRESENCE').get(currentUser).put(presenceData);
-    console.log('[usePresence] Updated presence:', status);
+    log(('[usePresence] Updated presence:', status);
   }, [currentUser]);
 
   /**
@@ -73,7 +73,7 @@ export function usePresence(isLoggedIn, currentUser) {
       status: 'offline',
       username: currentUser
     });
-    console.log('[usePresence] Set offline presence');
+    log(('[usePresence] Set offline presence');
   }, [currentUser]);
 
   /**
@@ -84,7 +84,7 @@ export function usePresence(isLoggedIn, currentUser) {
     setIsManualStatus(true);
     setUserStatus(newStatus);
     updatePresence(newStatus);
-    console.log('[usePresence] Manual status change:', newStatus);
+    log(('[usePresence] Manual status change:', newStatus);
   }, [updatePresence]);
 
   /**
@@ -116,7 +116,7 @@ export function usePresence(isLoggedIn, currentUser) {
     if (timeSinceActivity > AUTO_AWAY_TIMEOUT && userStatusRef.current === 'online') {
       setUserStatus('away');
       updatePresence('away');
-      console.log('[usePresence] Auto-away triggered');
+      log(('[usePresence] Auto-away triggered');
     }
   }, [updatePresence]);
 
@@ -129,7 +129,7 @@ export function usePresence(isLoggedIn, currentUser) {
       clearInterval(presenceIntervalRef.current);
       presenceIntervalRef.current = null;
     }
-    console.log('[usePresence] Cleanup completed');
+    log(('[usePresence] Cleanup completed');
   }, [setOfflinePresence]);
 
   // ============================================
@@ -140,7 +140,7 @@ export function usePresence(isLoggedIn, currentUser) {
   useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
 
-    console.log('[usePresence] Starting heartbeat for:', currentUser);
+    log(('[usePresence] Starting heartbeat for:', currentUser);
 
     // Initial presence update
     updatePresence(userStatusRef.current);

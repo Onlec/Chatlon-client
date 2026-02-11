@@ -27,6 +27,7 @@ export function usePaneManager() {
   const [cascadeOffset, setCascadeOffset] = useState(0);
   const [conversations, setConversations] = useState({});
   const [isStartOpen, setIsStartOpen] = useState(false);
+  const [unreadMetadata, setUnreadMetadata] = useState({});
 
   // Refs voor real-time access in callbacks/listeners
   const conversationsRef = useRef({});
@@ -65,34 +66,40 @@ export function usePaneManager() {
    * Open een pane.
    * @param {string} paneName - Naam van de pane (key uit paneConfig)
    */
-  const openPane = useCallback((paneName) => {
-    console.log('[usePaneManager] Opening pane:', paneName);
-    
-    setPanes(prev => ({
+
+const openPane = useCallback((paneName) => {
+        log(('[usePaneManager] Opening pane:', paneName);
+  setPanes(prev => {
+    // Als de pane al open is, doen we niets met de positie
+    if (prev[paneName]?.isOpen) return prev;
+
+    const offset = getNextCascadeOffset();
+    return {
       ...prev,
-      [paneName]: { ...prev[paneName], isOpen: true, isMinimized: false }
-    }));
-    
-    setIsStartOpen(false);
-    
-    setPaneOrder(prev => {
-      if (!prev.includes(paneName)) {
-        return [...prev, paneName];
+      [paneName]: { 
+        ...prev[paneName], 
+        isOpen: true, 
+        isMinimized: false,
+        // We slaan de startpositie op in de pane state
+        initialPos: { left: 100 + offset, top: 50 + offset } 
       }
-      // FIX: Breng naar voren in order als al open
-      const filtered = prev.filter(p => p !== paneName);
-      return [...filtered, paneName];
-    });
-    
-    setActivePane(paneName);
-  }, []); // FIX: Geen dependencies nodig - we gebruiken functional updates
+    };
+  });
+
+  setPaneOrder(prev => {
+    const filtered = prev.filter(p => p !== paneName);
+    return [...filtered, paneName];
+  });
+  
+  setActivePane(paneName);
+}, [getNextCascadeOffset]);
 
   /**
    * Sluit een pane.
    * @param {string} paneName - Naam van de pane
    */
   const closePane = useCallback((paneName) => {
-    console.log('[usePaneManager] Closing pane:', paneName);
+    log(('[usePaneManager] Closing pane:', paneName);
     
     setPanes(prev => ({
       ...prev,
@@ -116,7 +123,7 @@ export function usePaneManager() {
    * @param {string} paneName - Naam van de pane
    */
   const minimizePane = useCallback((paneName) => {
-    console.log('[usePaneManager] Minimizing pane:', paneName);
+    log(('[usePaneManager] Minimizing pane:', paneName);
     
     setPanes(prev => ({
       ...prev,
@@ -147,7 +154,7 @@ export function usePaneManager() {
    * @param {string} paneName - Naam van de pane
    */
   const toggleMaximizePane = useCallback((paneName) => {
-    console.log('[usePaneManager] Toggling maximize:', paneName);
+    log(('[usePaneManager] Toggling maximize:', paneName);
     
     setPanes(prev => ({
       ...prev,
@@ -155,22 +162,43 @@ export function usePaneManager() {
     }));
   }, []);
 
+/**
+   * Registreer de tijdstempel van een inkomende melding.
+   * Wordt aangeroepen door useMessageListeners via App.js.
+   */
+  const setNotificationTime = useCallback((contactName, timeRef) => {
+  setUnreadMetadata(prev => {
+    // Als er al een tijd staat voor dit contact, NIET overschrijven.
+    // We willen de grens bij het EERSTE ongelezen bericht houden.
+    if (prev[contactName]) return prev;
+    
+    return {
+      ...prev,
+      [contactName]: timeRef
+    };
+  });
+}, []);
+
+
+
   /**
    * Focus een pane (bring to front).
    * @param {string} paneName - Naam van de pane
    */
-  const focusPane = useCallback((paneName) => {
-    console.log('[usePaneManager] Focusing pane:', paneName);
+const focusPane = useCallback((paneName) => {
+  if (!paneName) return;
+  
+  setActivePane(paneName);
+  
+  setPaneOrder(prev => {
+    // Als hij al achteraan staat, doe niets om onnodige renders te voorkomen
+    if (prev[prev.length - 1] === paneName) return prev;
     
-    setActivePane(paneName);
-    
-    // FIX: Update paneOrder om focused pane naar voren te brengen
-    setPaneOrder(prev => {
-      if (prev[prev.length - 1] === paneName) return prev; // Al bovenaan
-      const filtered = prev.filter(p => p !== paneName);
-      return [...filtered, paneName];
-    });
-  }, []);
+    // Haal hem eruit en zet hem achteraan (hoogste index)
+    const filtered = prev.filter(p => p !== paneName);
+    return [...filtered, paneName];
+  });
+}, []);
 
   // ============================================
   // CONVERSATION OPERATIES
@@ -182,8 +210,9 @@ export function usePaneManager() {
    */
   const openConversation = useCallback((contactName) => {
     const convId = `conv_${contactName}`;
-    console.log('[usePaneManager] Opening conversation:', convId);
-
+    log(('[usePaneManager] Opening conversation:', convId);
+    const offset = getNextCascadeOffset();
+    
     setConversations(prev => {
       if (!prev[convId]) {
         // Nieuwe conversation
@@ -193,7 +222,8 @@ export function usePaneManager() {
             contactName,
             isOpen: true,
             isMinimized: false,
-            isMaximized: false
+            isMaximized: false,
+            initialPos: { left: 100 + offset, top: 50 + offset }
           }
         };
       } else {
@@ -211,14 +241,23 @@ export function usePaneManager() {
     });
 
     setActivePane(convId);
-  }, []);
+  }, [getNextCascadeOffset]);
 
+  const clearNotificationTime = useCallback((contactName) => {
+  setUnreadMetadata(prev => {
+    const newMetadata = { ...prev };
+    delete newMetadata[contactName];
+    return newMetadata;
+  });
+}, []);
   /**
    * Sluit een conversation.
    * @param {string} convId - Conversation ID (conv_<contactName>)
    */
   const closeConversation = useCallback((convId) => {
-    console.log('[usePaneManager] Closing conversation:', convId);
+    log(('[usePaneManager] Closing conversation:', convId);
+    const contactName = convId.replace('conv_', '');
+    clearNotificationTime(contactName); // Ruim de metadata op bij sluiten
 
     setConversations(prev => {
       const updated = { ...prev };
@@ -235,14 +274,14 @@ export function usePaneManager() {
       }
       return prev;
     });
-  }, []);
+  }, [clearNotificationTime]);
 
   /**
    * Minimaliseer een conversation.
    * @param {string} convId - Conversation ID
    */
   const minimizeConversation = useCallback((convId) => {
-    console.log('[usePaneManager] Minimizing conversation:', convId);
+    log(('[usePaneManager] Minimizing conversation:', convId);
 
     setConversations(prev => ({
       ...prev,
@@ -279,19 +318,22 @@ export function usePaneManager() {
    * @param {string} paneName - Pane of conversation ID
    * @returns {number} z-index waarde
    */
-  const getZIndex = useCallback((paneName) => {
-    // FIX: Gebruik paneOrderRef voor actuele waarde
-    const currentOrder = paneOrderRef.current;
-    const index = currentOrder.indexOf(paneName);
-    
-    // Actieve pane krijgt hoogste z-index
-    if (activePaneRef.current === paneName) {
-      return 1000;
-    }
-    
-    // Andere panes op basis van positie in order
-    return 100 + (index >= 0 ? index : 0);
-  }, []); // FIX: Geen dependencies - we gebruiken refs
+    const getZIndex = useCallback((paneName) => {
+  // Gebruik de state paneOrder voor de rendering (zodat React her-rendert)
+  // en de Ref alleen als fallback voor listeners.
+  const currentOrder = paneOrder; 
+  const index = currentOrder.indexOf(paneName);
+  
+  if (index === -1) return 100;
+
+  // De basis is 100 + de plek in de rij (0, 1, 2...)
+  const baseZ = 100 + index;
+
+  // Is dit het actieve venster? Geef het een flinke boost.
+  return activePane === paneName ? 1000 : baseZ;
+}, [paneOrder, activePane]); // BELANGRIJK: voeg deze dependencies toe!
+
+
 
   /**
    * Handle taskbar click.
@@ -401,11 +443,17 @@ export function usePaneManager() {
     if (savedPositions[paneName]) {
       return savedPositions[paneName];
     }
-    return {
-      left: 100 + cascadeOffset,
-      top: 50 + cascadeOffset
-    };
-  }, [savedPositions, cascadeOffset]);
+
+    // Zoek de pane op in normale panes OF conversations
+    const paneState = panes[paneName] || conversations[paneName];
+    
+    // Als we een opgeslagen cascade-positie hebben, gebruik die!
+    if (paneState && paneState.initialPos) {
+      return paneState.initialPos;
+    }
+
+    return { left: 100, top: 50 };
+  }, [savedPositions, panes, conversations]);
 
   /**
    * Reset alle panes en conversations.
@@ -420,7 +468,7 @@ export function usePaneManager() {
     setCascadeOffset(0);
     setConversations({});
     setIsStartOpen(false);
-    console.log('[usePaneManager] Reset all');
+    log(('[usePaneManager] Reset all');
   }, []);
 
   /**
@@ -449,6 +497,7 @@ export function usePaneManager() {
     savedSizes,
     savedPositions,
     conversations,
+    unreadMetadata,
     isStartOpen,
     
     // Refs (voor listeners)
@@ -464,9 +513,12 @@ export function usePaneManager() {
 
     // Conversation actions
     openConversation,
+    setNotificationTime,
+    clearNotificationTime,
     closeConversation,
     minimizeConversation,
     toggleMaximizeConversation,
+    
 
     // Helpers
     getZIndex,

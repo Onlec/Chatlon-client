@@ -113,7 +113,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
 
     const trimmedUsername = searchUsername.trim();
 
-    console.log('[ContactsPane] Adding contact:', trimmedUsername);
+    log(('[ContactsPane] Adding contact:', trimmedUsername);
 
     if (trimmedUsername === currentUser) {
       setSearchError('Je kunt jezelf niet toevoegen');
@@ -129,7 +129,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
     // Verstuur vriendenverzoek
     const requestId = `${currentUser}_${trimmedUsername}_${Date.now()}`;
     
-    console.log('[ContactsPane] Sending friend request:', { requestId, from: currentUser, to: trimmedUsername });
+    log(('[ContactsPane] Sending friend request:', { requestId, from: currentUser, to: trimmedUsername });
     
     // Voeg toe aan eigen "sent requests"
     user.get('sentRequests').get(requestId).put({
@@ -140,7 +140,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
 
     // Voeg toe aan PUBLIC friend requests space (zodat ontvanger het kan zien)
     const friendRequestPath = `friendRequests/${trimmedUsername}/${requestId}`;
-    console.log('[ContactsPane] Saving to Gun path:', friendRequestPath);
+    log(('[ContactsPane] Saving to Gun path:', friendRequestPath);
     
     gun.get('friendRequests').get(trimmedUsername).get(requestId).put({
       from: currentUser,
@@ -148,7 +148,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
       timestamp: Date.now()
     });
 
-    console.log('[ContactsPane] Friend request sent successfully');
+    log(('[ContactsPane] Friend request sent successfully');
 
     setSearchUsername('');
     setSearchError('');
