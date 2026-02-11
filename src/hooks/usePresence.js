@@ -14,6 +14,7 @@ import {
   AUTO_AWAY_TIMEOUT,
   STATUS_OPTIONS
 } from '../utils/presenceUtils';
+import { log } from '../utils/debug';
 
 /**
  * Hook voor presence/status management.
@@ -59,7 +60,7 @@ export function usePresence(isLoggedIn, currentUser) {
     };
 
     gun.get('PRESENCE').get(currentUser).put(presenceData);
-    log(('[usePresence] Updated presence:', status);
+    log('[usePresence] Updated presence:', status);
   }, [currentUser]);
 
   /**
@@ -73,7 +74,7 @@ export function usePresence(isLoggedIn, currentUser) {
       status: 'offline',
       username: currentUser
     });
-    log(('[usePresence] Set offline presence');
+    log('[usePresence] Set offline presence');
   }, [currentUser]);
 
   /**
@@ -84,7 +85,7 @@ export function usePresence(isLoggedIn, currentUser) {
     setIsManualStatus(true);
     setUserStatus(newStatus);
     updatePresence(newStatus);
-    log(('[usePresence] Manual status change:', newStatus);
+    log('[usePresence] Manual status change:', newStatus);
   }, [updatePresence]);
 
   /**
@@ -116,7 +117,7 @@ export function usePresence(isLoggedIn, currentUser) {
     if (timeSinceActivity > AUTO_AWAY_TIMEOUT && userStatusRef.current === 'online') {
       setUserStatus('away');
       updatePresence('away');
-      log(('[usePresence] Auto-away triggered');
+      log('[usePresence] Auto-away triggered');
     }
   }, [updatePresence]);
 
@@ -129,7 +130,7 @@ export function usePresence(isLoggedIn, currentUser) {
       clearInterval(presenceIntervalRef.current);
       presenceIntervalRef.current = null;
     }
-    log(('[usePresence] Cleanup completed');
+    log('[usePresence] Cleanup completed');
   }, [setOfflinePresence]);
 
   // ============================================
@@ -140,7 +141,7 @@ export function usePresence(isLoggedIn, currentUser) {
   useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
 
-    log(('[usePresence] Starting heartbeat for:', currentUser);
+    log('[usePresence] Starting heartbeat for:', currentUser);
 
     // Initial presence update
     updatePresence(userStatusRef.current);

@@ -108,7 +108,7 @@ export function useToasts(options = {}) {
 
     // Duplicate check
     if (isToastShown(toastKey)) {
-      log(('[useToasts] Duplicate toast, skipping:', toastKey);
+      log('[useToasts] Duplicate toast, skipping:', toastKey);
       return null;
     }
 
@@ -131,7 +131,7 @@ export function useToasts(options = {}) {
       return newToasts;
     });
 
-    log(('[useToasts] Toast shown:', toastId, toastData.type);
+    log('[useToasts] Toast shown:', toastId, toastData.type);
     return toastId;
   }, [generateToastKey, isToastShown, markToastShown, playSound, maxToasts]);
 

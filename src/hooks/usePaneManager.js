@@ -8,6 +8,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { paneConfig, getInitialPaneState } from '../paneConfig';
+import { log } from '../utils/debug';
 
 /**
  * Hook voor pane/window management.
@@ -68,7 +69,7 @@ export function usePaneManager() {
    */
 
 const openPane = useCallback((paneName) => {
-        log(('[usePaneManager] Opening pane:', paneName);
+        log('[usePaneManager] Opening pane:', paneName);
   setPanes(prev => {
     // Als de pane al open is, doen we niets met de positie
     if (prev[paneName]?.isOpen) return prev;
@@ -99,7 +100,7 @@ const openPane = useCallback((paneName) => {
    * @param {string} paneName - Naam van de pane
    */
   const closePane = useCallback((paneName) => {
-    log(('[usePaneManager] Closing pane:', paneName);
+    log('[usePaneManager] Closing pane:', paneName);
     
     setPanes(prev => ({
       ...prev,
@@ -123,7 +124,7 @@ const openPane = useCallback((paneName) => {
    * @param {string} paneName - Naam van de pane
    */
   const minimizePane = useCallback((paneName) => {
-    log(('[usePaneManager] Minimizing pane:', paneName);
+    log('[usePaneManager] Minimizing pane:', paneName);
     
     setPanes(prev => ({
       ...prev,
@@ -154,7 +155,7 @@ const openPane = useCallback((paneName) => {
    * @param {string} paneName - Naam van de pane
    */
   const toggleMaximizePane = useCallback((paneName) => {
-    log(('[usePaneManager] Toggling maximize:', paneName);
+    log('[usePaneManager] Toggling maximize:', paneName);
     
     setPanes(prev => ({
       ...prev,
@@ -210,7 +211,7 @@ const focusPane = useCallback((paneName) => {
    */
   const openConversation = useCallback((contactName) => {
     const convId = `conv_${contactName}`;
-    log(('[usePaneManager] Opening conversation:', convId);
+    log('[usePaneManager] Opening conversation:', convId);
     const offset = getNextCascadeOffset();
     
     setConversations(prev => {
@@ -255,7 +256,7 @@ const focusPane = useCallback((paneName) => {
    * @param {string} convId - Conversation ID (conv_<contactName>)
    */
   const closeConversation = useCallback((convId) => {
-    log(('[usePaneManager] Closing conversation:', convId);
+    log('[usePaneManager] Closing conversation:', convId);
     const contactName = convId.replace('conv_', '');
     clearNotificationTime(contactName); // Ruim de metadata op bij sluiten
 
@@ -281,7 +282,7 @@ const focusPane = useCallback((paneName) => {
    * @param {string} convId - Conversation ID
    */
   const minimizeConversation = useCallback((convId) => {
-    log(('[usePaneManager] Minimizing conversation:', convId);
+    log('[usePaneManager] Minimizing conversation:', convId);
 
     setConversations(prev => ({
       ...prev,
@@ -468,7 +469,7 @@ const focusPane = useCallback((paneName) => {
     setCascadeOffset(0);
     setConversations({});
     setIsStartOpen(false);
-    log(('[usePaneManager] Reset all');
+    log('[usePaneManager] Reset all');
   }, []);
 
   /**

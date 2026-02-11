@@ -11,6 +11,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { gun, user } from '../gun';
 import { getContactPairId, getAvatarUrl } from '../utils/chatUtils';
+import { log } from '../utils/debug';
 
 /**
  * Hook voor message en friend request listeners.
@@ -41,7 +42,7 @@ export function useMessageListeners({
     const isConvOpen = conv && conv.isOpen && !conv.isMinimized;
     const isConvActive = activePaneRef.current === convId;
     
-    log(('[useMessageListeners] isConversationActive check:', {
+    log('[useMessageListeners] isConversationActive check:', {
       contactName,
       convId,
       hasConv: !!conv,
@@ -60,7 +61,7 @@ export function useMessageListeners({
     if (!user.is || !currentUser) return;
 
     const listenerStartTime = Date.now();
-    log(('[useMessageListeners] Setting up friend request listener for:', currentUser);
+    log('[useMessageListeners] Setting up friend request listener for:', currentUser);
 
     const friendRequestsNode = gun.get('friendRequests').get(currentUser);
     
@@ -81,7 +82,7 @@ export function useMessageListeners({
       }
 
       shownToastsRef.current.add(toastKey);
-      log(('[useMessageListeners] Showing friend request toast from:', requestData.from);
+      log('[useMessageListeners] Showing friend request toast from:', requestData.from);
 
       showToast({
         from: requestData.from,
@@ -107,7 +108,7 @@ export function useMessageListeners({
     return;
   }
 
-  log((`[useMessageListeners] 🛡️ Start persistente listener voor: ${contactName}`);
+  log(`[useMessageListeners] 🛡️ Start persistente listener voor: ${contactName}`);
 
   let currentSessionId = null;
   const activeSessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
@@ -117,7 +118,7 @@ export function useMessageListeners({
     if (!activeSessionId || activeSessionId === currentSessionId) return;
     
     currentSessionId = activeSessionId;
-    log((`[useMessageListeners] 📡 Hook verbonden met sessie-node: ${activeSessionId}`);
+    log(`[useMessageListeners] 📡 Hook verbonden met sessie-node: ${activeSessionId}`);
 
     gun.get(activeSessionId).map().on((data, id) => {
       if (!data || !data.content || !data.sender) return;
@@ -133,7 +134,7 @@ export function useMessageListeners({
       const isRecent = data.timeRef > (now - 15000); 
 
       if (isRecent) {
-        log(('[useMessageListeners] 📨 Bericht ontvangen:', contactName, data.content);
+        log('[useMessageListeners] 📨 Bericht ontvangen:', contactName, data.content);
 
         // Geef door aan App.js (voor de oranje taakbalk)
         if (onMessage) {
@@ -170,7 +171,7 @@ export function useMessageListeners({
   const setupMessageListeners = useCallback(() => {
     if (!user.is || !currentUser) return;
 
-    log(('[useMessageListeners] 🚀 Setting up message listeners for:', currentUser);
+    log('[useMessageListeners] 🚀 Setting up message listeners for:', currentUser);
     listenerStartTimeRef.current = Date.now();
 
     user.get('contacts').map().on((contactData) => {
@@ -178,7 +179,7 @@ export function useMessageListeners({
         const contactName = contactData.username;
         const pairId = getContactPairId(currentUser, contactName);
         
-        log(('[useMessageListeners] 📋 Setting up listener for contact:', contactName);
+        log('[useMessageListeners] 📋 Setting up listener for contact:', contactName);
         setupContactMessageListener(contactName, pairId);
       }
     });
@@ -188,7 +189,7 @@ export function useMessageListeners({
    * Cleanup alle listeners.
    */
   const cleanup = useCallback(() => {
-    log(('[useMessageListeners] 🧹 Cleaning up all listeners');
+    log('[useMessageListeners] 🧹 Cleaning up all listeners');
 
     if (friendRequestListenerRef.current) {
       friendRequestListenerRef.current();
@@ -210,7 +211,7 @@ useEffect(() => {
 
   // Alleen opstarten als er nog geen listeners zijn
   if (Object.keys(messageListenersRef.current).length === 0) {
-    log(('[useMessageListeners] 🚀 Initializing persistent listeners...');
+    log('[useMessageListeners] 🚀 Initializing persistent listeners...');
     setupMessageListeners();
     setupFriendRequestListener();
   }

@@ -145,11 +145,11 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   useEffect(() => {
     // FIX: Guard tegen dubbele uitvoering
     if (hasInitializedRef.current) {
-      console.log('[App] Already initialized, skipping');
+      log('[App] Already initialized, skipping');
       return;
     }
 
-    log(('[App] Checking for existing session...');
+    log('[App] Checking for existing session...');
 
     const initializeUser = () => {
       if (user.is && user.is.alias) {
@@ -157,7 +157,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
         if (hasInitializedRef.current) return true;
         hasInitializedRef.current = true;
         
-        log(('[App] User already logged in:', user.is.alias);
+        log('[App] User already logged in:', user.is.alias);
         setIsLoggedIn(true);
         setCurrentUser(user.is.alias);
         
@@ -199,7 +199,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   };
 
   const handleLogoff = () => {
-    log(('[App] Logging off...');
+    log('[App] Logging off...');
     
     // Cleanup
     cleanupPresence();
@@ -230,7 +230,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
 };
 
 const onTaskbarClick = React.useCallback((paneId) => {
-  log(('[App] Taakbalk klik op:', paneId);
+  log('[App] Taakbalk klik op:', paneId);
 
   // 1. Als het een chat is, zorg dat hij ECHT open gaat
   if (paneId.startsWith('conv_')) {
