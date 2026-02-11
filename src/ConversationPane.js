@@ -118,7 +118,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       }
     });
-    chatListenersRef.current.add('chat', chatNode);
+    //chatListenersRef.current.add('chat', chatNode);
     chatListenersRef.current.add('nudge', nudgeNode);
     chatListenersRef.current.add('typing', typingNode);
 
@@ -150,9 +150,10 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
             {state.messages.slice(-displayLimit).map((msg, i, arr) => (
               <ChatMessage key={msg.id} msg={msg} prevMsg={arr[i-1]} />
             ))}
-            {isContactTyping && <div className="typing-indicator"><em>{contactName} is aan het typen...</em></div>}
           </div>
-
+          <div className="typing-indicator-bar">
+            {isContactTyping && <em>{contactName} is aan het typen...</em>}
+          </div>
           <ChatInput 
             value={messageText}
             onChange={(val) => {

@@ -408,48 +408,7 @@ div.pane-frame.maximized {
   box-shadow: none !important;
 }
 
-/* --- 8. CHAT SCROLLBAR --- */
 
-.chat-messages-area::-webkit-scrollbar {
-  width: 17px !important;
-}
-
-.chat-messages-area::-webkit-scrollbar-track {
-  background-color: #E2E2E2 !important;
-  border-left: 1px solid #AFAFAF !important;
-  box-shadow: inset 1px 0px 0px #FFF !important;
-}
-
-.chat-messages-area::-webkit-scrollbar-thumb {
-  background: linear-gradient(to right, #D9E8FB 0%, #C1D2EE 50%, #D9E8FB 100%) !important;
-  border: 1px solid #7F9DB9 !important;
-  box-shadow: inset 1px 1px 0px rgba(255,255,255,0.8) !important;
-}
-
-.chat-messages-area::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to right, #BDD7F5 0%, #A5BFE5 50%, #BDD7F5 100%) !important;
-}
-
-.chat-messages-area::-webkit-scrollbar-button:single-button {
-  background-color: #ECE9D8 !important;
-  display: block !important;
-  border: 1px solid #7F9DB9 !important;
-  height: 17px !important;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-.chat-messages-area::-webkit-scrollbar-button:vertical:decrement {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M5 2l-4 6h8z' fill='%234D6185'/%3E%3C/svg%3E") !important;
-}
-
-.chat-messages-area::-webkit-scrollbar-button:vertical:increment {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3E%3Cpath d='M5 8l-4-6h8z' fill='%234D6185'/%3E%3C/svg%3E") !important;
-}
-
-.chat-messages-area::-webkit-scrollbar-button:hover {
-  background-color: #DDD9D0 !important;
-}
 
 /* --- 9. DE SHAKE ANIMATIE --- */
 
@@ -1389,24 +1348,6 @@ div.pane-frame.maximized {
   padding: 2px;
 }
 
-/* Scrollbar voor chat messages */
-.chat-messages-display::-webkit-scrollbar {
-  width: 16px;
-}
-
-.chat-messages-display::-webkit-scrollbar-track {
-  background: #F0F0F0;
-  border-left: 1px solid #D4D0C8;
-}
-
-.chat-messages-display::-webkit-scrollbar-thumb {
-  background: #C1C1C1;
-  border: 1px solid #999;
-}
-
-.chat-messages-display::-webkit-scrollbar-thumb:hover {
-  background: #A8A8A8;
-}
 
 /* --- 17. EMOTICON PICKER --- */
 
@@ -1473,22 +1414,23 @@ div.pane-frame.maximized {
 /* --- 18. TYPING INDICATOR --- */
 
 .typing-indicator {
-  padding: 8px 10px;
+  padding: 2px 10px;
   font-size: 11px;
   color: #666;
-  font-style: italic;
-  animation: typing-fade 0.3s ease-in;
+  background: #ECE9D8;
+  border-top: 1px solid #D2D2D2;
+  flex-shrink: 0;
 }
 
-@keyframes typing-fade {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.typing-indicator-bar {
+  height: 18px;
+  min-height: 18px;
+  padding: 1px 8px;
+  font-size: 11px;
+  color: #666;
+  background: white;
+  flex-shrink: 0;
+  line-height: 16px;
 }
 
 /* --- 19. VRIENDENVERZOEKEN & CONTACT TOEVOEGEN --- */

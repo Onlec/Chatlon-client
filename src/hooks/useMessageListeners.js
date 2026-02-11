@@ -129,7 +129,7 @@ export function useMessageListeners({
 
       const now = Date.now();
       // Ruime marge voor 'recentheid' om netwerkvertraging op te vangen
-      const isRecent = data.timeRef > (now - 15000); 
+      const isRecent = data.timeRef > (Date.now - 15000); 
 
       if (isRecent) {
         log('[useMessageListeners] 📨 Bericht ontvangen:', contactName, data.content);
