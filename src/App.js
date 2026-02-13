@@ -30,6 +30,8 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
   const [unreadChats, setUnreadChats] = React.useState(new Set());
+  const [isBlockedByOtherTab, setIsBlockedByOtherTab] = useState(false);
+  const tabChannelRef = useRef(null);
   
   // FIX: Track of we al geïnitialiseerd zijn om dubbele openPane te voorkomen
   const hasInitializedRef = useRef(false);
@@ -138,6 +140,74 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
     showToast,
     shownToastsRef
   });
+
+
+  // ============================================
+  // TAB DUPLICATE DETECTION
+  // ============================================
+  useEffect(() => {
+    const channel = new BroadcastChannel('chatlon_session');
+    tabChannelRef.current = channel;
+
+    // Vraag of er al een actieve tab is
+    channel.postMessage({ type: 'TAB_CHECK' });
+
+    channel.onmessage = (e) => {
+      if (e.data.type === 'TAB_CHECK' && isLoggedIn) {
+        // Wij zijn de actieve tab — antwoord dat we er al zijn
+        channel.postMessage({ type: 'TAB_ACTIVE', user: currentUser });
+      }
+      if (e.data.type === 'TAB_ACTIVE') {
+        // Andere tab is al actief — blokkeer deze tab
+        setIsBlockedByOtherTab(true);
+      }
+    };
+
+    return () => channel.close();
+  }, [isLoggedIn, currentUser]);
+
+  // ============================================
+  // ACTIVE TAB HEARTBEAT (Cross-browser)
+  // ============================================
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser) return;
+
+    const tabId = `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Claim sessie
+    gun.get('ACTIVE_TAB').get(currentUser).put({
+      tabId: tabId,
+      heartbeat: Date.now()
+    });
+
+    // Heartbeat elke 5s
+    const heartbeatInterval = setInterval(() => {
+      gun.get('ACTIVE_TAB').get(currentUser).put({
+        tabId: tabId,
+        heartbeat: Date.now()
+      });
+    }, 5000);
+
+    // Luister of een andere tab ons verdringt
+    const activeTabNode = gun.get('ACTIVE_TAB').get(currentUser);
+    activeTabNode.on((data) => {
+      if (data && data.tabId && data.tabId !== tabId) {
+        clearInterval(heartbeatInterval);
+        activeTabNode.off();
+        alert('Je bent aangemeld op een andere locatie. Deze sessie wordt afgesloten.');
+        handleLogoff();
+      }
+    });
+
+    return () => {
+      clearInterval(heartbeatInterval);
+      gun.get('ACTIVE_TAB').get(currentUser).put({
+        tabId: null,
+        heartbeat: 0
+      });
+      activeTabNode.off();
+    };
+  }, [isLoggedIn, currentUser]);
 
   // ============================================
   // AUTO-LOGIN CHECK
@@ -250,6 +320,32 @@ const onTaskbarClick = React.useCallback((paneId) => {
     handleTaskbarClick(paneId);
   }
 }, [handleTaskbarClick, openConversation]);
+  // ============================================
+  // RENDER: BLOCKED BY OTHER TAB
+  // ============================================
+  if (isBlockedByOtherTab) {
+    return (
+      <div className="login-screen">
+        <div className="login-content">
+          <div className="login-logo">
+            <div className="dx-logo">
+              <span className="dx-logo-text">Macrohard</span>
+              <span className="dx-logo-panes">Panes</span>
+              <span className="dx-logo-xp">dX</span>
+            </div>
+          </div>
+          <div className="login-box">
+            <div className="login-header">
+              <p className="login-instruction">Je bent al aangemeld in een ander venster.</p>
+            </div>
+            <div style={{ textAlign: 'center', padding: '10px', fontSize: '11px', color: '#666' }}>
+              Chatlon kan maar in één venster tegelijk actief zijn.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ============================================
   // RENDER: BOOT SEQUENCE

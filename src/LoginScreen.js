@@ -8,19 +8,34 @@ function LoginScreen({ onLoginSuccess }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = () => {
+  const handleLogin = (retries = 3) => {
     if (!username || !password) {
       setError('Vul alle velden in');
       return;
     }
 
-    user.auth(username, password, (ack) => {
-      if (ack.err) {
-        setError('Onjuiste gebruikersnaam of wachtwoord');
-      } else {
-        setError('');
-        onLoginSuccess(username);
+    // Check of user al ergens actief is
+    gun.get('ACTIVE_TAB').get(username).once((data) => {
+      if (data && data.heartbeat && (Date.now() - data.heartbeat < 10000)) {
+        const forceLogin = window.confirm(
+          'Dit account is al aangemeld in een ander venster.\n\n' +
+          'Wil je de andere sessie afbreken en hier inloggen?'
+        );
+        if (!forceLogin) return;
       }
+
+      user.auth(username, password, (ack) => {
+        if (ack.err) {
+          if (retries > 0) {
+            setTimeout(() => handleLogin(retries - 1), 1500);
+          } else {
+            setError('Onjuiste gebruikersnaam of wachtwoord');
+          }
+        } else {
+          setError('');
+          onLoginSuccess(username);
+        }
+      });
     });
   };
 

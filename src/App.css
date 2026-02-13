@@ -3094,3 +3094,367 @@ div.pane-frame.maximized {
   background: #e0e0e0;
   color: #333;
 }
+
+/* --- CALL PANEL --- */
+
+.call-panel {
+  border-bottom: 1px solid #7F9DB9;
+  background: #ECE9D8;
+  flex-shrink: 0;
+}
+
+.call-invite {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: linear-gradient(to bottom, #FFEFC0 0%, #FFE49C 100%);
+  border-bottom: 1px solid #C5A643;
+}
+
+.call-invite-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.call-invite-text {
+  flex: 1;
+  font-size: 11px;
+  color: #333;
+}
+
+.call-invite-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.call-active {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: linear-gradient(to bottom, #D6E9D7 0%, #B8D8B9 100%);
+  border-bottom: 1px solid #6B9F6E;
+}
+
+.call-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #333;
+}
+
+.call-status-icon {
+  font-size: 16px;
+}
+
+.call-status-text {
+  font-weight: bold;
+}
+
+.call-timer {
+  color: #666;
+  font-family: 'Lucida Console', monospace;
+  font-size: 11px;
+}
+
+.call-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.call-btn {
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  border: 1px solid #999;
+  border-radius: 3px;
+  cursor: pointer;
+  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
+}
+
+.call-btn:hover {
+  background: linear-gradient(to bottom, #FFF9E6 0%, #FFEBB3 100%);
+}
+
+.call-accept {
+  border-color: #5B9F5E;
+  color: #2D6B30;
+  font-weight: bold;
+}
+
+.call-reject {
+  border-color: #C55050;
+  color: #993333;
+}
+
+.call-hangup {
+  border-color: #C55050;
+  color: #993333;
+  font-weight: bold;
+}
+
+.call-mute {
+  border-color: #7F9DB9;
+}
+
+.call-mute.muted {
+  background: #FFE0E0;
+  border-color: #C55050;
+}
+
+.chat-toolbar-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- TEAMTALK (TeamSpeak parodie) --- */
+
+.tt-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1E1E2E;
+  color: #C8C8D4;
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+  font-size: 11px;
+}
+
+.tt-menubar {
+  background: #2A2A3C;
+  border-bottom: 1px solid #3A3A4E;
+  display: flex;
+  gap: 2px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.tt-menu-item {
+  padding: 3px 8px;
+  cursor: default;
+  user-select: none;
+  color: #A0A0B4;
+}
+
+.tt-menu-item:hover {
+  background: #3A3A5E;
+  color: #FFFFFF;
+}
+
+/* Boomstructuur */
+.tt-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+  background: #16162A;
+  border: 1px solid #2A2A3C;
+  margin: 3px;
+}
+
+.tt-server-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  font-weight: bold;
+  color: #8888CC;
+  margin-bottom: 4px;
+}
+
+.tt-server-icon {
+  font-size: 14px;
+}
+
+.tt-server-name {
+  font-size: 11px;
+}
+
+.tt-channel-group {
+  margin-left: 8px;
+  margin-bottom: 2px;
+}
+
+.tt-channel-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.tt-channel-node:hover {
+  background: #2A2A4E;
+}
+
+.tt-channel-node.tt-active {
+  background: #2E3A5E;
+  color: #FFFFFF;
+}
+
+.tt-channel-node.tt-create {
+  color: #6666AA;
+  margin-top: 6px;
+}
+
+.tt-channel-node.tt-create:hover {
+  color: #8888CC;
+}
+
+.tt-channel-icon {
+  font-size: 12px;
+  width: 16px;
+  text-align: center;
+}
+
+.tt-channel-name {
+  flex: 1;
+}
+
+.tt-channel-count {
+  color: #6666AA;
+  font-size: 10px;
+}
+
+.tt-user-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px 2px 28px;
+  font-size: 11px;
+}
+
+.tt-user-node.tt-self {
+  color: #88AAFF;
+  font-weight: bold;
+}
+
+.tt-user-icon {
+  font-size: 11px;
+  width: 14px;
+  text-align: center;
+}
+
+.tt-user-name {
+  flex: 1;
+}
+
+/* Statusbalk */
+.tt-statusbar {
+  background: #2A2A3C;
+  border-top: 1px solid #3A3A4E;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tt-mute-btn, .tt-leave-btn {
+  padding: 3px 10px;
+  font-size: 10px;
+  font-family: 'Tahoma', sans-serif;
+  border: 1px solid #4A4A6E;
+  border-radius: 2px;
+  cursor: pointer;
+  background: #2E2E44;
+  color: #C8C8D4;
+}
+
+.tt-mute-btn:hover, .tt-leave-btn:hover {
+  background: #3A3A5E;
+  color: #FFFFFF;
+}
+
+.tt-mute-btn.tt-muted {
+  background: #4E2E2E;
+  border-color: #8E4444;
+  color: #FF8888;
+}
+
+.tt-leave-btn {
+  border-color: #8E4444;
+  color: #FF8888;
+}
+
+.tt-leave-btn:hover {
+  background: #4E2E2E;
+}
+
+.tt-status-info {
+  color: #6666AA;
+  font-size: 10px;
+  margin-left: auto;
+}
+
+/* Dialogen */
+.tt-dialog-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.tt-dialog {
+  background: #2A2A3C;
+  border: 1px solid #4A4A6E;
+  border-radius: 4px;
+  padding: 16px;
+  min-width: 250px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.tt-dialog-title {
+  font-weight: bold;
+  color: #FFFFFF;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.tt-input {
+  width: 100%;
+  padding: 5px 8px;
+  margin-bottom: 8px;
+  background: #16162A;
+  border: 1px solid #4A4A6E;
+  color: #C8C8D4;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 11px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.tt-input:focus {
+  border-color: #6666CC;
+}
+
+.tt-dialog-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.tt-btn {
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  border: 1px solid #4A4A6E;
+  border-radius: 2px;
+  cursor: pointer;
+  background: #2E2E44;
+  color: #C8C8D4;
+}
+
+.tt-btn:hover {
+  background: #3A3A5E;
+  color: #FFFFFF;
+}

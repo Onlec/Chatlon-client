@@ -71,6 +71,22 @@ All managed centrally by `App.js`.
 - No deeply nested writes
 - Flat, explicit graph structure
 
+### Calls
+- Signaling via CALLS/{pairId}
+- ICE candidates via CALLS/{pairId}/ice
+- Cleanup na hangup is verplicht
+- Eén actief gesprek per contactpaar
+
+### TeamTalk
+- Channel state via TEAMTALK/channels/{channelId}
+- User presence per channel via TEAMTALK/channels/{channelId}/users/{username}
+- Signaling via TEAMTALK/signaling/{channelId}
+- ICE candidates via TEAMTALK/signaling/{channelId}/ice
+- Heartbeat-based presence per channel
+- Cleanup na disconnect is verplicht
+- Mesh WebRTC: max ~6 users per channel
+- Vaste channels + tijdelijke (door gebruikers aangemaakt)
+
 ---
 
 ## 🔁 Real-Time & Presence

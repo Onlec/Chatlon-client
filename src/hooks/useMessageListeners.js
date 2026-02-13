@@ -122,14 +122,12 @@ export function useMessageListeners({
       if (!data || !data.content || !data.sender) return;
       if (data.sender === (user.is && user.is.alias)) return;
 
-      // Gebruik de Ref om te onthouden welke ID's al verwerkt zijn
       const msgKey = `processed_${id}`;
       if (shownToastsRef.current.has(msgKey)) return;
       shownToastsRef.current.add(msgKey);
 
       const now = Date.now();
-      // Ruime marge voor 'recentheid' om netwerkvertraging op te vangen
-      const isRecent = data.timeRef > (Date.now - 15000); 
+      const isRecent = data.timeRef > (now - 15000);
 
       if (isRecent) {
         log('[useMessageListeners] 📨 Bericht ontvangen:', contactName, data.content);

@@ -5,6 +5,7 @@ import ContactsPane from './ContactsPane';
 import PaintPane from './PaintPane';
 import BrowserPane from './BrowserPane';
 import MediaPane from './MediaPane';
+import TeamTalkPane from './components/TeamTalkPane';
 import { log } from './utils/debug';
 
 const paneConfig = {
@@ -77,6 +78,14 @@ const paneConfig = {
     minSize: { width: 600, height: 500 },
     desktopIcon: '🎵',
     desktopLabel: 'Panes Media Player'
+  },
+  teamtalk: {
+    title: 'TeamTalk',
+    component: TeamTalkPane,
+    icon: '🎧',
+    desktopIcon: '🎧',
+    desktopLabel: 'TeamTalk',
+    label: 'TeamTalk'
   }
 };
 

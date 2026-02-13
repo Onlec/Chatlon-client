@@ -4,6 +4,9 @@ import { convertEmoticons, getEmoticonCategories } from './emoticons';
 import { getContactPairId } from './utils/chatUtils';
 import { log } from './utils/debug';
 import { createListenerManager } from './utils/gunListenerManager';
+import { useWebRTC } from './hooks/useWebRTC';
+import CallPanel from './components/CallPanel';
+
 // ============================================
 // 1. REDUCER (Berichten logica)
 // ============================================
@@ -37,6 +40,18 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const windowOpenTimeRef = useRef(Date.now());
   const prevMsgCountRef = useRef(0);
   const chatListenersRef = useRef(createListenerManager());
+  const currentUser = user.is?.alias;
+  const {
+    callState,
+    isMuted,
+    callDuration,
+    remoteAudioRef,
+    startCall,
+    acceptCall,
+    rejectCall,
+    hangUp,
+    toggleMute
+  } = useWebRTC(currentUser, contactName);
 
   // --- Gun.js Handlers ---
   const sendMessage = useCallback(() => {
@@ -137,8 +152,22 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   return (
     <div className={`chat-conversation ${isShaking ? 'nudge-active' : ''}`}>
       <ChatTopMenu />
-      <ChatToolbar onNudge={sendNudge} canNudge={canNudge} />
-
+        <ChatToolbar onNudge={sendNudge} canNudge={canNudge} onStartCall={startCall} callState={callState} />      <CallPanel
+        callState={callState}
+        contactName={contactName}
+        isMuted={isMuted}
+        callDuration={callDuration}
+        onAccept={() => {
+          const callNode = gun.get('CALLS').get(getContactPairId(currentUser, contactName));
+          callNode.once((data) => {
+            if (data && data.sdp) acceptCall(data.sdp);
+          });
+        }}
+        onReject={rejectCall}
+        onHangUp={hangUp}
+        onToggleMute={toggleMute}
+        remoteAudioRef={remoteAudioRef}
+      />
       <div className="chat-chat-container">
         <div className="chat-left-column">
           <div className="chat-messages-display" ref={messagesAreaRef}>
@@ -195,19 +224,23 @@ function ChatTopMenu() {
   );
 }
 
-function ChatToolbar({ onNudge, canNudge }) {
-  const tools = [
+function ChatToolbar({ onNudge, canNudge, onStartCall, callState }) {  const tools = [
     { icon: '👥', label: 'Uitnodigen' },
     { icon: '📎', label: 'Bestand' },
     { icon: '🎥', label: 'Video' },
-    { icon: '🎤', label: 'Spraak' },
+    { icon: '🎤', label: 'Spraak', onClick: onStartCall, disabled: callState !== 'idle' },
     { icon: '🎮', label: 'Activiteiten' },
     { icon: '🎲', label: 'Spelletjes' }
   ];
   return (
     <div className="chat-toolbar">
       {tools.map(t => (
-        <button key={t.label} className="chat-toolbar-btn">
+        <button 
+          key={t.label} 
+          className={`chat-toolbar-btn ${t.disabled ? 'disabled' : ''}`}
+          onClick={t.onClick || undefined}
+          disabled={t.disabled}
+        >
           <span className="chat-toolbar-icon">{t.icon}</span>
           <span className="chat-toolbar-label">{t.label}</span>
         </button>
