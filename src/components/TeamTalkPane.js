@@ -8,7 +8,10 @@
 
 import React, { useState } from 'react';
 import { useTeamTalk } from '../hooks/useTeamTalk';
-import { user } from '../gun';
+import { gun, user } from '../gun';
+import { useTeamTalkMesh } from '../hooks/useTeamTalkMesh';
+
+
 
 function TeamTalkPane() {
   const currentUser = user.is?.alias;
@@ -28,6 +31,18 @@ function TeamTalkPane() {
   const [newChannelPassword, setNewChannelPassword] = useState('');
   const [passwordPrompt, setPasswordPrompt] = useState(null);
   const [passwordInput, setPasswordInput] = useState('');
+  const usersInCurrentChannel = currentChannel ? (channelUsers[currentChannel] || {}) : {};
+  const {
+    isMuted: meshMuted,
+    speakingUsers,
+    toggleMute: meshToggleMute,
+    peerCount,
+    remoteAudiosRef
+  } = useTeamTalkMesh(currentUser, currentChannel, usersInCurrentChannel);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [editingChannel, setEditingChannel] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [userVolumes, setUserVolumes] = useState({});
 
   const handleChannelClick = (channel) => {
     if (channel.id === currentChannel) return;
@@ -58,9 +73,49 @@ function TeamTalkPane() {
     }
   };
 
+  const handleContextMenu = (e, type, data) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      type,
+      data
+    });
+  };
+
+  const closeContextMenu = () => setContextMenu(null);
+
+  const handleDeleteChannel = (channelId) => {
+    if (currentChannel === channelId) leaveChannel();
+    gun.get('TEAMTALK').get('channels').get(channelId).put(null);
+    closeContextMenu();
+  };
+
+  const handleEditChannel = (channel) => {
+    setEditingChannel(channel.id);
+    setEditName(channel.name);
+    closeContextMenu();
+  };
+
+  const handleSaveEdit = () => {
+    if (editingChannel && editName.trim()) {
+      gun.get('TEAMTALK').get('channels').get(editingChannel).get('name').put(editName.trim());
+      setEditingChannel(null);
+      setEditName('');
+    }
+  };
+
+  const handleVolumeChange = (username, volume) => {
+    setUserVolumes(prev => ({ ...prev, [username]: volume }));
+    if (remoteAudiosRef && remoteAudiosRef.current && remoteAudiosRef.current[username]) {
+      remoteAudiosRef.current[username].volume = volume / 100;
+    }
+  };
+
   const getUserIcon = (userData) => {
     if (userData.isMuted) return '🔇';
-    if (userData.isSpeaking) return '🔊';
+    if (speakingUsers.has(userData.username)) return '🔊';
     return '🎤';
   };
 
@@ -96,11 +151,27 @@ function TeamTalkPane() {
               <div
                 className={`tt-channel-node ${isActive ? 'tt-active' : ''}`}
                 onClick={() => handleChannelClick(channel)}
+                onContextMenu={(e) => handleContextMenu(e, 'channel', channel)}
               >
                 <span className="tt-channel-icon">
                   {channel.hasPassword ? '🔒' : '📁'}
                 </span>
-                <span className="tt-channel-name">{channel.name}</span>
+                {editingChannel === channel.id ? (
+                  <input
+                    className="tt-inline-edit"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveEdit();
+                      if (e.key === 'Escape') setEditingChannel(null);
+                    }}
+                    onBlur={handleSaveEdit}
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span className="tt-channel-name">{channel.name}</span>
+                )}
                 {userCount > 0 && (
                   <span className="tt-channel-count">({userCount})</span>
                 )}
@@ -110,10 +181,23 @@ function TeamTalkPane() {
               {Object.values(users).map(u => (
                 <div
                   key={u.username}
-                  className={`tt-user-node ${u.username === currentUser ? 'tt-self' : ''}`}
+                  className={`tt-user-node ${u.username === currentUser ? 'tt-self' : ''} ${speakingUsers.has(u.username) ? 'tt-speaking' : ''}`}
+                  onContextMenu={(e) => u.username !== currentUser && handleContextMenu(e, 'user', u)}
                 >
                   <span className="tt-user-icon">{getUserIcon(u)}</span>
                   <span className="tt-user-name">{u.username}</span>
+                  {u.username !== currentUser && currentChannel && (
+                    <input
+                      type="range"
+                      className="tt-volume-slider"
+                      min="0"
+                      max="100"
+                      value={userVolumes[u.username] ?? 100}
+                      onChange={(e) => handleVolumeChange(u.username, parseInt(e.target.value))}
+                      onClick={(e) => e.stopPropagation()}
+                      title={`Volume: ${userVolumes[u.username] ?? 100}%`}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -178,22 +262,70 @@ function TeamTalkPane() {
           </div>
         </div>
       )}
-
+    {/* Context menu */}
+      {contextMenu && (
+        <>
+          <div className="tt-context-overlay" onClick={closeContextMenu} />
+          <div
+            className="tt-context-menu"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            {contextMenu.type === 'channel' && (
+              <>
+                <div className="tt-context-item" onClick={() => { handleChannelClick(contextMenu.data); closeContextMenu(); }}>
+                  📁 Verbinden
+                </div>
+                {contextMenu.data.type === 'temporary' && contextMenu.data.createdBy === currentUser && (
+                  <>
+                    <div className="tt-context-separator" />
+                    <div className="tt-context-item" onClick={() => handleEditChannel(contextMenu.data)}>
+                      ✏️ Naam wijzigen
+                    </div>
+                    <div className="tt-context-item tt-context-danger" onClick={() => handleDeleteChannel(contextMenu.data.id)}>
+                      🗑️ Kanaal verwijderen
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+            {contextMenu.type === 'user' && (
+              <>
+                <div className="tt-context-item tt-context-disabled">
+                  👤 {contextMenu.data.username}
+                </div>
+                <div className="tt-context-separator" />
+                <div className="tt-context-item" onClick={() => {
+                  handleVolumeChange(contextMenu.data.username, 0);
+                  closeContextMenu();
+                }}>
+                  🔇 Dempen
+                </div>
+                <div className="tt-context-item" onClick={() => {
+                  handleVolumeChange(contextMenu.data.username, 100);
+                  closeContextMenu();
+                }}>
+                  🔊 Volume herstellen
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
       {/* Statusbalk */}
       <div className="tt-statusbar">
         {currentChannel ? (
           <>
             <button
-              className={`tt-mute-btn ${isMuted ? 'tt-muted' : ''}`}
-              onClick={toggleMute}
+              className={`tt-mute-btn ${meshMuted ? 'tt-muted' : ''}`}
+              onClick={meshToggleMute}
             >
-              {isMuted ? '🔇 Gedempt' : '🎤 Mic aan'}
+              {meshMuted ? '🔇 Gedempt' : '🎤 Mic aan'}
             </button>
             <button className="tt-leave-btn" onClick={leaveChannel}>
               Verlaat kanaal
             </button>
             <span className="tt-status-info">
-              📡 Mesh | {getChannelUserCount(currentChannel)} gebruiker(s)
+              📡 Mesh ({peerCount} verbinding{peerCount !== 1 ? 'en' : ''}) | {getChannelUserCount(currentChannel)} gebruiker(s)
             </span>
           </>
         ) : (

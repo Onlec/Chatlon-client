@@ -3458,3 +3458,102 @@ div.pane-frame.maximized {
   background: #3A3A5E;
   color: #FFFFFF;
 }
+
+.tt-user-node.tt-speaking .tt-user-icon {
+  animation: tt-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes tt-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Context Menu */
+.tt-context-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9998;
+}
+
+.tt-context-menu {
+  position: fixed;
+  z-index: 9999;
+  background: #2A2A3C;
+  border: 1px solid #4A4A6E;
+  border-radius: 3px;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
+  min-width: 160px;
+  padding: 4px 0;
+}
+
+.tt-context-item {
+  padding: 5px 16px;
+  cursor: pointer;
+  color: #C8C8D4;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tt-context-item:hover {
+  background: #3A3A5E;
+  color: #FFFFFF;
+}
+
+.tt-context-item.tt-context-danger {
+  color: #FF8888;
+}
+
+.tt-context-item.tt-context-danger:hover {
+  background: #4E2E2E;
+  color: #FFAAAA;
+}
+
+.tt-context-item.tt-context-disabled {
+  color: #6666AA;
+  cursor: default;
+  font-weight: bold;
+}
+
+.tt-context-item.tt-context-disabled:hover {
+  background: transparent;
+}
+
+.tt-context-separator {
+  height: 1px;
+  background: #3A3A4E;
+  margin: 4px 8px;
+}
+
+/* Inline edit */
+.tt-inline-edit {
+  background: #16162A;
+  border: 1px solid #6666CC;
+  color: #FFFFFF;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 11px;
+  padding: 1px 4px;
+  flex: 1;
+  outline: none;
+  min-width: 0;
+}
+
+/* Volume slider */
+.tt-volume-slider {
+  width: 50px;
+  height: 10px;
+  margin-left: auto;
+  cursor: pointer;
+  accent-color: #6666CC;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.tt-user-node:hover .tt-volume-slider {
+  opacity: 1;
+}
