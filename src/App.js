@@ -149,7 +149,9 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   // Superpeer management
   const {
     isSuperpeer,
-    connectedSuperpeers
+    connectedSuperpeers,
+    relayStatus,
+    forceReconnect
   } = useSuperpeer(isLoggedIn, currentUser);
 
   // ============================================
@@ -548,6 +550,18 @@ const onTaskbarClick = React.useCallback((paneId) => {
 
         <div className="systray">
           {isSuperpeer && <span className="superpeer-badge" title={`Superpeer actief | ${connectedSuperpeers} peer(s) verbonden`}>📡</span>}
+          {isLoggedIn && (
+            <span
+              className={`relay-status-badge ${relayStatus.anyOnline ? 'relay-online' : 'relay-offline'}`}
+              title={relayStatus.anyOnline
+                ? `Relay verbonden${isSuperpeer ? ' | Superpeer actief' : ''} | ${connectedSuperpeers} peer(s)`
+                : 'Relay offline — klik om te reconnecten'
+              }
+              onClick={() => !relayStatus.anyOnline && forceReconnect()}
+            >
+              {relayStatus.anyOnline ? '🟢' : '🔴'}
+            </span>
+          )}
           {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>

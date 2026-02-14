@@ -17,12 +17,12 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { gun } from '../gun';
 import { log } from '../utils/debug';
+import { startRelayMonitor, stopRelayMonitor, onRelayStatusChange, forceReconnect } from '../utils/relayMonitor';
 
 const SUPERPEER_QUALIFY_TIME = 1 * 60 * 1000;  // 10 minuten
 const SUPERPEER_HEARTBEAT_INTERVAL = 15000;       // 15s
 const SUPERPEER_TIMEOUT = 30000;                   // 30s stale threshold
 const MAX_SUPERPEER_CONNECTIONS = 5;               // Max peers om te verbinden
-
 /**
  * Detecteer of dit een desktop browser is.
  */
@@ -39,6 +39,7 @@ function isDesktopBrowser() {
 export function useSuperpeer(isLoggedIn, currentUser) {
   const [isSuperpeer, setIsSuperpeer] = useState(false);
   const [connectedSuperpeers, setConnectedSuperpeers] = useState(0);
+  const [relayStatus, setRelayStatus] = useState({ anyOnline: true, allOnline: true });
 
   const loginTimeRef = useRef(null);
   const heartbeatRef = useRef(null);
@@ -94,6 +95,65 @@ export function useSuperpeer(isLoggedIn, currentUser) {
       username: currentUser
     });
   }, [currentUser]);
+
+  // ============================================
+  // RELAY MONITOR
+  // ============================================
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    startRelayMonitor();
+
+    const unsubscribe = onRelayStatusChange((status) => {
+      setRelayStatus(status);
+      log('[Superpeer] Relay status update:', status);
+    });
+
+    return () => {
+      unsubscribe();
+      stopRelayMonitor();
+    };
+  }, [isLoggedIn]);
+
+  // ============================================
+  // PEER RE-DISCOVERY
+  // ============================================
+
+  // Wanneer relay terugkomt, forceer re-discovery van superpeers
+  useEffect(() => {
+    if (!isLoggedIn || !relayStatus.anyOnline) return;
+
+    log('[Superpeer] Relay online — re-discovering peers');
+    discoverSuperpeers();
+
+    // Als wij superpeer zijn, refresh onze registratie
+    if (isSuperpeer) {
+      registerAsSuperpeer();
+    }
+  }, [relayStatus.anyOnline, isLoggedIn]);
+
+  // ============================================
+  // PERIODIC RE-ANNOUNCE (voor wanneer relay terugkomt)
+  // ============================================
+
+  useEffect(() => {
+    if (!isSuperpeer || !currentUser) return;
+
+    // Herregistreer elke 60s zodat na relay recovery
+    // de superpeer data direct beschikbaar is
+    const reannounceInterval = setInterval(() => {
+      gun.get('SUPERPEERS').get(currentUser).put({
+        available: true,
+        since: loginTimeRef.current,
+        heartbeat: Date.now(),
+        isDesktop: isDesktopBrowser(),
+        username: currentUser
+      });
+    }, 60000);
+
+    return () => clearInterval(reannounceInterval);
+  }, [isSuperpeer, currentUser]);
 
   // ============================================
   // SUPERPEER DISCOVERY
@@ -197,7 +257,9 @@ export function useSuperpeer(isLoggedIn, currentUser) {
 
   return {
     isSuperpeer,
-    connectedSuperpeers
+    connectedSuperpeers,
+    relayStatus,
+    forceReconnect
   };
 }
 

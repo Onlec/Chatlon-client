@@ -43,7 +43,7 @@ import { log } from '../utils/debug';
  */
 export function useToasts(options = {}) {
   const {
-    soundUrl = '/nudge.mp3',
+    soundUrl = '/alert.mp3',
     maxToasts = 5
   } = options;
 

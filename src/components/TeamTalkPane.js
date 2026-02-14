@@ -1,355 +1,310 @@
 // src/components/TeamTalkPane.js
 /**
- * TeamTalk Pane — TeamSpeak 2 parodie
+ * TeamTalk Pane — TeamSpeak-stijl voice chat
  * 
- * Boomstructuur met channels en gebruikers.
- * Donkergrijs/blauw thema, los van MSN-stijl.
+ * Server-based model: maak een server aan of verbind via ID + wachtwoord.
+ * Audio via Trystero (BitTorrent P2P), geen eigen server nodig.
  */
 
 import React, { useState } from 'react';
-import { useTeamTalk } from '../hooks/useTeamTalk';
-import { gun, user } from '../gun';
-import { useTeamTalkMesh } from '../hooks/useTeamTalkMesh';
-
-
+import { useTrysteroTeamTalk } from '../hooks/useTrysteroTeamTalk';
+import { user } from '../gun';
 
 function TeamTalkPane() {
-  const currentUser = user.is?.alias;
+  const currentUser = user.is?.alias || 'Anoniem';
   const {
-    channels,
-    channelUsers,
-    currentChannel,
-    currentHost,
-    isHost,
+    isConnected,
+    serverInfo,
+    peers,
     isMuted,
-    joinChannel,
-    leaveChannel,
-    createChannel,
-    toggleMute
-  } = useTeamTalk(currentUser);
-
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [newChannelName, setNewChannelName] = useState('');
-  const [newChannelPassword, setNewChannelPassword] = useState('');
-  const [passwordPrompt, setPasswordPrompt] = useState(null);
-  const [passwordInput, setPasswordInput] = useState('');
-  const usersInCurrentChannel = currentChannel ? (channelUsers[currentChannel] || {}) : {};
-  const {
-    isMuted: meshMuted,
     speakingUsers,
-    toggleMute: meshToggleMute,
-    peerCount,
-    remoteAudiosRef
-  } = useTeamTalkMesh(currentUser, currentChannel, usersInCurrentChannel, currentHost, isHost);
-  const [contextMenu, setContextMenu] = useState(null);
-  const [editingChannel, setEditingChannel] = useState(null);
-  const [editName, setEditName] = useState('');
+    recentServers,
+    connectionError,
+    createServer,
+    connectToServer,
+    disconnect,
+    toggleMute,
+    setUserVolume,
+    removeRecentServer,
+    findServer
+  } = useTrysteroTeamTalk(currentUser);
+
+  // Form state
+  const [joinServerId, setJoinServerId] = useState('');
+  const [joinPassword, setJoinPassword] = useState('');
+  const [joinNickname, setJoinNickname] = useState('');
+  const [createName, setCreateName] = useState('');
+  const [createPassword, setCreatePassword] = useState('');
+  const [activeTab, setActiveTab] = useState('join');  // 'join' | 'create'
   const [userVolumes, setUserVolumes] = useState({});
-  const [migrationNotice, setMigrationNotice] = useState(null);
-  const prevHostRef = React.useRef(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
 
-  // Host migratie melding
-  React.useEffect(() => {
-    if (currentHost && prevHostRef.current && prevHostRef.current !== currentHost && currentChannel) {
-      setMigrationNotice(`Host overgedragen: ${prevHostRef.current} → ${currentHost}`);
-      setTimeout(() => setMigrationNotice(null), 4000);
+  // ============================================
+  // HANDLERS
+  // ============================================
+
+  const handleConnect = async () => {
+    if (!joinServerId.trim()) return;
+    
+    setIsSearching(true);
+    setSearchError('');
+    
+    const server = await findServer(joinServerId.trim());
+    
+    setIsSearching(false);
+    
+    if (!server) {
+      setSearchError('Server niet gevonden. Controleer de ID of naam.');
+      return;
     }
-    prevHostRef.current = currentHost;
-  }, [currentHost, currentChannel]);
-
-  const handleChannelClick = (channel) => {
-    if (channel.id === currentChannel) return;
-
-    if (channel.hasPassword) {
-      setPasswordPrompt(channel.id);
-      setPasswordInput('');
-    } else {
-      joinChannel(channel.id);
+    
+    if (server.hasPassword && !joinPassword) {
+      setSearchError('Deze server vereist een wachtwoord.');
+      return;
     }
+    
+    connectToServer(
+      server.id, 
+      joinPassword || null, 
+      joinNickname.trim() || currentUser,
+      server.name
+    );
+  };
+  const handleCreate = () => {
+    if (!createName.trim()) return;
+    createServer(createName.trim(), createPassword || null);
   };
 
-  const handlePasswordSubmit = () => {
-    if (passwordPrompt) {
-      joinChannel(passwordPrompt, passwordInput);
-      setPasswordPrompt(null);
-      setPasswordInput('');
-    }
+  const handleRecentClick = (server) => {
+    connectToServer(server.id, server.password, currentUser);
   };
 
-  const handleCreateChannel = () => {
-    if (newChannelName.trim()) {
-      const id = createChannel(newChannelName, newChannelPassword || null);
-      if (id) joinChannel(id);
-      setNewChannelName('');
-      setNewChannelPassword('');
-      setShowCreateDialog(false);
-    }
+  const handleVolumeChange = (peerId, volume) => {
+    setUserVolumes(prev => ({ ...prev, [peerId]: volume }));
+    setUserVolume(peerId, volume);
   };
 
-  const handleContextMenu = (e, type, data) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
-      type,
-      data
-    });
+  const getPeerIcon = (peerId, peerData) => {
+    if (peerData.isMuted) return '🔇';
+    if (speakingUsers.has(peerData.nickname)) return '🔊';
+    return '🎤';
   };
 
-  const closeContextMenu = () => setContextMenu(null);
+  const peerCount = Object.keys(peers).length;
 
-  const handleDeleteChannel = (channelId) => {
-    if (currentChannel === channelId) leaveChannel();
-    gun.get('TEAMTALK').get('channels').get(channelId).put(null);
-    closeContextMenu();
-  };
+  // ============================================
+  // RENDER — VERBONDEN
+  // ============================================
 
-  const handleEditChannel = (channel) => {
-    setEditingChannel(channel.id);
-    setEditName(channel.name);
-    closeContextMenu();
-  };
+  if (isConnected) {
+    return (
+      <div className="tt-pane">
+        {/* Server header */}
+        <div className="tt-server-header">
+          <span className="tt-server-icon">📡</span>
+          <div className="tt-server-info">
+            <span className="tt-server-name">{serverInfo?.name || 'Server'}</span>
+            <span className="tt-server-id">ID: {serverInfo?.id}</span>
+          </div>
+        </div>
 
-  const handleSaveEdit = () => {
-    if (editingChannel && editName.trim()) {
-      gun.get('TEAMTALK').get('channels').get(editingChannel).get('name').put(editName.trim());
-      setEditingChannel(null);
-      setEditName('');
-    }
-  };
+        {/* Gebruikerslijst */}
+        <div className="tt-tree">
+          {/* Eigen user */}
+          <div className={`tt-user-node tt-self ${speakingUsers.has(currentUser) ? 'tt-speaking' : ''}`}>
+            <span className="tt-user-icon">{isMuted ? '🔇' : (speakingUsers.has(currentUser) ? '🔊' : '🎤')}</span>
+            <span className="tt-user-name">{currentUser} (jij)</span>
+          </div>
 
-  const handleVolumeChange = (username, volume) => {
-    setUserVolumes(prev => ({ ...prev, [username]: volume }));
-    if (remoteAudiosRef && remoteAudiosRef.current && remoteAudiosRef.current[username]) {
-      remoteAudiosRef.current[username].volume = volume / 100;
-    }
-  };
+          {/* Remote peers */}
+          {Object.entries(peers).map(([peerId, peerData]) => (
+            <div 
+              key={peerId} 
+              className={`tt-user-node ${speakingUsers.has(peerData.nickname) ? 'tt-speaking' : ''}`}
+            >
+              <span className="tt-user-icon">{getPeerIcon(peerId, peerData)}</span>
+              <span className="tt-user-name">{peerData.nickname}</span>
+              <input
+                type="range"
+                className="tt-volume-slider"
+                min="0"
+                max="100"
+                value={userVolumes[peerId] ?? 100}
+                onChange={(e) => handleVolumeChange(peerId, parseInt(e.target.value))}
+                onClick={(e) => e.stopPropagation()}
+                title={`Volume: ${userVolumes[peerId] ?? 100}%`}
+              />
+            </div>
+          ))}
 
-  const getUserIcon = (userData) => {
-    const hostBadge = userData.username === currentHost ? '⭐' : '';
-    if (userData.isMuted) return hostBadge + '🔇';
-    if (speakingUsers.has(userData.username)) return hostBadge + '🔊';
-    return hostBadge + '🎤';
-  };
+          {peerCount === 0 && (
+            <div className="tt-empty-message">
+              Wachten op andere gebruikers...
+            </div>
+          )}
+        </div>
 
-  const getChannelUserCount = (channelId) => {
-    const users = channelUsers[channelId];
-    return users ? Object.keys(users).length : 0;
-  };
+        {/* Controls */}
+        <div className="tt-controls">
+          <button
+            className={`tt-mute-btn ${isMuted ? 'tt-muted' : ''}`}
+            onClick={toggleMute}
+          >
+            {isMuted ? '🔇 Gedempt' : '🎤 Mic aan'}
+          </button>
+          <button className="tt-leave-btn" onClick={disconnect}>
+            🔌 Verbreken
+          </button>
+          <span className="tt-status-info">
+            📡 P2P | {peerCount + 1} gebruiker{peerCount !== 0 ? 's' : ''}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // RENDER — NIET VERBONDEN
+  // ============================================
 
   return (
-    <div className="tt-container">
-      {/* Menubalk */}
-      <div className="tt-menubar">
-        <span className="tt-menu-item">Verbinding</span>
-        <span className="tt-menu-item">Bladwijzers</span>
-        <span className="tt-menu-item" onClick={() => setShowCreateDialog(true)}>Kanalen</span>
-        <span className="tt-menu-item">Instellingen</span>
-      </div>
-
-      {/* Server boom */}
-      <div className="tt-tree">
-        <div className="tt-server-node">
-          <span className="tt-server-icon">📡</span>
-          <span className="tt-server-name">TalkServer (chatlon.server)</span>
-        </div>
-        
-        {channels.map(channel => {
-          const users = channelUsers[channel.id] || {};
-          const userCount = Object.keys(users).length;
-          const isActive = channel.id === currentChannel;
-
-          return (
-            <div key={channel.id} className="tt-channel-group">
-              <div
-                className={`tt-channel-node ${isActive ? 'tt-active' : ''}`}
-                onClick={() => handleChannelClick(channel)}
-                onContextMenu={(e) => handleContextMenu(e, 'channel', channel)}
-              >
-                <span className="tt-channel-icon">
-                  {channel.hasPassword ? '🔒' : '📁'}
-                </span>
-                {editingChannel === channel.id ? (
-                  <input
-                    className="tt-inline-edit"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveEdit();
-                      if (e.key === 'Escape') setEditingChannel(null);
-                    }}
-                    onBlur={handleSaveEdit}
-                    autoFocus
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <span className="tt-channel-name">{channel.name}</span>
-                )}
-                {userCount > 0 && (
-                  <span className="tt-channel-count">({userCount})</span>
-                )}
-              </div>
-
-              {/* Users in channel */}
-              {Object.values(users).map(u => (
-                <div
-                  key={u.username}
-                  className={`tt-user-node ${u.username === currentUser ? 'tt-self' : ''} ${speakingUsers.has(u.username) ? 'tt-speaking' : ''}`}
-                  onContextMenu={(e) => u.username !== currentUser && handleContextMenu(e, 'user', u)}
-                >
-                  <span className="tt-user-icon">{getUserIcon(u)}</span>
-                  <span className="tt-user-name">{u.username}</span>
-                  {u.username !== currentUser && currentChannel && (
-                    <input
-                      type="range"
-                      className="tt-volume-slider"
-                      min="0"
-                      max="100"
-                      value={userVolumes[u.username] ?? 100}
-                      onChange={(e) => handleVolumeChange(u.username, parseInt(e.target.value))}
-                      onClick={(e) => e.stopPropagation()}
-                      title={`Volume: ${userVolumes[u.username] ?? 100}%`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          );
-        })}
-
-        {/* Kanaal aanmaken */}
-        <div
-          className="tt-channel-node tt-create"
-          onClick={() => setShowCreateDialog(true)}
+    <div className="tt-pane">
+      {/* Tab navigatie */}
+      <div className="tt-tab-bar">
+        <button 
+          className={`tt-tab ${activeTab === 'join' ? 'tt-tab-active' : ''}`}
+          onClick={() => setActiveTab('join')}
         >
-          <span className="tt-channel-icon">➕</span>
-          <span className="tt-channel-name">Kanaal aanmaken...</span>
-        </div>
+          Verbinden
+        </button>
+        <button 
+          className={`tt-tab ${activeTab === 'create' ? 'tt-tab-active' : ''}`}
+          onClick={() => setActiveTab('create')}
+        >
+          Server aanmaken
+        </button>
       </div>
-        {/* Host migratie melding */}
-      {migrationNotice && (
-        <div className="tt-migration-notice">
-          ⭐ {migrationNotice}
-        </div>
-      )}
-      {/* Password prompt dialog */}
-      {passwordPrompt && (
-        <div className="tt-dialog-overlay">
-          <div className="tt-dialog">
-            <div className="tt-dialog-title">Wachtwoord vereist</div>
-            <input
-              type="password"
-              className="tt-input"
-              value={passwordInput}
-              onChange={(e) => setPasswordInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-              placeholder="Voer wachtwoord in..."
-              autoFocus
-            />
-            <div className="tt-dialog-actions">
-              <button className="tt-btn" onClick={handlePasswordSubmit}>OK</button>
-              <button className="tt-btn" onClick={() => setPasswordPrompt(null)}>Annuleren</button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Create channel dialog */}
-      {showCreateDialog && (
-        <div className="tt-dialog-overlay">
-          <div className="tt-dialog">
-            <div className="tt-dialog-title">Nieuw kanaal</div>
-            <input
-              className="tt-input"
-              value={newChannelName}
-              onChange={(e) => setNewChannelName(e.target.value)}
-              placeholder="Kanaalnaam"
-              autoFocus
-            />
-            <input
-              type="password"
-              className="tt-input"
-              value={newChannelPassword}
-              onChange={(e) => setNewChannelPassword(e.target.value)}
-              placeholder="Wachtwoord (optioneel)"
-            />
-            <div className="tt-dialog-actions">
-              <button className="tt-btn" onClick={handleCreateChannel}>Aanmaken</button>
-              <button className="tt-btn" onClick={() => setShowCreateDialog(false)}>Annuleren</button>
+      <div className="tt-form-area">
+        {/* Verbinden tab */}
+        {activeTab === 'join' && (
+          <div className="tt-form">
+            <div className="tt-form-group">
+              <label className="tt-label">Server-ID:</label>
+              <input
+                type="text"
+                className="tt-input"
+                value={joinServerId}
+                onChange={(e) => setJoinServerId(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
+                placeholder="bijv. tt-a3f8x"
+              />
             </div>
-          </div>
-        </div>
-      )}
-    {/* Context menu */}
-      {contextMenu && (
-        <>
-          <div className="tt-context-overlay" onClick={closeContextMenu} />
-          <div
-            className="tt-context-menu"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-          >
-            {contextMenu.type === 'channel' && (
-              <>
-                <div className="tt-context-item" onClick={() => { handleChannelClick(contextMenu.data); closeContextMenu(); }}>
-                  📁 Verbinden
-                </div>
-                {contextMenu.data.type === 'temporary' && contextMenu.data.createdBy === currentUser && (
-                  <>
-                    <div className="tt-context-separator" />
-                    <div className="tt-context-item" onClick={() => handleEditChannel(contextMenu.data)}>
-                      ✏️ Naam wijzigen
-                    </div>
-                    <div className="tt-context-item tt-context-danger" onClick={() => handleDeleteChannel(contextMenu.data.id)}>
-                      🗑️ Kanaal verwijderen
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-            {contextMenu.type === 'user' && (
-              <>
-                <div className="tt-context-item tt-context-disabled">
-                  👤 {contextMenu.data.username}
-                </div>
-                <div className="tt-context-separator" />
-                <div className="tt-context-item" onClick={() => {
-                  handleVolumeChange(contextMenu.data.username, 0);
-                  closeContextMenu();
-                }}>
-                  🔇 Dempen
-                </div>
-                <div className="tt-context-item" onClick={() => {
-                  handleVolumeChange(contextMenu.data.username, 100);
-                  closeContextMenu();
-                }}>
-                  🔊 Volume herstellen
-                </div>
-              </>
-            )}
-          </div>
-        </>
-      )}
-      {/* Statusbalk */}
-      <div className="tt-statusbar">
-        {currentChannel ? (
-          <>
-            <button
-              className={`tt-mute-btn ${meshMuted ? 'tt-muted' : ''}`}
-              onClick={meshToggleMute}
+            <div className="tt-form-group">
+              <label className="tt-label">Wachtwoord:</label>
+              <input
+                type="password"
+                className="tt-input"
+                value={joinPassword}
+                onChange={(e) => setJoinPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
+                placeholder="Optioneel"
+              />
+            </div>
+            <div className="tt-form-group">
+              <label className="tt-label">Nickname:</label>
+              <input
+                type="text"
+                className="tt-input"
+                value={joinNickname}
+                onChange={(e) => setJoinNickname(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
+                placeholder={currentUser}
+              />
+            </div>
+            <button 
+              className="tt-btn tt-connect-btn" 
+              onClick={handleConnect}
+              disabled={isSearching}
             >
-              {meshMuted ? '🔇 Gedempt' : '🎤 Mic aan'}
+              {isSearching ? '⏳ Zoeken...' : '📡 Verbinden'}
             </button>
-            <button className="tt-leave-btn" onClick={leaveChannel}>
-              Verlaat kanaal
-            </button>
-            <span className="tt-status-info">
-              {isHost ? '⭐ Host' : `📡 Via ${currentHost || '...'}`} ({peerCount} verbinding{peerCount !== 1 ? 'en' : ''}) | {getChannelUserCount(currentChannel)} gebruiker(s)
-            </span>
-          </>
-        ) : (
-          <span className="tt-status-info">Niet verbonden — dubbelklik op een kanaal</span>
+            {searchError && (
+              <div className="tt-error">⚠️ {searchError}</div>
+            )}
+          </div>
         )}
+
+        {/* Server aanmaken tab */}
+        {activeTab === 'create' && (
+          <div className="tt-form">
+            <div className="tt-form-group">
+              <label className="tt-label">Servernaam:</label>
+              <input
+                type="text"
+                className="tt-input"
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                placeholder="bijv. Gaming met vrienden"
+              />
+            </div>
+            <div className="tt-form-group">
+              <label className="tt-label">Wachtwoord:</label>
+              <input
+                type="password"
+                className="tt-input"
+                value={createPassword}
+                onChange={(e) => setCreatePassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                placeholder="Optioneel"
+              />
+            </div>
+            <button className="tt-btn tt-create-btn" onClick={handleCreate}>
+              ➕ Server aanmaken
+            </button>
+          </div>
+        )}
+
+        {/* Error */}
+        {connectionError && (
+          <div className="tt-error">
+            ⚠️ {connectionError}
+          </div>
+        )}
+
+        {/* Recente servers */}
+        {recentServers.length > 0 && (
+          <div className="tt-recent">
+            <div className="tt-recent-header">Recente servers</div>
+            {recentServers.map(server => (
+              <div 
+                key={server.id} 
+                className="tt-recent-item"
+                onClick={() => handleRecentClick(server)}
+              >
+                <span className="tt-recent-icon">📡</span>
+                <div className="tt-recent-info">
+                  <span className="tt-recent-name">{server.name}</span>
+                  <span className="tt-recent-id">{server.id}</span>
+                </div>
+                <button 
+                  className="tt-recent-remove"
+                  onClick={(e) => { e.stopPropagation(); removeRecentServer(server.id); }}
+                  title="Verwijderen"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Status bar */}
+      <div className="tt-controls">
+        <span className="tt-status-info">Niet verbonden — voer een server-ID in of maak een server aan</span>
       </div>
     </div>
   );

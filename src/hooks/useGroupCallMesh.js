@@ -1,6 +1,6 @@
-// src/hooks/useTeamTalkMesh.js
+// src/hooks/useGroupCallMesh.js
 /**
- * TeamTalk Mesh Hook — Supernode Patroon
+ * Herbruikte TeamTalk Mesh Hook — Supernode Patroon
  * 
  * De oudste user in een channel is de "supernode" (host).
  * Alle andere peers verbinden alleen met de host.

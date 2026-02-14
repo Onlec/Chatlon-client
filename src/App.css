@@ -3210,9 +3210,11 @@ div.pane-frame.maximized {
   cursor: not-allowed;
 }
 
-/* --- TEAMTALK (TeamSpeak parodie) --- */
+/* ============================================
+   TEAMTALK (Server-based voice chat via Trystero)
+   ============================================ */
 
-.tt-container {
+.tt-pane {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -3222,28 +3224,158 @@ div.pane-frame.maximized {
   font-size: 11px;
 }
 
-.tt-menubar {
+/* --- Tabs --- */
+.tt-tab-bar {
+  display: flex;
   background: #2A2A3C;
   border-bottom: 1px solid #3A3A4E;
-  display: flex;
-  gap: 2px;
-  padding: 2px 4px;
   flex-shrink: 0;
 }
 
-.tt-menu-item {
-  padding: 3px 8px;
-  cursor: default;
-  user-select: none;
-  color: #A0A0B4;
+.tt-tab {
+  flex: 1;
+  padding: 6px 12px;
+  background: #2A2A3C;
+  color: #8888AA;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 11px;
 }
 
-.tt-menu-item:hover {
+.tt-tab:hover {
+  color: #AAAACC;
+  background: #333344;
+}
+
+.tt-tab-active {
+  color: #FFFFFF;
+  border-bottom-color: #6666AA;
+  background: #2E2E44;
+}
+
+/* --- Formulieren --- */
+.tt-form-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.tt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tt-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tt-label {
+  color: #8888AA;
+  font-size: 10px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.tt-input {
+  width: 100%;
+  padding: 5px 8px;
+  background: #16162A;
+  border: 1px solid #4A4A6E;
+  color: #C8C8D4;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 11px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.tt-input:focus {
+  border-color: #6666CC;
+}
+
+.tt-btn {
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  border: 1px solid #4A4A6E;
+  border-radius: 2px;
+  cursor: pointer;
+  background: #2E2E44;
+  color: #C8C8D4;
+}
+
+.tt-btn:hover {
   background: #3A3A5E;
   color: #FFFFFF;
 }
 
-/* Boomstructuur */
+.tt-connect-btn {
+  background: #2E442E !important;
+  border-color: #448844 !important;
+  margin-top: 4px;
+}
+
+.tt-connect-btn:hover {
+  background: #3A5E3A !important;
+}
+
+.tt-create-btn {
+  background: #2E2E44 !important;
+  border-color: #555577 !important;
+  margin-top: 4px;
+}
+
+.tt-create-btn:hover {
+  background: #3A3A5E !important;
+}
+
+.tt-error {
+  color: #FF8888;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  padding: 6px 8px;
+  background: #3A2222;
+  border: 1px solid #553333;
+  margin-top: 8px;
+}
+
+/* --- Server header (verbonden) --- */
+.tt-server-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #2A2A3C;
+  border-bottom: 1px solid #3A3A4E;
+  flex-shrink: 0;
+}
+
+.tt-server-icon {
+  font-size: 18px;
+}
+
+.tt-server-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tt-server-name {
+  color: #FFFFFF;
+  font-size: 12px;
+  font-family: 'Tahoma', sans-serif;
+  font-weight: bold;
+}
+
+.tt-server-id {
+  color: #666688;
+  font-size: 9px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+/* --- Boomstructuur (gebruikerslijst) --- */
 .tt-tree {
   flex: 1;
   overflow-y: auto;
@@ -3253,76 +3385,11 @@ div.pane-frame.maximized {
   margin: 3px;
 }
 
-.tt-server-node {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 6px;
-  font-weight: bold;
-  color: #8888CC;
-  margin-bottom: 4px;
-}
-
-.tt-server-icon {
-  font-size: 14px;
-}
-
-.tt-server-name {
-  font-size: 11px;
-}
-
-.tt-channel-group {
-  margin-left: 8px;
-  margin-bottom: 2px;
-}
-
-.tt-channel-node {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 6px;
-  cursor: pointer;
-  border-radius: 2px;
-}
-
-.tt-channel-node:hover {
-  background: #2A2A4E;
-}
-
-.tt-channel-node.tt-active {
-  background: #2E3A5E;
-  color: #FFFFFF;
-}
-
-.tt-channel-node.tt-create {
-  color: #6666AA;
-  margin-top: 6px;
-}
-
-.tt-channel-node.tt-create:hover {
-  color: #8888CC;
-}
-
-.tt-channel-icon {
-  font-size: 12px;
-  width: 16px;
-  text-align: center;
-}
-
-.tt-channel-name {
-  flex: 1;
-}
-
-.tt-channel-count {
-  color: #6666AA;
-  font-size: 10px;
-}
-
 .tt-user-node {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 2px 6px 2px 28px;
+  padding: 3px 6px;
   font-size: 11px;
 }
 
@@ -3341,8 +3408,42 @@ div.pane-frame.maximized {
   flex: 1;
 }
 
-/* Statusbalk */
-.tt-statusbar {
+.tt-user-node.tt-speaking .tt-user-icon {
+  animation: tt-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes tt-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.tt-empty-message {
+  color: #555577;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  padding: 16px;
+  text-align: center;
+  font-style: italic;
+}
+
+/* --- Volume slider --- */
+.tt-volume-slider {
+  width: 50px;
+  height: 10px;
+  margin-left: auto;
+  cursor: pointer;
+  accent-color: #6666CC;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.tt-user-node:hover .tt-volume-slider {
+  opacity: 1;
+}
+
+/* --- Controls / statusbalk --- */
+.tt-controls {
   background: #2A2A3C;
   border-top: 1px solid #3A3A4E;
   padding: 6px 8px;
@@ -3389,7 +3490,71 @@ div.pane-frame.maximized {
   margin-left: auto;
 }
 
-/* Dialogen */
+/* --- Recente servers --- */
+.tt-recent {
+  margin-top: 12px;
+  border-top: 1px solid #3A3A4E;
+  padding-top: 8px;
+}
+
+.tt-recent-header {
+  color: #666688;
+  font-size: 10px;
+  font-family: 'Tahoma', sans-serif;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tt-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.tt-recent-item:hover {
+  background: #2A2A4E;
+}
+
+.tt-recent-icon {
+  font-size: 12px;
+}
+
+.tt-recent-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tt-recent-name {
+  color: #CCCCDD;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.tt-recent-id {
+  color: #555577;
+  font-size: 9px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.tt-recent-remove {
+  background: none;
+  border: none;
+  color: #555577;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 4px;
+}
+
+.tt-recent-remove:hover {
+  color: #FF6666;
+}
+
+/* --- Dialogen (hergebruikt voor toekomstige groepsgesprekken) --- */
 .tt-dialog-overlay {
   position: absolute;
   top: 0;
@@ -3419,161 +3584,11 @@ div.pane-frame.maximized {
   font-size: 12px;
 }
 
-.tt-input {
-  width: 100%;
-  padding: 5px 8px;
-  margin-bottom: 8px;
-  background: #16162A;
-  border: 1px solid #4A4A6E;
-  color: #C8C8D4;
-  font-family: 'Tahoma', sans-serif;
-  font-size: 11px;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.tt-input:focus {
-  border-color: #6666CC;
-}
-
 .tt-dialog-actions {
   display: flex;
   gap: 6px;
   justify-content: flex-end;
   margin-top: 4px;
-}
-
-.tt-btn {
-  padding: 4px 14px;
-  font-size: 11px;
-  font-family: 'Tahoma', sans-serif;
-  border: 1px solid #4A4A6E;
-  border-radius: 2px;
-  cursor: pointer;
-  background: #2E2E44;
-  color: #C8C8D4;
-}
-
-.tt-btn:hover {
-  background: #3A3A5E;
-  color: #FFFFFF;
-}
-
-.tt-user-node.tt-speaking .tt-user-icon {
-  animation: tt-pulse 0.6s ease-in-out infinite;
-}
-
-@keyframes tt-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-/* Context Menu */
-.tt-context-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9998;
-}
-
-.tt-context-menu {
-  position: fixed;
-  z-index: 9999;
-  background: #2A2A3C;
-  border: 1px solid #4A4A6E;
-  border-radius: 3px;
-  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
-  min-width: 160px;
-  padding: 4px 0;
-}
-
-.tt-context-item {
-  padding: 5px 16px;
-  cursor: pointer;
-  color: #C8C8D4;
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tt-context-item:hover {
-  background: #3A3A5E;
-  color: #FFFFFF;
-}
-
-.tt-context-item.tt-context-danger {
-  color: #FF8888;
-}
-
-.tt-context-item.tt-context-danger:hover {
-  background: #4E2E2E;
-  color: #FFAAAA;
-}
-
-.tt-context-item.tt-context-disabled {
-  color: #6666AA;
-  cursor: default;
-  font-weight: bold;
-}
-
-.tt-context-item.tt-context-disabled:hover {
-  background: transparent;
-}
-
-.tt-context-separator {
-  height: 1px;
-  background: #3A3A4E;
-  margin: 4px 8px;
-}
-
-/* Inline edit */
-.tt-inline-edit {
-  background: #16162A;
-  border: 1px solid #6666CC;
-  color: #FFFFFF;
-  font-family: 'Tahoma', sans-serif;
-  font-size: 11px;
-  padding: 1px 4px;
-  flex: 1;
-  outline: none;
-  min-width: 0;
-}
-
-/* Volume slider */
-.tt-volume-slider {
-  width: 50px;
-  height: 10px;
-  margin-left: auto;
-  cursor: pointer;
-  accent-color: #6666CC;
-  opacity: 0.4;
-  transition: opacity 0.2s;
-  flex-shrink: 0;
-}
-
-.tt-user-node:hover .tt-volume-slider {
-  opacity: 1;
-}
-
-/* Host migratie melding */
-.tt-migration-notice {
-  background: linear-gradient(to right, #2E3A5E, #1E1E2E);
-  border: 1px solid #4A4A6E;
-  color: #88AAFF;
-  padding: 6px 12px;
-  font-size: 11px;
-  text-align: center;
-  animation: tt-notice-fade 4s ease-in-out forwards;
-}
-
-@keyframes tt-notice-fade {
-  0% { opacity: 0; transform: translateY(-4px); }
-  10% { opacity: 1; transform: translateY(0); }
-  80% { opacity: 1; }
-  100% { opacity: 0; }
 }
 
 .superpeer-badge {
@@ -3585,6 +3600,24 @@ div.pane-frame.maximized {
 
 .superpeer-badge:hover {
   opacity: 1;
+}
+
+/* Relay status badge */
+.relay-status-badge {
+  font-size: 8px;
+  margin-right: 4px;
+  cursor: default;
+  line-height: 1;
+}
+
+.relay-status-badge.relay-offline {
+  cursor: pointer;
+  animation: relay-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes relay-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 /* ============================================
