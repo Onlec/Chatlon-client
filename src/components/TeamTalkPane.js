@@ -19,6 +19,8 @@ function TeamTalkPane() {
     channels,
     channelUsers,
     currentChannel,
+    currentHost,
+    isHost,
     isMuted,
     joinChannel,
     leaveChannel,
@@ -38,11 +40,22 @@ function TeamTalkPane() {
     toggleMute: meshToggleMute,
     peerCount,
     remoteAudiosRef
-  } = useTeamTalkMesh(currentUser, currentChannel, usersInCurrentChannel);
+  } = useTeamTalkMesh(currentUser, currentChannel, usersInCurrentChannel, currentHost, isHost);
   const [contextMenu, setContextMenu] = useState(null);
   const [editingChannel, setEditingChannel] = useState(null);
   const [editName, setEditName] = useState('');
   const [userVolumes, setUserVolumes] = useState({});
+  const [migrationNotice, setMigrationNotice] = useState(null);
+  const prevHostRef = React.useRef(null);
+
+  // Host migratie melding
+  React.useEffect(() => {
+    if (currentHost && prevHostRef.current && prevHostRef.current !== currentHost && currentChannel) {
+      setMigrationNotice(`Host overgedragen: ${prevHostRef.current} → ${currentHost}`);
+      setTimeout(() => setMigrationNotice(null), 4000);
+    }
+    prevHostRef.current = currentHost;
+  }, [currentHost, currentChannel]);
 
   const handleChannelClick = (channel) => {
     if (channel.id === currentChannel) return;
@@ -114,9 +127,10 @@ function TeamTalkPane() {
   };
 
   const getUserIcon = (userData) => {
-    if (userData.isMuted) return '🔇';
-    if (speakingUsers.has(userData.username)) return '🔊';
-    return '🎤';
+    const hostBadge = userData.username === currentHost ? '⭐' : '';
+    if (userData.isMuted) return hostBadge + '🔇';
+    if (speakingUsers.has(userData.username)) return hostBadge + '🔊';
+    return hostBadge + '🎤';
   };
 
   const getChannelUserCount = (channelId) => {
@@ -140,7 +154,7 @@ function TeamTalkPane() {
           <span className="tt-server-icon">📡</span>
           <span className="tt-server-name">TalkServer (chatlon.server)</span>
         </div>
-
+        
         {channels.map(channel => {
           const users = channelUsers[channel.id] || {};
           const userCount = Object.keys(users).length;
@@ -213,7 +227,12 @@ function TeamTalkPane() {
           <span className="tt-channel-name">Kanaal aanmaken...</span>
         </div>
       </div>
-
+        {/* Host migratie melding */}
+      {migrationNotice && (
+        <div className="tt-migration-notice">
+          ⭐ {migrationNotice}
+        </div>
+      )}
       {/* Password prompt dialog */}
       {passwordPrompt && (
         <div className="tt-dialog-overlay">
@@ -325,7 +344,7 @@ function TeamTalkPane() {
               Verlaat kanaal
             </button>
             <span className="tt-status-info">
-              📡 Mesh ({peerCount} verbinding{peerCount !== 1 ? 'en' : ''}) | {getChannelUserCount(currentChannel)} gebruiker(s)
+              {isHost ? '⭐ Host' : `📡 Via ${currentHost || '...'}`} ({peerCount} verbinding{peerCount !== 1 ? 'en' : ''}) | {getChannelUserCount(currentChannel)} gebruiker(s)
             </span>
           </>
         ) : (

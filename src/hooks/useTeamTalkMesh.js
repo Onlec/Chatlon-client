@@ -1,9 +1,12 @@
 // src/hooks/useTeamTalkMesh.js
 /**
- * TeamTalk Mesh Hook — WebRTC multi-peer audio
+ * TeamTalk Mesh Hook — Supernode Patroon
  * 
- * Beheert mesh van RTCPeerConnections binnen een channel.
- * Elke peer verbindt met elke andere peer (N-1 connections).
+ * De oudste user in een channel is de "supernode" (host).
+ * Alle andere peers verbinden alleen met de host.
+ * Host forwardt audio streams naar alle clients.
+ * 
+ * Fallback: als er maar 2 users zijn, directe P2P.
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -16,14 +19,13 @@ const ICE_SERVERS = [
 ];
 
 /**
- * Hook voor WebRTC mesh audio in een TeamTalk channel.
- * 
- * @param {string} currentUser - Huidige username
- * @param {string|null} channelId - Huidig channel ID
+ * @param {string} currentUser
+ * @param {string|null} channelId
  * @param {Object} channelUsers - Users in het channel
- * @returns {Object} Mesh state en functies
+ * @param {string|null} hostUsername - De huidige host
+ * @param {boolean} isHost - Ben ik de host?
  */
-export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
+export function useTeamTalkMesh(currentUser, channelId, channelUsers, hostUsername, isHost) {
   const [isMuted, setIsMuted] = useState(true);
   const [speakingUsers, setSpeakingUsers] = useState(new Set());
 
@@ -31,9 +33,13 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
   const localStreamRef = useRef(null);
   const remoteAudiosRef = useRef({});
   const processedIceRef = useRef(new Set());
+  const processedSignalsRef = useRef(new Set());
   const audioContextRef = useRef(null);
   const analysersRef = useRef({});
   const speakingIntervalRef = useRef(null);
+  const mixedStreamsRef = useRef({});
+  const mixDestinationsRef = useRef({});
+  const previousHostRef = useRef(null);
 
   // ============================================
   // LOCAL STREAM
@@ -41,11 +47,9 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
 
   const getLocalStream = useCallback(async () => {
     if (localStreamRef.current) return localStreamRef.current;
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStreamRef.current = stream;
-      // Start gedempt
       stream.getAudioTracks().forEach(track => { track.enabled = false; });
       log('[TeamTalkMesh] Local stream acquired');
       return stream;
@@ -70,37 +74,28 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
-
-    const ctx = audioContextRef.current;
-    const source = ctx.createMediaStreamSource(stream);
-    const analyser = ctx.createAnalyser();
+    const source = audioContextRef.current.createMediaStreamSource(stream);
+    const analyser = audioContextRef.current.createAnalyser();
     analyser.fftSize = 512;
     analyser.smoothingTimeConstant = 0.4;
     source.connect(analyser);
-
     analysersRef.current[username] = analyser;
   }, []);
 
   const startSpeakingMonitor = useCallback(() => {
     if (speakingIntervalRef.current) return;
-
     speakingIntervalRef.current = setInterval(() => {
       const speaking = new Set();
       const dataArray = new Uint8Array(256);
-
       Object.entries(analysersRef.current).forEach(([username, analyser]) => {
         analyser.getByteFrequencyData(dataArray);
         const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-        if (average > 15) {
-          speaking.add(username);
-        }
+        if (average > 15) speaking.add(username);
       });
-
       setSpeakingUsers(prev => {
         const prevArr = Array.from(prev).sort().join(',');
         const newArr = Array.from(speaking).sort().join(',');
-        if (prevArr === newArr) return prev;
-        return speaking;
+        return prevArr === newArr ? prev : speaking;
       });
     }, 150);
   }, []);
@@ -114,20 +109,162 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
     setSpeakingUsers(new Set());
   }, []);
 
+    
   // ============================================
-  // PEER CONNECTION MANAGEMENT
+  // HOST: AUDIO MIXING via Web Audio API
+  // ============================================
+
+  /**
+   * Maakt een unieke mix voor elke client ZONDER hun eigen audio.
+   * 
+   * Client B krijgt: mix van [Host + C + D]
+   * Client C krijgt: mix van [Host + B + D]
+   * etc.
+   */
+  const createMixForClient = useCallback((targetUser) => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const ctx = audioContextRef.current;
+
+    // Cleanup bestaande mix voor deze client
+    if (mixDestinationsRef.current[targetUser]) {
+      try {
+        mixDestinationsRef.current[targetUser].disconnect();
+      } catch (e) {}
+      delete mixDestinationsRef.current[targetUser];
+      delete mixedStreamsRef.current[targetUser];
+    }
+
+    const destination = ctx.createMediaStreamDestination();
+    mixDestinationsRef.current[targetUser] = destination;
+    mixedStreamsRef.current[targetUser] = destination.stream;
+
+    // Voeg alle bronnen toe BEHALVE de target user
+    // 1. Local stream (host's eigen audio)
+    if (localStreamRef.current) {
+      try {
+        const localSource = ctx.createMediaStreamSource(localStreamRef.current);
+        localSource.connect(destination);
+      } catch (e) {
+        log('[TeamTalkMesh] Mix: Error adding local stream:', e.message);
+      }
+    }
+
+    // 2. Alle remote streams behalve targetUser
+    Object.entries(remoteAudiosRef.current).forEach(([username, audioEl]) => {
+      if (username === targetUser || !audioEl.srcObject) return;
+      try {
+        const source = ctx.createMediaStreamSource(audioEl.srcObject);
+        source.connect(destination);
+      } catch (e) {
+        log('[TeamTalkMesh] Mix: Error adding remote stream from', username, ':', e.message);
+      }
+    });
+
+    log('[TeamTalkMesh] HOST: Created mix for', targetUser);
+    return destination.stream;
+  }, []);
+
+  /**
+   * Rebuild alle mixen wanneer een peer erbij komt of weggaat.
+   */
+  const rebuildAllMixes = useCallback(() => {
+    if (!isHost) return;
+
+    const clients = Object.keys(peersRef.current);
+    log('[TeamTalkMesh] HOST: Rebuilding mixes for', clients.length, 'clients');
+
+    clients.forEach(clientUser => {
+      const mixStream = createMixForClient(clientUser);
+      const pc = peersRef.current[clientUser];
+      if (!pc) return;
+
+      // Vervang de tracks op de peer connection met de mix
+      const senders = pc.getSenders();
+      const mixTrack = mixStream.getAudioTracks()[0];
+
+      if (!mixTrack) return;
+
+      const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
+      if (audioSender) {
+        audioSender.replaceTrack(mixTrack)
+          .then(() => log('[TeamTalkMesh] HOST: Replaced track for', clientUser))
+          .catch(err => log('[TeamTalkMesh] HOST: ReplaceTrack error:', err.message));
+      } else {
+        try {
+          pc.addTrack(mixTrack, mixStream);
+          log('[TeamTalkMesh] HOST: Added mix track to', clientUser);
+        } catch (err) {
+          log('[TeamTalkMesh] HOST: AddTrack error:', err.message);
+        }
+      }
+    });
+  }, [isHost, createMixForClient]);
+
+  /**
+   * Cleanup alle mixen.
+   */
+  const cleanupMixes = useCallback(() => {
+    Object.values(mixDestinationsRef.current).forEach(dest => {
+      try { dest.disconnect(); } catch (e) {}
+    });
+    mixDestinationsRef.current = {};
+    mixedStreamsRef.current = {};
+  }, []);
+
+  // ============================================
+  // PEER CLEANUP
+  // ============================================
+
+  const removePeer = useCallback((remoteUser) => {
+    log('[TeamTalkMesh] Removing peer:', remoteUser);
+    if (peersRef.current[remoteUser]) {
+      peersRef.current[remoteUser].close();
+      delete peersRef.current[remoteUser];
+    }
+    if (remoteAudiosRef.current[remoteUser]) {
+      remoteAudiosRef.current[remoteUser].srcObject = null;
+      delete remoteAudiosRef.current[remoteUser];
+    }
+    delete analysersRef.current[remoteUser];
+  }, []);
+
+  const removeAllPeers = useCallback(() => {
+    Object.keys(peersRef.current).forEach(removePeer);
+    processedIceRef.current.clear();
+    processedSignalsRef.current.clear();
+    stopSpeakingMonitor();
+  }, [removePeer, stopSpeakingMonitor]);
+
+  // ============================================
+  // HOST: FORWARD STREAMS
+  // ============================================
+
+  const forwardStreamToOtherClients = useCallback((sourceUser, stream) => {
+    if (!isHost) return;
+
+    log('[TeamTalkMesh] HOST: New stream from', sourceUser, '— rebuilding mixes');
+    
+    // Wacht kort zodat de stream volledig beschikbaar is
+    setTimeout(() => {
+      rebuildAllMixes();
+    }, 200);
+  }, [isHost, rebuildAllMixes]);
+
+  
+  // ============================================
+  // PEER CONNECTION
   // ============================================
 
   const createPeerConnection = useCallback((remoteUser) => {
     if (peersRef.current[remoteUser]) {
-      log('[TeamTalkMesh] Peer already exists for:', remoteUser);
       return peersRef.current[remoteUser];
     }
 
-    log('[TeamTalkMesh] Creating peer connection to:', remoteUser);
+    log('[TeamTalkMesh] Creating peer connection to:', remoteUser, isHost ? '(I am host)' : '(I am client)');
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-    // ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate && channelId) {
         const candidateId = `${currentUser}_${remoteUser}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
@@ -140,21 +277,22 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
       }
     };
 
-    // Remote stream
     pc.ontrack = (event) => {
       log('[TeamTalkMesh] Remote track from:', remoteUser);
       const stream = event.streams[0];
 
-      // Audio element
       if (!remoteAudiosRef.current[remoteUser]) {
         const audio = new Audio();
         audio.autoplay = true;
         remoteAudiosRef.current[remoteUser] = audio;
       }
       remoteAudiosRef.current[remoteUser].srcObject = stream;
-
-      // Speaking detection
       setupSpeakingDetection(remoteUser, stream);
+
+      // HOST: wanneer een client stream binnenkomt, forward naar andere clients
+      if (isHost) {
+        forwardStreamToOtherClients(remoteUser, stream);
+      }
     };
 
     pc.onconnectionstatechange = () => {
@@ -164,7 +302,6 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
       }
     };
 
-    // Voeg local tracks toe
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => {
         pc.addTrack(track, localStreamRef.current);
@@ -173,29 +310,8 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
 
     peersRef.current[remoteUser] = pc;
     return pc;
-  }, [channelId, currentUser, setupSpeakingDetection]);
+  }, [channelId, currentUser, isHost, setupSpeakingDetection, forwardStreamToOtherClients, removePeer]);
 
-  const removePeer = useCallback((remoteUser) => {
-    log('[TeamTalkMesh] Removing peer:', remoteUser);
-
-    if (peersRef.current[remoteUser]) {
-      peersRef.current[remoteUser].close();
-      delete peersRef.current[remoteUser];
-    }
-
-    if (remoteAudiosRef.current[remoteUser]) {
-      remoteAudiosRef.current[remoteUser].srcObject = null;
-      delete remoteAudiosRef.current[remoteUser];
-    }
-
-    delete analysersRef.current[remoteUser];
-  }, []);
-
-  const removeAllPeers = useCallback(() => {
-    Object.keys(peersRef.current).forEach(removePeer);
-    processedIceRef.current.clear();
-    stopSpeakingMonitor();
-  }, [removePeer, stopSpeakingMonitor]);
 
   // ============================================
   // SIGNALING
@@ -203,19 +319,18 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
 
   const sendOffer = useCallback(async (remoteUser) => {
     const pc = createPeerConnection(remoteUser);
-
     try {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      gun.get('TEAMTALK').get('signaling').get(channelId).get(`${currentUser}_${remoteUser}`).put({
+      const signalKey = `${currentUser}_${remoteUser}`;
+      gun.get('TEAMTALK').get('signaling').get(channelId).get(signalKey).put({
         type: 'offer',
         sdp: JSON.stringify(offer),
         from: currentUser,
         to: remoteUser,
         timestamp: Date.now()
       });
-
       log('[TeamTalkMesh] Offer sent to:', remoteUser);
     } catch (err) {
       log('[TeamTalkMesh] Error creating offer:', err.message);
@@ -224,20 +339,19 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
 
   const handleOffer = useCallback(async (fromUser, offerSdp) => {
     const pc = createPeerConnection(fromUser);
-
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(offerSdp)));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
-      gun.get('TEAMTALK').get('signaling').get(channelId).get(`${fromUser}_${currentUser}`).put({
+      const signalKey = `${fromUser}_${currentUser}`;
+      gun.get('TEAMTALK').get('signaling').get(channelId).get(signalKey).put({
         type: 'answer',
         sdp: JSON.stringify(answer),
         from: currentUser,
         to: fromUser,
         timestamp: Date.now()
       });
-
       log('[TeamTalkMesh] Answer sent to:', fromUser);
     } catch (err) {
       log('[TeamTalkMesh] Error handling offer:', err.message);
@@ -247,7 +361,6 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
   const handleAnswer = useCallback(async (fromUser, answerSdp) => {
     const pc = peersRef.current[fromUser];
     if (!pc) return;
-
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(answerSdp)));
       log('[TeamTalkMesh] Answer processed from:', fromUser);
@@ -264,33 +377,33 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
     if (localStreamRef.current) {
       const track = localStreamRef.current.getAudioTracks()[0];
       if (track) {
-        track.enabled = isMuted; // was muted, now unmute (and vice versa)
+        track.enabled = isMuted;
         setIsMuted(!isMuted);
-
-        // Update Gun presence
         if (channelId && currentUser) {
           gun.get('TEAMTALK').get('channels').get(channelId).get('users').get(currentUser).get('isMuted').put(!isMuted);
         }
-
         log('[TeamTalkMesh] Mute toggled:', !isMuted);
       }
     }
   }, [isMuted, channelId, currentUser]);
 
   // ============================================
-  // CHANNEL JOIN/LEAVE EFFECTS
+  // SIGNALING LISTENER
   // ============================================
 
-  // Signaling listener
   useEffect(() => {
     if (!channelId || !currentUser) return;
 
     const signalingNode = gun.get('TEAMTALK').get('signaling').get(channelId);
 
-    // Luister naar offers/answers gericht aan ons
     signalingNode.map().on((data, key) => {
       if (!data || !data.type || !data.sdp || data.to !== currentUser) return;
       if (data.timestamp && (Date.now() - data.timestamp > 30000)) return;
+
+      // Dedup signalen
+      const signalKey = `${data.type}_${data.from}_${data.timestamp}`;
+      if (processedSignalsRef.current.has(signalKey)) return;
+      processedSignalsRef.current.add(signalKey);
 
       if (data.type === 'offer' && data.from !== currentUser) {
         handleOffer(data.from, data.sdp);
@@ -300,7 +413,6 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
       }
     });
 
-    // ICE candidates
     signalingNode.get('ice').map().on((data, id) => {
       if (!data || !data.candidate || data.from === currentUser || data.to !== currentUser) return;
       if (processedIceRef.current.has(id)) return;
@@ -313,67 +425,121 @@ export function useTeamTalkMesh(currentUser, channelId, channelUsers) {
       }
     });
 
-    return () => {
-      signalingNode.off();
-    };
+    return () => signalingNode.off();
   }, [channelId, currentUser, handleOffer, handleAnswer]);
 
-  // Connect to peers when channel users change
+  // ============================================
+  // SUPERNODE CONNECTION LOGIC
+  // ============================================
+
   useEffect(() => {
-    if (!channelId || !currentUser) return;
+    if (!channelId || !currentUser || !hostUsername) return;
 
-    const users = channelUsers || {};
-    const otherUsers = Object.keys(users).filter(u => u !== currentUser);
-    const connectedPeers = Object.keys(peersRef.current);
+    const otherUsers = Object.keys(channelUsers || {}).filter(u => u !== currentUser);
 
-    // Nieuwe users → stuur offer (alleen als wij alfabetisch "eerst" komen, voorkomt dubbele offers)
-    otherUsers.forEach(remoteUser => {
-      if (!connectedPeers.includes(remoteUser)) {
-        if (currentUser < remoteUser) {
-          sendOffer(remoteUser);
+    if (isHost) {
+      // HOST: wacht op inkomende offers van clients
+      // Stuur offers naar clients die nog geen verbinding hebben
+      otherUsers.forEach(clientUser => {
+        if (!peersRef.current[clientUser]) {
+          log('[TeamTalkMesh] HOST: Initiating connection to client:', clientUser);
+          sendOffer(clientUser);
         }
+      });
+    } else {
+      // CLIENT: verbind alleen met host
+      if (hostUsername && !peersRef.current[hostUsername]) {
+        log('[TeamTalkMesh] CLIENT: Connecting to host:', hostUsername);
+        sendOffer(hostUsername);
       }
-    });
 
-    // Verwijderde users → cleanup
-    connectedPeers.forEach(peer => {
+      // Verwijder verbindingen met niet-host peers (migratie van mesh → supernode)
+      Object.keys(peersRef.current).forEach(peer => {
+        if (peer !== hostUsername) {
+          log('[TeamTalkMesh] CLIENT: Removing non-host peer:', peer);
+          removePeer(peer);
+        }
+      });
+    }
+
+    // Cleanup peers die niet meer in het channel zitten
+    Object.keys(peersRef.current).forEach(peer => {
       if (!otherUsers.includes(peer)) {
         removePeer(peer);
       }
     });
-  }, [channelId, currentUser, channelUsers, sendOffer, removePeer]);
+  }, [channelId, currentUser, channelUsers, hostUsername, isHost, sendOffer, removePeer]);
 
-  // Acquire stream on channel join, cleanup on leave
+
+  // ============================================
+  // HOST MIGRATIE
+  // ============================================
+
   useEffect(() => {
-    if (channelId) {
-      getLocalStream().then(() => {
-        startSpeakingMonitor();
-      });
-    } else {
+    if (!channelId || !currentUser || !hostUsername) return;
+
+    // Detecteer host change
+    if (previousHostRef.current && previousHostRef.current !== hostUsername) {
+      log('[TeamTalkMesh] HOST MIGRATION detected:', previousHostRef.current, '→', hostUsername);
+
+      // Sluit alle bestaande verbindingen
       removeAllPeers();
-      stopLocalStream();
+      cleanupMixes();
+      processedSignalsRef.current.clear();
+      processedIceRef.current.clear();
+
+      // Wacht kort voor Gun sync, dan reconnect
+      setTimeout(() => {
+        if (isHost) {
+          // Nieuwe host: wacht op inkomende connections
+          const otherUsers = Object.keys(channelUsers || {}).filter(u => u !== currentUser);
+          otherUsers.forEach(clientUser => {
+            log('[TeamTalkMesh] NEW HOST: Sending offer to:', clientUser);
+            sendOffer(clientUser);
+          });
+        } else {
+          // Client: verbind met nieuwe host
+          log('[TeamTalkMesh] CLIENT: Reconnecting to new host:', hostUsername);
+          sendOffer(hostUsername);
+        }
+      }, 500);
     }
 
+    previousHostRef.current = hostUsername;
+  }, [hostUsername, channelId, currentUser, isHost, channelUsers, removeAllPeers, cleanupMixes, sendOffer]);
+
+  // Rebuild mixes wanneer peers veranderen (host only)
+  useEffect(() => {
+    if (!isHost || !channelId) return;
+
+    const peerCount = Object.keys(peersRef.current).length;
+    if (peerCount > 0) {
+      // Debounce rebuild
+      const timer = setTimeout(() => {
+        rebuildAllMixes();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isHost, channelId, channelUsers, rebuildAllMixes]);
+
+  // Acquire stream + monitor on join, cleanup on leave
+  useEffect(() => {
+    if (channelId) {
+      getLocalStream().then(() => startSpeakingMonitor());
+    } else {
+      removeAllPeers();
+      cleanupMixes();
+      stopLocalStream();
+      previousHostRef.current = null;
+    }
     return () => {
       removeAllPeers();
+      cleanupMixes();
       stopLocalStream();
+      previousHostRef.current = null;
     };
   }, [channelId]);
-
-  // Cleanup signaling data bij leave
-  useEffect(() => {
-    return () => {
-      if (channelId) {
-        // Verwijder onze signaling data
-        const signalingNode = gun.get('TEAMTALK').get('signaling').get(channelId);
-        Object.keys(peersRef.current).forEach(peer => {
-          signalingNode.get(`${currentUser}_${peer}`).put(null);
-          signalingNode.get(`${peer}_${currentUser}`).put(null);
-        });
-      }
-    };
-  }, [channelId, currentUser]);
-
+  
   return {
     isMuted,
     speakingUsers,

@@ -6,6 +6,7 @@ import { log } from './utils/debug';
 import { createListenerManager } from './utils/gunListenerManager';
 import { useWebRTC } from './hooks/useWebRTC';
 import CallPanel from './components/CallPanel';
+import { encryptMessage, decryptMessage, warmupEncryption } from './utils/encryption';
 
 // ============================================
 // 1. REDUCER (Berichten logica)
@@ -54,22 +55,25 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   } = useWebRTC(currentUser, contactName);
 
   // --- Gun.js Handlers ---
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback(async () => {
     if (!messageText.trim() || !currentSessionId) return;
     const currentUser = user.is?.alias;
     const now = Date.now();
     const messageKey = `${currentUser}_${now}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // Encrypt content voor verzending
+    const encryptedContent = await encryptMessage(messageText, contactName);
+
     gun.get(currentSessionId).get(messageKey).put({
       sender: currentUser,
-      content: messageText,
+      content: encryptedContent,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timeRef: now
     });
     
     gun.get(`TYPING_${currentSessionId}`).put({ user: currentUser, isTyping: false, timestamp: now });
     setMessageText('');
-  }, [messageText, currentSessionId]);
+  }, [messageText, currentSessionId, contactName]);
 
   const sendNudge = useCallback(() => {
     if (!canNudge || !currentSessionId) return;
@@ -96,6 +100,13 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     });
   }, [contactName]);
 
+  // Warmup encryptie bij openen conversatie
+  useEffect(() => {
+    if (contactName) {
+      warmupEncryption(contactName);
+    }
+  }, [contactName]);
+
   useEffect(() => {
     if (!currentSessionId) return;
 
@@ -103,10 +114,15 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     const nudgeNode = gun.get(`NUDGE_${currentSessionId}`);
     const typingNode = gun.get(`TYPING_${currentSessionId}`);
 
-    chatNode.map().on((data, id) => {
+    chatNode.map().on(async (data, id) => {
       if (!data?.content) return;
       const boundary = lastNotificationTime ? (lastNotificationTime - 2000) : (windowOpenTimeRef.current - 1000);
-      dispatch({ ...data, id, isLegacy: data.timeRef < boundary });
+
+      // Decrypt content — de afzender is het contact OF wijzelf
+      const decryptContact = data.sender === user.is?.alias ? contactName : data.sender;
+      const decryptedContent = await decryptMessage(data.content, decryptContact);
+
+      dispatch({ ...data, content: decryptedContent, id, isLegacy: data.timeRef < boundary });
     });
 
     nudgeNode.on(data => {

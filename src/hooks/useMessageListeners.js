@@ -13,6 +13,7 @@ import { gun, user } from '../gun';
 import { getContactPairId, getAvatarUrl } from '../utils/chatUtils';
 import { log } from '../utils/debug';
 import { createListenerManager } from '../utils/gunListenerManager';
+import { decryptMessage } from '../utils/encryption';
 
 /**
  * Hook voor message en friend request listeners.
@@ -118,7 +119,7 @@ export function useMessageListeners({
     currentSessionId = activeSessionId;
     log(`[useMessageListeners] 📡 Hook verbonden met sessie-node: ${activeSessionId}`);
 
-    gun.get(activeSessionId).map().on((data, id) => {
+    gun.get(activeSessionId).map().on(async (data, id) => {
       if (!data || !data.content || !data.sender) return;
       if (data.sender === (user.is && user.is.alias)) return;
 
@@ -130,11 +131,14 @@ export function useMessageListeners({
       const isRecent = data.timeRef > (now - 15000);
 
       if (isRecent) {
-        log('[useMessageListeners] 📨 Bericht ontvangen:', contactName, data.content);
+        log('[useMessageListeners] 📨 Bericht ontvangen:', contactName);
+
+        // Decrypt voor preview
+        const decryptedContent = await decryptMessage(data.content, contactName);
 
         // Geef door aan App.js (voor de oranje taakbalk)
         if (onMessage) {
-          onMessage(data, contactName, id, activeSessionId);
+          onMessage({ ...data, content: decryptedContent }, contactName, id, activeSessionId);
         }
 
         // Toon Toast als het venster niet gefocust is
@@ -145,7 +149,7 @@ export function useMessageListeners({
           }
           showToast({
             from: contactName,
-            message: data.content,
+            message: decryptedContent,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${contactName}`,
             contactName: contactName,
             type: 'message',

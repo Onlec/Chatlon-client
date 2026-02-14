@@ -15,12 +15,18 @@ import { gun, user } from './gun';
 import { paneConfig } from './paneConfig';
 import './App.css';
 import { log } from './utils/debug';
+import { useSuperpeer } from './hooks/useSuperpeer';
 
 // Hooks
 import { useToasts } from './hooks/useToasts';
 import { usePresence } from './hooks/usePresence';
 import { usePaneManager } from './hooks/usePaneManager';
 import { useMessageListeners } from './hooks/useMessageListeners';
+
+import { runFullCleanup } from './utils/gunCleanup';
+import { clearEncryptionCache } from './utils/encryption';
+
+
 
 function App() {
   // ============================================
@@ -140,7 +146,11 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
     showToast,
     shownToastsRef
   });
-
+  // Superpeer management
+  const {
+    isSuperpeer,
+    connectedSuperpeers
+  } = useSuperpeer(isLoggedIn, currentUser);
 
   // ============================================
   // TAB DUPLICATE DETECTION
@@ -262,10 +272,16 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   
   const handleLoginSuccess = (username) => {
     log('[App] Login success:', username);
-    hasInitializedRef.current = true; // FIX: Markeer als geïnitialiseerd
+    hasInitializedRef.current = true;
     setIsLoggedIn(true);
     setCurrentUser(username);
-    setTimeout(() => openPane('contacts'), 100);
+    setTimeout(() => {
+          openPane('contacts');
+        }, 100);
+        setTimeout(() => {
+          runFullCleanup(user.is.alias);
+        }, 5000);
+    setTimeout(() => runFullCleanup(username), 5000);
   };
 
   const handleLogoff = () => {
@@ -276,6 +292,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
     cleanupListeners();
     resetShownToasts();
     resetAll();
+    clearEncryptionCache();
     
     // FIX: Reset initialized flag
     hasInitializedRef.current = false;
@@ -530,6 +547,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
 </div>
 
         <div className="systray">
+          {isSuperpeer && <span className="superpeer-badge" title={`Superpeer actief | ${connectedSuperpeers} peer(s) verbonden`}>📡</span>}
           {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>

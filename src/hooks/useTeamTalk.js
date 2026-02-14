@@ -31,6 +31,7 @@ export function useTeamTalk(currentUser) {
   const [channelUsers, setChannelUsers] = useState({});
   const [currentChannel, setCurrentChannel] = useState(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [currentHost, setCurrentHost] = useState(null);
 
   const heartbeatRef = useRef(null);
   const channelListenersRef = useRef(new Set());
@@ -93,6 +94,38 @@ export function useTeamTalk(currentUser) {
       }
     });
   }, []);
+  // ============================================
+  // HOST SELECTIE
+  // ============================================
+
+  const determineHost = useCallback((channelId) => {
+    const users = channelUsers[channelId];
+    if (!users || Object.keys(users).length === 0) {
+      setCurrentHost(null);
+      return;
+    }
+
+    // Oudste actieve user wordt host
+    const sortedUsers = Object.values(users)
+      .filter(u => u.heartbeat && (Date.now() - u.heartbeat < 12000))
+      .sort((a, b) => a.joinedAt - b.joinedAt);
+
+    const newHost = sortedUsers.length > 0 ? sortedUsers[0].username : null;
+
+    setCurrentHost(prev => {
+      if (prev !== newHost) {
+        log('[useTeamTalk] Host changed:', prev, '→', newHost);
+        // Publiceer host naar Gun zodat alle clients het weten
+        if (newHost && currentUser === newHost) {
+          gun.get('TEAMTALK').get('channels').get(channelId).get('host').put({
+            username: newHost,
+            since: Date.now()
+          });
+        }
+      }
+      return newHost;
+    });
+  }, [channelUsers, currentUser]);
 
   const setupChannelUserListener = useCallback((channelId) => {
     gun.get('TEAMTALK').get('channels').get(channelId).get('users').map().on((data, username) => {
@@ -149,7 +182,50 @@ export function useTeamTalk(currentUser) {
 
     return () => clearInterval(cleanupInterval);
   }, []);
+  // Host selectie effect
+  useEffect(() => {
+    if (currentChannel) {
+      determineHost(currentChannel);
+    } else {
+      setCurrentHost(null);
+    }
+  }, [currentChannel, channelUsers, determineHost]);
 
+  // Luister naar host updates van Gun (voor niet-host peers)
+  useEffect(() => {
+    if (!currentChannel) return;
+
+    const hostNode = gun.get('TEAMTALK').get('channels').get(currentChannel).get('host');
+    hostNode.on((data) => {
+      if (data && data.username) {
+        setCurrentHost(data.username);
+      }
+    });
+
+    return () => hostNode.off();
+  }, [currentChannel]);
+  // Host selectie effect
+  useEffect(() => {
+    if (currentChannel) {
+      determineHost(currentChannel);
+    } else {
+      setCurrentHost(null);
+    }
+  }, [currentChannel, channelUsers, determineHost]);
+
+  // Luister naar host updates van Gun (voor niet-host peers)
+  useEffect(() => {
+    if (!currentChannel) return;
+
+    const hostNode = gun.get('TEAMTALK').get('channels').get(currentChannel).get('host');
+    hostNode.on((data) => {
+      if (data && data.username) {
+        setCurrentHost(data.username);
+      }
+    });
+
+    return () => hostNode.off();
+  }, [currentChannel]);
   // ============================================
   // JOIN / LEAVE
   // ============================================
@@ -288,6 +364,8 @@ export function useTeamTalk(currentUser) {
     channels,
     channelUsers,
     currentChannel,
+    currentHost,
+    isHost: currentHost === currentUser,
     isMuted,
     joinChannel,
     leaveChannel,

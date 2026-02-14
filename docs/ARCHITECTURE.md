@@ -87,8 +87,43 @@ All managed centrally by `App.js`.
 - Mesh WebRTC: max ~6 users per channel
 - Vaste channels + tijdelijke (door gebruikers aangemaakt)
 
----
+### Encryptie
+- E2E encryptie via Gun SEA voor chatberichten
+- Diffie-Hellman key exchange per contactpaar
+- Gedeelde geheimen gecached per sessie
+- Backwards compatible met onversleutelde berichten
+- WebRTC audio/video is altijd encrypted (SRTP)
 
+---
+## Netwerk Architectuur
+
+### Relay Configuratie
+- Primaire relay: Render
+- Secundaire relay: Fly.io
+- Relays synchroniseren automatisch via Gun protocol
+- Clients verbinden met alle beschikbare relays
+
+### Data Persistentie (Selectief)
+- Contacten, channels, profielen: lokaal gecached
+- Chatberichten: session-only (MSN-authentiek)
+- Signaling data: ephemeral, geen storage
+
+### Data Compaction
+- Client-side cleanup bij login
+- Verwijdert: verlopen signaling, oude ICE, stale presence
+- Threshold: 60s voor signaling, 30s voor presence
+
+### Browser Peering (Laag 4)
+- Gun WebRTC peering voor directe browser-to-browser sync
+- Relay als fallback en discovery
+- STUN servers voor NAT traversal
+
+### Superpeers (Laag 5)
+- Stabiele clients als vrijwillige relay-peers
+- Selectie: >10min online, desktop, opt-in
+- Geregistreerd via SUPERPEER/ Gun node
+
+---
 ## 🔁 Real-Time & Presence
 
 ### Presence Model

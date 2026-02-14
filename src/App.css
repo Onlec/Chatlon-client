@@ -3557,3 +3557,126 @@ div.pane-frame.maximized {
 .tt-user-node:hover .tt-volume-slider {
   opacity: 1;
 }
+
+/* Host migratie melding */
+.tt-migration-notice {
+  background: linear-gradient(to right, #2E3A5E, #1E1E2E);
+  border: 1px solid #4A4A6E;
+  color: #88AAFF;
+  padding: 6px 12px;
+  font-size: 11px;
+  text-align: center;
+  animation: tt-notice-fade 4s ease-in-out forwards;
+}
+
+@keyframes tt-notice-fade {
+  0% { opacity: 0; transform: translateY(-4px); }
+  10% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.superpeer-badge {
+  font-size: 12px;
+  margin-right: 6px;
+  cursor: default;
+  opacity: 0.7;
+}
+
+.superpeer-badge:hover {
+  opacity: 1;
+}
+
+/* ============================================
+   PINBALL PANE
+   ============================================ */
+
+.pinball-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #000000;
+  position: relative;
+}
+
+.pinball-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #000000;
+}
+
+.pinball-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  z-index: 10;
+}
+
+.pinball-loading-text {
+  color: #FFFFFF;
+  font-size: 16px;
+  font-family: 'Tahoma', sans-serif;
+  margin-bottom: 8px;
+}
+
+.pinball-loading-sub {
+  color: #888888;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.pinball-focus-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 5;
+  cursor: pointer;
+}
+
+.pinball-focus-text {
+  color: #FFFFFF;
+  font-size: 18px;
+  font-family: 'Tahoma', sans-serif;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 12px 24px;
+  border-radius: 4px;
+  border: 1px solid #444444;
+}
+
+.pinball-controls-bar {
+  display: flex;
+  gap: 12px;
+  padding: 4px 8px;
+  background: #1A1A2E;
+  border-top: 1px solid #333355;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.pinball-control {
+  color: #8888AA;
+  font-size: 10px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.pinball-iframe:focus {
+  outline: none;
+}
+
+.pinball-container:focus-within .pinball-iframe {
+  pointer-events: all;
+}
