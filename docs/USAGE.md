@@ -46,7 +46,7 @@ Chatlon uses **three distinct AI roles**:
 
 ---
 
-## 🔒 Claude Development Contract (CRITICAL)
+## 🔑 Claude Development Contract (CRITICAL)
 
 Claude **must** follow these rules at all times.
 
@@ -96,25 +96,31 @@ Claude output **must** follow this structure:
 ```js
 // OLD
 const value = false;
+```
 
 ⬇️
 
+```js
 // NEW
 const value = true;
+```
 
 Reason: Fix incorrect default value.
-➕ New Block
+
+### ➕ New Block
 
 Insert after line ~200
 
+```js
 function newHelper() {}
-
+```
+```
 
 Anything outside this structure is invalid.
 
 ---
 
-## 📐 Architecture Compliance
+## 🔐 Architecture Compliance
 
 - `ARCHITECTURE.md` is **locked**
 - Claude may not contradict it
@@ -138,7 +144,7 @@ Claude should:
 
 - Temporary debug code is allowed
 - Debug code must be clearly marked
-- Cleanup is always the human’s responsibility
+- Cleanup is always the human's responsibility
 
 No debug logic is documented unless explicitly requested.
 
@@ -162,22 +168,33 @@ Claude never updates:
 ```bash
 npm install
 npm start
+```
 
-Environment:
+### Dependencies
 
-    .env.local → local Gun server
+Core:
+- React 19
+- Gun.js + SEA (auth, realtime sync, data storage)
+- react-draggable, react-resizable
 
-    .env → hosted Gun relay
+Transport:
+- Trystero (BitTorrent P2P — used for TeamTalk voice chat)
 
-🧠 Design Philosophy Reminder
+### Environment
+
+- `.env.local` → local Gun server (port 5050)
+- `.env` → hosted Gun relay (Render)
+- `REACT_APP_GUN_URL` — primary relay URL
+- `REACT_APP_GUN_URL_2` — secondary relay URL (optional)
+
+---
+
+## 🧠 Design Philosophy Reminder
 
 Chatlon prioritizes:
-
-    Authentic early-2000s behavior
-
-    Clarity over abstraction
-
-    Manual control over automation
+- Authentic early-2000s behavior
+- Clarity over abstraction
+- Manual control over automation
 
 AI assists.
 The human decides.

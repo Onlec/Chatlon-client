@@ -2,16 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { log } from './utils/debug';
 
 function BootSequence({ onBootComplete }) {
-  const [stage, setStage] = useState('post'); // post, xpboot, welcome, fadeout
+  const [stage, setStage] = useState('post'); // post, xpboot
   const [showCursor, setShowCursor] = useState(true);
   const [memoryCount, setMemoryCount] = useState(0);
   const [postLines, setPostLines] = useState([]);
   const [scanlinesEnabled, setScanlinesEnabled] = useState(true);
   
-  const audioRef = useRef(null);
   const biosBeepRef = useRef(null);
 
-  // POST stage - BIOS screen
+  // POST stage - Volledige BIOS screen met ASCII logo
   useEffect(() => {
     if (stage === 'post') {
       // Cursor blink
@@ -38,22 +37,22 @@ function BootSequence({ onBootComplete }) {
       }, 50);
 
       // Build POST text line by line
-const logoRows = String.raw`
-██████╗ ██╗   ██╗███████╗       ██████╗ ██████╗ ██████╗ ███████╗
+      const logoRows = String.raw`
+█████╗ ██╗   ██╗███████╗       ██████╗ ██████╗ ██████╗ ███████╗
 ██╔══██╗██║   ██║██╔════╝      ██╔════╝██╔═══██╗██╔══██╗██╔════╝
-██████╔╝██║   ██║█████╗  █████╗██║     ██║   ██║██████╔╝█████╗  
-██╔══██╗██║   ██║██╔══╝  ╚════╝██║     ██║   ██║██╔══██╗██╔══╝  
-██████╔╝╚██████╔╝██║           ╚██████╗╚██████╔╝██║  ██║███████╗
-╚═════╝  ╚═════╝ ╚═╝            ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝`.split('\n');
+███████║██║   ██║█████╗  █████╗██║     ██║   ██║██████╔╝█████╗  
+██╔══██║██║   ██║██╔══╝  ╚════╝██║     ██║   ██║██╔══██╗██╔══╝  
+███████║╚██████╔╝██║           ╚██████╗╚██████╔╝██║  ██║███████╗
+╚══════╝ ╚═════╝ ╚═╝            ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝`.split('\n');
 
-    const lines = [
+      const lines = [
         '',
-        ...logoRows, // Voegt alle regels van het logo toe aan de start
+        ...logoRows,
         '',
-        '          ---  T H E   F O U N D A T I O N   O F   P O W E R  ---',
+        '    ---  T H E   F O U N D A T I O N   O F   P O W E R  ---',
         '',
         'BufCore BIOS v2.51.1234',
-        'Copyright (C) 1984-2003, BufCore Systems, Inc.',
+        'Copyright (C) 1993-2003, BufCore Systems, Inc.',
         '',
         'Main Processor: Intel(R) Pentium(R) 4 CPU 2.40GHz',
         'Memory Test: ',
@@ -87,7 +86,7 @@ const logoRows = String.raw`
             setStage('xpboot');
           }, 500);
         }
-      }, 100);
+      }, 80);
 
       return () => {
         clearInterval(cursorInterval);
@@ -97,42 +96,14 @@ const logoRows = String.raw`
     }
   }, [stage]);
 
-  // XP Boot stage - animated logo
+  // XP Boot stage
   useEffect(() => {
     if (stage === 'xpboot') {
-      // After 4 seconds, show Welcome screen
+      // Na 4 seconden naar login
       const timer = setTimeout(() => {
-        setStage('welcome');
-      }, 4000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [stage]);
-
-  // Welcome stage
-  useEffect(() => {
-    if (stage === 'welcome') {
-      // After 3 seconds, fade to desktop
-      const timer = setTimeout(() => {
-        setStage('fadeout');
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [stage]);
-
-  // Fadeout stage - complete boot
-  useEffect(() => {
-    if (stage === 'fadeout') {
-      // Play Panes dX startup sound
-      if (audioRef.current) {
-        audioRef.current.play().catch(() => {});
-      }
-
-      // After 2 seconds, call onBootComplete
-      const timer = setTimeout(() => {
+        sessionStorage.setItem('chatlon_boot_complete', 'true');
         onBootComplete();
-      }, 2000);
+      }, 4000);
 
       return () => clearTimeout(timer);
     }
@@ -141,7 +112,7 @@ const logoRows = String.raw`
   // Keyboard listener for scanlines toggle
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'F5') {
+      if (e.key === 's') {
         setScanlinesEnabled(prev => !prev);
       }
     };
@@ -151,111 +122,74 @@ const logoRows = String.raw`
   }, []);
 
   return (
-    <div className={`boot-sequence ${stage}`}>
-      {/* POST/BIOS Stage */}
+    <div className="boot-sequence">
+      {/* POST/BIOS Stage - Volledige retro screen */}
       {stage === 'post' && (
-        <div className={`boot-post ${scanlinesEnabled ? 'scanlines' : ''}`}>
-          <div className="boot-post-content">
+        <div className={`xp-post ${scanlinesEnabled ? 'scanlines' : ''}`}>
+          <div className="xp-post-content">
             {postLines.map((line, index) => {
               if (line === 'Memory Testing: OK') {
                 return (
-                  <div key={index} className="boot-post-line">
+                  <div key={index} className="xp-post-line">
                     Memory Testing: {memoryCount} MB {memoryCount >= 256 ? 'OK' : '...'}
                   </div>
                 );
               }
               return (
-                <div key={index} className="boot-post-line">
+                <div key={index} className="xp-post-line">
                   {line}
                 </div>
               );
             })}
-            {showCursor && <span className="boot-cursor">_</span>}
+            {showCursor && <span className="xp-post-cursor">_</span>}
           </div>
-          <div className="boot-post-footer">
-            <span className="boot-hint">F5: Toggle Scanlines</span>
+          <div className="xp-post-footer">
+            <span className="xp-hint">S: Toggle Scanlines</span>
           </div>
         </div>
       )}
 
-      {/* Panes dX Boot Stage */}
+      {/* XP Boot Stage - Authentieke XP loading */}
       {stage === 'xpboot' && (
-        <div className="boot-dx">
-          <div className="boot-dx-content">
-            <div className="boot-dx-logo">
-              <svg width="300" height="100" viewBox="0 0 300 100">
-                {/* Panes dX Logo - simplified version */}
-                <defs>
-                  <linearGradient id="red-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#FF0000', stopOpacity: 0.8 }} />
-                    <stop offset="100%" style={{ stopColor: '#CC0000', stopOpacity: 1 }} />
-                  </linearGradient>
-                  <linearGradient id="green-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#00FF00', stopOpacity: 0.8 }} />
-                    <stop offset="100%" style={{ stopColor: '#00CC00', stopOpacity: 1 }} />
-                  </linearGradient>
-                  <linearGradient id="blue-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#0000FF', stopOpacity: 0.8 }} />
-                    <stop offset="100%" style={{ stopColor: '#0000CC', stopOpacity: 1 }} />
-                  </linearGradient>
-                  <linearGradient id="yellow-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#FFFF00', stopOpacity: 0.8 }} />
-                    <stop offset="100%" style={{ stopColor: '#CCCC00', stopOpacity: 1 }} />
-                  </linearGradient>
-                </defs>
-                
-                {/* Four colored rectangles arranged as XP logo */}
-                <rect x="30" y="10" width="50" height="35" fill="url(#red-gradient)" transform="skewX(-10)" />
-                <rect x="90" y="10" width="50" height="35" fill="url(#green-gradient)" transform="skewX(-10)" />
-                <rect x="30" y="55" width="50" height="35" fill="url(#blue-gradient)" transform="skewX(-10)" />
-                <rect x="90" y="55" width="50" height="35" fill="url(#yellow-gradient)" transform="skewX(-10)" />
-                
-                {/* Microsoft text */}
-                <text x="160" y="40" fontFamily="Arial, sans-serif" fontSize="16" fill="#fff" fontWeight="normal">
-                  Macrohard
-                </text>
-                
-                {/* Panes dX text */}
-                <text x="160" y="65" fontFamily="Trebuchet MS, Arial, sans-serif" fontSize="24" fill="#fff" fontWeight="bold">
-                  Panes
-                </text>
-                <text x="245" y="65" fontFamily="Trebuchet MS, Arial, sans-serif" fontSize="24" fill="#fff" fontWeight="bold" fontStyle="italic">
-                  dX
-                </text>
-                
-                {/* Professional text */}
-                <text x="160" y="80" fontFamily="Arial, sans-serif" fontSize="11" fill="#ccc">
-                  Professional
-                </text>
-              </svg>
+        <div className="xp-boot">
+          <div className="xp-boot-content">
+            {/* XP Logo */}
+            <div className="xp-boot-logo">
+              <div className="xp-logo-stripe xp-stripe-red"></div>
+              <div className="xp-logo-stripe xp-stripe-green"></div>
+              <div className="xp-logo-stripe xp-stripe-blue"></div>
+              <div className="xp-logo-stripe xp-stripe-yellow"></div>
             </div>
-            
-            <div className="boot-dx-loading">
-              <div className="boot-dx-bar">
-                <div className="boot-dx-bar-inner"></div>
+
+            {/* XP Text */}
+            <div className="xp-boot-brand">
+              <span className="xp-brand-microsoft">Macrohard</span>
+              <span className="xp-brand-windows">Panes<span className="xp-brand-xp">dX</span></span>
+            </div>
+
+            {/* Authentic XP Loading Bar */}
+            <div className="xp-boot-loading">
+              <div className="xp-loading-bar">
+                {Array.from({ length: 18 }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="xp-loading-block"
+                    style={{ animationDelay: `${i * 0.08}s` }}
+                  />
+                ))}
               </div>
             </div>
+
+            {/* Copyright tekst */}
+            <div className="xp-boot-copyright">
+              Copyright © Macrohard Corporation
+            </div>
           </div>
         </div>
       )}
 
-      {/* Welcome Stage */}
-      {stage === 'welcome' && (
-        <div className="boot-welcome">
-          <div className="boot-welcome-text">Welkom</div>
-        </div>
-      )}
-
-      {/* Fadeout Stage */}
-      {stage === 'fadeout' && (
-        <div className="boot-fadeout">
-          <div className="boot-bliss-preview"></div>
-        </div>
-      )}
-
-      {/* Audio elements */}
+      {/* Audio */}
       <audio ref={biosBeepRef} src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZXQ8NTqXi8bh2JAQufM7x4JdJCxVVrOXvs2sZCkaY4fHAeCwFKHzL8dyTQwoVYLXn7qVaEwxIpN/xu3AfBzaM0/PShTcHG2/E7+OaWQ8PVKzk775rHAU3jtLy0Yg4Bxxwxe7il1wPDk6o4vG/dyQEM3vO8d+VSRMUW7Pm76lZFAw=" />
-      <audio ref={audioRef} src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" />
     </div>
   );
 }

@@ -17,6 +17,7 @@ AI systems must NOT treat this section as architecture or rules.
 - [ ] Presence may briefly flicker during reconnect
 - [ ] Chat ordering edge case on simultaneous sends
 - [ ] Contact status not always updating instantly
+- [ ] TeamTalk: server naam lookup via Gun registry kan traag zijn bij eerste keer
 
 ### UI / UX
 - [ ] Z-index edge case when minimizing/restoring panes
@@ -27,3 +28,12 @@ AI systems must NOT treat this section as architecture or rules.
 - [ ] Remove leftover debug logs
 - [ ] Normalize Gun listeners cleanup
 - [ ] Verify ref usage in all Gun callbacks
+- [ ] Oude Gun TeamTalk nodes (TEAMTALK/channels/*, TEAMTALK/signaling/*) opruimen
+- [ ] useTeamTalkMesh.js hernoemen naar useGroupCallMesh.js (bewaard voor groepsgesprekken)
+- [ ] useTeamTalk.js opruimen — niet meer nodig voor TeamTalk, bewaren voor groepsgesprekken
+
+### Toekomstige Features
+- [ ] Groepsgesprekken in Chatlon Messenger (hergebruik Gun mesh code)
+- [ ] Credits / cosmetica systeem (verdienen, shop, thema's)
+- [ ] 1-on-1 calls optioneel migreren naar Trystero
+- [ ] Peer-to-peer file sharing via Trystero

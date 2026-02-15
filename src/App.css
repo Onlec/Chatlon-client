@@ -681,173 +681,640 @@ div.pane-frame.maximized {
 
 /* --- 13. PANES dX LOGIN SCREEN --- */
 
-.login-screen {
+/* ============================================
+   WINDOWS XP AUTHENTIC LOGIN SCREEN
+   ============================================ */
+
+.xp-login {
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(to bottom, #5A84CB 0%, #2952A3 100%);
+  background: linear-gradient(to bottom, 
+    #5a7fbe 0%,
+    #4169b0 15%,
+    #3d62a8 30%,
+    #35569d 50%,
+    #2d4a91 70%,
+    #254080 85%,
+    #1d3466 100%
+  );
+  display: flex;
+  flex-direction: column;
+  font-family: 'Tahoma', 'Verdana', 'Segoe UI', Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* ============================================
+   TOP BAR
+   ============================================ */
+
+.xp-top-bar {
+  height: 50px;
+  background: linear-gradient(to bottom, 
+    rgba(0, 38, 99, 0.8) 0%,
+    rgba(0, 28, 74, 0.9) 100%
+  );
+  display: flex;
+  align-items: center;
+  padding: 0 30px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.xp-top-text {
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: normal;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+
+.xp-main {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+  padding: 40px;
 }
 
-.login-content {
+/* ============================================
+   LEFT SIDE - LOGO
+   ============================================ */
+
+.xp-left {
+  flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 100%;
-  max-width: 500px;
+  justify-content: flex-end;
+  padding-right: 60px;
 }
 
-.login-logo {
-  margin-bottom: 60px;
+.xp-logo-container {
+  text-align: left;
 }
 
-.dx-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.dx-logo-text {
+.xp-logo-top {
   font-size: 18px;
-  color: white;
-  font-weight: normal;
-  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 300;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+  font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
 }
 
-.dx-logo-panes {
-  font-size: 42px;
-  color: white;
-  font-weight: bold;
-  letter-spacing: 1px;
-  line-height: 0.9;
+.xp-logo-windows {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
 }
 
-.dx-logo-xp {
+.xp-logo-win {
   font-size: 52px;
-  color: #FFB900;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+  font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
+  letter-spacing: -2px;
+}
+
+.xp-logo-xp {
+  font-size: 52px;
   font-weight: bold;
   font-style: italic;
-  letter-spacing: 3px;
-  margin-left: 60px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  color: #ffffff;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+  font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
+  letter-spacing: -1px;
 }
 
-.login-box {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 8px;
-  padding: 30px 40px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  min-width: 380px;
+/* ============================================
+   CENTER DIVIDER
+   ============================================ */
+
+.xp-divider {
+  width: 2px;
+  height: 420px;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 5%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.1) 95%,
+    transparent 100%
+  );
+  box-shadow: 
+    1px 0 0 rgba(255, 255, 255, 0.15),
+    -1px 0 0 rgba(0, 0, 0, 0.3);
 }
 
-.login-header {
-  text-align: center;
-  margin-bottom: 25px;
+/* ============================================
+   RIGHT SIDE - USERS
+   ============================================ */
+
+.xp-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 60px;
 }
 
-.login-instruction {
+/* USER SELECTION PANEL */
+.xp-user-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 280px;
+}
+
+.xp-user-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(2px);
+}
+
+.xp-user-item:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* DELETE BUTTON */
+.xp-delete-user {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(200, 0, 0, 0.8);
+  border: 1px solid rgba(150, 0, 0, 0.9);
+  border-radius: 3px;
+  color: #ffffff;
   font-size: 12px;
-  color: #003399;
-  margin: 0;
   font-weight: bold;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.login-field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.login-field label {
-  font-size: 11px;
-  font-weight: bold;
-  color: #000;
-}
-
-.dx-login-input {
-  padding: 6px 8px;
-  border: 1px solid #7F9DB9;
-  font-size: 13px;
-  font-family: 'Tahoma', sans-serif;
-  outline: none;
-}
-
-.dx-login-input:focus {
-  border-color: #0066CC;
-  box-shadow: 0 0 3px rgba(0,102,204,0.5);
-}
-
-.login-error {
-  background: #FFE6E6;
-  border: 1px solid #CC0000;
-  color: #CC0000;
-  padding: 8px;
-  border-radius: 3px;
-  font-size: 11px;
-  text-align: center;
-}
-
-.login-actions {
-  display: flex;
+  cursor: pointer;
+  display: none; /* Verborgen by default */
+  align-items: center;
   justify-content: center;
-  margin-top: 10px;
+  transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.login-btn {
-  min-width: 120px;
-  padding: 6px 20px;
+.xp-user-item:hover .xp-delete-user {
+  display: flex; /* Toon alleen bij hover */
 }
 
-.login-footer {
-  text-align: center;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #D0D0D0;
+.xp-delete-user:hover {
+  background: rgba(220, 0, 0, 1);
+  border-color: rgba(180, 0, 0, 1);
+  transform: scale(1.1);
 }
 
-.login-footer a {
-  font-size: 11px;
-  color: #003399;
-  text-decoration: none;
+.xp-delete-user:active {
+  transform: scale(0.95);
 }
 
-.login-footer a:hover {
-  text-decoration: underline;
+.xp-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 3px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: #ffffff;
 }
 
-.login-bottom {
-  margin-top: 40px;
+.xp-guest-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, #e8f0ff 0%, #d0e0ff 100%);
+}
+
+.xp-guest-icon {
+  font-size: 28px;
+  opacity: 0.7;
+}
+
+.xp-username {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* PASSWORD PANEL */
+.xp-password-panel {
+  min-width: 360px;
+}
+
+.xp-user-selected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.xp-avatar-large {
+  width: 64px;
+  height: 64px;
+  border-radius: 4px;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  background: #ffffff;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.xp-username-large {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.xp-input-row {
+  margin-bottom: 20px;
+}
+
+.xp-label {
+  display: block;
+  color: #ffffff;
+  font-size: 12px;
+  margin-bottom: 8px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-text-input {
   width: 100%;
+  padding: 8px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: 'Tahoma', Arial, sans-serif;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.xp-text-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.7);
+  background: #ffffff;
+  box-shadow: 
+    inset 0 1px 3px rgba(0, 0, 0, 0.1),
+    0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.xp-password-input-group {
   display: flex;
+  gap: 8px;
+}
+
+.xp-password-input-group .xp-text-input {
+  flex: 1;
+}
+
+.xp-arrow-button {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(to bottom, 
+    #7dc243 0%,
+    #6eb535 50%,
+    #5fa228 100%
+  );
+  border: 2px solid #4d8c1f;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
   justify-content: center;
 }
 
-.login-options {
-  display: flex;
-  gap: 15px;
+.xp-arrow-button:hover {
+  background: linear-gradient(to bottom, 
+    #8dd253 0%,
+    #7dc243 50%,
+    #6eb535 100%
+  );
 }
 
-.login-option-btn {
-  background: rgba(255,255,255,0.2);
-  border: 1px solid rgba(255,255,255,0.4);
-  color: white;
-  padding: 8px 20px;
+.xp-arrow-button:active {
+  transform: translateY(1px);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.xp-arrow {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.xp-error-message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 200, 200, 0.5);
   border-radius: 3px;
+  color: #ffcccc;
+  font-size: 11px;
+  line-height: 1.4;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-hint-text {
+  margin-top: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-checkbox-row {
+  margin-top: 12px;
+}
+
+.xp-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  cursor: pointer;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.xp-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}
+
+.xp-checkbox-label:hover {
+  color: #ffffff;
+}
+
+.xp-max-users-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 180, 0, 0.15);
+  border: 1px solid rgba(255, 180, 0, 0.4);
+  border-radius: 4px;
+  color: rgba(255, 220, 150, 0.95);
+  font-size: 11px;
+  line-height: 1.4;
+  margin-bottom: 12px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-separator-item {
+  background: none;
+  border: none;
+  padding: 8px 20px;
+  cursor: default;
+  pointer-events: none;
+}
+
+.xp-separator-item:hover {
+  background: none;
+  border: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.xp-separator-line {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.2) 80%,
+    transparent 100%
+  );
+}
+
+/* Special items (andere gebruiker, nieuwe gebruiker) */
+.xp-special-item {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.xp-special-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Disabled state */
+.xp-user-item.xp-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.xp-user-item.xp-disabled .xp-guest-avatar {
+  opacity: 0.5;
+}
+
+.xp-user-item.xp-disabled .xp-username {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+
+/* ============================================
+   BOTTOM BAR
+   ============================================ */
+
+.xp-bottom-bar {
+  height: 60px;
+  background: linear-gradient(to bottom, 
+    rgba(0, 38, 99, 0.9) 0%,
+    rgba(0, 28, 74, 0.95) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  border-top: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.xp-bottom-left {
+  flex: 1;
+}
+
+.xp-back-link {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 11px;
   cursor: pointer;
-  font-family: 'Tahoma', sans-serif;
+  text-decoration: underline;
+  padding: 6px 12px;
+  font-family: 'Tahoma', Arial, sans-serif;
+  transition: color 0.2s;
 }
 
-.login-option-btn:hover {
-  background: rgba(255,255,255,0.3);
+.xp-back-link:hover {
+  color: #ffffff;
+}
+
+.xp-bottom-right {
+  display: flex;
+  gap: 12px;
+}
+
+.xp-shutdown-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: linear-gradient(to bottom, 
+    #ff5555 0%,
+    #ee3333 50%,
+    #cc0000 100%
+  );
+  border: 2px solid #990000;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: bold;
+  font-family: 'Tahoma', Arial, sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.xp-shutdown-button:hover {
+  background: linear-gradient(to bottom, 
+    #ff6666 0%,
+    #ff4444 50%,
+    #dd1111 100%
+  );
+  box-shadow: 
+    0 3px 8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.xp-shutdown-button:active {
+  transform: translateY(1px);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.xp-shutdown-icon {
+  font-size: 14px;
+}
+
+/* ============================================
+   LOADING SCREEN
+   ============================================ */
+
+.xp-login-loading {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+.xp-loading-text {
+  font-size: 52px;
+  color: #ffffff;
+  font-weight: 300;
+  text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.5);
+  font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.xp-loading-bar-container {
+  width: 320px;
+}
+
+.xp-loading-bar {
+  width: 100%;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.xp-loading-bar-inner {
+  height: 100%;
+  background: linear-gradient(to right, 
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+  background-size: 200% 100%;
+  animation: xp-loading-animation 1.8s ease-in-out infinite;
+  border-radius: 5px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+@keyframes xp-loading-animation {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.xp-no-users-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  margin-bottom: 12px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-hint-icon {
+  font-size: 16px;
 }
 
 /* --- 14. REKENMACHINE STYLING --- */
@@ -2750,20 +3217,11 @@ div.pane-frame.maximized {
   padding-right: 250px;
 }
 
-/* --- 24. BOOT SEQUENCE --- */
+/* ============================================
+   POST/BIOS STAGE (CRT Screen met ASCII)
+   ============================================ */
 
-.boot-sequence {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 99999;
-  overflow: hidden;
-}
-
-/* POST/BIOS Stage */
-.boot-post {
+.xp-post {
   width: 100%;
   height: 100%;
   background: #000000;
@@ -2773,18 +3231,16 @@ div.pane-frame.maximized {
   padding: 20px;
   overflow: hidden;
   position: relative;
-  animation: boot-crt-flicker 0.5s ease-in;
+  animation: post-flicker 0.3s ease-in;
 }
 
-@keyframes boot-crt-flicker {
+@keyframes post-flicker {
   0%, 100% { opacity: 1; }
-  10% { opacity: 0.9; }
-  20% { opacity: 0.95; }
-  30% { opacity: 0.85; }
-  40% { opacity: 1; }
+  50% { opacity: 0.95; }
 }
 
-.boot-post.scanlines::before {
+/* CRT Scanlines */
+.xp-post.scanlines::before {
   content: '';
   position: absolute;
   top: 0;
@@ -2808,212 +3264,257 @@ div.pane-frame.maximized {
   100% { transform: translateY(10px); }
 }
 
-.boot-post.scanlines::after {
+/* CRT Vignette */
+.xp-post.scanlines::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
   pointer-events: none;
   z-index: 1;
 }
 
-.boot-post-content {
+.xp-post-content {
   position: relative;
   z-index: 3;
   white-space: pre-wrap;
-  line-height: 1.4;
+  line-height: 1.3;
   letter-spacing: 0.5px;
 }
 
-.boot-post-line {
-  margin: 2px 0;
-  text-shadow: 0 0 5px rgba(170, 170, 170, 0.5);
+.xp-post-line {
+  margin: 1px 0;
+  text-shadow: 0 0 4px rgba(170, 170, 170, 0.4);
 }
 
-.boot-cursor {
+.xp-post-cursor {
   display: inline-block;
   background: #AAAAAA;
   color: #000000;
   padding: 0 4px;
   margin-left: 2px;
-  animation: cursor-blink 1s step-end infinite;
 }
 
-@keyframes cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
-}
-
-.boot-post-footer {
+.xp-post-footer {
   position: absolute;
   bottom: 20px;
   left: 20px;
   right: 20px;
   z-index: 3;
-  font-size: 14px;
+  font-size: 13px;
   color: #666666;
   border-top: 1px solid #333333;
   padding-top: 10px;
 }
 
-.boot-hint {
+.xp-hint {
   color: #888888;
-  font-size: 12px;
+  font-size: 11px;
 }
 
-/* Panes dX Boot Stage */
-.boot-dx {
+/* ============================================
+   WINDOWS XP AUTHENTIC BOOT SEQUENCE
+   ============================================ */
+
+.boot-sequence {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  overflow: hidden;
+}
+
+/* ============================================
+   BIOS STAGE (Zwart scherm, witte tekst)
+   ============================================ */
+
+.xp-bios {
+  width: 100%;
+  height: 100%;
+  background: #000000;
+  display: flex;
+  align-items: flex-start;
+  padding: 30px 40px;
+}
+
+.xp-bios-content {
+  color: #FFFFFF;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.xp-bios-line {
+  margin: 3px 0;
+}
+
+.xp-bios-cursor {
+  background: #FFFFFF;
+  color: #000000;
+  padding: 0 4px;
+  margin-left: 3px;
+}
+
+/* ============================================
+   XP BOOT STAGE (Zwart met logo en loading bar)
+   ============================================ */
+
+.xp-boot {
   width: 100%;
   height: 100%;
   background: #000000;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: boot-fade-in 0.5s ease-in;
 }
 
-@keyframes boot-fade-in {
+.xp-boot-content {
+  text-align: center;
+}
+
+/* XP Logo - 4 gekleurde balkjes */
+.xp-boot-logo {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.xp-logo-stripe {
+  width: 60px;
+  height: 60px;
+  transform: skewX(-20deg);
+  animation: xp-logo-appear 0.6s ease-out backwards;
+}
+
+.xp-stripe-red {
+  background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
+  animation-delay: 0s;
+}
+
+.xp-stripe-green {
+  background: linear-gradient(135deg, #00FF00 0%, #00CC00 100%);
+  animation-delay: 0.1s;
+}
+
+.xp-stripe-blue {
+  background: linear-gradient(135deg, #0000FF 0%, #0000CC 100%);
+  animation-delay: 0.2s;
+}
+
+.xp-stripe-yellow {
+  background: linear-gradient(135deg, #FFFF00 0%, #CCCC00 100%);
+  animation-delay: 0.3s;
+}
+
+@keyframes xp-logo-appear {
+  from {
+    opacity: 0;
+    transform: skewX(-20deg) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: skewX(-20deg) translateY(0);
+  }
+}
+
+/* XP Brand Text */
+.xp-boot-brand {
+  margin-bottom: 80px;
+  animation: xp-brand-appear 0.8s ease-out 0.4s backwards;
+}
+
+@keyframes xp-brand-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.xp-brand-microsoft {
+  display: block;
+  color: #FFFFFF;
+  font-family: 'Trebuchet MS', Arial, sans-serif;
+  font-size: 13px;
+  font-weight: normal;
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+}
+
+.xp-brand-windows {
+  display: block;
+  color: #FFFFFF;
+  font-family: 'Trebuchet MS', Arial, sans-serif;
+  font-size: 36px;
+  font-weight: bold;
+  letter-spacing: -1px;
+}
+
+.xp-brand-xp {
+  font-style: italic;
+  margin-left: 4px;
+}
+
+/* ============================================
+   EXACT WINDOWS XP LOADING BAR
+   ============================================ */
+
+.xp-boot-loading {
+  width: 380px; /* Nog breder */
+  margin: 0 auto;
+  animation: xp-loading-appear 0.8s ease-out 0.6s backwards;
+}
+
+@keyframes xp-loading-appear {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-.boot-dx-content {
-  text-align: center;
-}
-
-.boot-dx-logo {
-  margin-bottom: 40px;
-  animation: boot-logo-glow 2s ease-in-out infinite;
-  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
-}
-
-@keyframes boot-logo-glow {
-  0%, 100% { 
-    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
-  }
-  50% { 
-    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.5));
-  }
-}
-
-.boot-dx-loading {
-  width: 300px;
-  margin: 0 auto;
-}
-
-.boot-dx-bar {
-  width: 100%;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 10px rgba(0, 102, 204, 0.3);
-}
-
-.boot-dx-bar-inner {
-  height: 100%;
-  width: 30%;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(0, 102, 204, 0.8) 40%,
-    rgba(51, 153, 255, 1) 50%,
-    rgba(0, 102, 204, 0.8) 60%,
-    transparent
-  );
-  border-radius: 4px;
-  animation: boot-bar-scroll 1.5s linear infinite;
-  box-shadow: 0 0 15px rgba(51, 153, 255, 0.8);
-}
-
-@keyframes boot-bar-scroll {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(400%); }
-}
-
-/* Welcome Stage */
-.boot-welcome {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to bottom, #5A84CB 0%, #2952A3 100%);
+/* Container */
+.xp-loading-bar {
+  height: 16px;
+  background: #000000;
+  border: 1px solid #1B4D8C;
   display: flex;
+  gap: 3px;
+  padding: 3px;
   align-items: center;
-  justify-content: center;
-  animation: boot-welcome-fade-in 0.8s ease-in;
 }
 
-@keyframes boot-welcome-fade-in {
-  from { 
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to { 
-    opacity: 1;
-    transform: scale(1);
-  }
+/* Grotere vierkantjes */
+.xp-loading-block {
+  width: 18px;
+  height: 10px;
+  background: #000000; /* Zwart standaard */
+  flex-shrink: 0;
+  animation: xp-block-light 1.44s linear infinite;
 }
 
-.boot-welcome-text {
-  font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
-  font-size: 64px;
-  font-weight: normal;
-  color: #FFFFFF;
-  text-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 20px rgba(255, 255, 255, 0.2);
-  animation: boot-welcome-pulse 2s ease-in-out;
-  letter-spacing: 2px;
-}
-
-@keyframes boot-welcome-pulse {
-  0% { 
-    opacity: 0;
-    transform: translateY(20px);
+/* Pulse animatie - alleen blauw tijdens actief, anders zwart */
+@keyframes xp-block-light {
+  0%, 16.67% {
+    background: linear-gradient(to bottom, 
+      #3399FF 0%,
+      #1E7DD6 50%,
+      #0D5EBB 100%
+    );
+    box-shadow: 
+      0 0 6px rgba(51, 153, 255, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
-  50% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
+  16.68%, 100% {
+    background: #000000; /* Volledig zwart */
+    box-shadow: none;
   }
 }
 
-/* Fadeout Stage */
-.boot-fadeout {
-  width: 100%;
-  height: 100%;
-  background: url('https://upload.wikimedia.org/wikipedia/en/2/27/Bliss_%28Windows_XP%29.png') no-repeat center center;
-  background-size: cover;
-  animation: boot-desktop-fade-in 2s ease-in forwards;
-  opacity: 0;
-}
-
-@keyframes boot-desktop-fade-in {
-  0% {
-    opacity: 0;
-    filter: brightness(1.5) blur(10px);
-  }
-  50% {
-    opacity: 0.5;
-    filter: brightness(1.2) blur(5px);
-  }
-  100% {
-    opacity: 1;
-    filter: brightness(1) blur(0);
-  }
-}
-
-.boot-bliss-preview {
-  width: 100%;
-  height: 100%;
-}
 
 .taskbar-tab.unread {
   background: #f0ad4e !important; /* XP Oranje kleur */

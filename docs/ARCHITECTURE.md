@@ -71,21 +71,11 @@ All managed centrally by `App.js`.
 - No deeply nested writes
 - Flat, explicit graph structure
 
-### Calls
+### Calls (1-on-1)
 - Signaling via CALLS/{pairId}
 - ICE candidates via CALLS/{pairId}/ice
 - Cleanup na hangup is verplicht
 - Eén actief gesprek per contactpaar
-
-### TeamTalk
-- Channel state via TEAMTALK/channels/{channelId}
-- User presence per channel via TEAMTALK/channels/{channelId}/users/{username}
-- Signaling via TEAMTALK/signaling/{channelId}
-- ICE candidates via TEAMTALK/signaling/{channelId}/ice
-- Heartbeat-based presence per channel
-- Cleanup na disconnect is verplicht
-- Mesh WebRTC: max ~6 users per channel
-- Vaste channels + tijdelijke (door gebruikers aangemaakt)
 
 ### Encryptie
 - E2E encryptie via Gun SEA voor chatberichten
@@ -94,24 +84,83 @@ All managed centrally by `App.js`.
 - Backwards compatible met onversleutelde berichten
 - WebRTC audio/video is altijd encrypted (SRTP)
 
+### Gun Data Schema
+- `PRESENCE/{username}` — heartbeat, status
+- `ACTIVE_TAB/{username}` — tab/sessie blokkering
+- `ACTIVE_SESSIONS/{pairId}` — chat sessie ID's
+- `CHAT_{pairId}_{timestamp}` — chatberichten (encrypted)
+- `TYPING_{sessionId}` — typing indicators
+- `NUDGE_{sessionId}` — nudge events
+- `CALLS/{pairId}` — 1-on-1 call signaling
+- `friendRequests/{username}` — inkomende verzoeken
+- `contactSync/{username}` — contact synchronisatie
+- `TEAMTALK_SERVERS/{serverId}` — server registry voor TeamTalk
+- `SUPERPEERS/{username}` — superpeer registraties
+
 ---
-## Netwerk Architectuur
+
+## 🎧 TeamTalk Architecture
+
+### Transport: Trystero (BitTorrent P2P)
+- Audio via Trystero rooms, geen eigen server nodig
+- Peer discovery via publieke BitTorrent trackers
+- WebRTC audio streams via `addStream()`
+- Data actions voor nickname en mute state
+- Geen Gun signaling nodig voor TeamTalk
+
+### Server Model
+- Server aanmaken genereert uniek ID (`tt-xxxxx`)
+- Server registry in Gun: `TEAMTALK_SERVERS/{serverId}`
+- Verbinden via server-ID of servernaam (matcht tegen registry/recente servers)
+- Optioneel wachtwoord per server (Trystero room password)
+- Recente servers opgeslagen in localStorage
+
+### Audio
+- Lokale stream via `getUserMedia({ audio: true })`
+- Mute via `track.enabled` toggle
+- Per-user volume control via Audio element
+- Speaking detection via Web Audio API analyser
+- Stream wordt opnieuw gestuurd bij late peer join
+
+### Relatie met Gun
+- Gun: server registry (TEAMTALK_SERVERS), authenticatie
+- Trystero: audio transport, peer presence in room, data exchange
+- Gun is autoritatief voor welke servers bestaan
+- Trystero is autoritatief voor wie in een room zit
+
+### Toekomstig: Groepsgesprekken
+- Bestaande Gun mesh code (useGroupCallMesh.js) hergebruikt
+- Gun signaling + handmatige WebRTC voor chat + audio
+- Invite-based model vanuit Chatlon Messenger
+- Gescheiden van TeamTalk (ander use case)
+
+---
+
+## 🌐 Netwerk Architectuur
 
 ### Relay Configuratie
 - Primaire relay: Render
-- Secundaire relay: Fly.io
-- Relays synchroniseren automatisch via Gun protocol
-- Clients verbinden met alle beschikbare relays
+- Relay is vereist voor login, persistente data, en peer discovery
+- Minstens één relay moet online zijn voor nieuwe verbindingen
+
+### Relay Health Monitor
+- Periodieke health check (elke 30s)
+- Automatische reconnect via `gun.opt()` wanneer relay terugkomt
+- Status indicator in taakbalk (🟢 online / 🔴 offline)
+- Handmatige force-reconnect mogelijk
 
 ### Data Persistentie (Selectief)
-- Contacten, channels, profielen: lokaal gecached
-- Chatberichten: session-only (MSN-authentiek)
+- Contacten, profielen: lokaal gecached via Gun
+- Chatberichten: persistent in Gun (legacy marking bij venster sluiten)
 - Signaling data: ephemeral, geen storage
+- TeamTalk servers: Gun registry (persistent)
+- Recente TeamTalk servers: localStorage (per client)
 
 ### Data Compaction
-- Client-side cleanup bij login
+- Client-side cleanup bij login (5s delay)
 - Verwijdert: verlopen signaling, oude ICE, stale presence
 - Threshold: 60s voor signaling, 30s voor presence
+- Cleanup voor: calls, TeamTalk, presence, active tabs, superpeers
 
 ### Browser Peering (Laag 4)
 - Gun WebRTC peering voor directe browser-to-browser sync
@@ -120,16 +169,20 @@ All managed centrally by `App.js`.
 
 ### Superpeers (Laag 5)
 - Stabiele clients als vrijwillige relay-peers
-- Selectie: >10min online, desktop, opt-in
-- Geregistreerd via SUPERPEER/ Gun node
+- Selectie: >10min online, desktop, automatisch opt-in
+- Geregistreerd via SUPERPEERS/{username} Gun node
+- Heartbeat elke 15s, stale na 30s
+- Re-announce elke 60s voor relay recovery
 
 ---
+
 ## 🔁 Real-Time & Presence
 
 ### Presence Model
-- Heartbeat-based presence
+- Heartbeat-based presence via Gun (primair)
 - Explicit online / offline detection
 - No reliance on Gun internal heuristics
+- TeamTalk presence via Trystero room events (binnen rooms)
 
 ### Refs & Callbacks
 - **Refs are mandatory** inside Gun callbacks
@@ -163,6 +216,7 @@ Trademarked names are forbidden.
 | XP | dX |
 | Microsoft | Macrohard |
 | MSN | Chatlon |
+| TeamSpeak | TeamTalk |
 
 Applies to:
 - Code
@@ -193,5 +247,6 @@ This document is updated **only when**:
 - Core architecture changes
 - Gun schema changes
 - Window manager rules change
+- New transport layers are added
 
 Minor refactors do **not** belong here.
