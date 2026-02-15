@@ -11,6 +11,7 @@ import LoginScreen from './LoginScreen';
 import ConversationPane from './ConversationPane';
 import BootSequence from './BootSequence';
 import ToastNotification from './ToastNotification';
+import ControlPane from './components/ControlPane';
 import { gun, user } from './gun';
 import { paneConfig } from './paneConfig';
 import './App.css';
@@ -25,13 +26,14 @@ import { useMessageListeners } from './hooks/useMessageListeners';
 
 import { runFullCleanup } from './utils/gunCleanup';
 import { clearEncryptionCache } from './utils/encryption';
-
+import { useScanlinesPreference } from './contexts/ScanlinesContext';
 
 
 function App() {
   // ============================================
   // AUTH STATE
   // ============================================
+  const { scanlinesEnabled } = useScanlinesPreference();
   const [hasBooted, setHasBooted] = useState(() => {
     // Boot alleen bij eerste bezoek of na expliciete restart
     const skipBoot = sessionStorage.getItem('chatlon_boot_complete');
@@ -242,11 +244,6 @@ useEffect(() => {
         setIsLoggedIn(true);
         setCurrentUser(user.is.alias);
         
-        // FIX: Gebruik setTimeout buiten React cycle
-        setTimeout(() => {
-          openPane('contacts');
-        }, 100);
-        
         return true;
       }
       return false;
@@ -276,12 +273,7 @@ useEffect(() => {
     hasInitializedRef.current = true;
     setIsLoggedIn(true);
     setCurrentUser(username);
-    setTimeout(() => {
-          openPane('contacts');
-        }, 100);
-        setTimeout(() => {
-          runFullCleanup(user.is.alias);
-        }, 5000);
+    
     setTimeout(() => runFullCleanup(username), 5000);
   };
 
@@ -373,6 +365,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
   // ============================================
   return (
     <div className="desktop" onClick={closeStartMenu}>
+      <div className={`scanlines-overlay ${scanlinesEnabled ? '' : 'disabled'}`}></div>
       {/* Desktop Icons */}
       <div className="shortcuts-area">
         {Object.entries(paneConfig).map(([paneName, config]) => (
@@ -471,7 +464,14 @@ const onTaskbarClick = React.useCallback((paneId) => {
           <div className="start-menu-main">
             <div className="start-left-col">
               {Object.entries(paneConfig).map(([paneName, config]) => (
-                <div key={paneName} className="start-item" onClick={() => openPane(paneName)}>
+                <div 
+                  key={paneName} 
+                  className="start-item" 
+                  onClick={() => {
+                    openPane(paneName);
+                    closeStartMenu();
+                  }}
+                >
                   {config.desktopIcon.endsWith('.ico') || config.desktopIcon.endsWith('.png') ? (
                     <img src={config.desktopIcon} alt="icon" style={{ width: '24px', height: '24px' }} />
                   ) : (
@@ -482,8 +482,24 @@ const onTaskbarClick = React.useCallback((paneId) => {
               ))}
             </div>
             <div className="start-right-col">
-              <div className="start-item-gray">My Documents</div>
-              <div className="start-item-gray">My Computer</div>
+              <div 
+                className="start-item-gray"
+                onClick={() => {
+                  // openPane('documents'); // als je dit later implementeert
+                  closeStartMenu();
+                }}
+              >
+                My Documents
+              </div>
+              <div 
+                className="start-item-gray"
+                onClick={() => {
+                  // openPane('computer'); // als je dit later implementeert
+                  closeStartMenu();
+                }}
+              >
+                My Computer
+              </div>
             </div>
           </div>
           <div className="start-menu-footer">
@@ -505,34 +521,41 @@ const onTaskbarClick = React.useCallback((paneId) => {
   {/* We maken een unieke lijst van alles wat open is ÉN alles wat ongelezen is */}
   {Array.from(new Set([...paneOrder, ...Array.from(unreadChats)])).map((paneId) => {
     
-    if (paneId.startsWith('conv_')) {
-      const contactName = paneId.replace('conv_', '');
-      const conv = conversations[paneId];
-      const isUnread = unreadChats.has(paneId);
-      
-      // Als de chat niet open is en niet ongelezen, toon hem dan niet
-      if (!conv?.isOpen && !isUnread) return null;
-
-      return (
-        <div
-          key={paneId}
-          className={`taskbar-tab ${activePane === paneId ? 'active' : ''} ${isUnread ? 'unread' : ''}`}
-          onClick={() => onTaskbarClick(paneId)}
-        >
-          <span className="taskbar-icon">💬</span> {contactName}
-        </div>
-      );
-    }
+  // NEW - Met title tooltips
+  if (paneId.startsWith('conv_')) {
+    const contactName = paneId.replace('conv_', '');
+    const conv = conversations[paneId];
+    const isUnread = unreadChats.has(paneId);
     
-    // ... rest van je normale panes (contacts etc)
-    const pane = panes[paneId];
-    if (!pane || !pane.isOpen) return null;
-    const config = paneConfig[paneId];
+    if (!conv?.isOpen && !isUnread) return null;
+
     return (
-      <div key={paneId} className={`taskbar-tab ${activePane === paneId ? 'active' : ''}`} onClick={() => onTaskbarClick(paneId)}>
-        <span className="taskbar-icon">{config.icon}</span> {config.label}
+      <div
+        key={paneId}
+        className={`taskbar-tab ${activePane === paneId ? 'active' : ''} ${isUnread ? 'unread' : ''}`}
+        onClick={() => onTaskbarClick(paneId)}
+        title={`Gesprek met ${contactName}`}
+      >
+        <span className="taskbar-icon">💬</span>
+        <span>{contactName}</span>
       </div>
     );
+  }
+
+  const pane = panes[paneId];
+  if (!pane || !pane.isOpen) return null;
+  const config = paneConfig[paneId];
+  return (
+    <div 
+      key={paneId} 
+      className={`taskbar-tab ${activePane === paneId ? 'active' : ''}`} 
+      onClick={() => onTaskbarClick(paneId)}
+      title={config.title || config.label}
+    >
+      <span className="taskbar-icon">{config.icon}</span>
+      <span>{config.label}</span>
+    </div>
+  );
   })}
 </div>
 

@@ -187,19 +187,10 @@ const openPane = useCallback((paneName) => {
    * @param {string} paneName - Naam van de pane
    */
 const focusPane = useCallback((paneName) => {
-  if (!paneName) return;
-  
-  setActivePane(paneName);
-  
-  setPaneOrder(prev => {
-    // Als hij al achteraan staat, doe niets om onnodige renders te voorkomen
-    if (prev[prev.length - 1] === paneName) return prev;
-    
-    // Haal hem eruit en zet hem achteraan (hoogste index)
-    const filtered = prev.filter(p => p !== paneName);
-    return [...filtered, paneName];
-  });
-}, []);
+    if (!paneName) return;
+    setActivePane(paneName);
+    // paneOrder blijft ongewijzigd
+  }, []);
 
   // ============================================
   // CONVERSATION OPERATIES
@@ -350,10 +341,7 @@ const focusPane = useCallback((paneName) => {
         if (conv.isMinimized) {
           // Restore
           setActivePane(paneName);
-          setPaneOrder(order => {
-            const filtered = order.filter(p => p !== paneName);
-            return [...filtered, paneName];
-          });
+          // paneOrder blijft hetzelfde
           return {
             ...prev,
             [paneName]: { ...prev[paneName], isMinimized: false }
@@ -367,10 +355,7 @@ const focusPane = useCallback((paneName) => {
         } else {
           // Focus
           setActivePane(paneName);
-          setPaneOrder(order => {
-            const filtered = order.filter(p => p !== paneName);
-            return [...filtered, paneName];
-          });
+          // paneOrder blijft hetzelfde
           return prev;
         }
       });
@@ -385,10 +370,7 @@ const focusPane = useCallback((paneName) => {
       if (pane.isMinimized) {
         // Restore
         setActivePane(paneName);
-        setPaneOrder(order => {
-          const filtered = order.filter(p => p !== paneName);
-          return [...filtered, paneName];
-        });
+        // paneOrder blijft hetzelfde
         return {
           ...prev,
           [paneName]: { ...prev[paneName], isMinimized: false }
@@ -402,10 +384,7 @@ const focusPane = useCallback((paneName) => {
       } else {
         // Focus
         setActivePane(paneName);
-        setPaneOrder(order => {
-          const filtered = order.filter(p => p !== paneName);
-          return [...filtered, paneName];
-        });
+        // paneOrder blijft hetzelfde
         return prev;
       }
     });

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { log } from './utils/debug';
+import { useScanlinesPreference } from './contexts/ScanlinesContext';
 
 function BootSequence({ onBootComplete }) {
   const [stage, setStage] = useState('post'); // post, xpboot
   const [showCursor, setShowCursor] = useState(true);
   const [memoryCount, setMemoryCount] = useState(0);
   const [postLines, setPostLines] = useState([]);
-  const [scanlinesEnabled, setScanlinesEnabled] = useState(true);
+  const { scanlinesEnabled } = useScanlinesPreference();  
   
   const biosBeepRef = useRef(null);
 
@@ -109,18 +110,6 @@ function BootSequence({ onBootComplete }) {
     }
   }, [stage, onBootComplete]);
 
-  // Keyboard listener for scanlines toggle
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 's') {
-        setScanlinesEnabled(prev => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   return (
     <div className="boot-sequence">
       {/* POST/BIOS Stage - Volledige retro screen */}
@@ -155,10 +144,9 @@ function BootSequence({ onBootComplete }) {
           <div className="xp-boot-content">
             {/* XP Logo */}
             <div className="xp-boot-logo">
-              <div className="xp-logo-stripe xp-stripe-red"></div>
               <div className="xp-logo-stripe xp-stripe-green"></div>
               <div className="xp-logo-stripe xp-stripe-blue"></div>
-              <div className="xp-logo-stripe xp-stripe-yellow"></div>
+              <div className="xp-logo-stripe xp-stripe-red"></div>
             </div>
 
             {/* XP Text */}

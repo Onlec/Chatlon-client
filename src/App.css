@@ -1,3 +1,79 @@
+/* ============================================
+   GLOBAL SCANLINES OVERLAY
+   ============================================ */
+
+/* Root overlay - altijd bovenop hele app */
+.scanlines-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 999999;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.scanlines-overlay.disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Horizontale scanlines */
+.scanlines-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.05) 0px,
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  animation: scanline-move 8s linear infinite;
+}
+
+@keyframes scanline-move {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
+}
+
+/* CRT Vignette effect */
+.scanlines-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at center, 
+    transparent 60%, 
+    rgba(0, 0, 0, 0.12) 100%
+  );
+  pointer-events: none;
+}
+
+/* Subtle screen flicker */
+@keyframes crt-flicker {
+  0%, 100% { 
+    filter: brightness(1);
+  }
+  50% { 
+    filter: brightness(0.985);
+  }
+}
+
+.scanlines-overlay {
+  animation: crt-flicker 0.15s infinite;
+}
+
 /* --- 1. DESKTOP BASIS --- */
 
 body, html {
@@ -298,7 +374,9 @@ div.pane-frame.maximized {
 }
 
 .start-btn {
-  height: 100%; 
+  height: 100%;
+  width: 90px;
+  flex-shrink: 0;
   background: linear-gradient(
     to right,
     #3FA142 0%,
@@ -316,6 +394,9 @@ div.pane-frame.maximized {
   border-bottom-right-radius: 10px;
   cursor: pointer;
   box-shadow: inset 1px 0 0 rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .start-btn:hover {
@@ -333,22 +414,34 @@ div.pane-frame.maximized {
   box-shadow: inset 2px 2px 3px rgba(0,0,0,0.3);
 }
 
+.start-icon {
+  margin-right: 4px;
+}
+
+/* Taskbar Items Container */
 .taskbar-items { 
   flex-grow: 1; 
   display: flex; 
   padding-left: 10px; 
-  gap: 5px; 
+  gap: 5px;
+  overflow: hidden;
 }
 
+/* Individual Taskbar Tab */
 .taskbar-tab {
   background: linear-gradient(to bottom, #3E82F7 0%, #2B6FCE 100%);
   color: white; 
   padding: 2px 10px; 
   border-radius: 3px; 
   font-size: 11px;
-  min-width: 120px; 
+  
+  /* XP Dynamic Width */
+  flex: 1 1 auto;
+  min-width: 50px;
+  max-width: 160px;
+  
   display: flex; 
-  align-items: center; 
+  align-items: center;
   gap: 5px; 
   cursor: pointer; 
   border: 1px solid rgba(0,0,0,0.2);
@@ -364,12 +457,31 @@ div.pane-frame.maximized {
   box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);
 }
 
+/* Taskbar Icon */
+.taskbar-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+/* Taskbar Text with Ellipsis */
+.taskbar-tab > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* System Tray */
 .systray { 
   color: white; 
   font-size: 11px; 
   padding: 0 10px; 
   margin-left: auto;
   text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* --- 7. CLASSIC OS ELEMENTEN --- */
@@ -3239,44 +3351,6 @@ div.pane-frame.maximized {
   50% { opacity: 0.95; }
 }
 
-/* CRT Scanlines */
-.xp-post.scanlines::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.15) 0px,
-    transparent 1px,
-    transparent 2px,
-    rgba(0, 0, 0, 0.15) 3px
-  );
-  pointer-events: none;
-  z-index: 2;
-  animation: scanline-move 8s linear infinite;
-}
-
-@keyframes scanline-move {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(10px); }
-}
-
-/* CRT Vignette */
-.xp-post.scanlines::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
-  pointer-events: none;
-  z-index: 1;
-}
-
 .xp-post-content {
   position: relative;
   z-index: 3;
@@ -3377,49 +3451,53 @@ div.pane-frame.maximized {
   text-align: center;
 }
 
-/* XP Logo - 4 gekleurde balkjes */
+/* Container: veranderd naar grid voor de 2x2 look */
 .xp-boot-logo {
-  display: flex;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 60px); 
+  gap: 10px;
   justify-content: center;
   margin-bottom: 30px;
+  /* Een lichte rotatie geeft het die vlag-vibe */
+  transform: rotate(45deg);
 }
 
 .xp-logo-stripe {
   width: 60px;
   height: 60px;
-  transform: skewX(-20deg);
-  animation: xp-logo-appear 0.6s ease-out backwards;
+  border-radius: 4px; /* XP had subtiel afgeronde hoeken */
+  animation: xp-logo-appear 0.8s ease-out forwards;
+  opacity: 0; /* Begin onzichtbaar voor de animatie */
 }
 
+/* De ontbrekende animatie */
+
+
+/* Kleuren met iets meer "glossy" XP-verloop */
 .xp-stripe-red {
-  background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
-  animation-delay: 0s;
-}
-
-.xp-stripe-green {
-  background: linear-gradient(135deg, #00FF00 0%, #00CC00 100%);
+  background: linear-gradient(135deg, #ff5252 0%, #d50000 100%);
   animation-delay: 0.1s;
 }
 
-.xp-stripe-blue {
-  background: linear-gradient(135deg, #0000FF 0%, #0000CC 100%);
+.xp-stripe-green {
+  background: linear-gradient(135deg, #66bb6a 0%, #388e3c 100%);
   animation-delay: 0.2s;
 }
 
-.xp-stripe-yellow {
-  background: linear-gradient(135deg, #FFFF00 0%, #CCCC00 100%);
+.xp-stripe-blue {
+  background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
   animation-delay: 0.3s;
 }
 
+
 @keyframes xp-logo-appear {
-  from {
+  0% {
+    transform: translateY(0) scale(0.8);
     opacity: 0;
-    transform: skewX(-20deg) translateY(-20px);
   }
-  to {
+  100% {
+    transform: translateY(0) scale(1);
     opacity: 1;
-    transform: skewX(-20deg) translateY(0);
   }
 }
 
@@ -4213,4 +4291,185 @@ div.pane-frame.maximized {
 
 .pinball-container:focus-within .pinball-iframe {
   pointer-events: all;
+}
+
+/* ============================================
+   WINDOWS XP CONTROL PANEL
+   ============================================ */
+
+.control-panel {
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  overflow-y: auto;
+  font-family: 'Tahoma', 'Segoe UI', Arial, sans-serif;
+}
+
+/* Home View */
+.cp-home {
+  padding: 20px;
+}
+
+.cp-header h2 {
+  color: #003399;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #0066CC;
+}
+
+.cp-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cp-category {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(to bottom, #FFFFFF 0%, #F5F9FF 100%);
+  border: 1px solid #C0D9F5;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cp-category:hover {
+  background: linear-gradient(to bottom, #F0F6FF 0%, #E5F1FF 100%);
+  border-color: #5B9BD5;
+  box-shadow: 0 2px 4px rgba(0, 51, 153, 0.1);
+}
+
+.cp-category-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.cp-category-content {
+  flex: 1;
+}
+
+.cp-category-title {
+  color: #003399;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.cp-category-description {
+  color: #666666;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* Settings View */
+.cp-settings {
+  padding: 20px;
+}
+
+.cp-breadcrumb {
+  margin-bottom: 16px;
+}
+
+.cp-back-link {
+  color: #0066CC;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.cp-back-link:hover {
+  text-decoration: underline;
+}
+
+.cp-settings-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #0066CC;
+}
+
+.cp-settings-icon {
+  font-size: 28px;
+}
+
+.cp-settings-header h2 {
+  color: #003399;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.cp-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cp-setting-item {
+  padding: 12px;
+  background: #F8F8F8;
+  border: 1px solid #DEDEDE;
+  border-radius: 3px;
+}
+
+.cp-setting-main {
+  margin-bottom: 6px;
+}
+
+.cp-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #000000;
+}
+
+.cp-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}
+
+.cp-select-row,
+.cp-button-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cp-select-row label,
+.cp-button-row label {
+  font-size: 12px;
+  color: #000000;
+  font-weight: bold;
+}
+
+.cp-select {
+  padding: 4px 8px;
+  border: 1px solid #7F9DB9;
+  font-size: 12px;
+  font-family: 'Tahoma', Arial, sans-serif;
+  background: #FFFFFF;
+  min-width: 150px;
+}
+
+.cp-action-button {
+  padding: 6px 16px;
+  font-size: 11px;
+}
+
+.cp-setting-description {
+  color: #666666;
+  font-size: 10px;
+  line-height: 1.4;
+  padding-left: 22px;
+  font-style: italic;
 }

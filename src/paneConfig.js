@@ -6,6 +6,7 @@ import PaintPane from './PaintPane';
 import BrowserPane from './BrowserPane';
 import MediaPane from './MediaPane';
 import TeamTalkPane from './components/TeamTalkPane';
+import ControlPane from './components/ControlPane';
 import PinballPane from './components/PinballPane';
 import { log } from './utils/debug';
 
@@ -87,7 +88,7 @@ const paneConfig = {
     desktopIcon: '🎧',
     desktopLabel: 'TeamTalk',
     label: 'TeamTalk'
-  }/*,
+  },/*,
   pinball: {
     title: '3D Flipperkast',
     icon: '🏓',
@@ -98,6 +99,16 @@ const paneConfig = {
     desktopIcon: '🏓',
     desktopLabel: '3D Flipperkast'
   }*/
+ control: {
+    title: 'Configuratiescherm',
+    label: 'Configuratiescherm',
+    desktopLabel: 'Configuratiescherm',
+    desktopIcon: '⚙️',
+    icon: '⚙️',
+    component: ControlPane,
+    defaultSize: { width: 600, height: 500 },
+    minSize: { width: 500, height: 400 }
+  },
 };
 
 // Helper om initial pane state te genereren

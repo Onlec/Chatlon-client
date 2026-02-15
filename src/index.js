@@ -3,11 +3,14 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { ScanlinesProvider } from './contexts/ScanlinesContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <ScanlinesProvider>
+      <App />
+    </ScanlinesProvider>
   </React.StrictMode>
 );
 
