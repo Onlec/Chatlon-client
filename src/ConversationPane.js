@@ -7,6 +7,7 @@ import { createListenerManager } from './utils/gunListenerManager';
 import { useWebRTC } from './hooks/useWebRTC';
 import CallPanel from './components/CallPanel';
 import { encryptMessage, decryptMessage, warmupEncryption } from './utils/encryption';
+import { useSounds } from './hooks/useSounds';
 
 // ============================================
 // 1. REDUCER (Berichten logica)
@@ -24,6 +25,7 @@ const reducer = (state, action) => {
 // 2. HOOFDCOMPONENT
 // ============================================
 function ConversationPane({ contactName, lastNotificationTime, clearNotificationTime }) {
+  const { playSound } = useSounds();
   const [state, dispatch] = useReducer(reducer, { messages: [], messageMap: {} });
   const [messageText, setMessageText] = useState('');
   const [displayLimit, setDisplayLimit] = useState(5);
@@ -42,6 +44,8 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const prevMsgCountRef = useRef(0);
   const chatListenersRef = useRef(createListenerManager());
   const currentUser = user.is?.alias;
+  const lastTypingSoundRef = useRef(0);
+
   const {
     callState,
     isMuted,
@@ -78,9 +82,10 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const sendNudge = useCallback(() => {
     if (!canNudge || !currentSessionId) return;
     setCanNudge(false);
+    playSound('nudge');
     gun.get(`NUDGE_${currentSessionId}`).put({ time: Date.now(), from: user.is?.alias });
     setTimeout(() => setCanNudge(true), 5000);
-  }, [canNudge, currentSessionId]);
+  }, [canNudge, currentSessionId, playSound]);
 
   // --- Effects (Sessie & Listeners) ---
   useEffect(() => {
@@ -128,7 +133,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     nudgeNode.on(data => {
       if (data?.time > lastProcessedNudge.current && data.from === contactName) {
         lastProcessedNudge.current = data.time;
-        new Audio('/nudge.mp3').play().catch(() => {});
+        playSound('nudge'); // ✅ Use hook
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 600);
       }
@@ -202,6 +207,15 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
           <ChatInput 
             value={messageText}
             onChange={(val) => {
+              // Play typing sound on new character
+              if (val.length > messageText.length) {
+                const now = Date.now();
+                if (now - lastTypingSoundRef.current > 100) { // Max 1 sound per 100ms
+                  playSound('typing');
+                  lastTypingSoundRef.current = now;
+                }
+              }
+              
               setMessageText(val);
               const now = Date.now();
               if (now - lastTypingSignal.current > 1000) {

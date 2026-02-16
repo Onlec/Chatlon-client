@@ -1,35 +1,12 @@
 import React, { useState } from 'react';
 import { useScanlinesPreference } from '../contexts/ScanlinesContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 function ControlPane() {
   const { scanlinesEnabled, toggleScanlines } = useScanlinesPreference();
+  const { settings, updateSetting, resetSettings } = useSettings();
   const [selectedCategory, setSelectedCategory] = useState(null);
-
-  // Placeholder settings (later uit localStorage/context halen)
-  const [settings, setSettings] = useState({
-    // Uiterlijk
-    desktopBackground: 'bliss',
-    fontSize: 'medium',
-    colorScheme: 'blue',
-    
-    // Geluid
-    systemSounds: true,
-    toastNotifications: true,
-    nudgeSound: true,
-    typingSound: false,
-    
-    // Netwerk
-    autoReconnect: true,
-    superpeerEnabled: false,
-    
-    // Chat
-    saveHistory: false,
-    showTyping: true,
-    emoticons: true,
-    
-    // Geavanceerd
-    debugMode: false,
-  });
+  const [showResetSuccess, setShowResetSuccess] = useState(false);
 
   const categories = [
     {
@@ -50,7 +27,7 @@ function ControlPane() {
           id: 'fontSize', 
           label: 'Lettergrootte', 
           type: 'select',
-          options: ['Klein', 'Normaal', 'Groot'],
+          options: ['klein', 'normaal', 'groot'],
           value: settings.fontSize,
           description: 'Grootte van tekst in vensters'
         },
@@ -58,7 +35,7 @@ function ControlPane() {
           id: 'colorScheme', 
           label: 'Kleurenschema', 
           type: 'select',
-          options: ['Blauw (standaard)', 'Olijfgroen', 'Zilver'],
+          options: ['blauw', 'olijfgroen', 'zilver'],
           value: settings.colorScheme,
           description: 'Kleur van vensters en knoppen'
         }
@@ -195,6 +172,7 @@ function ControlPane() {
           id: 'resetSettings', 
           label: 'Instellingen resetten', 
           type: 'button',
+          action: resetSettings, // ✅ Voeg action property toe
           description: 'Zet alle instellingen terug naar standaardwaarden'
         }
       ]
@@ -202,11 +180,7 @@ function ControlPane() {
   ];
 
   const handleSettingChange = (categoryId, settingId, value) => {
-    setSettings(prev => ({
-      ...prev,
-      [settingId]: value
-    }));
-    // Later: opslaan in localStorage of context
+    updateSetting(settingId, value);
   };
 
   return (
@@ -281,7 +255,7 @@ function ControlPane() {
                         className="cp-select"
                       >
                         {setting.options.map(option => (
-                          <option key={option} value={option.toLowerCase()}>
+                          <option key={option} value={option}>
                             {option}
                           </option>
                         ))}
@@ -292,7 +266,23 @@ function ControlPane() {
                   {setting.type === 'button' && (
                     <div className="cp-button-row">
                       <label>{setting.label}</label>
-                      <button className="dx-button cp-action-button">
+                      <button 
+                        className="dx-button cp-action-button"
+                        onClick={() => {
+                          if (setting.id === 'resetSettings') {
+                            if (window.confirm('Weet je zeker dat je alle instellingen wilt resetten?')) {
+                              resetSettings();
+                              setShowResetSuccess(true);
+                              setTimeout(() => setShowResetSuccess(false), 3000);
+                            }
+                          } else if (setting.action) {
+                            setting.action();
+                          } else {
+                            // Placeholder voor andere buttons (changePassword, cleanupCache)
+                            alert(`${setting.label} functionaliteit komt in Part C!`);
+                          }
+                        }}
+                      >
                         {setting.label}
                       </button>
                     </div>
@@ -307,6 +297,11 @@ function ControlPane() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+    {showResetSuccess && (
+        <div className="cp-success-message">
+          ✓ Instellingen zijn gereset naar standaardwaarden
         </div>
       )}
     </div>

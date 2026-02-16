@@ -4,13 +4,16 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ScanlinesProvider } from './contexts/ScanlinesContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <ScanlinesProvider>
-      <App />
-    </ScanlinesProvider>
+    <SettingsProvider>
+      <ScanlinesProvider>
+        <App />
+      </ScanlinesProvider>
+    </SettingsProvider>
   </React.StrictMode>
 );
 

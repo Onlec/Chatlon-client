@@ -17,6 +17,7 @@ import { paneConfig } from './paneConfig';
 import './App.css';
 import { log } from './utils/debug';
 import { useSuperpeer } from './hooks/useSuperpeer';
+import { useSounds } from './hooks/useSounds';
 
 // Hooks
 import { useToasts } from './hooks/useToasts';
@@ -27,6 +28,7 @@ import { useMessageListeners } from './hooks/useMessageListeners';
 import { runFullCleanup } from './utils/gunCleanup';
 import { clearEncryptionCache } from './utils/encryption';
 import { useScanlinesPreference } from './contexts/ScanlinesContext';
+import { useSettings } from './contexts/SettingsContext';
 
 
 function App() {
@@ -50,6 +52,8 @@ function App() {
   // ============================================
   // HOOKS
   // ============================================
+  const { settings } = useSettings();
+  const { playSound } = useSounds();
   
   // Toast notifications
   const { 
@@ -99,6 +103,8 @@ function App() {
     cleanup: cleanupPresence 
   } = usePresence(isLoggedIn, currentUser);
 
+  
+
   // Message listeners
 // ============================================
   // MESSAGE HANDLER (voor Toasts)
@@ -120,8 +126,9 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
 
   // STAP B: Altijd toast tonen als we niet in de chat zitten
   if (!isFocused) {
+    playSound('message')
     const toastKey = `msg_${msgId}`;
-    if (!shownToastsRef.current.has(toastKey)) {
+    if (settings.toastNotifications) {
       shownToastsRef.current.add(toastKey);
       showToast({
         type: 'message',
@@ -134,8 +141,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
       });
     }
   }
-}, [currentUser, showToast, setUnreadChats]);
-  // Belangrijk: openConversation en minimizeConversation moeten in de dependency array!
+}, [currentUser, showToast, setUnreadChats, activePaneRef, conversationsRef, shownToastsRef, playSound, settings]); // ADD settings  // Belangrijk: openConversation en minimizeConversation moeten in de dependency array!
   // Message listeners initialisatie
   const { 
     cleanup: cleanupListeners 
@@ -273,6 +279,8 @@ useEffect(() => {
     hasInitializedRef.current = true;
     setIsLoggedIn(true);
     setCurrentUser(username);
+
+    playSound('login');
     
     setTimeout(() => runFullCleanup(username), 5000);
   };
@@ -280,6 +288,8 @@ useEffect(() => {
   
   const handleLogoff = () => {
     log('[App] Logging off...');
+
+    playSound('logoff')
     
     // Cleanup
     cleanupPresence();

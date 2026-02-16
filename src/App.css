@@ -4473,3 +4473,32 @@ div.pane-frame.maximized {
   padding-left: 22px;
   font-style: italic;
 }
+
+.cp-success-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(to bottom, #E8F5E9 0%, #C8E6C9 100%);
+  border: 2px solid #4CAF50;
+  color: #2E7D32;
+  padding: 20px 32px;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  z-index: 100001;
+  font-size: 13px;
+  font-family: 'Tahoma', Arial, sans-serif;
+  font-weight: bold;
+  animation: cp-success-fade-in 0.3s ease-out;
+}
+
+@keyframes cp-success-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
