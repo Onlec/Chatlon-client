@@ -152,84 +152,495 @@
   --startmenu-divider:    #C1D2EE;
   --startmenu-footer-bdr: #1659C5;
   --startmenu-pinned:     #00156E;
+
+  --menu-hover:           #316AC5;
+  --app-bg:               #ECE9D8;
+  --toolbar-bg:           #F0F0F0;
+  --toolbar-border:       #919B9C;
+  --link-color:           #003399;
+  --link-color-light:     #0066CC;
+  --btn-border:           #7F9DB9;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #ECE9D8;
+  --input-border:         #7F9DB9;
+  --sidebar-bg:           #F0F0F0;
 }
 
-/* Thema: Olijfgroen */
+/* Thema: Olijfgroen (Luna Olive Green - authentiek) */
 [data-theme="olijfgroen"] {
-  --win-bg:               #E8E4D0;
-  --win-frame-border:     #5A7520;
-  --win-frame-shadow:     #3D5212;
-  --win-titlebar-a:       #4E6C1A;
-  --win-titlebar-b:       #87A840;
-  --win-titlebar-c:       #4E6C1A;
-  --win-titlebar-d:       #344812;
-  --win-content-border:   #8FA860;
-  --win-btn-bg:           #87A840;
+  --win-bg:               #ECE9D8;
+  --win-frame-border:     #6E7B38;
+  --win-frame-shadow:     #4E5725;
+  --win-titlebar-a:       #5B7526;
+  --win-titlebar-b:       #92A45C;
+  --win-titlebar-c:       #5B7526;
+  --win-titlebar-d:       #3E5118;
+  --win-content-border:   #8E9E6C;
+  --win-btn-bg:           #92A45C;
 
-  --taskbar-a:            #4E6C1A;
-  --taskbar-b:            #87A840;
-  --taskbar-c:            #4E6C1A;
-  --taskbar-d:            #344812;
-  --tab-a:                #799E36;
-  --tab-b:                #5A7A24;
-  --tab-hover-a:          #8BB845;
-  --tab-hover-b:          #799E36;
-  --tab-active-a:         #3A5C14;
-  --tab-active-b:         #2A4A0C;
+  --taskbar-a:            #6D7128;
+  --taskbar-b:            #8C8D43;
+  --taskbar-c:            #6D7128;
+  --taskbar-d:            #4A4E18;
+  --tab-a:                #83863C;
+  --tab-b:                #6D7128;
+  --tab-hover-a:          #969A4C;
+  --tab-hover-b:          #83863C;
+  --tab-active-a:         #4E5220;
+  --tab-active-b:         #3A3D14;
 
-  --startbtn-a:           #7B8D2C;
-  --startbtn-b:           #A0B840;
-  --startbtn-border:      #4A5C14;
-  --startbtn-hover-a:     #8EA03A;
-  --startbtn-hover-b:     #B0CC4C;
+  --startbtn-a:           #3FA142;
+  --startbtn-b:           #61BB46;
+  --startbtn-border:      #165C1F;
+  --startbtn-hover-a:     #4FB64F;
+  --startbtn-hover-b:     #6FD14F;
 
-  --startmenu-border:     #5A7520;
-  --startmenu-header-a:   #87A840;
-  --startmenu-header-b:   #4E6C1A;
-  --startmenu-item-hover: #5A7A28;
-  --startmenu-rightcol:   #D4E0B4;
-  --startmenu-divider:    #BCC89C;
-  --startmenu-footer-bdr: #3A5A14;
-  --startmenu-pinned:     #1A3408;
+  --startmenu-border:     #6E7B38;
+  --startmenu-header-a:   #92A45C;
+  --startmenu-header-b:   #5B7526;
+  --startmenu-item-hover: #6D7128;
+  --startmenu-rightcol:   #D6DFC0;
+  --startmenu-divider:    #BCC4A0;
+  --startmenu-footer-bdr: #4E5725;
+  --startmenu-pinned:     #2A3010;
+
+  --menu-hover:           #6D7128;
+  --app-bg:               #ECE9D8;
+  --toolbar-bg:           #EDE9D4;
+  --toolbar-border:       #8A8A6C;
+  --link-color:           #3A4A10;
+  --link-color-light:     #5B7526;
+  --btn-border:           #8E9E6C;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #ECE9D8;
+  --input-border:         #8E9E6C;
+  --sidebar-bg:           #EDE9D4;
 }
 
-/* Thema: Zilver */
+/* Thema: Zilver (Luna Silver - authentiek) */
 [data-theme="zilver"] {
-  --win-bg:               #EDE9E5;
-  --win-frame-border:     #7080A0;
-  --win-frame-shadow:     #3A4A5C;
-  --win-titlebar-a:       #6C7C8E;
-  --win-titlebar-b:       #9AAAB8;
-  --win-titlebar-c:       #6C7C8E;
-  --win-titlebar-d:       #4C5C6E;
-  --win-content-border:   #969696;
-  --win-btn-bg:           #9AAAB8;
+  --win-bg:               #EBE9ED;
+  --win-frame-border:     #5E7CA0;
+  --win-frame-shadow:     #3C546E;
+  --win-titlebar-a:       #5E7CA0;
+  --win-titlebar-b:       #9AB4D0;
+  --win-titlebar-c:       #5E7CA0;
+  --win-titlebar-d:       #3C546E;
+  --win-content-border:   #9CA2AC;
+  --win-btn-bg:           #9AB4D0;
 
-  --taskbar-a:            #6C7C8E;
-  --taskbar-b:            #9AAAB8;
-  --taskbar-c:            #6C7C8E;
-  --taskbar-d:            #4C5C6E;
-  --tab-a:                #889AAA;
-  --tab-b:                #6C7C8E;
-  --tab-hover-a:          #9AAAB8;
-  --tab-hover-b:          #889AAA;
-  --tab-active-a:         #4C5C6E;
-  --tab-active-b:         #3C4C5E;
+  --taskbar-a:            #7C8EA4;
+  --taskbar-b:            #A4B4C8;
+  --taskbar-c:            #7C8EA4;
+  --taskbar-d:            #5A6A80;
+  --tab-a:                #96A8BC;
+  --tab-b:                #7C8EA4;
+  --tab-hover-a:          #A8BACC;
+  --tab-hover-b:          #96A8BC;
+  --tab-active-a:         #5A6A80;
+  --tab-active-b:         #4A5A70;
 
-  --startbtn-a:           #888898;
-  --startbtn-b:           #AAAAB8;
-  --startbtn-border:      #505060;
-  --startbtn-hover-a:     #9A9AAA;
-  --startbtn-hover-b:     #BBBBC8;
+  --startbtn-a:           #8CA0B4;
+  --startbtn-b:           #A8BCD0;
+  --startbtn-border:      #546878;
+  --startbtn-hover-a:     #9CB0C4;
+  --startbtn-hover-b:     #B8CCE0;
 
-  --startmenu-border:     #6C7C8E;
-  --startmenu-header-a:   #9AAAB8;
-  --startmenu-header-b:   #6C7C8E;
-  --startmenu-item-hover: #6C7C8E;
-  --startmenu-rightcol:   #D8DDE2;
-  --startmenu-divider:    #BBBBCC;
-  --startmenu-footer-bdr: #5A6A7C;
-  --startmenu-pinned:     #2A3A4C;
+  --startmenu-border:     #5E7CA0;
+  --startmenu-header-a:   #9AB4D0;
+  --startmenu-header-b:   #5E7CA0;
+  --startmenu-item-hover: #7C8EA4;
+  --startmenu-rightcol:   #DDE0E8;
+  --startmenu-divider:    #B8BCC8;
+  --startmenu-footer-bdr: #5A6A80;
+  --startmenu-pinned:     #2C3848;
+
+  --menu-hover:           #7C8EA4;
+  --app-bg:               #EBE9ED;
+  --toolbar-bg:           #E8E6EA;
+  --toolbar-border:       #9A98A0;
+  --link-color:           #2C3848;
+  --link-color-light:     #5E7CA0;
+  --btn-border:           #9CA2AC;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #EBE9ED;
+  --input-border:         #9CA2AC;
+  --sidebar-bg:           #E8E6EA;
+}
+
+/* Thema: Royale (donkerblauw) */
+[data-theme="royale"] {
+  --win-bg:               #EAE8E1;
+  --win-frame-border:     #1C3E7A;
+  --win-frame-shadow:     #0F2750;
+  --win-titlebar-a:       #1C3E7A;
+  --win-titlebar-b:       #4682B4;
+  --win-titlebar-c:       #1C3E7A;
+  --win-titlebar-d:       #0F2750;
+  --win-content-border:   #6685A4;
+  --win-btn-bg:           #4682B4;
+
+  --taskbar-a:            #13306A;
+  --taskbar-b:            #1C4B8E;
+  --taskbar-c:            #13306A;
+  --taskbar-d:            #0B1F46;
+  --tab-a:                #1E4F94;
+  --tab-b:                #163C74;
+  --tab-hover-a:          #2A5FAA;
+  --tab-hover-b:          #1E4F94;
+  --tab-active-a:         #0E2A58;
+  --tab-active-b:         #0B1F46;
+
+  --startbtn-a:           #2B7A2B;
+  --startbtn-b:           #45A845;
+  --startbtn-border:      #145514;
+  --startbtn-hover-a:     #38923B;
+  --startbtn-hover-b:     #52BC52;
+
+  --startmenu-border:     #1C3E7A;
+  --startmenu-header-a:   #4682B4;
+  --startmenu-header-b:   #1C3E7A;
+  --startmenu-item-hover: #1C4B8E;
+  --startmenu-rightcol:   #CEDAE8;
+  --startmenu-divider:    #A8BCCF;
+  --startmenu-footer-bdr: #13306A;
+  --startmenu-pinned:     #071A3C;
+
+  --menu-hover:           #1C4B8E;
+  --app-bg:               #EAE8E1;
+  --toolbar-bg:           #E4E2DC;
+  --toolbar-border:       #8A8A80;
+  --link-color:           #0F2750;
+  --link-color-light:     #1C3E7A;
+  --btn-border:           #6685A4;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #EAE8E1;
+  --input-border:         #6685A4;
+  --sidebar-bg:           #E4E2DC;
+}
+
+/* Thema: Zune (oranje/donker) */
+[data-theme="zune"] {
+  --win-bg:               #E8E4E0;
+  --win-frame-border:     #3A3A3A;
+  --win-frame-shadow:     #1A1A1A;
+  --win-titlebar-a:       #3A3A3A;
+  --win-titlebar-b:       #5A5A5A;
+  --win-titlebar-c:       #3A3A3A;
+  --win-titlebar-d:       #1A1A1A;
+  --win-content-border:   #808080;
+  --win-btn-bg:           #5A5A5A;
+
+  --taskbar-a:            #2C2C2C;
+  --taskbar-b:            #3E3E3E;
+  --taskbar-c:            #2C2C2C;
+  --taskbar-d:            #1A1A1A;
+  --tab-a:                #4A4A4A;
+  --tab-b:                #3A3A3A;
+  --tab-hover-a:          #5A5A5A;
+  --tab-hover-b:          #4A4A4A;
+  --tab-active-a:         #2A2A2A;
+  --tab-active-b:         #1A1A1A;
+
+  --startbtn-a:           #D45500;
+  --startbtn-b:           #F47B20;
+  --startbtn-border:      #8B3800;
+  --startbtn-hover-a:     #E86510;
+  --startbtn-hover-b:     #FF8C30;
+
+  --startmenu-border:     #3A3A3A;
+  --startmenu-header-a:   #5A5A5A;
+  --startmenu-header-b:   #2C2C2C;
+  --startmenu-item-hover: #D45500;
+  --startmenu-rightcol:   #E0DCDA;
+  --startmenu-divider:    #B0AAAA;
+  --startmenu-footer-bdr: #2C2C2C;
+  --startmenu-pinned:     #1A1A1A;
+
+  --menu-hover:           #D45500;
+  --app-bg:               #E8E4E0;
+  --toolbar-bg:           #E0DCDA;
+  --toolbar-border:       #908880;
+  --link-color:           #1A1A1A;
+  --link-color-light:     #D45500;
+  --btn-border:           #808080;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #E8E4E0;
+  --input-border:         #808080;
+  --sidebar-bg:           #E0DCDA;
+}
+
+/* Thema: Royale Noir (donker met blauwe gloed) */
+[data-theme="royale-noir"] {
+  --win-bg:               #E2E0DA;
+  --win-frame-border:     #1A1A2E;
+  --win-frame-shadow:     #0A0A1A;
+  --win-titlebar-a:       #1A1A2E;
+  --win-titlebar-b:       #2E3E6E;
+  --win-titlebar-c:       #1A1A2E;
+  --win-titlebar-d:       #0A0A1A;
+  --win-content-border:   #5A5A6E;
+  --win-btn-bg:           #2E3E6E;
+
+  --taskbar-a:            #141422;
+  --taskbar-b:            #1E2040;
+  --taskbar-c:            #141422;
+  --taskbar-d:            #0A0A14;
+  --tab-a:                #242848;
+  --tab-b:                #1A1E38;
+  --tab-hover-a:          #2E3258;
+  --tab-hover-b:          #242848;
+  --tab-active-a:         #101428;
+  --tab-active-b:         #0A0C1A;
+
+  --startbtn-a:           #2B7A2B;
+  --startbtn-b:           #45A845;
+  --startbtn-border:      #145514;
+  --startbtn-hover-a:     #38923B;
+  --startbtn-hover-b:     #52BC52;
+
+  --startmenu-border:     #1A1A2E;
+  --startmenu-header-a:   #2E3E6E;
+  --startmenu-header-b:   #1A1A2E;
+  --startmenu-item-hover: #2E3E6E;
+  --startmenu-rightcol:   #D0D0DA;
+  --startmenu-divider:    #9A9AAA;
+  --startmenu-footer-bdr: #141422;
+  --startmenu-pinned:     #0A0A14;
+
+  --menu-hover:           #2E3E6E;
+  --app-bg:               #E2E0DA;
+  --toolbar-bg:           #DAD8D2;
+  --toolbar-border:       #8A8880;
+  --link-color:           #0A0A1A;
+  --link-color-light:     #1A1A2E;
+  --btn-border:           #5A5A6E;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #E2E0DA;
+  --input-border:         #5A5A6E;
+  --sidebar-bg:           #DAD8D2;
+}
+
+/* Thema: Energy Blue (helder aquablauw) */
+[data-theme="energy-blue"] {
+  --win-bg:               #ECE9D8;
+  --win-frame-border:     #0068D2;
+  --win-frame-shadow:     #004AA0;
+  --win-titlebar-a:       #0068D2;
+  --win-titlebar-b:       #38A8F0;
+  --win-titlebar-c:       #0068D2;
+  --win-titlebar-d:       #004AA0;
+  --win-content-border:   #6CAED8;
+  --win-btn-bg:           #38A8F0;
+
+  --taskbar-a:            #0060C8;
+  --taskbar-b:            #28A0F0;
+  --taskbar-c:            #0060C8;
+  --taskbar-d:            #004090;
+  --tab-a:                #1E90E8;
+  --tab-b:                #0870CC;
+  --tab-hover-a:          #38A8F0;
+  --tab-hover-b:          #1E90E8;
+  --tab-active-a:         #004EA8;
+  --tab-active-b:         #003C88;
+
+  --startbtn-a:           #3FA142;
+  --startbtn-b:           #61BB46;
+  --startbtn-border:      #165C1F;
+  --startbtn-hover-a:     #4FB64F;
+  --startbtn-hover-b:     #6FD14F;
+
+  --startmenu-border:     #0068D2;
+  --startmenu-header-a:   #38A8F0;
+  --startmenu-header-b:   #0068D2;
+  --startmenu-item-hover: #0870CC;
+  --startmenu-rightcol:   #D0E8FA;
+  --startmenu-divider:    #A8D0F0;
+  --startmenu-footer-bdr: #004AA0;
+  --startmenu-pinned:     #002860;
+
+  --menu-hover:           #0870CC;
+  --app-bg:               #ECE9D8;
+  --toolbar-bg:           #E8F0F8;
+  --toolbar-border:       #88AAC8;
+  --link-color:           #002860;
+  --link-color-light:     #0068D2;
+  --btn-border:           #6CAED8;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #ECE9D8;
+  --input-border:         #6CAED8;
+  --sidebar-bg:           #E8F0F8;
+}
+
+/* Thema: Klassiek (Windows 98) */
+[data-theme="klassiek"] {
+  --win-bg:               #C0C0C0;
+  --win-frame-border:     #000080;
+  --win-frame-shadow:     #000060;
+  --win-titlebar-a:       #000080;
+  --win-titlebar-b:       #1084D0;
+  --win-titlebar-c:       #000080;
+  --win-titlebar-d:       #000060;
+  --win-content-border:   #808080;
+  --win-btn-bg:           #C0C0C0;
+
+  --taskbar-a:            #C0C0C0;
+  --taskbar-b:            #D4D0C8;
+  --taskbar-c:            #C0C0C0;
+  --taskbar-d:            #808080;
+  --tab-a:                #D4D0C8;
+  --tab-b:                #C0C0C0;
+  --tab-hover-a:          #E0DCD4;
+  --tab-hover-b:          #D4D0C8;
+  --tab-active-a:         #A0A0A0;
+  --tab-active-b:         #808080;
+
+  --startbtn-a:           #C0C0C0;
+  --startbtn-b:           #D4D0C8;
+  --startbtn-border:      #808080;
+  --startbtn-hover-a:     #D4D0C8;
+  --startbtn-hover-b:     #E0DCD4;
+
+  --startmenu-border:     #808080;
+  --startmenu-header-a:   #000080;
+  --startmenu-header-b:   #1084D0;
+  --startmenu-item-hover: #000080;
+  --startmenu-rightcol:   #C0C0C0;
+  --startmenu-divider:    #808080;
+  --startmenu-footer-bdr: #808080;
+  --startmenu-pinned:     #000000;
+
+  --menu-hover:           #000080;
+  --app-bg:               #C0C0C0;
+  --toolbar-bg:           #C0C0C0;
+  --toolbar-border:       #808080;
+  --link-color:           #000080;
+  --link-color-light:     #000080;
+  --btn-border:           #808080;
+  --btn-gradient-a:       #D4D0C8;
+  --btn-gradient-b:       #C0C0C0;
+  --input-border:         #808080;
+  --sidebar-bg:           #C0C0C0;
+}
+
+/* - - - KLASSIEK (Win98) structurele overrides - - - */
+
+/* Vensterframe: vierkant, 3D bevel, geen soft shadow */
+[data-theme="klassiek"] .pane-frame {
+  border-radius: 0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040, 2px 2px 0 #000;
+}
+
+/* Titelbalk: horizontaal gradient zoals Win98 */
+[data-theme="klassiek"] .pane-header {
+  background: linear-gradient(to right, var(--win-titlebar-a), var(--win-titlebar-b));
+  border-radius: 0;
+}
+
+/* Titelbalk-knoppen: vierkant, raised bevel, geen rode close */
+[data-theme="klassiek"] .pane-btn {
+  border-radius: 0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+  background: var(--win-btn-bg);
+}
+[data-theme="klassiek"] .pane-btn:active {
+  border-color: #808080 #DFDFDF #DFDFDF #808080;
+  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+}
+[data-theme="klassiek"] .pane-btn.close {
+  background: var(--win-btn-bg);
+}
+[data-theme="klassiek"] .pane-btn.close:hover {
+  background: var(--win-btn-bg);
+}
+
+/* Taakbalk: vlak, opgehoogde rand bovenaan */
+[data-theme="klassiek"] .taskbar {
+  background: var(--taskbar-a);
+  border-top: 2px solid #FFFFFF;
+  box-shadow: inset 0 1px 0 #DFDFDF;
+}
+
+/* Start-knop: vierkant, vlak, raised bevel */
+[data-theme="klassiek"] .start-btn {
+  border-radius: 0;
+  background: #C0C0C0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+  border-right: 2px solid #808080;
+}
+[data-theme="klassiek"] .start-btn:hover {
+  background: #C0C0C0;
+}
+[data-theme="klassiek"] .start-btn.pressed {
+  background: #C0C0C0;
+  filter: none;
+  border-color: #808080 #DFDFDF #DFDFDF #808080;
+  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+}
+
+/* Taakbalk-tabs: vierkant, vlak, raised bevel */
+[data-theme="klassiek"] .taskbar-tab {
+  border-radius: 0;
+  background: #C0C0C0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+  color: #000000;
+}
+[data-theme="klassiek"] .taskbar-tab:hover {
+  background: #D4D0C8;
+}
+[data-theme="klassiek"] .taskbar-tab.active {
+  background: #C0C0C0;
+  border-color: #808080 #DFDFDF #DFDFDF #808080;
+  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+}
+
+/* Startmenu: vierkant, harde schaduw */
+[data-theme="klassiek"] .start-menu {
+  border-radius: 0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: 2px 2px 0 #000;
+}
+[data-theme="klassiek"] .start-menu-header {
+  background: var(--startmenu-header-a);
+}
+[data-theme="klassiek"] .start-menu-footer {
+  background: #C0C0C0;
+  border-top: 1px solid #808080;
+}
+[data-theme="klassiek"] .start-item {
+  border-radius: 0;
+}
+
+/* Knoppen: vierkant, vlak, raised bevel */
+[data-theme="klassiek"] .dx-button {
+  border-radius: 0;
+  background: var(--app-bg);
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+}
+[data-theme="klassiek"] .dx-button:hover {
+  background: var(--app-bg);
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+}
+[data-theme="klassiek"] .dx-button:active {
+  background: var(--app-bg);
+  border-color: #808080 #DFDFDF #DFDFDF #808080;
+  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+}
+
+/* Desktop shortcuts: geen drop-shadow op iconen */
+[data-theme="klassiek"] .shortcut-icon {
+  filter: none;
 }
 
 /* ================================================
@@ -457,7 +868,7 @@ div.pane-frame.maximized {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #ECE9D8;
+  background-color: var(--app-bg);
   overflow: hidden;
   position: relative;
   box-sizing: border-box;
@@ -467,7 +878,7 @@ div.pane-frame.maximized {
   background: #F1F1F1;
   padding: 4px 8px; 
   font-size: var(--ui-font-size); 
-  border-bottom: 1px solid #7F9DB9; 
+  border-bottom: 1px solid var(--btn-border); 
   color: #666;
   flex-shrink: 0;
 }
@@ -491,7 +902,7 @@ div.pane-frame.maximized {
 
 .chat-sidebar {
   width: 110px; 
-  border-left: 1px solid #7F9DB9; 
+  border-left: 1px solid var(--btn-border);
   background: #F7F7F7; 
   display: flex; 
   flex-direction: column; 
@@ -503,7 +914,7 @@ div.pane-frame.maximized {
 .chat-avatar-img {
   width: 85px; 
   height: 85px; 
-  border: 1px solid #7F9DB9; 
+  border: 1px solid var(--btn-border); 
   padding: 2px; 
   background: white;
   flex-shrink: 0;
@@ -511,8 +922,8 @@ div.pane-frame.maximized {
 
 .chat-input-section {
   padding: 8px;
-  background: #ECE9D8;
-  border-top: 1px solid #7F9DB9;
+  background: var(--app-bg);
+  border-top: 1px solid var(--btn-border);
   display: flex;
   gap: 5px;
   flex-shrink: 0;
@@ -522,7 +933,7 @@ div.pane-frame.maximized {
   flex-grow: 1;
   height: 45px;
   min-height: 45px;
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   padding: 4px;
   resize: none;
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
@@ -661,7 +1072,7 @@ div.pane-frame.maximized {
 
 .dx-button {
   padding: 4px 12px;
-  background: linear-gradient(to bottom, #ECE9D8 0%, #F5F4F2 50%, #ECE9D8 100%);
+  background: linear-gradient(to bottom, var(--app-bg) 0%, #F5F4F2 50%, var(--app-bg) 100%);
   border: 1px solid;
   border-color: #FFFFFF #808080 #808080 #FFFFFF;
   border-radius: 3px;
@@ -688,7 +1099,7 @@ div.pane-frame.maximized {
 .nudge-btn.disabled {
   color: #808080 !important;
   cursor: not-allowed !important;
-  background: linear-gradient(to bottom, #E8E8E8 0%, #F0F0F0 50%, #E8E8E8 100%) !important;
+  background: linear-gradient(to bottom, #E8E8E8 0%, var(--toolbar-bg) 50%, #E8E8E8 100%) !important;
   border-color: #A0A0A0 !important;
   box-shadow: none !important;
 }
@@ -721,7 +1132,7 @@ div.pane-frame.maximized {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #ECE9D8;
+  background-color: var(--app-bg);
   align-items: center;
   justify-content: center;
   padding: 20px;
@@ -743,7 +1154,7 @@ div.pane-frame.maximized {
 .chat-login-logo {
   font-size: 48px;
   background: white;
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   border-radius: 4px;
   padding: 10px;
   box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
@@ -751,7 +1162,7 @@ div.pane-frame.maximized {
 
 .chat-login-title {
   font-weight: bold;
-  color: #003399;
+  color: var(--link-color);
   font-size: 14px;
 }
 
@@ -770,7 +1181,7 @@ div.pane-frame.maximized {
 }
 
 .dx-input {
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   padding: 3px 4px;
   font-size: var(--ui-font-size-md);
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
@@ -779,7 +1190,7 @@ div.pane-frame.maximized {
 }
 
 .dx-input:focus {
-  border-color: #0066CC;
+  border-color: var(--link-color-light);
   box-shadow: 0 0 2px rgba(0,102,204,0.5);
 }
 
@@ -790,7 +1201,7 @@ div.pane-frame.maximized {
 }
 
 .dx-button.secondary {
-  background: linear-gradient(to bottom, #F0F0F0 0%, #FAFAFA 50%, #F0F0F0 100%);
+  background: linear-gradient(to bottom, var(--toolbar-bg) 0%, #FAFAFA 50%, var(--toolbar-bg) 100%);
 }
 
 .chat-login-footer {
@@ -799,13 +1210,13 @@ div.pane-frame.maximized {
 }
 
 .chat-login-footer a {
-  color: #003399;
+  color: var(--link-color);
   text-decoration: none;
 }
 
 .chat-login-footer a:hover {
   text-decoration: underline;
-  color: #0066CC;
+  color: var(--link-color-light);
 }
 
 /* ================================================
@@ -935,8 +1346,8 @@ div.pane-frame.maximized {
 }
 
 .notepad-menubar {
-  background: #ECE9D8;
-  border-bottom: 1px solid #919B9C;
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--toolbar-border);
   display: flex;
   gap: 2px;
   padding: 2px 4px;
@@ -951,7 +1362,7 @@ div.pane-frame.maximized {
 }
 
 .notepad-menu-item:hover {
-  background: #316AC5;
+  background: var(--menu-hover);
   color: white;
 }
 
@@ -968,7 +1379,7 @@ div.pane-frame.maximized {
 }
 
 .notepad-textarea:disabled {
-  background: #F0F0F0;
+  background: var(--toolbar-bg);
   color: #808080;
 }
 
@@ -1620,13 +2031,13 @@ div.pane-frame.maximized {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #ECE9D8;
+  background-color: var(--app-bg);
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
 }
 
 .calculator-menubar {
-  background: #ECE9D8;
-  border-bottom: 1px solid #919B9C;
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--toolbar-border);
   display: flex;
   gap: 2px;
   padding: 2px 4px;
@@ -1641,7 +2052,7 @@ div.pane-frame.maximized {
 }
 
 .calculator-menu-item:hover {
-  background: #316AC5;
+  background: var(--menu-hover);
   color: white;
 }
 
@@ -1682,7 +2093,7 @@ div.pane-frame.maximized {
   font-size: 13px;
   font-weight: bold;
   border: 1px outset #fff;
-  background: linear-gradient(to bottom, #ECE9D8 0%, #D8D0C8 100%);
+  background: linear-gradient(to bottom, var(--app-bg) 0%, #D8D0C8 100%);
   cursor: pointer;
   font-family: 'Tahoma', sans-serif;
   min-width: 40px;
@@ -1691,7 +2102,7 @@ div.pane-frame.maximized {
 
 .calc-btn:active {
   border: 1px inset #808080;
-  background: linear-gradient(to bottom, #D8D0C8 0%, #ECE9D8 100%);
+  background: linear-gradient(to bottom, #D8D0C8 0%, var(--app-bg) 100%);
 }
 
 .calc-btn.memory {
@@ -1700,17 +2111,17 @@ div.pane-frame.maximized {
 }
 
 .calc-btn.function {
-  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
+  background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
   color: #000080;
 }
 
 .calc-btn.operator {
-  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
+  background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
   color: #CC0000;
 }
 
 .calc-btn.equals {
-  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
+  background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
   color: #CC0000;
 }
 
@@ -1722,13 +2133,13 @@ div.pane-frame.maximized {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #ECE9D8;
+  background-color: var(--app-bg);
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
 }
 
 .contacts-menubar {
-  background: #ECE9D8;
-  border-bottom: 1px solid #919B9C;
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--toolbar-border);
   display: flex;
   gap: 2px;
   padding: 2px 4px;
@@ -1743,13 +2154,13 @@ div.pane-frame.maximized {
 }
 
 .contacts-menu-item:hover {
-  background: #316AC5;
+  background: var(--menu-hover);
   color: white;
 }
 
 .contacts-user-section {
   background: linear-gradient(to bottom, #FFFFFF 0%, #E8F2FD 100%);
-  border-bottom: 1px solid #7F9DB9;
+  border-bottom: 1px solid var(--btn-border);
   padding: 12px;
   flex-shrink: 0;
 }
@@ -1764,7 +2175,7 @@ div.pane-frame.maximized {
 .contacts-user-avatar {
   width: 48px;
   height: 48px;
-  border: 2px solid #7F9DB9;
+  border: 2px solid var(--btn-border);
   border-radius: 2px;
 }
 
@@ -1775,7 +2186,7 @@ div.pane-frame.maximized {
 .contacts-user-name {
   font-weight: bold;
   font-size: 13px;
-  color: #003399;
+  color: var(--link-color);
   margin-bottom: 2px;
 }
 
@@ -1789,7 +2200,7 @@ div.pane-frame.maximized {
 }
 
 .contacts-personal-message:hover {
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   background: white;
 }
 
@@ -1798,7 +2209,7 @@ div.pane-frame.maximized {
   font-size: var(--ui-font-size);
   font-style: italic;
   padding: 2px;
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   outline: none;
   font-family: 'Tahoma', sans-serif;
 }
@@ -1823,7 +2234,7 @@ div.pane-frame.maximized {
 }
 
 .contacts-status-dropdown {
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   padding: 2px;
   font-size: var(--ui-font-size);
   font-family: 'Tahoma', sans-serif;
@@ -1856,7 +2267,7 @@ div.pane-frame.maximized {
   gap: 5px;
   padding: 3px 10px;
   cursor: pointer;
-  border-bottom: 1px solid #F0F0F0;
+  border-bottom: 1px solid var(--toolbar-bg);
   overflow: hidden;
 }
 
@@ -1906,11 +2317,11 @@ div.pane-frame.maximized {
 
 .contacts-bottom-banner {
   background: linear-gradient(to bottom, #FFFFFF 0%, #E8F2FD 100%);
-  border-top: 1px solid #7F9DB9;
+  border-top: 1px solid var(--btn-border);
   padding: 8px;
   text-align: center;
   font-size: var(--ui-font-size-sm);
-  color: #003399;
+  color: var(--link-color);
   flex-shrink: 0;
 }
 
@@ -1930,13 +2341,13 @@ div.pane-frame.maximized {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #ECE9D8;
+  background: var(--app-bg);
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
 }
 
 .chat-menubar {
-  background: #ECE9D8;
-  border-bottom: 1px solid #919B9C;
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--toolbar-border);
   display: flex;
   gap: 2px;
   padding: 2px 4px;
@@ -1951,13 +2362,13 @@ div.pane-frame.maximized {
 }
 
 .chat-menu-item:hover {
-  background: #316AC5;
+  background: var(--menu-hover);
   color: white;
 }
 
 .chat-toolbar {
-  background: #F0F0F0;
-  border-bottom: 1px solid #919B9C;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
   padding: 4px 6px;
   display: flex;
   align-items: center;
@@ -1996,7 +2407,7 @@ div.pane-frame.maximized {
 .chat-toolbar-separator {
   width: 1px;
   height: 30px;
-  background: #919B9C;
+  background: var(--toolbar-border);
   margin: 0 4px;
 }
 
@@ -2031,7 +2442,7 @@ div.pane-frame.maximized {
 .chat-contact-header-name {
   font-size: var(--ui-font-size-md);
   font-weight: bold;
-  color: #003399;
+  color: var(--link-color);
 }
 
 .chat-contact-header-msg {
@@ -2058,7 +2469,7 @@ div.pane-frame.maximized {
 }
 
 .chat-input-toolbar {
-  background: #F0F0F0;
+  background: var(--toolbar-bg);
   border-bottom: 1px solid #D4D0C8;
   padding: 2px 4px;
   display: flex;
@@ -2099,7 +2510,7 @@ div.pane-frame.maximized {
 
 .chat-right-column {
   width: 120px;
-  background: #F0F0F0;
+  background: var(--toolbar-bg);
   border-left: 1px solid #D4D0C8;
   display: flex;
   flex-direction: column;
@@ -2117,7 +2528,7 @@ div.pane-frame.maximized {
 .chat-display-picture {
   width: 96px;
   height: 96px;
-  border: 2px solid #7F9DB9;
+  border: 2px solid var(--btn-border);
   background: white;
   padding: 2px;
 }
@@ -2133,7 +2544,7 @@ div.pane-frame.maximized {
   left: 0;
   margin-bottom: 4px;
   background: white;
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   border-radius: 4px;
   box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
   padding: 8px;
@@ -2154,7 +2565,7 @@ div.pane-frame.maximized {
 .emoticon-category-title {
   font-size: var(--ui-font-size-sm);
   font-weight: bold;
-  color: #003399;
+  color: var(--link-color);
   margin-bottom: 6px;
   padding-bottom: 2px;
   border-bottom: 1px solid #E0E0E0;
@@ -2183,7 +2594,7 @@ div.pane-frame.maximized {
 
 .emoticon-item:hover {
   background: #E8F2FD;
-  border-color: #7F9DB9;
+  border-color: var(--btn-border);
   transform: scale(1.1);
 }
 
@@ -2195,7 +2606,7 @@ div.pane-frame.maximized {
   padding: 2px 10px;
   font-size: var(--ui-font-size);
   color: #666;
-  background: #ECE9D8;
+  background: var(--app-bg);
   border-top: 1px solid #D2D2D2;
   flex-shrink: 0;
 }
@@ -2219,14 +2630,14 @@ div.pane-frame.maximized {
   margin-top: 8px;
   padding: 8px;
   background: white;
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   border-radius: 3px;
 }
 
 .pending-requests-section {
   background: #FFF9E6;
-  border-top: 1px solid #7F9DB9;
-  border-bottom: 1px solid #7F9DB9;
+  border-top: 1px solid var(--btn-border);
+  border-bottom: 1px solid var(--btn-border);
   flex-shrink: 0;
 }
 
@@ -2255,7 +2666,7 @@ div.pane-frame.maximized {
 .pending-request-name {
   font-size: var(--ui-font-size);
   font-weight: bold;
-  color: #003399;
+  color: var(--link-color);
 }
 
 .pending-request-actions {
@@ -2280,7 +2691,7 @@ div.pane-frame.maximized {
 
 .toast-notification {
   width: 280px;
-  background: linear-gradient(to bottom, #FFFFFF 0%, #F0F0F0 100%);
+  background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--toolbar-bg) 100%);
   border: 2px solid #0054E3;
   border-radius: 6px;
   box-shadow: 3px 3px 12px rgba(0,0,0,0.4);
@@ -2353,7 +2764,7 @@ div.pane-frame.maximized {
 .toast-avatar {
   width: 48px;
   height: 48px;
-  border: 2px solid #7F9DB9;
+  border: 2px solid var(--btn-border);
   border-radius: 2px;
   background: white;
   flex-shrink: 0;
@@ -2367,7 +2778,7 @@ div.pane-frame.maximized {
 .toast-from {
   font-weight: bold;
   font-size: var(--ui-font-size-md);
-  color: #003399;
+  color: var(--link-color);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2396,13 +2807,13 @@ div.pane-frame.maximized {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #ECE9D8;
+  background-color: var(--app-bg);
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
 }
 
 .paint-menubar {
-  background: #ECE9D8;
-  border-bottom: 1px solid #919B9C;
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--toolbar-border);
   display: flex;
   gap: 2px;
   padding: 2px 4px;
@@ -2417,13 +2828,13 @@ div.pane-frame.maximized {
 }
 
 .paint-menu-item:hover {
-  background: #316AC5;
+  background: var(--menu-hover);
   color: white;
 }
 
 .paint-toolbar {
-  background: #F0F0F0;
-  border-bottom: 1px solid #919B9C;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
   padding: 4px 6px;
   display: flex;
   align-items: center;
@@ -2439,13 +2850,13 @@ div.pane-frame.maximized {
 .paint-toolbar-separator {
   width: 1px;
   height: 30px;
-  background: #919B9C;
+  background: var(--toolbar-border);
   margin: 0 4px;
 }
 
 .paint-tool-btn, .paint-action-btn {
-  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
-  border: 1px solid #7F9DB9;
+  background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
+  border: 1px solid var(--btn-border);
   border-radius: 2px;
   padding: 6px 8px;
   cursor: pointer;
@@ -2464,7 +2875,7 @@ div.pane-frame.maximized {
 
 .paint-tool-btn.active {
   background: linear-gradient(to bottom, #D8D0C8 0%, #E8E4DC 100%);
-  border: 2px solid #316AC5;
+  border: 2px solid var(--menu-hover);
   box-shadow: inset 1px 1px 2px #808080;
 }
 
@@ -2477,7 +2888,7 @@ div.pane-frame.maximized {
 
 .paint-sidebar-left {
   width: 80px;
-  background: #ECE9D8;
+  background: var(--app-bg);
   border-right: 2px solid #FFFFFF;
   border-bottom: 2px solid #808080;
   padding: 8px;
@@ -2509,7 +2920,7 @@ div.pane-frame.maximized {
 }
 
 .paint-grid-tool {
-  background: #F0F0F0;
+  background: var(--toolbar-bg);
   border: 1px solid #808080;
   padding: 6px;
   cursor: pointer;
@@ -2579,7 +2990,7 @@ div.pane-frame.maximized {
 }
 
 .paint-color-palette {
-  background: #ECE9D8;
+  background: var(--app-bg);
   border-top: 2px solid #FFFFFF;
   padding: 8px;
   display: flex;
@@ -2652,14 +3063,14 @@ div.pane-frame.maximized {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #ECE9D8;
+  background-color: var(--app-bg);
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
   position: relative;
 }
 
 .browser-menubar {
-  background: #ECE9D8;
-  border-bottom: 1px solid #919B9C;
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--toolbar-border);
   display: flex;
   gap: 2px;
   padding: 2px 4px;
@@ -2674,13 +3085,13 @@ div.pane-frame.maximized {
 }
 
 .browser-menu-item:hover {
-  background: #316AC5;
+  background: var(--menu-hover);
   color: white;
 }
 
 .browser-toolbar {
-  background: #F0F0F0;
-  border-bottom: 1px solid #919B9C;
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
   padding: 4px 6px;
   display: flex;
   align-items: center;
@@ -2689,8 +3100,8 @@ div.pane-frame.maximized {
 }
 
 .browser-nav-btn {
-  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
-  border: 1px solid #7F9DB9;
+  background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
+  border: 1px solid var(--btn-border);
   border-radius: 2px;
   padding: 4px 8px;
   cursor: pointer;
@@ -2715,7 +3126,7 @@ div.pane-frame.maximized {
   align-items: center;
   gap: 4px;
   background: white;
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   padding: 2px 4px;
 }
 
@@ -2735,8 +3146,8 @@ div.pane-frame.maximized {
 }
 
 .browser-go-btn {
-  background: linear-gradient(to bottom, #ECE9D8 0%, #D8D0C8 100%);
-  border: 1px solid #7F9DB9;
+  background: linear-gradient(to bottom, var(--app-bg) 0%, #D8D0C8 100%);
+  border: 1px solid var(--btn-border);
   padding: 2px 10px;
   font-size: var(--ui-font-size);
   cursor: pointer;
@@ -2790,7 +3201,7 @@ div.pane-frame.maximized {
 }
 
 .browser-status-bar {
-  background: #F0F0F0;
+  background: var(--toolbar-bg);
   border-top: 1px solid #D0D0D0;
   padding: 2px 6px;
   display: flex;
@@ -2879,7 +3290,7 @@ div.pane-frame.maximized {
 }
 
 .yoctol-links a {
-  color: #0066CC;
+  color: var(--link-color-light);
   text-decoration: none;
 }
 
@@ -2915,7 +3326,7 @@ div.pane-frame.maximized {
 }
 
 .yoctol-service-box a {
-  color: #0066CC;
+  color: var(--link-color-light);
   text-decoration: none;
   font-size: var(--ui-font-size);
 }
@@ -2934,7 +3345,7 @@ div.pane-frame.maximized {
 }
 
 .yoctol-footer a {
-  color: #0066CC;
+  color: var(--link-color-light);
   text-decoration: none;
 }
 
@@ -2968,7 +3379,7 @@ div.pane-frame.maximized {
 .browser-popup {
   position: absolute;
   width: 320px;
-  background: #ECE9D8;
+  background: var(--app-bg);
   border: 2px solid #0054E3;
   box-shadow: 4px 4px 10px rgba(0,0,0,0.5);
   z-index: 1000;
@@ -3023,7 +3434,7 @@ div.pane-frame.maximized {
 .browser-popup-content {
   padding: 15px;
   background: white;
-  border: 2px solid #7F9DB9;
+  border: 2px solid var(--btn-border);
   margin: 2px;
 }
 
@@ -3105,7 +3516,7 @@ div.pane-frame.maximized {
 }
 
 .media-menu-item:hover {
-  background: #0066CC;
+  background: var(--link-color-light);
   color: white;
 }
 
@@ -3157,7 +3568,7 @@ div.pane-frame.maximized {
 }
 
 .media-load-btn {
-  background: linear-gradient(to bottom, #0066CC 0%, #0052A3 100%);
+  background: linear-gradient(to bottom, var(--link-color-light) 0%, #0052A3 100%);
   border: 1px solid #0052A3;
   color: white;
   padding: 8px 20px;
@@ -3168,7 +3579,7 @@ div.pane-frame.maximized {
 }
 
 .media-load-btn:hover {
-  background: linear-gradient(to bottom, #0077DD 0%, #0066CC 100%);
+  background: linear-gradient(to bottom, #0077DD 0%, var(--link-color-light) 100%);
 }
 
 .media-track-info {
@@ -3211,8 +3622,8 @@ div.pane-frame.maximized {
 }
 
 .media-viz-btn.active {
-  background: linear-gradient(to bottom, #0066CC 0%, #0052A3 100%);
-  border-color: #0066CC;
+  background: linear-gradient(to bottom, var(--link-color-light) 0%, #0052A3 100%);
+  border-color: var(--link-color-light);
   color: white;
   box-shadow: 0 0 10px rgba(0, 102, 204, 0.5);
 }
@@ -3855,7 +4266,7 @@ div.pane-frame.maximized {
   top: 50%;
   left: 0;
   right: 0;
-  border-top: 1px dotted #7F9DB9; /* De gestippelde MSN lijn */
+  border-top: 1px dotted var(--btn-border); /* De gestippelde MSN lijn */
   z-index: 1;
 }
 
@@ -3865,7 +4276,7 @@ div.pane-frame.maximized {
   background: white; 
   padding: 0 10px;
   font-size: var(--ui-font-size);
-  color: #7F9DB9;
+  color: var(--btn-border);
   font-family: 'Tahoma', sans-serif;
 }
 
@@ -3888,8 +4299,8 @@ div.pane-frame.maximized {
 /* - - - CALL PANEL - - - - - - - - - - - - - - - */
 
 .call-panel {
-  border-bottom: 1px solid #7F9DB9;
-  background: #ECE9D8;
+  border-bottom: 1px solid var(--btn-border);
+  background: var(--app-bg);
   flex-shrink: 0;
 }
 
@@ -3962,7 +4373,7 @@ div.pane-frame.maximized {
   border: 1px solid #999;
   border-radius: 3px;
   cursor: pointer;
-  background: linear-gradient(to bottom, #FFFFFF 0%, #ECE9D8 100%);
+  background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
 }
 
 .call-btn:hover {
@@ -3987,7 +4398,7 @@ div.pane-frame.maximized {
 }
 
 .call-mute {
-  border-color: #7F9DB9;
+  border-color: var(--btn-border);
 }
 
 .call-mute.muted {
@@ -4522,12 +4933,12 @@ div.pane-frame.maximized {
 }
 
 .cp-header h2 {
-  color: #003399;
+  color: var(--link-color);
   font-size: 16px;
   font-weight: bold;
   margin: 0 0 20px 0;
   padding-bottom: 8px;
-  border-bottom: 1px solid #0066CC;
+  border-bottom: 1px solid var(--link-color-light);
 }
 
 .cp-categories {
@@ -4564,7 +4975,7 @@ div.pane-frame.maximized {
 }
 
 .cp-category-title {
-  color: #003399;
+  color: var(--link-color);
   font-size: 14px;
   font-weight: bold;
   margin-bottom: 4px;
@@ -4586,7 +4997,7 @@ div.pane-frame.maximized {
 }
 
 .cp-back-link {
-  color: #0066CC;
+  color: var(--link-color-light);
   font-size: var(--ui-font-size);
   cursor: pointer;
   text-decoration: none;
@@ -4602,7 +5013,7 @@ div.pane-frame.maximized {
   gap: 12px;
   margin-bottom: 24px;
   padding-bottom: 12px;
-  border-bottom: 2px solid #0066CC;
+  border-bottom: 2px solid var(--link-color-light);
 }
 
 .cp-settings-icon {
@@ -4610,7 +5021,7 @@ div.pane-frame.maximized {
 }
 
 .cp-settings-header h2 {
-  color: #003399;
+  color: var(--link-color);
   font-size: 16px;
   font-weight: bold;
   margin: 0;
@@ -4665,7 +5076,7 @@ div.pane-frame.maximized {
 
 .cp-select {
   padding: 4px 8px;
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   font-size: var(--ui-font-size-md);
   font-family: 'Tahoma', Arial, sans-serif;
   background: #FFFFFF;
@@ -4738,7 +5149,7 @@ div.pane-frame.maximized {
 }
 
 .modal-dialog {
-  background: #ECE9D8;
+  background: var(--app-bg);
   border: 3px solid;
   border-color: #FFFFFF #404040 #404040 #FFFFFF;
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
@@ -4805,13 +5216,13 @@ div.pane-frame.maximized {
 .xp-input {
   width: 100%;
   padding: 4px 6px;
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--btn-border);
   font-size: var(--ui-font-size);
   font-family: 'Tahoma', Arial, sans-serif;
 }
 
 .xp-input:focus {
-  outline: 1px solid #0066CC;
+  outline: 1px solid var(--link-color-light);
 }
 
 .form-actions {

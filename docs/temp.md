@@ -1,0 +1,1 @@
+#316AC5 (menu hover)var(--menu-hover)#ECE9D8 (app achtergrond)var(--app-bg)#F0F0F0 (toolbar bg)var(--toolbar-bg)#919B9C (toolbar border)var(--toolbar-border)#003399 (links/headers)var(--link-color)#0066CC (lichte links)var(--link-color-light)#7F9DB9 (button borders)var(--btn-border)#FFFFFF → #ECE9D8 (button gradient)var(--btn-gradient-a) → var(--btn-gradient-b)

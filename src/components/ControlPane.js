@@ -55,7 +55,7 @@ function ControlPane() {
           id: 'colorScheme', 
           label: 'Kleurenschema', 
           type: 'select',
-          options: ['blauw', 'olijfgroen', 'zilver'],
+          options: ['blauw', 'olijfgroen', 'zilver', 'royale', 'zune', 'royale-noir', 'energy-blue', 'klassiek'],
           value: colorScheme,
           description: 'Kleur van vensters en knoppen'
         }
