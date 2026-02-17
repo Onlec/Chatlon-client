@@ -13,6 +13,7 @@
   z-index: 999999;
   opacity: 1;
   transition: opacity 0.3s ease;
+  animation: crt-flicker 0.15s infinite;
 }
 
 .scanlines-overlay.disabled {
@@ -70,11 +71,170 @@
   }
 }
 
-.scanlines-overlay {
-  animation: crt-flicker 0.15s infinite;
+/* ================================================
+   THEMA VARIABELEN
+   ================================================ */
+
+/* Lettergrootte variabelen — standaard (normaal) */
+:root {
+  --ui-font-size:    11px;  /* Basis UI tekst */
+  --ui-font-size-md: 12px;  /* Licht groter: namen, labels */
+  --ui-font-size-sm: 10px;  /* Klein secundair */
+  --ui-font-size-xs:  9px;  /* Heel klein */
 }
 
-/* --- 1. DESKTOP BASIS --- */
+/*
+  SCOPED overrides: enkel van kracht binnen desktop-shell containers.
+  Boot-sequence en login-scherm (buiten .pane-frame / .taskbar /
+  .start-menu / .shortcuts-area) gebruiken altijd de :root defaults.
+*/
+
+/* Klein */
+[data-fontsize="klein"] .pane-frame,
+[data-fontsize="klein"] .taskbar,
+[data-fontsize="klein"] .start-menu,
+[data-fontsize="klein"] .shortcuts-area {
+  --ui-font-size:    10px;
+  --ui-font-size-md: 11px;
+  --ui-font-size-sm:  9px;
+  --ui-font-size-xs:  8px;
+}
+
+/* Groot */
+[data-fontsize="groot"] .pane-frame,
+[data-fontsize="groot"] .taskbar,
+[data-fontsize="groot"] .start-menu,
+[data-fontsize="groot"] .shortcuts-area {
+  --ui-font-size:    13px;
+  --ui-font-size-md: 14px;
+  --ui-font-size-sm: 12px;
+  --ui-font-size-xs: 10px;
+}
+
+/* Standaard: Windows XP Blauw (Luna) */
+:root {
+  /* Venster chrome */
+  --win-bg:               #ECE9D8;
+  --win-frame-border:     #0054E3;
+  --win-frame-shadow:     #0831D9;
+  --win-titlebar-a:       #0058e6;
+  --win-titlebar-b:       #2596f3;
+  --win-titlebar-c:       #0058e6;
+  --win-titlebar-d:       #0046ad;
+  --win-content-border:   #7F9DB9;
+  --win-btn-bg:           #3f8cf3;
+
+  /* Taakbalk */
+  --taskbar-a:            #245edb;
+  --taskbar-b:            #3f8cf3;
+  --taskbar-c:            #245edb;
+  --taskbar-d:            #1941a5;
+  --tab-a:                #3E82F7;
+  --tab-b:                #2B6FCE;
+  --tab-hover-a:          #5199F8;
+  --tab-hover-b:          #3E82F7;
+  --tab-active-a:         #1E52B7;
+  --tab-active-b:         #1941A5;
+
+  /* Start-knop */
+  --startbtn-a:           #3FA142;
+  --startbtn-b:           #61BB46;
+  --startbtn-border:      #165C1F;
+  --startbtn-hover-a:     #4FB64F;
+  --startbtn-hover-b:     #6FD14F;
+
+  /* Startmenu */
+  --startmenu-border:     #245EDC;
+  --startmenu-header-a:   #5199F8;
+  --startmenu-header-b:   #245EDC;
+  --startmenu-item-hover: #316AC5;
+  --startmenu-rightcol:   #D3E5FA;
+  --startmenu-divider:    #C1D2EE;
+  --startmenu-footer-bdr: #1659C5;
+  --startmenu-pinned:     #00156E;
+}
+
+/* Thema: Olijfgroen */
+[data-theme="olijfgroen"] {
+  --win-bg:               #E8E4D0;
+  --win-frame-border:     #5A7520;
+  --win-frame-shadow:     #3D5212;
+  --win-titlebar-a:       #4E6C1A;
+  --win-titlebar-b:       #87A840;
+  --win-titlebar-c:       #4E6C1A;
+  --win-titlebar-d:       #344812;
+  --win-content-border:   #8FA860;
+  --win-btn-bg:           #87A840;
+
+  --taskbar-a:            #4E6C1A;
+  --taskbar-b:            #87A840;
+  --taskbar-c:            #4E6C1A;
+  --taskbar-d:            #344812;
+  --tab-a:                #799E36;
+  --tab-b:                #5A7A24;
+  --tab-hover-a:          #8BB845;
+  --tab-hover-b:          #799E36;
+  --tab-active-a:         #3A5C14;
+  --tab-active-b:         #2A4A0C;
+
+  --startbtn-a:           #7B8D2C;
+  --startbtn-b:           #A0B840;
+  --startbtn-border:      #4A5C14;
+  --startbtn-hover-a:     #8EA03A;
+  --startbtn-hover-b:     #B0CC4C;
+
+  --startmenu-border:     #5A7520;
+  --startmenu-header-a:   #87A840;
+  --startmenu-header-b:   #4E6C1A;
+  --startmenu-item-hover: #5A7A28;
+  --startmenu-rightcol:   #D4E0B4;
+  --startmenu-divider:    #BCC89C;
+  --startmenu-footer-bdr: #3A5A14;
+  --startmenu-pinned:     #1A3408;
+}
+
+/* Thema: Zilver */
+[data-theme="zilver"] {
+  --win-bg:               #EDE9E5;
+  --win-frame-border:     #7080A0;
+  --win-frame-shadow:     #3A4A5C;
+  --win-titlebar-a:       #6C7C8E;
+  --win-titlebar-b:       #9AAAB8;
+  --win-titlebar-c:       #6C7C8E;
+  --win-titlebar-d:       #4C5C6E;
+  --win-content-border:   #969696;
+  --win-btn-bg:           #9AAAB8;
+
+  --taskbar-a:            #6C7C8E;
+  --taskbar-b:            #9AAAB8;
+  --taskbar-c:            #6C7C8E;
+  --taskbar-d:            #4C5C6E;
+  --tab-a:                #889AAA;
+  --tab-b:                #6C7C8E;
+  --tab-hover-a:          #9AAAB8;
+  --tab-hover-b:          #889AAA;
+  --tab-active-a:         #4C5C6E;
+  --tab-active-b:         #3C4C5E;
+
+  --startbtn-a:           #888898;
+  --startbtn-b:           #AAAAB8;
+  --startbtn-border:      #505060;
+  --startbtn-hover-a:     #9A9AAA;
+  --startbtn-hover-b:     #BBBBC8;
+
+  --startmenu-border:     #6C7C8E;
+  --startmenu-header-a:   #9AAAB8;
+  --startmenu-header-b:   #6C7C8E;
+  --startmenu-item-hover: #6C7C8E;
+  --startmenu-rightcol:   #D8DDE2;
+  --startmenu-divider:    #BBBBCC;
+  --startmenu-footer-bdr: #5A6A7C;
+  --startmenu-pinned:     #2A3A4C;
+}
+
+/* ================================================
+   1. DESKTOP BASIS
+   ================================================ */
 
 body, html {
   margin: 0;
@@ -100,7 +260,9 @@ body, html {
   pointer-events: none;
 }
 
-/* --- 2. DESKTOP ICONEN --- */
+/* ================================================
+   2. DESKTOP ICONEN
+   ================================================ */
 
 .shortcuts-area {
   position: absolute;
@@ -136,18 +298,20 @@ body, html {
 
 .shortcut-label {
   color: white;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   text-align: center;
   text-shadow: 1px 1px 2px black;
   user-select: none;
 }
 
-/* --- 3. HET VENSTER FRAME --- */
+/* ================================================
+   3. HET VENSTER FRAME
+   ================================================ */
 .pane-frame {
-  background-color: #ECE9D8;
-  border: 1px solid #0054E3;
-  box-shadow: 
-    0 0 0 2px #0831D9,
+  background-color: var(--win-bg);
+  border: 1px solid var(--win-frame-border);
+  box-shadow:
+    0 0 0 2px var(--win-frame-shadow),
     4px 4px 15px rgba(0,0,0,0.4);
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
@@ -206,13 +370,14 @@ div.pane-frame.maximized {
 }
 
 .pane-header {
-  background: linear-gradient(to bottom, #0058e6 0%, #2596f3 9%, #0058e6 18%, #0058e6 92%, #0046ad 100%);
+  background: linear-gradient(to bottom, var(--win-titlebar-a) 0%, var(--win-titlebar-b) 9%, var(--win-titlebar-c) 18%, var(--win-titlebar-c) 92%, var(--win-titlebar-d) 100%);
   padding: 4px 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: white;
   font-weight: bold;
+  font-size: var(--ui-font-size);
   text-shadow: 1px 1px 1px #000;
   flex-shrink: 0;
   user-select: none;
@@ -236,21 +401,23 @@ div.pane-frame.maximized {
   justify-content: center;
 }
 
-.minimize { background: #3f8cf3; }
-.maximize { background: #3f8cf3; font-size: 14px; }
+.minimize { background: var(--win-btn-bg); }
+.maximize { background: var(--win-btn-bg); font-size: 14px; }
 .close { background: #e81123; }
 
 .pane-content {
   flex-grow: 1;
   background-color: white;
   margin: 2px;
-  border: 1px solid #7F9DB9;
+  border: 1px solid var(--win-content-border);
   display: flex;
   flex-direction: column;
   overflow: hidden !important;
 }
 
-/* --- 4. DE HANDMATIGE RESIZERS --- */
+/* ================================================
+   4. DE HANDMATIGE RESIZERS
+   ================================================ */
 
 .resizer-e { 
   position: absolute; 
@@ -283,7 +450,9 @@ div.pane-frame.maximized {
   background: linear-gradient(135deg, transparent 50%, #808080 50%, #808080 60%, transparent 60%, transparent 70%, #808080 70%, #808080 80%, transparent 80%);
 }
 
-/* --- 5. CHAT LAYOUT --- */
+/* ================================================
+   5. CHAT LAYOUT
+   ================================================ */
 .chat-main-wrapper {
   display: flex;
   flex-direction: column;
@@ -297,7 +466,7 @@ div.pane-frame.maximized {
 .chat-info-bar {
   background: #F1F1F1;
   padding: 4px 8px; 
-  font-size: 11px; 
+  font-size: var(--ui-font-size); 
   border-bottom: 1px solid #7F9DB9; 
   color: #666;
   flex-shrink: 0;
@@ -357,17 +526,19 @@ div.pane-frame.maximized {
   padding: 4px;
   resize: none;
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
 }
 
-/* --- 6. TAAKBALK --- */
+/* ================================================
+   6. TAAKBALK
+   ================================================ */
 
 .taskbar {
-  position: fixed; 
-  bottom: 0; 
-  width: 100%; 
+  position: fixed;
+  bottom: 0;
+  width: 100%;
   height: 30px;
-  background: linear-gradient(to bottom, #245edb 0%, #3f8cf3 9%, #245edb 18%, #245edb 92%, #1941a5 100%);
+  background: linear-gradient(to bottom, var(--taskbar-a) 0%, var(--taskbar-b) 9%, var(--taskbar-c) 18%, var(--taskbar-c) 92%, var(--taskbar-d) 100%);
   display: flex; 
   align-items: center; 
   z-index: 10000;
@@ -379,17 +550,17 @@ div.pane-frame.maximized {
   flex-shrink: 0;
   background: linear-gradient(
     to right,
-    #3FA142 0%,
-    #61BB46 45%,
-    #61BB46 55%,
-    #3FA142 100%
+    var(--startbtn-a) 0%,
+    var(--startbtn-b) 45%,
+    var(--startbtn-b) 55%,
+    var(--startbtn-a) 100%
   );
-  color: white; 
-  font-weight: bold; 
-  font-size: 11px;
-  padding: 0 15px; 
-  border: none; 
-  border-right: 1px solid #165C1F;
+  color: white;
+  font-weight: bold;
+  font-size: var(--ui-font-size);
+  padding: 0 15px;
+  border: none;
+  border-right: 1px solid var(--startbtn-border);
   border-top-right-radius: 10px; 
   border-bottom-right-radius: 10px;
   cursor: pointer;
@@ -402,10 +573,10 @@ div.pane-frame.maximized {
 .start-btn:hover {
   background: linear-gradient(
     to right,
-    #4FB64F 0%,
-    #6FD14F 45%,
-    #6FD14F 55%,
-    #4FB64F 100%
+    var(--startbtn-hover-a) 0%,
+    var(--startbtn-hover-b) 45%,
+    var(--startbtn-hover-b) 55%,
+    var(--startbtn-hover-a) 100%
   );
 }
 
@@ -429,11 +600,11 @@ div.pane-frame.maximized {
 
 /* Individual Taskbar Tab */
 .taskbar-tab {
-  background: linear-gradient(to bottom, #3E82F7 0%, #2B6FCE 100%);
-  color: white; 
-  padding: 2px 10px; 
-  border-radius: 3px; 
-  font-size: 11px;
+  background: linear-gradient(to bottom, var(--tab-a) 0%, var(--tab-b) 100%);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 3px;
+  font-size: var(--ui-font-size);
   
   /* XP Dynamic Width */
   flex: 1 1 auto;
@@ -449,11 +620,11 @@ div.pane-frame.maximized {
 }
 
 .taskbar-tab:hover {
-  background: linear-gradient(to bottom, #5199F8 0%, #3E82F7 100%);
+  background: linear-gradient(to bottom, var(--tab-hover-a) 0%, var(--tab-hover-b) 100%);
 }
 
-.taskbar-tab.active { 
-  background: linear-gradient(to bottom, #1E52B7 0%, #1941A5 100%);
+.taskbar-tab.active {
+  background: linear-gradient(to bottom, var(--tab-active-a) 0%, var(--tab-active-b) 100%);
   box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);
 }
 
@@ -473,9 +644,9 @@ div.pane-frame.maximized {
 }
 
 /* System Tray */
-.systray { 
-  color: white; 
-  font-size: 11px; 
+.systray {
+  color: white;
+  font-size: var(--ui-font-size);
   padding: 0 10px; 
   margin-left: auto;
   text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
@@ -484,7 +655,9 @@ div.pane-frame.maximized {
   gap: 8px;
 }
 
-/* --- 7. CLASSIC OS ELEMENTEN --- */
+/* ================================================
+   7. CLASSIC OS ELEMENTEN
+   ================================================ */
 
 .dx-button {
   padding: 4px 12px;
@@ -493,7 +666,7 @@ div.pane-frame.maximized {
   border-color: #FFFFFF #808080 #808080 #FFFFFF;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
   box-shadow: 
     inset 1px 1px 0 #FFFFFF,
@@ -522,7 +695,9 @@ div.pane-frame.maximized {
 
 
 
-/* --- 9. DE SHAKE ANIMATIE --- */
+/* ================================================
+   9. DE SHAKE ANIMATIE
+   ================================================ */
 
 .nudge-active {
   animation: chat-shake 0.1s linear 6 !important;
@@ -538,7 +713,9 @@ div.pane-frame.maximized {
   100% { transform: translate(0px, 0px); }
 }
 
-/* --- 10. CHAT LOGIN SCHERM --- */
+/* ================================================
+   10. CHAT LOGIN SCHERM
+   ================================================ */
 
 .chat-login-container {
   display: flex;
@@ -587,7 +764,7 @@ div.pane-frame.maximized {
 }
 
 .chat-login-body label {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #000;
   font-weight: bold;
 }
@@ -595,7 +772,7 @@ div.pane-frame.maximized {
 .dx-input {
   border: 1px solid #7F9DB9;
   padding: 3px 4px;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
   outline: none;
   background: white;
@@ -618,7 +795,7 @@ div.pane-frame.maximized {
 
 .chat-login-footer {
   margin-top: 25px;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
 }
 
 .chat-login-footer a {
@@ -631,7 +808,9 @@ div.pane-frame.maximized {
   color: #0066CC;
 }
 
-/* --- 11. START MENU STIJL --- */
+/* ================================================
+   11. START MENU STIJL
+   ================================================ */
 
 .start-menu {
   position: absolute;
@@ -639,7 +818,7 @@ div.pane-frame.maximized {
   left: 0;
   width: 380px;
   background: white;
-  border: 2px solid #245EDC;
+  border: 2px solid var(--startmenu-border);
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   display: flex;
@@ -650,7 +829,7 @@ div.pane-frame.maximized {
 }
 
 .start-menu-header {
-  background: linear-gradient(to bottom, #5199F8 0%, #245EDC 100%);
+  background: linear-gradient(to bottom, var(--startmenu-header-a) 0%, var(--startmenu-header-b) 100%);
   color: white;
   padding: 8px 10px;
   display: flex;
@@ -669,7 +848,7 @@ div.pane-frame.maximized {
 
 .start-user-name {
   font-weight: bold;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
@@ -681,12 +860,12 @@ div.pane-frame.maximized {
 .start-left-col {
   width: 50%;
   padding: 5px;
-  border-right: 1px solid #C1D2EE;
+  border-right: 1px solid var(--startmenu-divider);
 }
 
 .start-right-col {
   width: 50%;
-  background-color: #D3E5FA;
+  background-color: var(--startmenu-rightcol);
   padding: 5px;
 }
 
@@ -695,7 +874,7 @@ div.pane-frame.maximized {
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   cursor: pointer;
   color: #333;
   border-radius: 2px;
@@ -707,34 +886,34 @@ div.pane-frame.maximized {
 }
 
 .start-item:hover {
-  background-color: #316AC5;
+  background-color: var(--startmenu-item-hover);
   color: white;
 }
 
 .start-item-gray {
   font-weight: bold;
-  color: #00156E;
+  color: var(--startmenu-pinned);
 }
 
 .start-item-gray:hover {
-  background-color: #316AC5;
+  background-color: var(--startmenu-item-hover);
   color: white;
 }
 
 .start-menu-footer {
-  background: linear-gradient(to bottom, #5199F8 0%, #245EDC 100%);
+  background: linear-gradient(to bottom, var(--startmenu-header-a) 0%, var(--startmenu-header-b) 100%);
   padding: 5px 10px;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  border-top: 1px solid #1659C5;
+  border-top: 1px solid var(--startmenu-footer-bdr);
 }
 
 .logoff-btn, .shutdown-btn {
   background: none;
   border: none;
   color: white;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   cursor: pointer;
   font-weight: bold;
   text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
@@ -744,7 +923,9 @@ div.pane-frame.maximized {
   text-decoration: underline; 
 }
 
-/* --- 12. NOTEPAD STYLING --- */
+/* ================================================
+   12. NOTEPAD STYLING
+   ================================================ */
 
 .notepad-container {
   display: flex;
@@ -759,7 +940,7 @@ div.pane-frame.maximized {
   display: flex;
   gap: 2px;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   flex-shrink: 0;
 }
 
@@ -791,7 +972,9 @@ div.pane-frame.maximized {
   color: #808080;
 }
 
-/* --- 13. PANES dX LOGIN SCREEN --- */
+/* ================================================
+   13. PANES dX LOGIN SCREEN
+   ================================================ */
 
 /* ============================================
    WINDOWS XP AUTHENTIC LOGIN SCREEN
@@ -834,7 +1017,7 @@ div.pane-frame.maximized {
 
 .xp-top-text {
   color: #ffffff;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-weight: normal;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -972,7 +1155,7 @@ div.pane-frame.maximized {
   border: 1px solid rgba(150, 0, 0, 0.9);
   border-radius: 3px;
   color: #ffffff;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   font-weight: bold;
   cursor: pointer;
   display: none; /* Verborgen by default */
@@ -1061,7 +1244,7 @@ div.pane-frame.maximized {
 .xp-label {
   display: block;
   color: #ffffff;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   margin-bottom: 8px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -1144,7 +1327,7 @@ div.pane-frame.maximized {
   border: 1px solid rgba(255, 200, 200, 0.5);
   border-radius: 3px;
   color: #ffcccc;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   line-height: 1.4;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -1152,7 +1335,7 @@ div.pane-frame.maximized {
 .xp-hint-text {
   margin-top: 16px;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   text-align: center;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -1166,7 +1349,7 @@ div.pane-frame.maximized {
   align-items: center;
   gap: 8px;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   cursor: pointer;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   user-select: none;
@@ -1191,7 +1374,7 @@ div.pane-frame.maximized {
   border: 1px solid rgba(255, 180, 0, 0.4);
   border-radius: 4px;
   color: rgba(255, 220, 150, 0.95);
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   line-height: 1.4;
   margin-bottom: 12px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
@@ -1277,7 +1460,7 @@ div.pane-frame.maximized {
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.9);
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   cursor: pointer;
   text-decoration: underline;
   padding: 6px 12px;
@@ -1307,7 +1490,7 @@ div.pane-frame.maximized {
   border: 2px solid #990000;
   border-radius: 4px;
   color: #ffffff;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   font-weight: bold;
   font-family: 'Tahoma', Arial, sans-serif;
   cursor: pointer;
@@ -1420,7 +1603,7 @@ div.pane-frame.maximized {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   color: rgba(255, 255, 255, 0.85);
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   margin-bottom: 12px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -1429,7 +1612,9 @@ div.pane-frame.maximized {
   font-size: 16px;
 }
 
-/* --- 14. REKENMACHINE STYLING --- */
+/* ================================================
+   14. REKENMACHINE STYLING
+   ================================================ */
 
 .calculator-container {
   display: flex;
@@ -1445,7 +1630,7 @@ div.pane-frame.maximized {
   display: flex;
   gap: 2px;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   flex-shrink: 0;
 }
 
@@ -1529,7 +1714,9 @@ div.pane-frame.maximized {
   color: #CC0000;
 }
 
-/* --- 15. CHAT MESSENGER CONTACTENLIJST --- */
+/* ================================================
+   15. CHAT MESSENGER CONTACTENLIJST
+   ================================================ */
 
 .contacts-container {
   display: flex;
@@ -1545,7 +1732,7 @@ div.pane-frame.maximized {
   display: flex;
   gap: 2px;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   flex-shrink: 0;
 }
 
@@ -1593,7 +1780,7 @@ div.pane-frame.maximized {
 }
 
 .contacts-personal-message {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #666;
   font-style: italic;
   cursor: text;
@@ -1608,7 +1795,7 @@ div.pane-frame.maximized {
 
 .contacts-personal-message-input {
   width: 100%;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-style: italic;
   padding: 2px;
   border: 1px solid #7F9DB9;
@@ -1638,7 +1825,7 @@ div.pane-frame.maximized {
 .contacts-status-dropdown {
   border: 1px solid #7F9DB9;
   padding: 2px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-family: 'Tahoma', sans-serif;
   background: white;
   cursor: pointer;
@@ -1650,32 +1837,6 @@ div.pane-frame.maximized {
   background: white;
 }
 
-.contacts-category-header {
-  background: linear-gradient(to bottom, #E8F2FD 0%, #D0E4F7 100%);
-  border-bottom: 1px solid #7F9DB9;
-  padding: 6px 8px;
-  font-size: 11px;
-  font-weight: bold;
-  color: #003399;
-  cursor: pointer;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.contacts-category-header:hover {
-  background: linear-gradient(to bottom, #D0E4F7 0%, #B8D6F0 100%);
-}
-
-.contacts-category-header.collapsed {
-  opacity: 0.7;
-}
-
-.contacts-category-icon {
-  font-size: 8px;
-  color: #666;
-}
 
 .contacts-list {
   padding: 4px 0;
@@ -1684,7 +1845,7 @@ div.pane-frame.maximized {
 .contacts-empty {
   padding: 20px;
   text-align: center;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #666;
   font-style: italic;
 }
@@ -1692,45 +1853,55 @@ div.pane-frame.maximized {
 .contact-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 5px;
+  padding: 3px 10px;
   cursor: pointer;
-  position: relative;
   border-bottom: 1px solid #F0F0F0;
+  overflow: hidden;
 }
 
 .contact-item:hover {
   background: linear-gradient(to right, #FFFACD 0%, #FFF9C4 100%);
 }
 
-.contact-avatar {
-  width: 32px;
-  height: 32px;
-  border: 1px solid #7F9DB9;
-  border-radius: 2px;
-}
-
-.contact-info {
-  flex: 1;
+.contact-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .contact-name {
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   font-weight: bold;
   color: #000;
+  flex-shrink: 0;
 }
 
-.contact-status {
-  font-size: 10px;
-  color: #666;
+.contact-status-label {
+  font-size: var(--ui-font-size-sm);
+  color: #555;
+  flex-shrink: 0;
+}
+
+.contact-personal-msg {
+  font-size: var(--ui-font-size-sm);
+  color: #999;
   font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .contact-status-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   border: 1px solid rgba(0,0,0,0.2);
+  flex-shrink: 0;
 }
 
 .contacts-bottom-banner {
@@ -1738,7 +1909,7 @@ div.pane-frame.maximized {
   border-top: 1px solid #7F9DB9;
   padding: 8px;
   text-align: center;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   color: #003399;
   flex-shrink: 0;
 }
@@ -1751,7 +1922,9 @@ div.pane-frame.maximized {
   text-decoration: underline;
 }
 
-/* --- 16. KLASSIEKE CHAT MESSENGER CONVERSATION WINDOW --- */
+/* ================================================
+   16. KLASSIEKE CHAT MESSENGER CONVERSATION WINDOW
+   ================================================ */
 
 .chat-conversation {
   display: flex;
@@ -1767,7 +1940,7 @@ div.pane-frame.maximized {
   display: flex;
   gap: 2px;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   flex-shrink: 0;
 }
 
@@ -1802,7 +1975,7 @@ div.pane-frame.maximized {
   align-items: center;
   gap: 2px;
   cursor: pointer;
-  font-size: 9px;
+  font-size: var(--ui-font-size-xs);
   color: #000;
 }
 
@@ -1816,7 +1989,7 @@ div.pane-frame.maximized {
 }
 
 .chat-toolbar-label {
-  font-size: 9px;
+  font-size: var(--ui-font-size-xs);
   white-space: nowrap;
 }
 
@@ -1842,12 +2015,40 @@ div.pane-frame.maximized {
   min-width: 0;
 }
 
+.chat-contact-header {
+  padding: 5px 10px 4px;
+  background: linear-gradient(to bottom, #EEF4FB 0%, #E3EDF8 100%);
+  border-bottom: 1px solid #C0D4EA;
+  line-height: 1.3;
+}
+
+.chat-contact-header-from {
+  font-size: var(--ui-font-size);
+  color: #666;
+  margin-right: 4px;
+}
+
+.chat-contact-header-name {
+  font-size: var(--ui-font-size-md);
+  font-weight: bold;
+  color: #003399;
+}
+
+.chat-contact-header-msg {
+  font-size: var(--ui-font-size-sm);
+  color: #666;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .chat-messages-display {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
   background: white;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
 }
 
 .chat-input-container {
@@ -1870,7 +2071,7 @@ div.pane-frame.maximized {
   border-radius: 2px;
   padding: 3px 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
 }
 
 .chat-input-tool:hover:not(:disabled) {
@@ -1885,12 +2086,12 @@ div.pane-frame.maximized {
 
 .chat-input-text {
   width: 100%;
-  min-height: 60px;
+  min-height: 74px;
   max-height: 120px;
   border: none;
   padding: 6px;
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   resize: vertical;
   outline: none;
   box-sizing: border-box;
@@ -1902,7 +2103,7 @@ div.pane-frame.maximized {
   border-left: 1px solid #D4D0C8;
   display: flex;
   flex-direction: column;
-  padding: 8px;
+  padding: 8px 8px 0 8px;
   flex-shrink: 0;
 }
 
@@ -1911,12 +2112,6 @@ div.pane-frame.maximized {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-}
-
-.chat-avatar-label {
-  font-size: 10px;
-  color: #666;
-  font-weight: bold;
 }
 
 .chat-display-picture {
@@ -1928,7 +2123,9 @@ div.pane-frame.maximized {
 }
 
 
-/* --- 17. EMOTICON PICKER --- */
+/* ================================================
+   17. EMOTICON PICKER
+   ================================================ */
 
 .emoticon-picker {
   position: absolute;
@@ -1955,7 +2152,7 @@ div.pane-frame.maximized {
 }
 
 .emoticon-category-title {
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   font-weight: bold;
   color: #003399;
   margin-bottom: 6px;
@@ -1990,11 +2187,13 @@ div.pane-frame.maximized {
   transform: scale(1.1);
 }
 
-/* --- 18. TYPING INDICATOR --- */
+/* ================================================
+   18. TYPING INDICATOR
+   ================================================ */
 
 .typing-indicator {
   padding: 2px 10px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #666;
   background: #ECE9D8;
   border-top: 1px solid #D2D2D2;
@@ -2005,14 +2204,16 @@ div.pane-frame.maximized {
   height: 18px;
   min-height: 18px;
   padding: 1px 8px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #666;
   background: white;
   flex-shrink: 0;
   line-height: 16px;
 }
 
-/* --- 19. VRIENDENVERZOEKEN & CONTACT TOEVOEGEN --- */
+/* ================================================
+   19. VRIENDENVERZOEKEN & CONTACT TOEVOEGEN
+   ================================================ */
 
 .add-contact-form {
   margin-top: 8px;
@@ -2032,7 +2233,7 @@ div.pane-frame.maximized {
 .pending-requests-header {
   background: linear-gradient(to bottom, #FFE8A3 0%, #FFD966 100%);
   padding: 6px 8px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-weight: bold;
   color: #663300;
   border-bottom: 1px solid #CC9933;
@@ -2052,7 +2253,7 @@ div.pane-frame.maximized {
 }
 
 .pending-request-name {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-weight: bold;
   color: #003399;
 }
@@ -2062,7 +2263,9 @@ div.pane-frame.maximized {
   gap: 4px;
 }
 
-/* --- 20. TOAST NOTIFICATIES --- */
+/* ================================================
+   20. TOAST NOTIFICATIES
+   ================================================ */
 
 .toast-container {
   position: fixed;
@@ -2163,7 +2366,7 @@ div.pane-frame.maximized {
 
 .toast-from {
   font-weight: bold;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   color: #003399;
   margin-bottom: 4px;
   overflow: hidden;
@@ -2172,7 +2375,7 @@ div.pane-frame.maximized {
 }
 
 .toast-message {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #000;
   margin-bottom: 4px;
   overflow: hidden;
@@ -2181,11 +2384,13 @@ div.pane-frame.maximized {
 }
 
 .toast-hint {
-  font-size: 9px;
+  font-size: var(--ui-font-size-xs);
   color: #666;
   font-style: italic;
 }
-/* --- 21. MACROHARD PANET (PAINT) STYLING --- */
+/* ================================================
+   21. MACROHARD PANET (PAINT) STYLING
+   ================================================ */
 
 .paint-container {
   display: flex;
@@ -2201,7 +2406,7 @@ div.pane-frame.maximized {
   display: flex;
   gap: 2px;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   flex-shrink: 0;
 }
 
@@ -2289,7 +2494,7 @@ div.pane-frame.maximized {
 }
 
 .paint-toolbox-title {
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   font-weight: bold;
   color: #000;
   margin-bottom: 6px;
@@ -2403,7 +2608,7 @@ div.pane-frame.maximized {
 }
 
 .paint-color-label {
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   font-weight: bold;
   color: #000;
 }
@@ -2439,7 +2644,9 @@ div.pane-frame.maximized {
   min-height: 400px;
 }
 
-/* --- 22. INTERNET ADVENTURER BROWSER --- */
+/* ================================================
+   22. INTERNET ADVENTURER BROWSER
+   ================================================ */
 
 .browser-container {
   display: flex;
@@ -2456,7 +2663,7 @@ div.pane-frame.maximized {
   display: flex;
   gap: 2px;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   flex-shrink: 0;
 }
 
@@ -2513,7 +2720,7 @@ div.pane-frame.maximized {
 }
 
 .browser-address-label {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #666;
   white-space: nowrap;
 }
@@ -2522,7 +2729,7 @@ div.pane-frame.maximized {
   flex: 1;
   border: none;
   outline: none;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   padding: 2px;
   font-family: 'Tahoma', sans-serif;
 }
@@ -2531,7 +2738,7 @@ div.pane-frame.maximized {
   background: linear-gradient(to bottom, #ECE9D8 0%, #D8D0C8 100%);
   border: 1px solid #7F9DB9;
   padding: 2px 10px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   cursor: pointer;
 }
 
@@ -2547,7 +2754,7 @@ div.pane-frame.maximized {
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   flex-shrink: 0;
 }
 
@@ -2561,7 +2768,7 @@ div.pane-frame.maximized {
   background: transparent;
   border: 1px solid transparent;
   padding: 2px 6px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   cursor: pointer;
   border-radius: 2px;
   display: flex;
@@ -2588,7 +2795,7 @@ div.pane-frame.maximized {
   padding: 2px 6px;
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #666;
   flex-shrink: 0;
 }
@@ -2648,7 +2855,7 @@ div.pane-frame.maximized {
   background: linear-gradient(to bottom, #F5F5F5 0%, #E0E0E0 100%);
   border: 1px solid #AAAAAA;
   padding: 8px 16px;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   cursor: pointer;
   border-radius: 2px;
   color: #333;
@@ -2667,7 +2874,7 @@ div.pane-frame.maximized {
 
 .yoctol-links {
   text-align: center;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   margin-bottom: 40px;
 }
 
@@ -2702,7 +2909,7 @@ div.pane-frame.maximized {
 }
 
 .yoctol-service-box p {
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   color: #666;
   margin: 0 0 8px 0;
 }
@@ -2710,7 +2917,7 @@ div.pane-frame.maximized {
 .yoctol-service-box a {
   color: #0066CC;
   text-decoration: none;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
 }
 
 .yoctol-service-box a:hover {
@@ -2719,7 +2926,7 @@ div.pane-frame.maximized {
 
 .yoctol-footer {
   text-align: center;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   color: #999;
   margin-top: 60px;
   padding: 20px 0;
@@ -2783,7 +2990,7 @@ div.pane-frame.maximized {
   color: white;
   font-weight: bold;
   text-shadow: 1px 1px 1px #000;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
 }
 
 .browser-popup-title {
@@ -2805,7 +3012,7 @@ div.pane-frame.maximized {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   flex-shrink: 0;
 }
 
@@ -2822,7 +3029,7 @@ div.pane-frame.maximized {
 
 .browser-popup-content p {
   margin: 0 0 15px 0;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   color: #000;
   font-weight: bold;
 }
@@ -2837,7 +3044,7 @@ div.pane-frame.maximized {
   background: linear-gradient(to bottom, #FFD700 0%, #FFA500 100%);
   border: 2px solid #FF8C00;
   padding: 8px 16px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-weight: bold;
   cursor: pointer;
   border-radius: 3px;
@@ -2867,7 +3074,9 @@ div.pane-frame.maximized {
   min-height: 450px;
 }
 
-/* --- 23. PANES MEDIA PLAYER --- */
+/* ================================================
+   23. PANES MEDIA PLAYER
+   ================================================ */
 
 .media-container {
   display: flex;
@@ -2884,7 +3093,7 @@ div.pane-frame.maximized {
   display: flex;
   gap: 2px;
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   flex-shrink: 0;
 }
 
@@ -2954,7 +3163,7 @@ div.pane-frame.maximized {
   padding: 8px 20px;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   font-weight: bold;
 }
 
@@ -2975,7 +3184,7 @@ div.pane-frame.maximized {
 }
 
 .media-track-details {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #888;
 }
 
@@ -2993,7 +3202,7 @@ div.pane-frame.maximized {
   padding: 6px 16px;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
 }
 
 .media-viz-btn:hover {
@@ -3016,7 +3225,7 @@ div.pane-frame.maximized {
 }
 
 .media-time {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #888;
   min-width: 40px;
   text-align: center;
@@ -3144,7 +3353,7 @@ div.pane-frame.maximized {
 }
 
 .media-volume-text {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #888;
   min-width: 35px;
 }
@@ -3165,7 +3374,7 @@ div.pane-frame.maximized {
   background: #000000;
   padding: 8px 12px;
   border-bottom: 1px solid #333;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-weight: bold;
   color: #00ff88;
 }
@@ -3181,7 +3390,7 @@ div.pane-frame.maximized {
 }
 
 .media-playlist-section-title {
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   color: #666;
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -3228,7 +3437,7 @@ div.pane-frame.maximized {
 }
 
 .media-playlist-item-title {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-weight: bold;
   color: white;
   white-space: nowrap;
@@ -3237,7 +3446,7 @@ div.pane-frame.maximized {
 }
 
 .media-playlist-item-artist {
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   color: #888;
   white-space: nowrap;
   overflow: hidden;
@@ -3252,7 +3461,7 @@ div.pane-frame.maximized {
   padding: 8px;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   margin-bottom: 8px;
 }
 
@@ -3275,7 +3484,7 @@ div.pane-frame.maximized {
   color: white;
   padding: 6px 8px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   outline: none;
   font-family: 'Courier New', monospace;
 }
@@ -3292,7 +3501,7 @@ div.pane-frame.maximized {
   padding: 6px 12px;
   border-radius: 3px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-weight: bold;
 }
 
@@ -3386,7 +3595,7 @@ div.pane-frame.maximized {
 
 .xp-hint {
   color: #888888;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
 }
 
 /* ============================================
@@ -3609,7 +3818,9 @@ div.pane-frame.maximized {
   50% { opacity: 0.7; }
 }
 
-/* --- 22. LEGACY MESSAGES  --- */
+/* ================================================
+   22. LEGACY MESSAGES
+   ================================================ */
 
 /* De container voor een oud bericht */
 .chat-message.legacy {
@@ -3653,7 +3864,7 @@ div.pane-frame.maximized {
   z-index: 2;
   background: white; 
   padding: 0 10px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #7F9DB9;
   font-family: 'Tahoma', sans-serif;
 }
@@ -3665,7 +3876,7 @@ div.pane-frame.maximized {
   color: #666;
   padding: 5px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   margin-bottom: 10px;
 }
 
@@ -3674,7 +3885,7 @@ div.pane-frame.maximized {
   color: #333;
 }
 
-/* --- CALL PANEL --- */
+/* - - - CALL PANEL - - - - - - - - - - - - - - - */
 
 .call-panel {
   border-bottom: 1px solid #7F9DB9;
@@ -3698,7 +3909,7 @@ div.pane-frame.maximized {
 
 .call-invite-text {
   flex: 1;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #333;
 }
 
@@ -3721,7 +3932,7 @@ div.pane-frame.maximized {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #333;
 }
 
@@ -3736,7 +3947,7 @@ div.pane-frame.maximized {
 .call-timer {
   color: #666;
   font-family: 'Lucida Console', monospace;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
 }
 
 .call-controls {
@@ -3746,7 +3957,7 @@ div.pane-frame.maximized {
 
 .call-btn {
   padding: 4px 12px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-family: 'Tahoma', sans-serif;
   border: 1px solid #999;
   border-radius: 3px;
@@ -3800,10 +4011,10 @@ div.pane-frame.maximized {
   background: #1E1E2E;
   color: #C8C8D4;
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
 }
 
-/* --- Tabs --- */
+/* - - - Tabs - - - - - - - - - - - - - - - - - - */
 .tt-tab-bar {
   display: flex;
   background: #2A2A3C;
@@ -3820,7 +4031,7 @@ div.pane-frame.maximized {
   border-bottom: 2px solid transparent;
   cursor: pointer;
   font-family: 'Tahoma', sans-serif;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
 }
 
 .tt-tab:hover {
@@ -3834,7 +4045,7 @@ div.pane-frame.maximized {
   background: #2E2E44;
 }
 
-/* --- Formulieren --- */
+/* - - - Formulieren - - - - - - - - - - - - - - - */
 .tt-form-area {
   flex: 1;
   overflow-y: auto;
@@ -3855,7 +4066,7 @@ div.pane-frame.maximized {
 
 .tt-label {
   color: #8888AA;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   font-family: 'Tahoma', sans-serif;
 }
 
@@ -3866,7 +4077,7 @@ div.pane-frame.maximized {
   border: 1px solid #4A4A6E;
   color: #C8C8D4;
   font-family: 'Tahoma', sans-serif;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   outline: none;
   box-sizing: border-box;
 }
@@ -3877,7 +4088,7 @@ div.pane-frame.maximized {
 
 .tt-btn {
   padding: 4px 14px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-family: 'Tahoma', sans-serif;
   border: 1px solid #4A4A6E;
   border-radius: 2px;
@@ -3913,7 +4124,7 @@ div.pane-frame.maximized {
 
 .tt-error {
   color: #FF8888;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-family: 'Tahoma', sans-serif;
   padding: 6px 8px;
   background: #3A2222;
@@ -3921,7 +4132,7 @@ div.pane-frame.maximized {
   margin-top: 8px;
 }
 
-/* --- Server header (verbonden) --- */
+/* - - - Server header (verbonden) - - - - - - - - */
 .tt-server-header {
   display: flex;
   align-items: center;
@@ -3943,18 +4154,18 @@ div.pane-frame.maximized {
 
 .tt-server-name {
   color: #FFFFFF;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   font-family: 'Tahoma', sans-serif;
   font-weight: bold;
 }
 
 .tt-server-id {
   color: #666688;
-  font-size: 9px;
+  font-size: var(--ui-font-size-xs);
   font-family: 'Tahoma', sans-serif;
 }
 
-/* --- Boomstructuur (gebruikerslijst) --- */
+/* - - - Boomstructuur (gebruikerslijst) - - - - - */
 .tt-tree {
   flex: 1;
   overflow-y: auto;
@@ -3969,7 +4180,7 @@ div.pane-frame.maximized {
   align-items: center;
   gap: 6px;
   padding: 3px 6px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
 }
 
 .tt-user-node.tt-self {
@@ -3978,7 +4189,7 @@ div.pane-frame.maximized {
 }
 
 .tt-user-icon {
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   width: 14px;
   text-align: center;
 }
@@ -3998,14 +4209,14 @@ div.pane-frame.maximized {
 
 .tt-empty-message {
   color: #555577;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-family: 'Tahoma', sans-serif;
   padding: 16px;
   text-align: center;
   font-style: italic;
 }
 
-/* --- Volume slider --- */
+/* - - - Volume slider - - - - - - - - - - - - - - */
 .tt-volume-slider {
   width: 50px;
   height: 10px;
@@ -4021,7 +4232,7 @@ div.pane-frame.maximized {
   opacity: 1;
 }
 
-/* --- Controls / statusbalk --- */
+/* - - - Controls / statusbalk - - - - - - - - - - */
 .tt-controls {
   background: #2A2A3C;
   border-top: 1px solid #3A3A4E;
@@ -4034,7 +4245,7 @@ div.pane-frame.maximized {
 
 .tt-mute-btn, .tt-leave-btn {
   padding: 3px 10px;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   font-family: 'Tahoma', sans-serif;
   border: 1px solid #4A4A6E;
   border-radius: 2px;
@@ -4065,11 +4276,11 @@ div.pane-frame.maximized {
 
 .tt-status-info {
   color: #6666AA;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   margin-left: auto;
 }
 
-/* --- Recente servers --- */
+/* - - - Recente servers - - - - - - - - - - - - - */
 .tt-recent {
   margin-top: 12px;
   border-top: 1px solid #3A3A4E;
@@ -4078,7 +4289,7 @@ div.pane-frame.maximized {
 
 .tt-recent-header {
   color: #666688;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   font-family: 'Tahoma', sans-serif;
   margin-bottom: 6px;
   text-transform: uppercase;
@@ -4099,7 +4310,7 @@ div.pane-frame.maximized {
 }
 
 .tt-recent-icon {
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
 }
 
 .tt-recent-info {
@@ -4110,13 +4321,13 @@ div.pane-frame.maximized {
 
 .tt-recent-name {
   color: #CCCCDD;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-family: 'Tahoma', sans-serif;
 }
 
 .tt-recent-id {
   color: #555577;
-  font-size: 9px;
+  font-size: var(--ui-font-size-xs);
   font-family: 'Tahoma', sans-serif;
 }
 
@@ -4125,7 +4336,7 @@ div.pane-frame.maximized {
   border: none;
   color: #555577;
   cursor: pointer;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   padding: 2px 4px;
 }
 
@@ -4133,7 +4344,7 @@ div.pane-frame.maximized {
   color: #FF6666;
 }
 
-/* --- Dialogen (hergebruikt voor toekomstige groepsgesprekken) --- */
+/* - - - Dialogen (hergebruikt voor groepsgesprekken) - */
 .tt-dialog-overlay {
   position: absolute;
   top: 0;
@@ -4160,7 +4371,7 @@ div.pane-frame.maximized {
   font-weight: bold;
   color: #FFFFFF;
   margin-bottom: 12px;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
 }
 
 .tt-dialog-actions {
@@ -4171,7 +4382,7 @@ div.pane-frame.maximized {
 }
 
 .superpeer-badge {
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   margin-right: 6px;
   cursor: default;
   opacity: 0.7;
@@ -4241,7 +4452,7 @@ div.pane-frame.maximized {
 
 .pinball-loading-sub {
   color: #888888;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-family: 'Tahoma', sans-serif;
 }
 
@@ -4281,7 +4492,7 @@ div.pane-frame.maximized {
 
 .pinball-control {
   color: #8888AA;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   font-family: 'Tahoma', sans-serif;
 }
 
@@ -4361,7 +4572,7 @@ div.pane-frame.maximized {
 
 .cp-category-description {
   color: #666666;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   line-height: 1.4;
 }
 
@@ -4376,7 +4587,7 @@ div.pane-frame.maximized {
 
 .cp-back-link {
   color: #0066CC;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   cursor: pointer;
   text-decoration: none;
 }
@@ -4427,7 +4638,7 @@ div.pane-frame.maximized {
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   color: #000000;
 }
 
@@ -4447,7 +4658,7 @@ div.pane-frame.maximized {
 
 .cp-select-row label,
 .cp-button-row label {
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   color: #000000;
   font-weight: bold;
 }
@@ -4455,7 +4666,7 @@ div.pane-frame.maximized {
 .cp-select {
   padding: 4px 8px;
   border: 1px solid #7F9DB9;
-  font-size: 12px;
+  font-size: var(--ui-font-size-md);
   font-family: 'Tahoma', Arial, sans-serif;
   background: #FFFFFF;
   min-width: 150px;
@@ -4463,12 +4674,12 @@ div.pane-frame.maximized {
 
 .cp-action-button {
   padding: 6px 16px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
 }
 
 .cp-setting-description {
   color: #666666;
-  font-size: 10px;
+  font-size: var(--ui-font-size-sm);
   line-height: 1.4;
   padding-left: 22px;
   font-style: italic;
@@ -4568,7 +4779,7 @@ div.pane-frame.maximized {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   padding: 0;
 }
 
@@ -4587,7 +4798,7 @@ div.pane-frame.maximized {
 .form-group label {
   display: block;
   margin-bottom: 4px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   color: #000000;
 }
 
@@ -4595,7 +4806,7 @@ div.pane-frame.maximized {
   width: 100%;
   padding: 4px 6px;
   border: 1px solid #7F9DB9;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   font-family: 'Tahoma', Arial, sans-serif;
 }
 
@@ -4631,6 +4842,6 @@ div.pane-frame.maximized {
   color: #721C24;
   padding: 8px;
   border-radius: 3px;
-  font-size: 11px;
+  font-size: var(--ui-font-size);
   margin-top: 8px;
 }

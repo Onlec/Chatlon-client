@@ -107,6 +107,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   const handlePersonalMessageSave = () => {
     if (user.is) {
       user.get('personalMessage').put(personalMessage);
+      gun.get('PRESENCE').get(user.is.alias).put({ personalMessage: personalMessage });
     }
     setIsEditingMessage(false);
   };
@@ -361,66 +362,53 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
 
       {/* Contact lijst */}
       <div className="contacts-list-section">
-        {/* Online contacten */}
-        <div className="contacts-category-header">
-          <span className="contacts-category-icon">▼</span>
-          <span className="contacts-category-name">Online ({onlineContacts.length})</span>
-        </div>
-        
         <div className="contacts-list">
           {onlineContacts.length === 0 && offlineContacts.length === 0 ? (
             <div className="contacts-empty">
               Voeg contacten toe om te beginnen met chatten!
             </div>
           ) : (
-            onlineContacts.map((contact) => {
-              const presence = getPresenceStatus(contactPresence[contact.username]);
-              return (
-                <div 
-                  key={contact.username}
-                  className="contact-item"
-                  onDoubleClick={() => onOpenConversation && onOpenConversation(contact.username)}
-                >
-                  <img src={contact.avatar} alt={contact.username} className="contact-avatar" />
-                  <div className="contact-info">
-                    <div className="contact-name">{contact.username}</div>
-                    <div className="contact-status">{presence.label}</div>
+            <>
+              {onlineContacts.map((contact) => {
+                const presence = getPresenceStatus(contactPresence[contact.username]);
+                const personalMsg = contactPresence[contact.username]?.personalMessage;
+                return (
+                  <div
+                    key={contact.username}
+                    className="contact-item"
+                    onDoubleClick={() => onOpenConversation && onOpenConversation(contact.username)}
+                  >
+                    <span className="contact-status-dot" style={{ backgroundColor: presence.color }}></span>
+                    <div className="contact-inline">
+                      <span className="contact-name">{contact.username}</span>
+                      <span className="contact-status-label">({presence.label})</span>
+                      {personalMsg && <span className="contact-personal-msg"> - {personalMsg}</span>}
+                    </div>
                   </div>
-                  <span className="contact-status-dot" style={{ backgroundColor: presence.color }}></span>
-                </div>
-              );
-            })
+                );
+              })}
+              {offlineContacts.map((contact) => {
+                const presence = getPresenceStatus(contactPresence[contact.username]);
+                const personalMsg = contactPresence[contact.username]?.personalMessage;
+                return (
+                  <div
+                    key={contact.username}
+                    className="contact-item"
+                    style={{ opacity: 0.6 }}
+                    onDoubleClick={() => onOpenConversation && onOpenConversation(contact.username)}
+                  >
+                    <span className="contact-status-dot" style={{ backgroundColor: presence.color }}></span>
+                    <div className="contact-inline">
+                      <span className="contact-name">{contact.username}</span>
+                      <span className="contact-status-label">({presence.label})</span>
+                      {personalMsg && <span className="contact-personal-msg"> - {personalMsg}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
-
-        {/* Offline categorie */}
-        <div className="contacts-category-header collapsed">
-          <span className="contacts-category-icon">▶</span>
-          <span className="contacts-category-name">Offline ({offlineContacts.length})</span>
-        </div>
-        
-        {offlineContacts.length > 0 && (
-          <div className="contacts-list">
-            {offlineContacts.map((contact) => {
-              const presence = getPresenceStatus(contactPresence[contact.username]);
-              return (
-                <div 
-                  key={contact.username}
-                  className="contact-item"
-                  style={{ opacity: 0.6 }}
-                  onDoubleClick={() => onOpenConversation && onOpenConversation(contact.username)}
-                >
-                  <img src={contact.avatar} alt={contact.username} className="contact-avatar" />
-                  <div className="contact-info">
-                    <div className="contact-name">{contact.username}</div>
-                    <div className="contact-status">{presence.label}</div>
-                  </div>
-                  <span className="contact-status-dot" style={{ backgroundColor: presence.color }}></span>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
 
       {/* Bottom banner */}

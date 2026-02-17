@@ -374,7 +374,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
   // RENDER: DESKTOP
   // ============================================
   return (
-    <div className="desktop" onClick={closeStartMenu}>
+    <div className="desktop" onClick={closeStartMenu} data-theme={settings.colorScheme !== 'blauw' ? settings.colorScheme : undefined} data-fontsize={settings.fontSize !== 'normaal' ? settings.fontSize : undefined}>
       <div className={`scanlines-overlay ${scanlinesEnabled ? '' : 'disabled'}`}></div>
       {/* Desktop Icons */}
       <div className="shortcuts-area">

@@ -37,3 +37,28 @@ AI systems must NOT treat this section as architecture or rules.
 - [ ] Credits / cosmetica systeem (verdienen, shop, thema's)
 - [ ] 1-on-1 calls optioneel migreren naar Trystero
 - [ ] Peer-to-peer file sharing via Trystero
+
+---
+
+### MSN Authenticiteit (hoge prioriteit)
+- [ ] **Contactgroepen** — vouwbare categorieën (Friends / Family / Work) in ContactsPane; Gun-node per gebruiker met groepsmapping
+- [ ] **Berichtopmaak** — vet, cursief, kleur, lettertype per bericht in ConversationPane; toolbar-knoppen bestaan al visueel maar hebben geen handler
+- [ ] **Aangepaste profielfoto** — gebruiker uploadt eigen foto (base64 opslaan in Gun); huidig: alleen DiceBear-avatars op basis van gebruikersnaam
+- [ ] **"Contact is nu online"-melding** — Toast + geluid wanneer contact van offline → online gaat; usePresence volgt status al, trigger-logica ontbreekt
+- [ ] **Offline berichtenwachtrij** — berichten gestuurd terwijl contact offline is, afleveren bij reconnect via Gun.js persistentie
+
+### Functionaliteit
+- [ ] **Bestandsoverdracht** — toolbar-knop in ConversationPane bestaat maar heeft nul implementatie; WebRTC data channel via bestaande useWebRTC-hook
+- [ ] **Videobellen fase 2** — useWebRTC.js heeft volledige audio call-lifecycle; video toevoegen via getUserMedia({ video: true })
+- [ ] **Contacten blokkeren** — "Blokkeer"-optie op contact; Gun-node BLOCKED_BY_\<user\> bijhouden en gefilterd weergeven
+
+### Stabiliteit / UX
+- [ ] **Verbindingsstatus-indicator** — kleine indicator in taakbalk ("Verbonden" / "Opnieuw verbinden..."); relayMonitor.js utility bestaat al
+- [ ] **Foutherstel-UI** — zichtbare melding bij relay-uitval of verbindingsverlies
+
+### Apps afmaken (placeholders)
+- [ ] **Kladblok** (notepad) — functionele teksteditor met opslaan/laden
+- [ ] **Rekenmachine** — functionele calculator (UI bestaat al)
+- [ ] **Tekenprogramma** (paint) — functioneel tekenvlak (canvas)
+- [ ] **Internet Adventurer** (browser) — iframe + adresbalk navigatie
+- [ ] **Mediaspeler** — audio/video afspelen via File API of URL

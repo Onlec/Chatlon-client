@@ -34,6 +34,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const [canNudge, setCanNudge] = useState(true);
   const [showEmoticonPicker, setShowEmoticonPicker] = useState(false);
   const [isContactTyping, setIsContactTyping] = useState(false);
+  const [contactPresence, setContactPresence] = useState(null);
 
   const messagesAreaRef = useRef(null);
   const emoticonPickerRef = useRef(null);
@@ -110,6 +111,14 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     if (contactName) {
       warmupEncryption(contactName);
     }
+  }, [contactName]);
+
+  // Presence listener voor contact
+  useEffect(() => {
+    if (!contactName) return;
+    const node = gun.get('PRESENCE').get(contactName);
+    node.on((data) => { if (data) setContactPresence(data); });
+    return () => node.off();
   }, [contactName]);
 
   useEffect(() => {
@@ -191,6 +200,13 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
       />
       <div className="chat-chat-container">
         <div className="chat-left-column">
+          <div className="chat-contact-header">
+            <span className="chat-contact-header-from">Van:</span>
+            <span className="chat-contact-header-name">{contactName}</span>
+            {contactPresence?.personalMessage && (
+              <div className="chat-contact-header-msg">{contactPresence.personalMessage}</div>
+            )}
+          </div>
           <div className="chat-messages-display" ref={messagesAreaRef}>
             {state.messages.length > displayLimit && (
               <button className="load-more-btn" onClick={() => setDisplayLimit(p => p + 25)}>
@@ -234,8 +250,8 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
         </div>
 
         <div className="chat-right-column">
-          <AvatarDisplay label="Contact" name={contactName} />
-          <AvatarDisplay label="Jij" name={user.is?.alias} isSelf />
+          <AvatarDisplay name={contactName} />
+          <AvatarDisplay name={user.is?.alias} isSelf />
         </div>
       </div>
     </div>
@@ -323,10 +339,9 @@ function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, set
   );
 }
 
-function AvatarDisplay({ label, name, isSelf }) {
+function AvatarDisplay({ name, isSelf }) {
   return (
     <div className="chat-avatar-container" style={isSelf ? { marginTop: 'auto' } : {}}>
-      <div className="chat-avatar-label">{label}:</div>
       <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} alt={name} className="chat-display-picture" />
     </div>
   );
