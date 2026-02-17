@@ -410,6 +410,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
                 onMinimize={() => minimizePane(paneName)}
                 zIndex={getZIndex(paneName)} // EN DEZE GEEF JE DOOR
                 onFocus={() => focusPane(paneName)}
+                isActive={activePane === paneName}
                 savedSize={savedSizes[paneName]}
                 onSizeChange={(newSize) => handleSizeChange(paneName, newSize)}
                 initialPosition={pane.initialPos || getInitialPosition(paneName)}
@@ -448,6 +449,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
                 onMinimize={() => minimizeConversation(convId)}
                 zIndex={getZIndex(convId)} // EN DEZE GEEF JE DOOR
                 onFocus={() => focusPane(convId)}
+                isActive={activePane === convId}
                 savedSize={savedSizes[convId]}
                 onSizeChange={(newSize) => handleSizeChange(convId, newSize)}
                 initialPosition={getInitialPosition(convId)}

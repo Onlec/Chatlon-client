@@ -34,6 +34,7 @@ export function usePaneManager() {
   const conversationsRef = useRef({});
   const activePaneRef = useRef(null);
   const paneOrderRef = useRef([]); // FIX: Ref voor paneOrder
+  const panesRef = useRef({});
 
   // Sync refs met state
   useEffect(() => {
@@ -43,6 +44,10 @@ export function usePaneManager() {
   useEffect(() => {
     activePaneRef.current = activePane;
   }, [activePane]);
+
+  useEffect(() => {
+    panesRef.current = panes;
+  }, [panes]);
 
   // FIX: Sync paneOrder ref
   useEffect(() => {
@@ -120,13 +125,19 @@ const openPane = useCallback((paneName) => {
 
     setPaneOrder(prev => prev.filter(p => p !== paneName));
 
-    // FIX: Gebruik ref voor actuele paneOrder
+    // FIX: Gebruik refs om het volgende zichtbare venster te vinden
     setActivePane(prev => {
-      if (prev === paneName) {
-        const remaining = paneOrderRef.current.filter(p => p !== paneName);
-        return remaining[remaining.length - 1] || null;
-      }
-      return prev;
+      if (prev !== paneName) return prev;
+      const remaining = paneOrderRef.current.filter(p => {
+        if (p === paneName) return false;
+        if (p.startsWith('conv_')) {
+          const conv = conversationsRef.current[p];
+          return conv && conv.isOpen && !conv.isMinimized;
+        }
+        const pane = panesRef.current[p];
+        return pane && pane.isOpen && !pane.isMinimized;
+      });
+      return remaining[remaining.length - 1] || null;
     });
   }, []);
 
@@ -142,22 +153,19 @@ const openPane = useCallback((paneName) => {
       [paneName]: { ...prev[paneName], isMinimized: true }
     }));
 
-    // FIX: Update active pane naar volgende in order
+    // FIX: Update active pane naar volgende zichtbare venster
     setActivePane(prev => {
-      if (prev === paneName) {
-        const currentOrder = paneOrderRef.current;
-        const visiblePanes = currentOrder.filter(p => {
-          if (p === paneName) return false;
-          if (p.startsWith('conv_')) {
-            const conv = conversationsRef.current[p];
-            return conv && conv.isOpen && !conv.isMinimized;
-          }
-          // Voor normale panes moeten we state checken
-          return true; // We kunnen niet synchroon panes state checken hier
-        });
-        return visiblePanes[visiblePanes.length - 1] || null;
-      }
-      return prev;
+      if (prev !== paneName) return prev;
+      const visiblePanes = paneOrderRef.current.filter(p => {
+        if (p === paneName) return false;
+        if (p.startsWith('conv_')) {
+          const conv = conversationsRef.current[p];
+          return conv && conv.isOpen && !conv.isMinimized;
+        }
+        const pane = panesRef.current[p];
+        return pane && pane.isOpen && !pane.isMinimized;
+      });
+      return visiblePanes[visiblePanes.length - 1] || null;
     });
   }, []);
 
@@ -271,11 +279,17 @@ const focusPane = useCallback((paneName) => {
     setPaneOrder(prev => prev.filter(p => p !== convId));
 
     setActivePane(prev => {
-      if (prev === convId) {
-        const remaining = paneOrderRef.current.filter(p => p !== convId);
-        return remaining[remaining.length - 1] || null;
-      }
-      return prev;
+      if (prev !== convId) return prev;
+      const visiblePanes = paneOrderRef.current.filter(p => {
+        if (p === convId) return false;
+        if (p.startsWith('conv_')) {
+          const conv = conversationsRef.current[p];
+          return conv && conv.isOpen && !conv.isMinimized;
+        }
+        const pane = panesRef.current[p];
+        return pane && pane.isOpen && !pane.isMinimized;
+      });
+      return visiblePanes[visiblePanes.length - 1] || null;
     });
   }, [clearNotificationTime]);
 
@@ -292,11 +306,17 @@ const focusPane = useCallback((paneName) => {
     }));
 
     setActivePane(prev => {
-      if (prev === convId) {
-        const remaining = paneOrderRef.current.filter(p => p !== convId);
-        return remaining[remaining.length - 1] || null;
-      }
-      return prev;
+      if (prev !== convId) return prev;
+      const visiblePanes = paneOrderRef.current.filter(p => {
+        if (p === convId) return false;
+        if (p.startsWith('conv_')) {
+          const conv = conversationsRef.current[p];
+          return conv && conv.isOpen && !conv.isMinimized;
+        }
+        const pane = panesRef.current[p];
+        return pane && pane.isOpen && !pane.isMinimized;
+      });
+      return visiblePanes[visiblePanes.length - 1] || null;
     });
   }, []);
 

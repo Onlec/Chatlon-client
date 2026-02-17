@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { paneConfig } from './paneConfig';
 import { log } from './utils/debug';
 
-function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, onFocus, zIndex, type, savedSize, onSizeChange, initialPosition, onPositionChange }) {
+function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, onFocus, zIndex, type, savedSize, onSizeChange, initialPosition, onPositionChange, isActive }) {
   const paneRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const hasInitialized = useRef(false);
@@ -130,7 +130,7 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, o
       onMouseDown={() => onFocus && onFocus()}
     >
       <div className="pane-inner-container">
-        <div className="pane-header" onMouseDown={handleMouseDown}>
+        <div className={`pane-header ${isActive === false ? 'inactive' : ''}`} onMouseDown={handleMouseDown}>
           <div className="pane-title-section">
             <span className="pane-icon">💤</span>
             <span className="pane-title">{title}</span>
