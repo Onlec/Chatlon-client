@@ -4502,3 +4502,135 @@ div.pane-frame.maximized {
     transform: translate(-50%, -50%);
   }
 }
+
+/* ============================================
+   MODAL COMPONENTS
+   ============================================ */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  animation: modal-fade-in 0.2s ease-out;
+}
+
+@keyframes modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-dialog {
+  background: #ECE9D8;
+  border: 3px solid;
+  border-color: #FFFFFF #404040 #404040 #FFFFFF;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+  min-width: 400px;
+  max-width: 500px;
+  animation: modal-slide-in 0.3s ease-out;
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  background: linear-gradient(to right, #0054E3 0%, #0A73D9 100%);
+  color: white;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.modal-close {
+  background: #C0C0C0;
+  border: 2px solid;
+  border-color: #FFFFFF #000000 #000000 #FFFFFF;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0;
+}
+
+.modal-close:active {
+  border-color: #000000 #FFFFFF #FFFFFF #000000;
+}
+
+.modal-body {
+  padding: 16px;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #000000;
+}
+
+.xp-input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #7F9DB9;
+  font-size: 11px;
+  font-family: 'Tahoma', Arial, sans-serif;
+}
+
+.xp-input:focus {
+  outline: 1px solid #0066CC;
+}
+
+.form-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.dx-button.primary {
+  background: linear-gradient(to bottom, #EAF3FF 0%, #D9E9FC 50%, #C1DBFC 100%);
+  border: 1px solid #003C74;
+  font-weight: bold;
+}
+
+.success-message {
+  background: #D4EDDA;
+  border: 1px solid #28A745;
+  color: #155724;
+  padding: 12px;
+  border-radius: 3px;
+  text-align: center;
+}
+
+.error-message {
+  background: #F8D7DA;
+  border: 1px solid #DC3545;
+  color: #721C24;
+  padding: 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  margin-top: 8px;
+}

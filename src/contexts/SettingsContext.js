@@ -63,12 +63,14 @@ export function SettingsProvider({ children }) {
   }, [settings]);
 
   // Update single setting
-  const updateSetting = (key, value) => {
-    setSettings(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
+    const updateSetting = (key, value) => {
+    console.log('[SettingsContext] Updating:', key, value);
+    setSettings(prev => {
+        const newSettings = { ...prev, [key]: value };
+        console.log('[SettingsContext] New settings:', newSettings);
+        return newSettings;
+    });
+    };
 
   // Update multiple settings at once
   const updateSettings = (updates) => {

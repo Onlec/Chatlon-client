@@ -1,14 +1,34 @@
 import React, { useState } from 'react';
 import { useScanlinesPreference } from '../contexts/ScanlinesContext';
 import { useSettings } from '../contexts/SettingsContext';
+import ChangePasswordModal from './ChangePasswordModal';
+import { clearAllCaches } from '../utils/cacheCleanup';
+import { log } from '../utils/debug';
 
 function ControlPane() {
   const { scanlinesEnabled, toggleScanlines } = useScanlinesPreference();
   const { settings, updateSetting, resetSettings } = useSettings();
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [showResetSuccess, setShowResetSuccess] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [rememberMe, setRememberMe] = useState(localStorage.getItem('chatlon_remember_me') === 'true');
 
-  const categories = [
+  const {
+    systemSounds,
+    toastNotifications,
+    nudgeSound,
+    typingSound,
+    autoReconnect,
+    superpeerEnabled,
+    saveHistory,
+    showTyping,
+    emoticons,
+    debugMode,
+    fontSize,
+    colorScheme
+  } = settings;
+  
+  const categories =  [
     {
       id: 'appearance',
       icon: '🎨',
@@ -28,7 +48,7 @@ function ControlPane() {
           label: 'Lettergrootte', 
           type: 'select',
           options: ['klein', 'normaal', 'groot'],
-          value: settings.fontSize,
+          value: fontSize,
           description: 'Grootte van tekst in vensters'
         },
         { 
@@ -36,7 +56,7 @@ function ControlPane() {
           label: 'Kleurenschema', 
           type: 'select',
           options: ['blauw', 'olijfgroen', 'zilver'],
-          value: settings.colorScheme,
+          value: colorScheme,
           description: 'Kleur van vensters en knoppen'
         }
       ]
@@ -51,28 +71,28 @@ function ControlPane() {
           id: 'systemSounds', 
           label: 'Systeemgeluiden', 
           type: 'checkbox',
-          value: settings.systemSounds,
+          value: systemSounds,
           description: 'Geluiden afspelen bij gebeurtenissen'
         },
         { 
           id: 'toastNotifications', 
           label: 'Toast meldingen', 
           type: 'checkbox',
-          value: settings.toastNotifications,
+          value: toastNotifications,
           description: 'Pop-up meldingen voor nieuwe berichten'
         },
         { 
           id: 'nudgeSound', 
           label: 'Nudge geluid', 
           type: 'checkbox',
-          value: settings.nudgeSound,
+          value: nudgeSound,
           description: 'Geluid afspelen bij nudge'
         },
         { 
           id: 'typingSound', 
           label: 'Typing geluid', 
           type: 'checkbox',
-          value: settings.typingSound,
+          value: typingSound,
           description: 'Toetsenbordgeluid tijdens typen'
         }
       ]
@@ -87,14 +107,14 @@ function ControlPane() {
           id: 'autoReconnect', 
           label: 'Automatisch opnieuw verbinden', 
           type: 'checkbox',
-          value: settings.autoReconnect,
+          value: autoReconnect,
           description: 'Automatisch verbinden bij connectieverlies'
         },
         { 
           id: 'superpeerEnabled', 
           label: 'Superpeer modus', 
           type: 'checkbox',
-          value: settings.superpeerEnabled,
+          value: superpeerEnabled,
           description: 'Help andere gebruikers door als relay te fungeren'
         }
       ]
@@ -111,11 +131,19 @@ function ControlPane() {
           type: 'button',
           description: 'Wijzig uw accountwachtwoord'
         },
-        { 
-          id: 'rememberMe', 
-          label: 'Onthoud mijn gegevens', 
+        {
+          id: 'rememberMe',
+          label: 'Onthoud mijn gegevens',
           type: 'checkbox',
-          value: true,
+          value: rememberMe,
+          onChange: () => {
+            const newValue = !rememberMe;
+            localStorage.setItem('chatlon_remember_me', newValue.toString());
+            if (!newValue) {
+              localStorage.removeItem('chatlon_credentials');
+            }
+            setRememberMe(newValue);
+          },
           description: 'Blijf aangemeld na afsluiten'
         }
       ]
@@ -130,21 +158,21 @@ function ControlPane() {
           id: 'saveHistory', 
           label: 'Gesprekgeschiedenis bewaren', 
           type: 'checkbox',
-          value: settings.saveHistory,
+          value: saveHistory,
           description: 'Berichten lokaal opslaan (MSN-authentiek: uit)'
         },
         { 
           id: 'showTyping', 
           label: 'Toon typing indicator', 
           type: 'checkbox',
-          value: settings.showTyping,
+          value: showTyping,
           description: 'Laat anderen zien wanneer u typt'
         },
         { 
           id: 'emoticons', 
           label: 'Emoticons inschakelen', 
           type: 'checkbox',
-          value: settings.emoticons,
+          value: emoticons,
           description: 'Vervang tekst door emoticons'
         }
       ]
@@ -159,7 +187,7 @@ function ControlPane() {
           id: 'debugMode', 
           label: 'Debug modus', 
           type: 'checkbox',
-          value: settings.debugMode,
+          value: debugMode,
           description: 'Toon technische informatie in console'
         },
         { 
@@ -179,8 +207,17 @@ function ControlPane() {
     }
   ];
 
+  const selectedCategory = selectedCategoryId ? categories.find(c => c.id === selectedCategoryId) : null;
+
   const handleSettingChange = (categoryId, settingId, value) => {
+    log('[ControlPane] Setting change:', settingId, value);
     updateSetting(settingId, value);
+    
+    // Check settings after update
+    setTimeout(() => {
+      const updated = localStorage.getItem('chatlon_settings');
+      log('[ControlPane] Settings after update:', JSON.parse(updated));
+    }, 100);
   };
 
   return (
@@ -197,7 +234,7 @@ function ControlPane() {
               <div 
                 key={category.id}
                 className="cp-category"
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => setSelectedCategoryId(category.id)}
               >
                 <div className="cp-category-icon">{category.icon}</div>
                 <div className="cp-category-content">
@@ -214,7 +251,7 @@ function ControlPane() {
           <div className="cp-breadcrumb">
             <span 
               className="cp-back-link"
-              onClick={() => setSelectedCategory(null)}
+              onClick={() => setSelectedCategoryId(null)}
             >
               ← Terug naar Configuratiescherm
             </span>
@@ -269,17 +306,21 @@ function ControlPane() {
                       <button 
                         className="dx-button cp-action-button"
                         onClick={() => {
-                          if (setting.id === 'resetSettings') {
+                          if (setting.id === 'changePassword') {
+                            setShowPasswordModal(true); // ✅ Show modal
+                          } else if (setting.id === 'resetSettings') {
                             if (window.confirm('Weet je zeker dat je alle instellingen wilt resetten?')) {
                               resetSettings();
                               setShowResetSuccess(true);
                               setTimeout(() => setShowResetSuccess(false), 3000);
                             }
+                          } else if (setting.id === 'cleanupCache') {
+                            if (window.confirm('Dit wist tijdelijke gegevens en kan de app sneller maken.\n\nDoorgaan?')) {
+                              const cleared = clearAllCaches();
+                              alert(`✓ ${cleared} cache(s) gewist.\n\nVoor beste resultaat, ververs de pagina.`);
+                            }
                           } else if (setting.action) {
                             setting.action();
-                          } else {
-                            // Placeholder voor andere buttons (changePassword, cleanupCache)
-                            alert(`${setting.label} functionaliteit komt in Part C!`);
                           }
                         }}
                       >
@@ -299,10 +340,13 @@ function ControlPane() {
           </div>
         </div>
       )}
-    {showResetSuccess && (
+      {showResetSuccess && (
         <div className="cp-success-message">
           ✓ Instellingen zijn gereset naar standaardwaarden
         </div>
+      )}
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
       )}
     </div>
   );
