@@ -69,29 +69,40 @@ export function usePaneManager() {
    */
 
 const openPane = useCallback((paneName) => {
-        log('[usePaneManager] Opening pane:', paneName);
+  log('[usePaneManager] Opening pane:', paneName);
   setPanes(prev => {
-    // Als de pane al open is, doen we niets met de positie
-    if (prev[paneName]?.isOpen) return prev;
+    const pane = prev[paneName];
 
+    // Al open en zichtbaar — niets wijzigen, focusPane handelt de rest
+    if (pane?.isOpen && !pane?.isMinimized) return prev;
+
+    // Open maar geminimaliseerd — alleen restoren
+    if (pane?.isOpen && pane?.isMinimized) {
+      return {
+        ...prev,
+        [paneName]: { ...prev[paneName], isMinimized: false }
+      };
+    }
+
+    // Nog niet open — nieuw openen met cascade positie
     const offset = getNextCascadeOffset();
     return {
       ...prev,
-      [paneName]: { 
-        ...prev[paneName], 
-        isOpen: true, 
+      [paneName]: {
+        ...prev[paneName],
+        isOpen: true,
         isMinimized: false,
-        // We slaan de startpositie op in de pane state
-        initialPos: { left: 100 + offset, top: 50 + offset } 
+        initialPos: { left: 100 + offset, top: 50 + offset }
       }
     };
   });
 
+  // Alleen aan paneOrder toevoegen als het er nog niet in zit
   setPaneOrder(prev => {
-    const filtered = prev.filter(p => p !== paneName);
-    return [...filtered, paneName];
+    if (prev.includes(paneName)) return prev;
+    return [...prev, paneName];
   });
-  
+
   setActivePane(paneName);
 }, [getNextCascadeOffset]);
 
