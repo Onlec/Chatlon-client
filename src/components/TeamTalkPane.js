@@ -20,13 +20,19 @@ function TeamTalkPane() {
     speakingUsers,
     recentServers,
     connectionError,
+    audioSettings,
+    audioDevices,
+    micLevel,
     createServer,
     connectToServer,
     disconnect,
     toggleMute,
     setUserVolume,
     removeRecentServer,
-    findServer
+    findServer,
+    updateAudioSetting,
+    startMicTest,
+    stopMicTest
   } = useTrysteroTeamTalk(currentUser);
 
   // Form state
@@ -35,10 +41,11 @@ function TeamTalkPane() {
   const [joinNickname, setJoinNickname] = useState('');
   const [createName, setCreateName] = useState('');
   const [createPassword, setCreatePassword] = useState('');
-  const [activeTab, setActiveTab] = useState('join');  // 'join' | 'create'
+  const [activeTab, setActiveTab] = useState('join');  // 'join' | 'create' | 'audio'
   const [userVolumes, setUserVolumes] = useState({});
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [micTesting, setMicTesting] = useState(false);
 
   // ============================================
   // HANDLERS
@@ -172,17 +179,23 @@ function TeamTalkPane() {
     <div className="tt-pane">
       {/* Tab navigatie */}
       <div className="tt-tab-bar">
-        <button 
+        <button
           className={`tt-tab ${activeTab === 'join' ? 'tt-tab-active' : ''}`}
-          onClick={() => setActiveTab('join')}
+          onClick={() => { if (micTesting) { stopMicTest(); setMicTesting(false); } setActiveTab('join'); }}
         >
           Verbinden
         </button>
-        <button 
+        <button
           className={`tt-tab ${activeTab === 'create' ? 'tt-tab-active' : ''}`}
-          onClick={() => setActiveTab('create')}
+          onClick={() => { if (micTesting) { stopMicTest(); setMicTesting(false); } setActiveTab('create'); }}
         >
           Server aanmaken
+        </button>
+        <button
+          className={`tt-tab ${activeTab === 'audio' ? 'tt-tab-active' : ''}`}
+          onClick={() => setActiveTab('audio')}
+        >
+          Audio
         </button>
       </div>
 
@@ -267,15 +280,94 @@ function TeamTalkPane() {
           </div>
         )}
 
+        {/* Audio tab */}
+        {activeTab === 'audio' && (
+          <div className="tt-form tt-audio-settings">
+            {/* Microfoon selectie */}
+            <div className="tt-form-group">
+              <label className="tt-label">Microfoon:</label>
+              <select
+                className="tt-input tt-select"
+                value={audioSettings.deviceId}
+                onChange={(e) => updateAudioSetting('deviceId', e.target.value)}
+              >
+                <option value="">Standaard</option>
+                {audioDevices.map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Mic gain slider */}
+            <div className="tt-form-group">
+              <label className="tt-label">Input volume: {audioSettings.micGain}%</label>
+              <input
+                type="range"
+                className="tt-audio-slider"
+                min="0"
+                max="200"
+                value={audioSettings.micGain}
+                onChange={(e) => updateAudioSetting('micGain', parseInt(e.target.value))}
+              />
+            </div>
+
+            {/* VU Meter */}
+            <div className="tt-form-group">
+              <label className="tt-label">Mic-test:</label>
+              <div className="tt-vu-meter">
+                <div className="tt-vu-fill" style={{ width: `${micLevel}%` }} />
+              </div>
+              <button
+                className="tt-btn tt-mic-test-btn"
+                onClick={() => {
+                  if (micTesting) { stopMicTest(); setMicTesting(false); }
+                  else { startMicTest(); setMicTesting(true); }
+                }}
+              >
+                {micTesting ? '⏹ Stop test' : '🎤 Test microfoon'}
+              </button>
+            </div>
+
+            {/* Audio verwerking checkboxes */}
+            <div className="tt-form-group tt-audio-checks">
+              <label className="tt-label">Audioverwerking:</label>
+              <label className="tt-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={audioSettings.noiseSuppression}
+                  onChange={(e) => updateAudioSetting('noiseSuppression', e.target.checked)}
+                />
+                <span>Ruisonderdrukking</span>
+              </label>
+              <label className="tt-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={audioSettings.echoCancellation}
+                  onChange={(e) => updateAudioSetting('echoCancellation', e.target.checked)}
+                />
+                <span>Echoreductie</span>
+              </label>
+              <label className="tt-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={audioSettings.autoGainControl}
+                  onChange={(e) => updateAudioSetting('autoGainControl', e.target.checked)}
+                />
+                <span>Automatische versterking</span>
+              </label>
+            </div>
+          </div>
+        )}
+
         {/* Error */}
-        {connectionError && (
+        {connectionError && activeTab !== 'audio' && (
           <div className="tt-error">
             ⚠️ {connectionError}
           </div>
         )}
 
         {/* Recente servers */}
-        {recentServers.length > 0 && (
+        {recentServers.length > 0 && activeTab !== 'audio' && (
           <div className="tt-recent">
             <div className="tt-recent-header">Recente servers</div>
             {recentServers.map(server => (

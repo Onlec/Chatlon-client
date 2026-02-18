@@ -24,6 +24,7 @@ const fallbackAvatar = (username) => {
 
 export function AvatarProvider({ children }) {
   const [avatarCache, setAvatarCache] = useState({});
+  const [displayNameCache, setDisplayNameCache] = useState({});
   const listenersRef = useRef(new Set());
 
   const subscribeAvatar = useCallback((username) => {
@@ -45,6 +46,13 @@ export function AvatarProvider({ children }) {
       setAvatarCache(prev => {
         if (prev[username] === resolvedUrl) return prev;
         return { ...prev, [username]: resolvedUrl };
+      });
+
+      // Display name uitlezen uit hetzelfde PROFILES node
+      const newDisplayName = profileData.displayName || '';
+      setDisplayNameCache(prev => {
+        if (prev[username] === newDisplayName) return prev;
+        return { ...prev, [username]: newDisplayName };
       });
     });
   }, []);
@@ -71,6 +79,22 @@ export function AvatarProvider({ children }) {
     setAvatarCache(prev => ({ ...prev, [username]: resolved }));
   }, []);
 
+  const getDisplayName = useCallback((username) => {
+    if (!username) return '';
+    subscribeAvatar(username);
+    return displayNameCache[username] || username;
+  }, [displayNameCache, subscribeAvatar]);
+
+  const setMyDisplayName = useCallback((displayName) => {
+    if (!user.is) return;
+    const username = user.is.alias;
+    gun.get('PROFILES').get(username).put({
+      displayName: displayName,
+      updatedAt: Date.now()
+    });
+    setDisplayNameCache(prev => ({ ...prev, [username]: displayName }));
+  }, []);
+
   const clearMyAvatar = useCallback(() => {
     if (!user.is) return;
     const username = user.is.alias;
@@ -84,7 +108,7 @@ export function AvatarProvider({ children }) {
   }, []);
 
   return (
-    <AvatarContext.Provider value={{ getAvatar, setMyAvatar, clearMyAvatar, presets: PRESET_AVATARS }}>
+    <AvatarContext.Provider value={{ getAvatar, setMyAvatar, clearMyAvatar, getDisplayName, setMyDisplayName, presets: PRESET_AVATARS }}>
       {children}
     </AvatarContext.Provider>
   );

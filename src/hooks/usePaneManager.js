@@ -363,6 +363,23 @@ const focusPane = useCallback((paneName) => {
    * @param {string} paneName - Pane of conversation ID
    */
   const handleTaskbarClick = useCallback((paneName) => {
+    // Helper: vind volgende zichtbare pane na minimaliseren
+    const clearActivePaneAfterMinimize = (minimizedPane) => {
+      setActivePane(prev => {
+        if (prev !== minimizedPane) return prev;
+        const visiblePanes = paneOrderRef.current.filter(p => {
+          if (p === minimizedPane) return false;
+          if (p.startsWith('conv_')) {
+            const conv = conversationsRef.current[p];
+            return conv && conv.isOpen && !conv.isMinimized;
+          }
+          const pane = panesRef.current[p];
+          return pane && pane.isOpen && !pane.isMinimized;
+        });
+        return visiblePanes[visiblePanes.length - 1] || null;
+      });
+    };
+
     // Check of het een conversation is
     if (paneName.startsWith('conv_')) {
       setConversations(prev => {
@@ -372,13 +389,13 @@ const focusPane = useCallback((paneName) => {
         if (conv.isMinimized) {
           // Restore
           setActivePane(paneName);
-          // paneOrder blijft hetzelfde
           return {
             ...prev,
             [paneName]: { ...prev[paneName], isMinimized: false }
           };
         } else if (activePaneRef.current === paneName) {
           // Minimize
+          clearActivePaneAfterMinimize(paneName);
           return {
             ...prev,
             [paneName]: { ...prev[paneName], isMinimized: true }
@@ -386,7 +403,6 @@ const focusPane = useCallback((paneName) => {
         } else {
           // Focus
           setActivePane(paneName);
-          // paneOrder blijft hetzelfde
           return prev;
         }
       });
@@ -401,13 +417,13 @@ const focusPane = useCallback((paneName) => {
       if (pane.isMinimized) {
         // Restore
         setActivePane(paneName);
-        // paneOrder blijft hetzelfde
         return {
           ...prev,
           [paneName]: { ...prev[paneName], isMinimized: false }
         };
       } else if (activePaneRef.current === paneName) {
         // Minimize
+        clearActivePaneAfterMinimize(paneName);
         return {
           ...prev,
           [paneName]: { ...prev[paneName], isMinimized: true }
@@ -415,7 +431,6 @@ const focusPane = useCallback((paneName) => {
       } else {
         // Focus
         setActivePane(paneName);
-        // paneOrder blijft hetzelfde
         return prev;
       }
     });

@@ -51,6 +51,12 @@ If something is not described here, it is either:
 
 All managed centrally by `App.js`.
 
+### Messenger Sign-In State
+- `messengerSignedIn` leeft in `App.js`, niet in ContactsPane
+- Reden: pane sluiten en heropenen mag sign-in niet verliezen
+- Systray icon verschijnt na eerste sign-in, toont online status
+- Systray "Afsluiten" = sign-out messenger + pane sluiten (niet desktop logoff)
+
 ---
 
 ## 🔫 Gun.js Architecture
@@ -65,6 +71,23 @@ All managed centrally by `App.js`.
 - Gun SEA is mandatory
 - User object is persistent
 - Auth state is reactive but centralized
+- Identity is e-mail based: `user@coldmail.com` (Gun alias = full email)
+- Registration: email (local + domain dropdown) + password + local name
+- Supported domains: `@coldmail.com`, `@coldmail.nl`, `@coldmail.net`
+
+### Dual Identity Model
+Er zijn twee gescheiden identiteitssystemen:
+
+| | Lokaal account | Chatlon profiel |
+|---|---|---|
+| **Opslag** | `localStorage` (`chatlon_users`) | Gun (`PROFILES/{email}`) |
+| **Naam** | `localName` — getoond in startmenu & login tile | `displayName` — getoond in chat & contactenlijst |
+| **Avatar** | `localAvatar` — login tile & startmenu | `avatar` + `avatarType` — chat & contactenlijst |
+| **Beheer** | Configuratiescherm → Gebruikersaccount | Chatlon Messenger → Opties |
+| **Default** | `localName` = email bij registratie | `displayName` = email bij registratie |
+
+Deze scheiding is bewust: het lokale account is per-device (zoals een Windows gebruiker),
+het Chatlon profiel is netwerk-breed (zoals een MSN profiel).
 
 ### Data Model Rules
 - Users, chats, presence and contacts are separated
@@ -85,17 +108,20 @@ All managed centrally by `App.js`.
 - WebRTC audio/video is altijd encrypted (SRTP)
 
 ### Gun Data Schema
-- `PRESENCE/{username}` — heartbeat, status
-- `ACTIVE_TAB/{username}` — tab/sessie blokkering
+All `{email}` keys use the full email address (e.g. `bob@coldmail.com`).
+
+- `PRESENCE/{email}` — heartbeat, status, personalMessage
+- `ACTIVE_TAB/{email}` — tab/sessie blokkering
 - `ACTIVE_SESSIONS/{pairId}` — chat sessie ID's
 - `CHAT_{pairId}_{timestamp}` — chatberichten (encrypted)
 - `TYPING_{sessionId}` — typing indicators
 - `NUDGE_{sessionId}` — nudge events
 - `CALLS/{pairId}` — 1-on-1 call signaling
-- `friendRequests/{username}` — inkomende verzoeken
-- `contactSync/{username}` — contact synchronisatie
+- `friendRequests/{email}` — inkomende verzoeken
+- `contactSync/{email}` — contact synchronisatie
 - `TEAMTALK_SERVERS/{serverId}` — server registry voor TeamTalk
-- `SUPERPEERS/{username}` — superpeer registraties
+- `SUPERPEERS/{email}` — superpeer registraties
+- `PROFILES/{email}` — avatar, avatarType, displayName, wallpaper, wallpaperType
 
 ---
 
@@ -156,6 +182,16 @@ All managed centrally by `App.js`.
 - TeamTalk servers: Gun registry (persistent)
 - Recente TeamTalk servers: localStorage (per client)
 
+### localStorage Schema
+Lokale per-device data (niet gesynchroniseerd):
+
+- `chatlon_users` — `[{ email, localName, localAvatar }]` — lokale gebruikerslijst (login tiles)
+- `chatlon_credentials` — `{ email, password }` — opgeslagen login (auto sign-in)
+- `chatlon_remember_me` — `'true'` — of credentials opgeslagen zijn
+- `chatlon_settings` — `{ systemSounds, fontSize, colorScheme, ... }` — app-instellingen (via SettingsContext)
+- `chatlon_wallpaper` — achtergrond configuratie
+- `chatlon_scanlines` — CRT scanlines voorkeur
+
 ### Data Compaction
 - Client-side cleanup bij login (5s delay)
 - Verwijdert: verlopen signaling, oude ICE, stale presence
@@ -199,6 +235,12 @@ All managed centrally by `App.js`.
 - No UI frameworks
 - No CSS-in-JS
 
+### React Portals
+- Dropdown menus gebruiken `ReactDOM.createPortal` om buiten pane overflow te renderen
+- Portal root: `#portal-root` div binnen `.desktop[data-theme]` (erft thema CSS variabelen)
+- Positie berekend via `useLayoutEffect` (geen flicker)
+- Nooit portalen naar `document.body` (verliest thema context)
+
 ### Authenticity
 - Visual glitches are acceptable
 - Over-polish is discouraged
@@ -216,6 +258,7 @@ Trademarked names are forbidden.
 | XP | dX |
 | Microsoft | Macrohard |
 | MSN | Chatlon |
+| Hotmail | Coldmail |
 | TeamSpeak | TeamTalk |
 
 Applies to:

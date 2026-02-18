@@ -674,6 +674,18 @@ body, html {
   position: relative;
 }
 
+#portal-root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+#portal-root > * {
+  pointer-events: auto;
+}
+
 .pane-layer {
   position: absolute;
   top: 0;
@@ -1070,12 +1082,95 @@ div.pane-frame.maximized {
 .systray {
   color: white;
   font-size: var(--ui-font-size);
-  padding: 0 10px; 
+  padding: 0 10px;
   margin-left: auto;
   text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
+}
+
+.systray-chatlon-icon {
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+.systray-chatlon-icon:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.systray-chatlon-figure {
+  font-size: 14px;
+}
+
+.systray-status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.4);
+}
+
+.systray-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: var(--app-bg);
+  border: 1px solid #808080;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+  z-index: 100000;
+  min-width: 220px;
+  padding: 2px 0;
+  margin-bottom: 2px;
+  color: #000;
+  text-shadow: none;
+}
+
+.systray-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.systray-menu-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  border: 1px solid #808080;
+}
+
+.systray-menu-user {
+  display: flex;
+  flex-direction: column;
+}
+
+.systray-menu-name {
+  font-size: 11px;
+  font-weight: bold;
+  color: #000;
+  text-shadow: none;
+}
+
+.systray-menu-status {
+  font-size: 10px;
+  text-shadow: none;
+}
+
+.systray-status-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  border: 1px solid rgba(0,0,0,0.2);
 }
 
 /* ================================================
@@ -1535,6 +1630,20 @@ div.pane-frame.maximized {
   align-items: center;
   justify-content: flex-start;
   padding-left: 60px;
+}
+
+.xp-autologin-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+.xp-autologin-text {
+  color: white;
+  font-size: 14px;
+  font-family: 'Franklin Gothic Medium', 'Tahoma', sans-serif;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
 /* USER SELECTION PANEL */
@@ -2147,6 +2256,176 @@ div.pane-frame.maximized {
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
 }
 
+/* ---- Chatlon Sign-in Screen ---- */
+.contacts-signin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 24px 32px;
+  background: linear-gradient(180deg, #e8f0fe 0%, #d4e4fc 100%);
+}
+
+.contacts-signin-logo {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.contacts-signin-brand {
+  font-size: 22px;
+  font-weight: bold;
+  color: #0066cc;
+  letter-spacing: -0.5px;
+}
+
+.contacts-signin-subtitle {
+  font-size: 12px;
+  color: #336699;
+  margin-top: 2px;
+}
+
+.contacts-signin-fields {
+  width: 100%;
+  max-width: 240px;
+  margin-bottom: 12px;
+}
+
+.contacts-signin-field {
+  margin-bottom: 8px;
+}
+
+.contacts-signin-label {
+  display: block;
+  font-size: 11px;
+  color: #333;
+  margin-bottom: 3px;
+}
+
+.contacts-signin-input {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  border: 1px solid #adb5bd;
+  background: #f0f0f0;
+  color: #888;
+  cursor: default;
+  box-sizing: border-box;
+}
+
+.contacts-signin-options {
+  margin-bottom: 16px;
+}
+
+.contacts-signin-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #333;
+  cursor: pointer;
+}
+
+.contacts-signin-btn {
+  padding: 5px 24px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+  border: 1px solid #999;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.contacts-signin-btn:hover {
+  background: linear-gradient(180deg, #fff 0%, #c8d8e8 100%);
+  border-color: #0066cc;
+}
+
+.contacts-signin-btn:active {
+  background: linear-gradient(180deg, #ccc 0%, #eee 100%);
+}
+
+.contacts-signin-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #666;
+}
+
+.contacts-signin-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4caf50;
+}
+
+/* ---- Chatlon Signing-in Animation ---- */
+.contacts-signing-in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 24px 32px;
+  background: linear-gradient(180deg, #e8f0fe 0%, #d4e4fc 100%);
+}
+
+.contacts-signin-email {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.contacts-signin-message {
+  font-size: 11px;
+  color: #555;
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.contacts-signin-progress {
+  width: 200px;
+  height: 16px;
+  background: #e0e0e0;
+  border: 1px solid #999;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.contacts-signin-progress-bar {
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, #3a7bd5, #5ba3e6, #3a7bd5);
+  background-size: 200% 100%;
+  animation: signin-progress 1.2s ease-in-out infinite;
+  border-radius: 1px;
+}
+
+@keyframes signin-progress {
+  0% { margin-left: -30%; }
+  100% { margin-left: 100%; }
+}
+
+.contacts-signin-cancel {
+  padding: 4px 16px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+  border: 1px solid #999;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.contacts-signin-cancel:hover {
+  border-color: #666;
+}
+
 .contacts-menubar {
   background: var(--app-bg);
   border-bottom: 1px solid var(--toolbar-border);
@@ -2163,9 +2442,157 @@ div.pane-frame.maximized {
   user-select: none;
 }
 
-.contacts-menu-item:hover {
+.contacts-menu-item:hover,
+.contacts-menu-item.active {
   background: var(--menu-hover);
   color: white;
+}
+
+/* ============================
+   Dropdown Menu Component
+   ============================ */
+
+.dropdown-menu-wrapper {
+  position: relative;
+}
+
+.dropdown-panel {
+  background: var(--app-bg);
+  border: 1px solid #808080;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  z-index: 10000;
+  min-width: 200px;
+  padding: 2px 0;
+  color: #000;
+  text-shadow: none;
+}
+
+.dropdown-panel-portal {
+  position: fixed;
+}
+
+.dropdown-item {
+  padding: 4px 24px 4px 8px;
+  cursor: default;
+  white-space: nowrap;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-item:hover {
+  background: var(--menu-hover);
+  color: white;
+}
+
+.dropdown-item-disabled {
+  color: #808080;
+}
+
+.dropdown-item-disabled:hover {
+  background: transparent;
+  color: #808080;
+}
+
+.dropdown-separator {
+  height: 1px;
+  background: #C0C0C0;
+  margin: 3px 4px;
+}
+
+.dropdown-check {
+  display: inline-block;
+  width: 16px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.dropdown-item-label {
+  flex: 1;
+}
+
+.dropdown-arrow {
+  font-size: 8px;
+  margin-left: 12px;
+}
+
+.dropdown-submenu {
+  position: absolute;
+  left: 100%;
+  top: -2px;
+}
+
+/* ============================
+   Options Dialog (MSN-stijl)
+   ============================ */
+
+.options-dialog {
+  width: 500px;
+  min-width: 400px;
+}
+
+.options-body {
+  display: flex;
+  min-height: 280px;
+}
+
+.options-sidebar {
+  width: 140px;
+  background: #F5F5F5;
+  border-right: 1px solid #C0C0C0;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+.options-sidebar-item {
+  padding: 8px 12px;
+  cursor: default;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.options-sidebar-item:hover {
+  background: #E8E8E8;
+}
+
+.options-sidebar-item.active {
+  background: var(--menu-hover);
+  color: white;
+}
+
+.options-sidebar-icon {
+  font-size: 14px;
+}
+
+.options-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.options-footer {
+  border-top: 1px solid #C0C0C0;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  background: var(--app-bg);
+}
+
+.options-field {
+  margin-bottom: 12px;
+}
+
+.options-field label {
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
 }
 
 .contacts-user-section {
@@ -2197,6 +2624,24 @@ div.pane-frame.maximized {
   font-weight: bold;
   font-size: 13px;
   color: var(--link-color);
+  margin-bottom: 0px;
+  cursor: default;
+}
+
+.contacts-displayname-input {
+  font-weight: bold;
+  font-size: 13px;
+  color: var(--link-color);
+  border: 1px solid var(--link-color);
+  padding: 0 2px;
+  width: 100%;
+  font-family: 'Tahoma', sans-serif;
+  box-sizing: border-box;
+}
+
+.contacts-user-subname {
+  font-size: 10px;
+  color: #888;
   margin-bottom: 2px;
 }
 
@@ -2283,6 +2728,26 @@ div.pane-frame.maximized {
 
 .contact-item:hover {
   background: linear-gradient(to right, #FFFACD 0%, #FFF9C4 100%);
+}
+
+.contact-item-blocked {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.contact-item-blocked:hover {
+  background: transparent;
+}
+
+.contacts-group-header {
+  font-size: 10px;
+  font-weight: bold;
+  color: #666;
+  padding: 6px 10px 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-top: 1px solid #C0C0C0;
+  margin-top: 4px;
 }
 
 .contact-inline {
@@ -2636,14 +3101,114 @@ div.pane-frame.maximized {
    19. VRIENDENVERZOEKEN & CONTACT TOEVOEGEN
    ================================================ */
 
-.add-contact-form {
-  margin-top: 8px;
-  padding: 8px;
-  background: white;
-  border: 1px solid var(--btn-border);
-  border-radius: 3px;
+/* ---- Add Contact Wizard ---- */
+.add-contact-wizard {
+  min-width: 380px;
+  max-width: 440px;
 }
 
+.wizard-step {
+  min-height: 120px;
+  padding: 4px 0;
+}
+
+.wizard-question {
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.wizard-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 8px;
+}
+
+.wizard-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #333;
+  cursor: pointer;
+}
+
+.wizard-radio em {
+  color: #666;
+  font-size: 10px;
+}
+
+.wizard-radio-disabled {
+  color: #999;
+  cursor: default;
+}
+
+.wizard-email-input {
+  width: 100%;
+  padding: 5px 6px;
+  font-size: 12px;
+  font-family: 'Tahoma', sans-serif;
+  border: 2px solid;
+  border-color: #7F9DB9 #F0F0F0 #F0F0F0 #7F9DB9;
+  box-sizing: border-box;
+}
+
+.wizard-email-input:focus {
+  outline: none;
+  border-color: #0054E3 #A0C0E8 #A0C0E8 #0054E3;
+}
+
+.wizard-error {
+  color: #CC0000;
+  font-size: 10px;
+  margin-top: 6px;
+}
+
+.wizard-hint {
+  font-size: 10px;
+  color: #888;
+  margin-top: 8px;
+}
+
+.wizard-confirmation {
+  text-align: center;
+  padding: 8px 0;
+}
+
+.wizard-confirmation-icon {
+  font-size: 28px;
+  color: #28a745;
+  margin-bottom: 8px;
+}
+
+.wizard-confirmation-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.wizard-confirmation-text {
+  font-size: 11px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.wizard-actions {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px 10px;
+  border-top: 1px solid #ccc;
+  background: var(--app-bg);
+}
+
+.wizard-actions-spacer {
+  flex: 1;
+}
+
+/* ---- Friend Request Dialog (MSN-stijl) ---- */
 .pending-requests-section {
   background: #FFF9E6;
   border-top: 1px solid var(--btn-border);
@@ -2660,28 +3225,71 @@ div.pane-frame.maximized {
   border-bottom: 1px solid #CC9933;
 }
 
-.pending-request-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 8px;
-  border-bottom: 1px solid #FFEBB3;
+.friend-request-dialog {
+  padding: 10px 12px;
   background: white;
+  border-bottom: 1px solid #FFEBB3;
 }
 
-.pending-request-item:last-child {
+.friend-request-dialog:last-child {
   border-bottom: none;
 }
 
-.pending-request-name {
-  font-size: var(--ui-font-size);
-  font-weight: bold;
+.friend-request-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.friend-request-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+}
+
+.friend-request-info {
+  font-size: 11px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.friend-request-info strong {
   color: var(--link-color);
 }
 
-.pending-request-actions {
+.friend-request-options {
   display: flex;
-  gap: 4px;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 4px;
+  margin-bottom: 10px;
+}
+
+.friend-request-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 10px;
+  color: #333;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.friend-request-checkbox input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.friend-request-checkbox input:disabled + span {
+  color: #999;
+}
+
+.friend-request-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 /* ================================================
@@ -4262,6 +4870,75 @@ div.pane-frame.maximized {
 }
 
 /* ============================================
+   SHUTDOWN SCREEN
+   ============================================ */
+
+.shutdown-screen {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fade-from-black 0.8s ease-out;
+}
+
+.shutdown-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.shutdown-message {
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Arial, sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.power-on-button {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.power-on-button:hover {
+  border-color: rgba(100, 200, 255, 0.5);
+  background: rgba(100, 200, 255, 0.08);
+  box-shadow: 0 0 20px rgba(100, 200, 255, 0.15);
+}
+
+.power-on-button:active {
+  transform: scale(0.95);
+  background: rgba(100, 200, 255, 0.15);
+}
+
+.power-on-icon {
+  font-size: 32px;
+  color: rgba(255, 255, 255, 0.3);
+  transition: color 0.3s ease;
+}
+
+.power-on-button:hover .power-on-icon {
+  color: rgba(100, 200, 255, 0.7);
+}
+
+.power-on-hint {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 11px;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* ============================================
    EXACT WINDOWS XP LOADING BAR
    ============================================ */
 
@@ -4338,9 +5015,9 @@ div.pane-frame.maximized {
 .chat-message.legacy {
   opacity: 0.6;
   filter: grayscale(40%); /* Subtieler dan 100% voor betere leesbaarheid */
-  border-left: 2px solid #D4D0C8; /* Een 'oude' verticale lijn */
+
   margin-left: 2px;
-  background-color: rgba(236, 233, 216, 0.2); /* Heel licht XP-beige */
+  
 }
 
 .legacy .message-header {
@@ -4856,6 +5533,100 @@ div.pane-frame.maximized {
   color: #FF6666;
 }
 
+/* - - - Audio instellingen tab - - - */
+
+.tt-audio-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tt-select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.tt-audio-slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #2A2A3C;
+  border-radius: 3px;
+  outline: none;
+  margin-top: 4px;
+}
+
+.tt-audio-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6666CC;
+  cursor: pointer;
+  border: 2px solid #8888EE;
+}
+
+.tt-audio-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6666CC;
+  cursor: pointer;
+  border: 2px solid #8888EE;
+}
+
+.tt-vu-meter {
+  height: 10px;
+  background: #1A1A2A;
+  border: 1px solid #3A3A5A;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.tt-vu-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #44CC44 0%, #CCCC44 60%, #CC4444 90%);
+  transition: width 0.08s linear;
+  border-radius: 2px;
+}
+
+.tt-mic-test-btn {
+  margin-top: 6px;
+  font-size: 11px;
+  padding: 4px 10px;
+  background: #2A2A3C;
+  border: 1px solid #4A4A6E;
+  color: #CCCCDD;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.tt-mic-test-btn:hover {
+  background: #3A3A4C;
+  border-color: #6666CC;
+}
+
+.tt-audio-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tt-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #CCCCDD;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tt-checkbox-label input[type="checkbox"] {
+  accent-color: #6666CC;
+}
+
 /* - - - Dialogen (hergebruikt voor groepsgesprekken) - */
 .tt-dialog-overlay {
   position: absolute;
@@ -5195,6 +5966,43 @@ div.pane-frame.maximized {
   line-height: 1.4;
   padding-left: 22px;
   font-style: italic;
+}
+
+.cp-text-input {
+  padding: 4px 6px;
+  border: 2px inset #c0c0c0;
+  font-family: 'Tahoma', 'Segoe UI', sans-serif;
+  font-size: var(--ui-font-size);
+  width: 200px;
+  background: #fff;
+}
+
+.cp-avatar-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cp-avatar-option {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #c0c0c0;
+  border-radius: 4px;
+  cursor: pointer;
+  object-fit: cover;
+  opacity: 0.7;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.cp-avatar-option:hover {
+  opacity: 1;
+  border-color: #0055e5;
+}
+
+.cp-avatar-selected {
+  opacity: 1;
+  border-color: #0055e5;
+  box-shadow: 0 0 0 2px rgba(0, 85, 229, 0.3);
 }
 
 .cp-success-message {

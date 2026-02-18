@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { log } from './utils/debug';
 
-function MediaPane() {
+function MediaPane({ onNowPlayingChange }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -112,10 +112,12 @@ function MediaPane() {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
+      onNowPlayingChange?.({ title: currentTrack.title, artist: currentTrack.artist, isPlaying: false });
     } else {
       connectAudioSource();
       await audioRef.current.play();
       visualize();
+      onNowPlayingChange?.({ title: currentTrack.title, artist: currentTrack.artist, isPlaying: true });
     }
     setIsPlaying(!isPlaying);
   };
@@ -387,6 +389,7 @@ function MediaPane() {
               audioRef.current.pause();
               audioRef.current.currentTime = 0;
               setIsPlaying(false);
+              onNowPlayingChange?.({ title: currentTrack.title, artist: currentTrack.artist, isPlaying: false });
             }
           }}>
             ⏹
@@ -468,7 +471,10 @@ function MediaPane() {
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        onEnded={() => setIsPlaying(false)}
+        onEnded={() => {
+          setIsPlaying(false);
+          onNowPlayingChange?.({ title: currentTrack.title, artist: currentTrack.artist, isPlaying: false });
+        }}
         crossOrigin="anonymous"
       />
     </div>

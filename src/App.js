@@ -26,12 +26,22 @@ import { usePaneManager } from './hooks/usePaneManager';
 import { useMessageListeners } from './hooks/useMessageListeners';
 
 import { runFullCleanup } from './utils/gunCleanup';
+import { STATUS_OPTIONS } from './utils/presenceUtils';
 import { clearEncryptionCache } from './utils/encryption';
 import { useScanlinesPreference } from './contexts/ScanlinesContext';
 import { useSettings } from './contexts/SettingsContext';
 import { useAvatar } from './contexts/AvatarContext';
 import { useWallpaper } from './contexts/WallpaperContext';
 
+
+// Helper: lees lokale naam uit chatlon_users localStorage
+function getLocalUserInfo(email) {
+  try {
+    const users = JSON.parse(localStorage.getItem('chatlon_users') || '[]');
+    const normalized = users.map(u => typeof u === 'string' ? { email: u, localName: u } : u);
+    return normalized.find(u => u.email === email) || null;
+  } catch { return null; }
+}
 
 function App() {
   // ============================================
@@ -44,11 +54,16 @@ function App() {
     return skipBoot === 'true';
   });
   const justBootedRef = useRef(false);
+  const [isShutdown, setIsShutdown] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
   const [unreadChats, setUnreadChats] = React.useState(new Set());
-  
-  
+  const [nowPlaying, setNowPlaying] = useState(null);
+  const [messengerSignedIn, setMessengerSignedIn] = useState(false);
+  const [showSystrayMenu, setShowSystrayMenu] = useState(false);
+  const systrayMenuRef = useRef(null);
+  const systrayIconRef = useRef(null);
+
   // FIX: Track of we al geïnitialiseerd zijn om dubbele openPane te voorkomen
   const hasInitializedRef = useRef(false);
 
@@ -56,7 +71,7 @@ function App() {
   // HOOKS
   // ============================================
   const { settings } = useSettings();
-  const { getAvatar } = useAvatar();
+  const { getAvatar, getDisplayName } = useAvatar();
   const { getWallpaperStyle } = useWallpaper();
   const { playSound } = useSounds();
   
@@ -138,7 +153,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
       showToast({
         type: 'message',
         contactName: senderName,
-        from: senderName,
+        from: getDisplayName(senderName),
         message: msg.content,
         avatar: getAvatar(senderName),
         messageId: msgId,
@@ -146,7 +161,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
       });
     }
   }
-}, [currentUser, showToast, setUnreadChats, activePaneRef, conversationsRef, shownToastsRef, playSound, settings, getAvatar]);
+}, [currentUser, showToast, setUnreadChats, activePaneRef, conversationsRef, shownToastsRef, playSound, settings, getAvatar, getDisplayName]);
   // Message listeners initialisatie
   const { 
     cleanup: cleanupListeners 
@@ -295,31 +310,34 @@ useEffect(() => {
   const handleLogoff = () => {
     log('[App] Logging off...');
 
-    playSound('logoff')
-    
+    playSound('logoff');
+
     // Cleanup
     cleanupPresence();
     cleanupListeners();
     resetShownToasts();
     resetAll();
     clearEncryptionCache();
-    
+
     // FIX: Reset initialized flag
     hasInitializedRef.current = false;
-    
+    setMessengerSignedIn(false);
+
     // BELANGRIJK: Wis credentials als "onthoud mij" NIET actief is
     const rememberMe = localStorage.getItem('chatlon_remember_me') === 'true';
     if (!rememberMe) {
       localStorage.removeItem('chatlon_credentials');
     }
-    
+
     // Logout
     user.leave();
     setIsLoggedIn(false);
     setCurrentUser('');
-    
-    // Reload (zonder credentials wordt er niet auto-ingelogd)
-    window.location.reload();
+
+    // Wacht tot logoff geluid klaar is, dan reload
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   };
   // Trigger boot sequence bij shutdown/restart via Start menu
   const handleShutdown = () => {
@@ -330,6 +348,21 @@ useEffect(() => {
     }
     window.location.reload();
   };
+  // Systray menu click-outside
+  useEffect(() => {
+    if (!showSystrayMenu) return;
+    const handleClick = (e) => {
+      if (systrayMenuRef.current && !systrayMenuRef.current.contains(e.target) &&
+          systrayIconRef.current && !systrayIconRef.current.contains(e.target)) {
+        setShowSystrayMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showSystrayMenu]);
+
+  const currentStatusOption = STATUS_OPTIONS.find(s => s.value === userStatus) || STATUS_OPTIONS[0];
+
   const handleToastClick = (toast) => {
   if (toast.type === 'message') {
     const paneId = `conv_${toast.contactName}`;
@@ -363,6 +396,30 @@ const onTaskbarClick = React.useCallback((paneId) => {
 }, [handleTaskbarClick, openConversation]);
 
   // ============================================
+  // RENDER: SHUTDOWN SCREEN
+  // ============================================
+  if (isShutdown) {
+    return (
+      <div className="shutdown-screen">
+        <div className="shutdown-content">
+          <div className="shutdown-message">De computer is uitgeschakeld.</div>
+          <button
+            className="power-on-button"
+            onClick={() => {
+              sessionStorage.removeItem('chatlon_boot_complete');
+              setIsShutdown(false);
+              setHasBooted(false);
+            }}
+          >
+            <span className="power-on-icon">⏻</span>
+          </button>
+          <div className="power-on-hint">Druk op de aan/uit-knop om de computer te starten</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
   // RENDER: BOOT SEQUENCE
   // ============================================
   if (!hasBooted) {
@@ -375,7 +432,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
   if (!isLoggedIn) {
     const fromBoot = justBootedRef.current;
     justBootedRef.current = false;
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} fadeIn={fromBoot} />;
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} fadeIn={fromBoot} onShutdown={() => setIsShutdown(true)} />;
   }
 
   // ============================================
@@ -383,6 +440,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
   // ============================================
   return (
     <div className="desktop" onClick={closeStartMenu} style={getWallpaperStyle()} data-theme={settings.colorScheme !== 'blauw' ? settings.colorScheme : undefined} data-fontsize={settings.fontSize !== 'normaal' ? settings.fontSize : undefined}>
+      <div id="portal-root"></div>
       <div className={`scanlines-overlay ${scanlinesEnabled ? '' : 'disabled'}`}></div>
       {/* Desktop Icons */}
       <div className="shortcuts-area">
@@ -425,11 +483,21 @@ const onTaskbarClick = React.useCallback((paneId) => {
                 onPositionChange={(newPosition) => handlePositionChange(paneName, newPosition)}
               >
                 {paneName === 'contacts' ? (
-                  <Component 
+                  <Component
                     onOpenConversation={openConversation}
-                    // FIX: Pass presence props to ContactsPane
                     userStatus={userStatus}
                     onStatusChange={handleStatusChange}
+                    onLogoff={handleLogoff}
+                    onSignOut={() => handleStatusChange('offline')}
+                    onClosePane={() => closePane('contacts')}
+                    nowPlaying={nowPlaying}
+                    currentUserEmail={currentUser}
+                    messengerSignedIn={messengerSignedIn}
+                    setMessengerSignedIn={setMessengerSignedIn}
+                  />
+                ) : paneName === 'media' ? (
+                  <Component
+                    onNowPlayingChange={setNowPlaying}
                   />
                 ) : (
                   <Component />
@@ -449,7 +517,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
               onMouseDown={() => focusPane(convId)} 
               style={{ display: conv.isMinimized ? 'none' : 'block', zIndex: getZIndex(convId), position: 'absolute'}}>
               <Pane
-                title={`Gesprek met ${conv.contactName}`}
+                title={`${getDisplayName(conv.contactName)} - Gesprek`}
                 type="conversation"
                 isMaximized={conv.isMaximized}
                 onMaximize={() => toggleMaximizeConversation(convId)}
@@ -474,12 +542,16 @@ const onTaskbarClick = React.useCallback((paneId) => {
       {isStartOpen && (
         <div className="start-menu" onClick={(e) => e.stopPropagation()}>
           <div className="start-menu-header">
-            <img 
-              src={getAvatar(currentUser)} 
-              alt="user" 
-              className="start-user-img" 
+            <img
+              src={(() => {
+                const info = getLocalUserInfo(currentUser);
+                if (info?.localAvatar) return `/avatars/${info.localAvatar}`;
+                return getAvatar(currentUser);
+              })()}
+              alt="user"
+              className="start-user-img"
             />
-            <span className="start-user-name">{currentUser}</span>
+            <span className="start-user-name">{getLocalUserInfo(currentUser)?.localName || currentUser}</span>
           </div>
           <div className="start-menu-main">
             <div className="start-left-col">
@@ -554,10 +626,10 @@ const onTaskbarClick = React.useCallback((paneId) => {
         key={paneId}
         className={`taskbar-tab ${activePane === paneId ? 'active' : ''} ${isUnread ? 'unread' : ''}`}
         onClick={() => onTaskbarClick(paneId)}
-        title={`Gesprek met ${contactName}`}
+        title={`${getDisplayName(contactName)} - Gesprek`}
       >
         <span className="taskbar-icon">💬</span>
-        <span>{contactName}</span>
+        <span>{getDisplayName(contactName)}</span>
       </div>
     );
   }
@@ -592,6 +664,50 @@ const onTaskbarClick = React.useCallback((paneId) => {
             >
               {relayStatus.anyOnline ? '🟢' : '🔴'}
             </span>
+          )}
+          {isLoggedIn && messengerSignedIn && (
+            <span
+              ref={systrayIconRef}
+              className="systray-chatlon-icon"
+              title={`Chatlon - ${currentStatusOption.label} (${getDisplayName(currentUser)})`}
+              onClick={(e) => { e.stopPropagation(); setShowSystrayMenu(prev => !prev); }}
+            >
+              <span className="systray-chatlon-figure">💬</span>
+              <span className="systray-status-dot" style={{ backgroundColor: currentStatusOption.color }}></span>
+            </span>
+          )}
+          {showSystrayMenu && (
+            <div ref={systrayMenuRef} className="systray-menu" onClick={(e) => e.stopPropagation()}>
+              <div className="systray-menu-header">
+                <img src={getAvatar(currentUser)} alt="" className="systray-menu-avatar" />
+                <div className="systray-menu-user">
+                  <div className="systray-menu-name">{getDisplayName(currentUser)}</div>
+                  <div className="systray-menu-status" style={{ color: currentStatusOption.color }}>{currentStatusOption.label}</div>
+                </div>
+              </div>
+              <div className="dropdown-separator" />
+              {STATUS_OPTIONS.map(opt => (
+                <div
+                  key={opt.value}
+                  className={`dropdown-item ${userStatus === opt.value ? 'dropdown-item-checked' : ''}`}
+                  onClick={() => { handleStatusChange(opt.value); setShowSystrayMenu(false); }}
+                >
+                  <span className="systray-status-indicator" style={{ backgroundColor: opt.color }}></span>
+                  <span className="dropdown-item-label">{opt.label}</span>
+                </div>
+              ))}
+              <div className="dropdown-separator" />
+              <div className="dropdown-item" onClick={() => { openPane('contacts'); setShowSystrayMenu(false); }}>
+                <span className="dropdown-item-label">Chatlon openen</span>
+              </div>
+              <div className="dropdown-item" onClick={() => { setMessengerSignedIn(false); handleStatusChange('offline'); setShowSystrayMenu(false); }}>
+                <span className="dropdown-item-label">Afmelden</span>
+              </div>
+              <div className="dropdown-separator" />
+              <div className="dropdown-item" onClick={() => { setMessengerSignedIn(false); handleStatusChange('offline'); closePane('contacts'); setShowSystrayMenu(false); }}>
+                <span className="dropdown-item-label">Afsluiten</span>
+              </div>
+            </div>
           )}
           {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </div>

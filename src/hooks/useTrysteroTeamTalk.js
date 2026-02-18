@@ -46,17 +46,40 @@ export function useTrysteroTeamTalk(currentUser) {
   const [recentServers, setRecentServers] = useState([]);
   const [connectionError, setConnectionError] = useState(null);
 
+  // Audio settings state
+  const [audioSettings, setAudioSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chatlon-tt-audio');
+      return saved ? JSON.parse(saved) : {
+        deviceId: '',
+        micGain: 100,
+        noiseSuppression: true,
+        echoCancellation: true,
+        autoGainControl: true
+      };
+    } catch {
+      return { deviceId: '', micGain: 100, noiseSuppression: true, echoCancellation: true, autoGainControl: true };
+    }
+  });
+  const [audioDevices, setAudioDevices] = useState([]);
+  const [micLevel, setMicLevel] = useState(0);
+
   // ============================================
   // REFS
   // ============================================
   const roomRef = useRef(null);
   const localStreamRef = useRef(null);
+  const gainNodeRef = useRef(null);
+  const micAnalyserRef = useRef(null);
+  const micMonitorRef = useRef(null);
+  const audioSettingsRef = useRef(audioSettings);
   const remoteAudiosRef = useRef({});
   const sendNicknameRef = useRef(null);
   const getNicknameRef = useRef(null);
   const sendMuteStateRef = useRef(null);
   const getMuteStateRef = useRef(null);
   const audioContextRef = useRef(null);
+  const loopbackAudioRef = useRef(null);
   const analysersRef = useRef({});
   const speakingIntervalRef = useRef(null);
   const peersRef = useRef({});
@@ -71,6 +94,54 @@ export function useTrysteroTeamTalk(currentUser) {
   useEffect(() => {
     nicknameRef.current = currentUser;
   }, [currentUser]);
+  // Sync audio settings ref + persist to localStorage
+  useEffect(() => {
+    audioSettingsRef.current = audioSettings;
+    try {
+      localStorage.setItem('chatlon-tt-audio', JSON.stringify(audioSettings));
+    } catch { /* ignore */ }
+  }, [audioSettings]);
+
+  // Enumerate audio input devices
+  const enumerateDevices = useCallback(async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices
+        .filter(d => d.kind === 'audioinput')
+        .map(d => ({ deviceId: d.deviceId, label: d.label || `Microfoon ${d.deviceId.slice(0, 6)}` }));
+      setAudioDevices(inputs);
+      return inputs;
+    } catch {
+      return [];
+    }
+  }, []);
+
+  // Load devices on mount + when permissions change
+  useEffect(() => {
+    enumerateDevices();
+    navigator.mediaDevices?.addEventListener('devicechange', enumerateDevices);
+    return () => navigator.mediaDevices?.removeEventListener('devicechange', enumerateDevices);
+  }, [enumerateDevices]);
+
+  // Mic level monitor (VU meter) — werkt ook zonder verbinding
+  const startMicMonitor = useCallback(() => {
+    if (micMonitorRef.current) return;
+    micMonitorRef.current = setInterval(() => {
+      if (!micAnalyserRef.current) { setMicLevel(0); return; }
+      const data = new Uint8Array(micAnalyserRef.current.frequencyBinCount);
+      micAnalyserRef.current.getByteFrequencyData(data);
+      const avg = data.reduce((a, b) => a + b, 0) / data.length;
+      setMicLevel(Math.min(100, Math.round(avg * 1.5)));
+    }, 80);
+  }, []);
+
+  const stopMicMonitor = useCallback(() => {
+    if (micMonitorRef.current) {
+      clearInterval(micMonitorRef.current);
+      micMonitorRef.current = null;
+    }
+    setMicLevel(0);
+  }, []);
 
   // ============================================
   // LOAD RECENT SERVERS (localStorage)
@@ -152,31 +223,69 @@ export function useTrysteroTeamTalk(currentUser) {
   const getLocalStream = useCallback(async () => {
     if (localStreamRef.current) return localStreamRef.current;
 
+    const settings = audioSettingsRef.current;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: true, 
-        video: false 
-      });
-      localStreamRef.current = stream;
-      // Start met track ENABLED — anders stuurt WebRTC geen data
-      // Mute/unmute regelen we via de UI state, niet via track.enabled
-      log('[TrysteroTT] Local stream acquired, tracks:', 
-        stream.getTracks().map(t => `${t.kind}:${t.enabled}:${t.readyState}`)
-      );
-      return stream;
+      const constraints = {
+        audio: {
+          noiseSuppression: settings.noiseSuppression,
+          echoCancellation: settings.echoCancellation,
+          autoGainControl: settings.autoGainControl,
+          ...(settings.deviceId && { deviceId: { exact: settings.deviceId } })
+        },
+        video: false
+      };
+
+      const rawStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // Re-enumerate devices nu we permissie hebben (labels worden zichtbaar)
+      enumerateDevices();
+
+      // GainNode setup voor mic volume
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const ctx = audioContextRef.current;
+      const source = ctx.createMediaStreamSource(rawStream);
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = settings.micGain / 100;
+      gainNodeRef.current = gainNode;
+
+      // Analyser voor VU meter
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.5;
+      micAnalyserRef.current = analyser;
+
+      // Destination om een nieuwe stream te krijgen met gain applied
+      const destination = ctx.createMediaStreamDestination();
+      source.connect(gainNode);
+      gainNode.connect(analyser);
+      gainNode.connect(destination);
+
+      const processedStream = destination.stream;
+      localStreamRef.current = processedStream;
+
+      // Start VU meter
+      startMicMonitor();
+
+      log('[TrysteroTT] Local stream acquired with constraints, gain:', settings.micGain + '%');
+      return processedStream;
     } catch (err) {
       log('[TrysteroTT] Microphone access denied:', err.message);
       setConnectionError('Microfoon toegang geweigerd');
       return null;
     }
-  }, []);
+  }, [enumerateDevices, startMicMonitor]);
 
   const stopLocalStream = useCallback(() => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
       localStreamRef.current = null;
     }
-  }, []);
+    gainNodeRef.current = null;
+    micAnalyserRef.current = null;
+    stopMicMonitor();
+  }, [stopMicMonitor]);
 
   // ============================================
   // SPEAKING DETECTION
@@ -474,6 +583,13 @@ export function useTrysteroTeamTalk(currentUser) {
       roomRef.current = null;
     }
 
+    // Stop loopback if active
+    if (loopbackAudioRef.current) {
+      loopbackAudioRef.current.pause();
+      loopbackAudioRef.current.srcObject = null;
+      loopbackAudioRef.current = null;
+    }
+
     // Stop audio
     stopLocalStream();
     stopSpeakingMonitor();
@@ -534,6 +650,80 @@ export function useTrysteroTeamTalk(currentUser) {
   }, []);
 
   // ============================================
+  // AUDIO SETTINGS
+  // ============================================
+
+  const updateAudioSetting = useCallback((key, value) => {
+    setAudioSettings(prev => ({ ...prev, [key]: value }));
+
+    // Live apply gain without reconnecting
+    if (key === 'micGain' && gainNodeRef.current) {
+      gainNodeRef.current.gain.value = value / 100;
+      return;
+    }
+
+    // For device or constraint changes: need to re-acquire stream
+    if (['deviceId', 'noiseSuppression', 'echoCancellation', 'autoGainControl'].includes(key)) {
+      // Only re-acquire if we have an active stream
+      if (localStreamRef.current) {
+        // Stop old stream
+        localStreamRef.current.getTracks().forEach(t => t.stop());
+        localStreamRef.current = null;
+        gainNodeRef.current = null;
+        micAnalyserRef.current = null;
+
+        // Close old audio context so getLocalStream creates a fresh one
+        if (audioContextRef.current) {
+          audioContextRef.current.close().catch(() => {});
+          audioContextRef.current = null;
+        }
+
+        // Re-acquire with new settings (after state update)
+        setTimeout(async () => {
+          const newStream = await getLocalStream();
+          if (newStream && roomRef.current) {
+            // Re-add stream to room for all peers
+            roomRef.current.addStream(newStream);
+            log('[TrysteroTT] Stream re-acquired with new settings');
+          }
+        }, 50);
+      }
+    }
+  }, [getLocalStream]);
+
+  // Start mic test (VU meter + loopback zodat gebruiker zichzelf hoort)
+  const startMicTest = useCallback(async () => {
+    if (localStreamRef.current) return; // Already have a stream
+    const stream = await getLocalStream();
+    if (stream) {
+      // Loopback: speel mic audio af zodat gebruiker zichzelf hoort
+      const loopback = new Audio();
+      loopback.srcObject = stream;
+      loopback.volume = 1.0;
+      loopback.play().catch(() => {});
+      loopbackAudioRef.current = loopback;
+      log('[TrysteroTT] Mic test started with loopback');
+    }
+  }, [getLocalStream]);
+
+  const stopMicTest = useCallback(() => {
+    if (!isConnected) {
+      // Stop loopback audio
+      if (loopbackAudioRef.current) {
+        loopbackAudioRef.current.pause();
+        loopbackAudioRef.current.srcObject = null;
+        loopbackAudioRef.current = null;
+      }
+      stopLocalStream();
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+      log('[TrysteroTT] Mic test stopped');
+    }
+  }, [isConnected, stopLocalStream]);
+
+  // ============================================
   // CLEANUP
   // ============================================
 
@@ -576,7 +766,12 @@ export function useTrysteroTeamTalk(currentUser) {
     speakingUsers,
     recentServers,
     connectionError,
-    
+
+    // Audio settings
+    audioSettings,
+    audioDevices,
+    micLevel,
+
     // Actions
     createServer,
     connectToServer,
@@ -585,6 +780,9 @@ export function useTrysteroTeamTalk(currentUser) {
     setUserVolume,
     removeRecentServer,
     findServer,
+    updateAudioSetting,
+    startMicTest,
+    stopMicTest,
     remoteAudiosRef
   };
 }

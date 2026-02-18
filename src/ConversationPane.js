@@ -36,6 +36,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const [showEmoticonPicker, setShowEmoticonPicker] = useState(false);
   const [isContactTyping, setIsContactTyping] = useState(false);
   const [contactPresence, setContactPresence] = useState(null);
+  const { getDisplayName } = useAvatar();
 
   const messagesAreaRef = useRef(null);
   const emoticonPickerRef = useRef(null);
@@ -203,7 +204,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
         <div className="chat-left-column">
           <div className="chat-contact-header">
             <span className="chat-contact-header-from">Van:</span>
-            <span className="chat-contact-header-name">{contactName}</span>
+            <span className="chat-contact-header-name">{getDisplayName(contactName)}</span>
             {contactPresence?.personalMessage && (
               <div className="chat-contact-header-msg">{contactPresence.personalMessage}</div>
             )}
@@ -219,7 +220,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
             ))}
           </div>
           <div className="typing-indicator-bar">
-            {isContactTyping && <em>{contactName} is aan het typen...</em>}
+            {isContactTyping && <em>{getDisplayName(contactName)} is aan het typen...</em>}
           </div>
           <ChatInput 
             value={messageText}
@@ -300,12 +301,13 @@ function ChatToolbar({ onNudge, canNudge, onStartCall, callState }) {  const too
 }
 
 function ChatMessage({ msg, prevMsg }) {
+  const { getDisplayName } = useAvatar();
   const isFirstNew = prevMsg?.isLegacy && !msg.isLegacy;
   return (
     <>
       {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
       <div className={`chat-message ${msg.isLegacy ? 'legacy' : ''}`}>
-        <div className="message-header"><strong>{msg.sender}</strong> says ({msg.timestamp}):</div>
+        <div className="message-header"><strong>{getDisplayName(msg.sender)}</strong> zegt ({msg.timestamp}):</div>
         <div className="message-content">{convertEmoticons(msg.content)}</div>
       </div>
     </>

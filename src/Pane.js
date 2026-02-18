@@ -40,6 +40,26 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, o
     };
   }, []);
 
+  // Venster binnen scherm houden bij window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition(prev => {
+        const maxLeft = Math.max(0, window.innerWidth - 100);
+        const maxTop = Math.max(0, window.innerHeight - 100);
+        const newLeft = Math.min(prev.left, maxLeft);
+        const newTop = Math.min(prev.top, maxTop);
+        if (newLeft !== prev.left || newTop !== prev.top) {
+          const clamped = { left: Math.max(0, newLeft), top: Math.max(0, newTop) };
+          if (onPositionChange) onPositionChange(clamped);
+          return clamped;
+        }
+        return prev;
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [onPositionChange]);
+
   const handleMouseDown = (e) => {
     // Focus pane wanneer erop geklikt wordt
     if (onFocus) onFocus();

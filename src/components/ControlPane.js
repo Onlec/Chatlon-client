@@ -1,38 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useScanlinesPreference } from '../contexts/ScanlinesContext';
 import { useSettings } from '../contexts/SettingsContext';
-import ChangePasswordModal from './ChangePasswordModal';
-import AvatarPickerModal from './AvatarPickerModal';
+import { user } from '../gun';
 import WallpaperPickerModal from './WallpaperPickerModal';
 import { clearAllCaches } from '../utils/cacheCleanup';
 import { log } from '../utils/debug';
+
+const PRESET_AVATARS = ['cat.jpg', 'egg.jpg', 'crab.jpg', 'blocks.jpg', 'pug.jpg'];
 
 function ControlPane() {
   const { scanlinesEnabled, toggleScanlines } = useScanlinesPreference();
   const { settings, updateSetting, resetSettings } = useSettings();
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [showResetSuccess, setShowResetSuccess] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showWallpaperModal, setShowWallpaperModal] = useState(false);
-  const [rememberMe, setRememberMe] = useState(localStorage.getItem('chatlon_remember_me') === 'true');
+
+  // Account state (lokale naam + avatar uit localStorage)
+  const currentEmail = user.is?.alias || '';
+  const [localName, setLocalName] = useState('');
+  const [localAvatar, setLocalAvatar] = useState('');
+  const [accountSaved, setAccountSaved] = useState(false);
+
+  useEffect(() => {
+    if (!currentEmail) return;
+    try {
+      const users = JSON.parse(localStorage.getItem('chatlon_users') || '[]');
+      const userObj = users.find(u => (typeof u === 'string' ? u : u.email) === currentEmail);
+      if (userObj && typeof userObj === 'object') {
+        setLocalName(userObj.localName || currentEmail);
+        setLocalAvatar(userObj.localAvatar || '');
+      } else {
+        setLocalName(currentEmail);
+      }
+    } catch { /* ignore */ }
+  }, [currentEmail]);
+
+  const saveAccountSettings = () => {
+    try {
+      const users = JSON.parse(localStorage.getItem('chatlon_users') || '[]');
+      const normalized = users.map(u => typeof u === 'string' ? { email: u, localName: u } : u);
+      const idx = normalized.findIndex(u => u.email === currentEmail);
+      if (idx >= 0) {
+        normalized[idx] = { ...normalized[idx], localName: localName.trim() || currentEmail, localAvatar };
+      } else {
+        normalized.push({ email: currentEmail, localName: localName.trim() || currentEmail, localAvatar });
+      }
+      localStorage.setItem('chatlon_users', JSON.stringify(normalized));
+      setAccountSaved(true);
+      setTimeout(() => setAccountSaved(false), 3000);
+    } catch (e) {
+      log('[ControlPane] Error saving account:', e);
+    }
+  };
 
   const {
-    systemSounds,
-    toastNotifications,
-    nudgeSound,
-    typingSound,
     autoReconnect,
     superpeerEnabled,
-    saveHistory,
-    showTyping,
-    emoticons,
     debugMode,
     fontSize,
-    colorScheme
+    colorScheme,
+    systemSounds
   } = settings;
   
   const categories =  [
+    {
+      id: 'account',
+      icon: '👤',
+      title: 'Gebruikersaccount',
+      description: 'Lokale naam en avatar wijzigen',
+      customRender: true
+    },
     {
       id: 'appearance',
       icon: '🎨',
@@ -73,37 +110,16 @@ function ControlPane() {
     },
     {
       id: 'sounds',
-      icon: '🔔',
-      title: 'Geluid en meldingen',
-      description: 'Wijzig geluids- en meldingsinstellingen',
+      icon: '🔊',
+      title: 'Geluiden',
+      description: 'Systeemgeluiden en meldingen beheren',
       settings: [
-        { 
-          id: 'systemSounds', 
-          label: 'Systeemgeluiden', 
+        {
+          id: 'systemSounds',
+          label: 'Systeemgeluiden afspelen',
           type: 'checkbox',
-          value: systemSounds,
-          description: 'Geluiden afspelen bij gebeurtenissen'
-        },
-        { 
-          id: 'toastNotifications', 
-          label: 'Toast meldingen', 
-          type: 'checkbox',
-          value: toastNotifications,
-          description: 'Pop-up meldingen voor nieuwe berichten'
-        },
-        { 
-          id: 'nudgeSound', 
-          label: 'Nudge geluid', 
-          type: 'checkbox',
-          value: nudgeSound,
-          description: 'Geluid afspelen bij nudge'
-        },
-        { 
-          id: 'typingSound', 
-          label: 'Typing geluid', 
-          type: 'checkbox',
-          value: typingSound,
-          description: 'Toetsenbordgeluid tijdens typen'
+          value: systemSounds !== false,
+          description: 'Speel geluiden af bij aanmelden, afmelden en meldingen'
         }
       ]
     },
@@ -126,70 +142,6 @@ function ControlPane() {
           type: 'checkbox',
           value: superpeerEnabled,
           description: 'Help andere gebruikers door als relay te fungeren'
-        }
-      ]
-    },
-    {
-      id: 'accounts',
-      icon: '👤',
-      title: 'Gebruikersaccounts',
-      description: 'Wijzig gebruikersaccount en privacy-instellingen',
-      settings: [
-        {
-          id: 'changeAvatar',
-          label: 'Profielfoto wijzigen',
-          type: 'button',
-          description: 'Wijzig uw profielfoto of kies een standaard avatar'
-        },
-        {
-          id: 'changePassword',
-          label: 'Wachtwoord wijzigen',
-          type: 'button',
-          description: 'Wijzig uw accountwachtwoord'
-        },
-        {
-          id: 'rememberMe',
-          label: 'Onthoud mijn gegevens',
-          type: 'checkbox',
-          value: rememberMe,
-          onChange: () => {
-            const newValue = !rememberMe;
-            localStorage.setItem('chatlon_remember_me', newValue.toString());
-            if (!newValue) {
-              localStorage.removeItem('chatlon_credentials');
-            }
-            setRememberMe(newValue);
-          },
-          description: 'Blijf aangemeld na afsluiten'
-        }
-      ]
-    },
-    {
-      id: 'chat',
-      icon: '💬',
-      title: 'Chat en berichten',
-      description: 'Configureer chat-gedrag en voorkeuren',
-      settings: [
-        { 
-          id: 'saveHistory', 
-          label: 'Gesprekgeschiedenis bewaren', 
-          type: 'checkbox',
-          value: saveHistory,
-          description: 'Berichten lokaal opslaan (MSN-authentiek: uit)'
-        },
-        { 
-          id: 'showTyping', 
-          label: 'Toon typing indicator', 
-          type: 'checkbox',
-          value: showTyping,
-          description: 'Laat anderen zien wanneer u typt'
-        },
-        { 
-          id: 'emoticons', 
-          label: 'Emoticons inschakelen', 
-          type: 'checkbox',
-          value: emoticons,
-          description: 'Vervang tekst door emoticons'
         }
       ]
     },
@@ -278,7 +230,58 @@ function ControlPane() {
             <h2>{selectedCategory.title}</h2>
           </div>
 
-          <div className="cp-settings-list">
+          {selectedCategory.customRender && selectedCategory.id === 'account' && (
+            <div className="cp-settings-list">
+              <div className="cp-setting-item">
+                <div className="cp-setting-main">
+                  <div className="cp-select-row">
+                    <label>Lokale naam</label>
+                    <input
+                      type="text"
+                      className="cp-text-input"
+                      value={localName}
+                      onChange={(e) => setLocalName(e.target.value)}
+                      placeholder="Uw naam"
+                    />
+                  </div>
+                </div>
+                <div className="cp-setting-description">
+                  De naam die wordt getoond in het startmenu en aanmeldscherm
+                </div>
+              </div>
+
+              <div className="cp-setting-item">
+                <div className="cp-setting-main">
+                  <label style={{ display: 'block', marginBottom: '8px' }}>Lokale avatar</label>
+                  <div className="cp-avatar-grid">
+                    {PRESET_AVATARS.map(av => (
+                      <img
+                        key={av}
+                        src={`/avatars/${av}`}
+                        alt={av}
+                        className={`cp-avatar-option ${localAvatar === av ? 'cp-avatar-selected' : ''}`}
+                        onClick={() => setLocalAvatar(av)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="cp-setting-description">
+                  Kies een avatar voor uw lokaal account (login scherm)
+                </div>
+              </div>
+
+              <div className="cp-setting-item">
+                <div className="cp-setting-main">
+                  <button className="dx-button cp-action-button" onClick={saveAccountSettings}>
+                    Opslaan
+                  </button>
+                  {accountSaved && <span style={{ marginLeft: '10px', color: '#2a7d2a' }}>✓ Opgeslagen</span>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!selectedCategory.customRender && <div className="cp-settings-list">
             {selectedCategory.settings.map(setting => (
               <div key={setting.id} className="cp-setting-item">
                 <div className="cp-setting-main">
@@ -324,10 +327,6 @@ function ControlPane() {
                         onClick={() => {
                           if (setting.id === 'changeWallpaper') {
                             setShowWallpaperModal(true);
-                          } else if (setting.id === 'changeAvatar') {
-                            setShowAvatarModal(true);
-                          } else if (setting.id === 'changePassword') {
-                            setShowPasswordModal(true);
                           } else if (setting.id === 'resetSettings') {
                             if (window.confirm('Weet je zeker dat je alle instellingen wilt resetten?')) {
                               resetSettings();
@@ -357,19 +356,13 @@ function ControlPane() {
                 )}
               </div>
             ))}
-          </div>
+          </div>}
         </div>
       )}
       {showResetSuccess && (
         <div className="cp-success-message">
           ✓ Instellingen zijn gereset naar standaardwaarden
         </div>
-      )}
-      {showPasswordModal && (
-        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
-      )}
-      {showAvatarModal && (
-        <AvatarPickerModal onClose={() => setShowAvatarModal(false)} />
       )}
       {showWallpaperModal && (
         <WallpaperPickerModal onClose={() => setShowWallpaperModal(false)} />
