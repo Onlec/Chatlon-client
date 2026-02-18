@@ -3,9 +3,11 @@ import { gun, user } from './gun';
 import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
 import { log } from './utils/debug';
 import { createListenerManager } from './utils/gunListenerManager';
+import { useAvatar } from './contexts/AvatarContext';
 
 
 function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange }) {
+  const { getAvatar } = useAvatar();
   // FIX: Gebruik props als ze beschikbaar zijn, anders lokale state
   const [localStatus, setLocalStatus] = useState('online');
   const myStatus = propUserStatus || localStatus;
@@ -40,7 +42,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
             if (existing) return prev;
             return [...prev, {
               username: contactData.username,
-              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${contactData.username}`,
+              avatar: contactData.username,
               status: 'online'
             }];
           });
@@ -240,7 +242,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
       <div className="contacts-user-section">
         <div className="contacts-user-info">
           <img 
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser}`} 
+            src={getAvatar(currentUser)} 
             alt="avatar" 
             className="contacts-user-avatar"
           />

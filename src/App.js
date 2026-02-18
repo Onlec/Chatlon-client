@@ -29,6 +29,8 @@ import { runFullCleanup } from './utils/gunCleanup';
 import { clearEncryptionCache } from './utils/encryption';
 import { useScanlinesPreference } from './contexts/ScanlinesContext';
 import { useSettings } from './contexts/SettingsContext';
+import { useAvatar } from './contexts/AvatarContext';
+import { useWallpaper } from './contexts/WallpaperContext';
 
 
 function App() {
@@ -41,6 +43,7 @@ function App() {
     const skipBoot = sessionStorage.getItem('chatlon_boot_complete');
     return skipBoot === 'true';
   });
+  const justBootedRef = useRef(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
   const [unreadChats, setUnreadChats] = React.useState(new Set());
@@ -53,6 +56,8 @@ function App() {
   // HOOKS
   // ============================================
   const { settings } = useSettings();
+  const { getAvatar } = useAvatar();
+  const { getWallpaperStyle } = useWallpaper();
   const { playSound } = useSounds();
   
   // Toast notifications
@@ -135,13 +140,13 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
         contactName: senderName,
         from: senderName,
         message: msg.content,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${senderName}`,
+        avatar: getAvatar(senderName),
         messageId: msgId,
         sessionId: sessionId
       });
     }
   }
-}, [currentUser, showToast, setUnreadChats, activePaneRef, conversationsRef, shownToastsRef, playSound, settings]); // ADD settings  // Belangrijk: openConversation en minimizeConversation moeten in de dependency array!
+}, [currentUser, showToast, setUnreadChats, activePaneRef, conversationsRef, shownToastsRef, playSound, settings, getAvatar]);
   // Message listeners initialisatie
   const { 
     cleanup: cleanupListeners 
@@ -155,7 +160,8 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
       setNotificationTime(contactName, timeRef);
     },
     showToast,
-    shownToastsRef
+    shownToastsRef,
+    getAvatar
   });
   // Superpeer management
   const {
@@ -360,21 +366,23 @@ const onTaskbarClick = React.useCallback((paneId) => {
   // RENDER: BOOT SEQUENCE
   // ============================================
   if (!hasBooted) {
-    return <BootSequence onBootComplete={() => setHasBooted(true)} />;
+    return <BootSequence onBootComplete={() => { justBootedRef.current = true; setHasBooted(true); }} />;
   }
 
   // ============================================
   // RENDER: LOGIN SCREEN
   // ============================================
   if (!isLoggedIn) {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+    const fromBoot = justBootedRef.current;
+    justBootedRef.current = false;
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} fadeIn={fromBoot} />;
   }
 
   // ============================================
   // RENDER: DESKTOP
   // ============================================
   return (
-    <div className="desktop" onClick={closeStartMenu} data-theme={settings.colorScheme !== 'blauw' ? settings.colorScheme : undefined} data-fontsize={settings.fontSize !== 'normaal' ? settings.fontSize : undefined}>
+    <div className="desktop" onClick={closeStartMenu} style={getWallpaperStyle()} data-theme={settings.colorScheme !== 'blauw' ? settings.colorScheme : undefined} data-fontsize={settings.fontSize !== 'normaal' ? settings.fontSize : undefined}>
       <div className={`scanlines-overlay ${scanlinesEnabled ? '' : 'disabled'}`}></div>
       {/* Desktop Icons */}
       <div className="shortcuts-area">
@@ -467,7 +475,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
         <div className="start-menu" onClick={(e) => e.stopPropagation()}>
           <div className="start-menu-header">
             <img 
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser}`} 
+              src={getAvatar(currentUser)} 
               alt="user" 
               className="start-user-img" 
             />

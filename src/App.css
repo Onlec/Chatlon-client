@@ -670,8 +670,7 @@ body, html {
 .desktop {
   width: 100vw;
   height: 100vh;
-  background: url('https://upload.wikimedia.org/wikipedia/en/2/27/Bliss_%28Windows_XP%29.png') no-repeat center center;
-  background-size: cover;
+  background: #3A6EA5;
   position: relative;
 }
 
@@ -1470,9 +1469,7 @@ div.pane-frame.maximized {
   padding-right: 60px;
 }
 
-.xp-logo-container {
-  text-align: left;
-}
+/* Login screen overrides verplaatst naar einde van brand-layout sectie */
 
 .xp-logo-top {
   font-size: 18px;
@@ -4084,93 +4081,184 @@ div.pane-frame.maximized {
   text-align: center;
 }
 
-/* Container: veranderd naar grid voor de 2x2 look */
-.xp-boot-logo {
-  display: grid;
-  grid-template-columns: repeat(2, 60px); 
-  gap: 10px;
+/* =============================================
+   XP BRAND LAYOUT — Geïntegreerd logo + tekst
+   ============================================= */
+
+.xp-brand-layout {
+  display: flex;
+  align-items: flex-end;
   justify-content: center;
-  margin-bottom: 30px;
-  /* Een lichte rotatie geeft het die vlag-vibe */
-  transform: rotate(45deg);
-}
-
-.xp-logo-stripe {
-  width: 60px;
-  height: 60px;
-  border-radius: 4px; /* XP had subtiel afgeronde hoeken */
-  animation: xp-logo-appear 0.8s ease-out forwards;
-  opacity: 0; /* Begin onzichtbaar voor de animatie */
-}
-
-/* De ontbrekende animatie */
-
-
-/* Kleuren met iets meer "glossy" XP-verloop */
-.xp-stripe-red {
-  background: linear-gradient(135deg, #ff5252 0%, #d50000 100%);
-  animation-delay: 0.1s;
-}
-
-.xp-stripe-green {
-  background: linear-gradient(135deg, #66bb6a 0%, #388e3c 100%);
-  animation-delay: 0.2s;
-}
-
-.xp-stripe-blue {
-  background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
-  animation-delay: 0.3s;
-}
-
-
-@keyframes xp-logo-appear {
-  0% {
-    transform: translateY(0) scale(0.8);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-}
-
-/* XP Brand Text */
-.xp-boot-brand {
+  gap: 0;
   margin-bottom: 80px;
   animation: xp-brand-appear 0.8s ease-out 0.4s backwards;
 }
 
-@keyframes xp-brand-appear {
+.xp-brand-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  animation: xp-brand-appear 0.8s ease-out 0.4s backwards;
+}
+
+.xp-brand-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-left: -140px;
+  margin-top: 10px;
+}
+
+/* Vlag-logo: 2x2 grid, kleiner, geïntegreerd naast tekst */
+.xp-boot-logo {
+  display: grid;
+  grid-template-columns: repeat(2, 52px);
+  gap: 6px;
+  transform: rotate(65deg);
+  margin-bottom: 0;
+  position: relative;
+  top: -30px;
+  animation: xp-logo-container-appear 0.6s ease-out 0.2s backwards;
+}
+
+.xp-logo-stripe {
+  width: 52px;
+  height: 52px;
+  border-radius: 3px;
+  animation: xp-stripe-appear 1s ease-out both;
+}
+
+.xp-stripe-red {
+  background: linear-gradient(135deg, #FF4400 0%, #CC2200 100%);
+  animation-delay: 0.1s;
+}
+
+.xp-stripe-green {
+  background: linear-gradient(135deg, #44DD44 0%, #22A022 100%);
+  animation-delay: 0.4s;
+}
+
+.xp-stripe-blue {
+  background: linear-gradient(135deg, #00BBFF 0%, #0066DD 100%);
+  animation-delay: 0.7s;
+}
+
+@keyframes xp-logo-container-appear {
   from {
+    transform: rotate(65deg) scale(0.5);
     opacity: 0;
   }
   to {
+    transform: rotate(65deg) scale(1);
     opacity: 1;
   }
 }
 
+@keyframes xp-stripe-appear {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes xp-brand-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Tekst styling */
 .xp-brand-microsoft {
   display: block;
-  color: #FFFFFF;
-  font-family: 'Trebuchet MS', Arial, sans-serif;
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Arial, sans-serif;
+  font-size: 14px;
   font-weight: normal;
-  letter-spacing: 3px;
-  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .xp-brand-windows {
   display: block;
   color: #FFFFFF;
-  font-family: 'Trebuchet MS', Arial, sans-serif;
-  font-size: 36px;
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Arial, sans-serif;
+  font-size: 42px;
   font-weight: bold;
-  letter-spacing: -1px;
+  letter-spacing: 3px;
+  line-height: 1;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .xp-brand-xp {
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Arial, sans-serif;
   font-style: italic;
-  margin-left: 4px;
+  font-weight: bold;
+  font-size: 28px;
+  color: #FFC61A;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+  vertical-align: super;
+  line-height: 0;
+  margin-left: 2px;
+  animation: xp-brand-appear 0.8s ease-out 0.6s backwards;
+}
+
+/* Login screen: geen animaties, alles direct zichtbaar */
+.xp-login-brand-layout {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+.xp-login-brand-layout .xp-boot-logo {
+  animation: none !important;
+  transform: rotate(65deg);
+}
+
+.xp-login-brand-layout .xp-logo-stripe {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: scale(1);
+}
+
+.xp-login-brand-layout .xp-brand-left {
+  animation: none !important;
+}
+
+.xp-login-brand-layout .xp-brand-xp {
+  animation: none !important;
+}
+
+/* Boot → Login transitie overlays */
+.boot-fade-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999;
+  animation: fade-to-black 0.8s ease-in forwards;
+  pointer-events: none;
+}
+
+.login-fade-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999;
+  animation: fade-from-black 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes fade-to-black {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-from-black {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 /* ============================================
@@ -5268,4 +5356,228 @@ div.pane-frame.maximized {
   border-radius: 3px;
   font-size: var(--ui-font-size);
   margin-top: 8px;
+}
+
+/* - - - AVATAR PICKER MODAL - - - - - - - - - */
+
+.avatar-picker-dialog {
+  min-width: 460px;
+  max-width: 520px;
+}
+
+.avatar-picker-current {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.avatar-picker-preview-img {
+  width: 110px;
+  height: 110px;
+  border: 2px solid;
+  border-color: #808080 #FFFFFF #FFFFFF #808080;
+  object-fit: cover;
+}
+
+.avatar-picker-current-label {
+  font-size: var(--ui-font-size-sm);
+  color: #444;
+  margin-top: 4px;
+}
+
+.avatar-picker-tabs {
+  display: flex;
+  border-bottom: 2px solid #808080;
+  margin-bottom: 10px;
+}
+
+.avatar-tab-btn {
+  padding: 4px 12px;
+  font-size: var(--ui-font-size);
+  font-family: 'Tahoma', sans-serif;
+  background: #D4D0C8;
+  border: 1px solid #808080;
+  border-bottom: none;
+  cursor: pointer;
+  margin-right: 2px;
+  position: relative;
+  bottom: -2px;
+}
+
+.avatar-tab-btn.active {
+  background: var(--app-bg);
+  border-bottom: 2px solid var(--app-bg);
+  font-weight: bold;
+  z-index: 1;
+}
+
+.avatar-tab-btn:hover:not(.active) {
+  background: #E8E8E0;
+}
+
+.avatar-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  justify-items: center;
+}
+
+.avatar-preset-item {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border: 2px solid;
+  border-color: #D4D0C8 #808080 #808080 #D4D0C8;
+  cursor: pointer;
+}
+
+.avatar-preset-item:hover {
+  border-color: var(--link-color-light);
+}
+
+.avatar-preset-item.selected {
+  border-color: var(--link-color);
+  outline: 2px solid var(--link-color);
+}
+
+.avatar-upload-panel {
+  margin-bottom: 12px;
+}
+
+.avatar-upload-hint {
+  font-size: var(--ui-font-size-sm);
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.avatar-upload-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 10px;
+}
+
+/* =============================================
+   WALLPAPER PICKER
+   ============================================= */
+
+.wallpaper-picker-dialog {
+  min-width: 520px;
+  max-width: 600px;
+}
+
+.wallpaper-current {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.wallpaper-current-preview {
+  width: 240px;
+  height: 135px;
+  border: 2px solid;
+  border-color: #808080 #FFFFFF #FFFFFF #808080;
+  object-fit: cover;
+}
+
+.wallpaper-current-label {
+  font-size: var(--ui-font-size-sm);
+  color: #444;
+  margin-top: 4px;
+}
+
+.wallpaper-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  justify-items: center;
+}
+
+.wallpaper-preset-item {
+  cursor: pointer;
+  text-align: center;
+  border: 2px solid;
+  border-color: #D4D0C8 #808080 #808080 #D4D0C8;
+  padding: 3px;
+  background: #FFF;
+}
+
+.wallpaper-preset-item:hover {
+  border-color: var(--link-color-light);
+}
+
+.wallpaper-preset-item.selected {
+  border-color: var(--link-color);
+  outline: 2px solid var(--link-color);
+}
+
+.wallpaper-preset-item img {
+  width: 150px;
+  height: 84px;
+  object-fit: cover;
+  display: block;
+}
+
+.wallpaper-preset-label {
+  font-size: var(--ui-font-size-sm);
+  color: #333;
+  margin-top: 2px;
+}
+
+.wallpaper-color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+  justify-items: center;
+}
+
+.wallpaper-color-item {
+  cursor: pointer;
+  text-align: center;
+  border: 2px solid;
+  border-color: #D4D0C8 #808080 #808080 #D4D0C8;
+  padding: 3px;
+  background: #FFF;
+}
+
+.wallpaper-color-item:hover {
+  border-color: var(--link-color-light);
+}
+
+.wallpaper-color-item.selected {
+  border-color: var(--link-color);
+  outline: 2px solid var(--link-color);
+}
+
+.wallpaper-color-swatch {
+  width: 60px;
+  height: 42px;
+  border: 1px solid #808080;
+}
+
+.wallpaper-color-label {
+  font-size: var(--ui-font-size-sm);
+  color: #333;
+  margin-top: 2px;
+}
+
+.wallpaper-upload-preview {
+  margin-top: 10px;
+}
+
+.wallpaper-upload-preview img {
+  max-width: 100%;
+  max-height: 160px;
+  border: 2px solid;
+  border-color: #808080 #FFFFFF #FFFFFF #808080;
+  object-fit: contain;
 }

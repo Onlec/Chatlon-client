@@ -10,7 +10,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { gun, user } from '../gun';
-import { getContactPairId, getAvatarUrl } from '../utils/chatUtils';
+import { getContactPairId } from '../utils/chatUtils';
 import { log } from '../utils/debug';
 import { createListenerManager } from '../utils/gunListenerManager';
 import { decryptMessage } from '../utils/encryption';
@@ -26,7 +26,8 @@ export function useMessageListeners({
   showToast,
   shownToastsRef,
   onMessage,
-  onNotification
+  onNotification,
+  getAvatar
 }) {
   // Tracking refs
   const listenersRef = useRef(createListenerManager());
@@ -88,14 +89,14 @@ export function useMessageListeners({
       showToast({
         from: requestData.from,
         message: 'wil je toevoegen als contact',
-        avatar: getAvatarUrl(requestData.from),
+        avatar: getAvatar(requestData.from),
         type: 'friendRequest',
         requestId: requestId
       });
     });
 
     listenersRef.current.add('friendRequests', friendRequestsNode);
-  }, [currentUser, showToast, shownToastsRef]);
+  }, [currentUser, showToast, shownToastsRef, getAvatar]);
 
   /**
    * Setup listener voor messages van een specifiek contact.
@@ -150,7 +151,7 @@ export function useMessageListeners({
           showToast({
             from: contactName,
             message: decryptedContent,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${contactName}`,
+            avatar: getAvatar(contactName),
             contactName: contactName,
             type: 'message',
             messageId: id,
@@ -164,7 +165,7 @@ export function useMessageListeners({
   // Markeer als actief zonder cleanup toe te voegen
   listenersRef.current.add(pairId, activeSessionNode);
   
-}, [onMessage, isConversationActive, showToast]); // Alleen herscheppen als deze functies veranderen
+}, [onMessage, isConversationActive, showToast, getAvatar, onNotification, shownToastsRef]);
   /**
    * Setup listeners voor alle contacten.
    */

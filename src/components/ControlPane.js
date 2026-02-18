@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useScanlinesPreference } from '../contexts/ScanlinesContext';
 import { useSettings } from '../contexts/SettingsContext';
 import ChangePasswordModal from './ChangePasswordModal';
+import AvatarPickerModal from './AvatarPickerModal';
+import WallpaperPickerModal from './WallpaperPickerModal';
 import { clearAllCaches } from '../utils/cacheCleanup';
 import { log } from '../utils/debug';
 
@@ -11,6 +13,8 @@ function ControlPane() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [showResetSuccess, setShowResetSuccess] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showWallpaperModal, setShowWallpaperModal] = useState(false);
   const [rememberMe, setRememberMe] = useState(localStorage.getItem('chatlon_remember_me') === 'true');
 
   const {
@@ -58,6 +62,12 @@ function ControlPane() {
           options: ['blauw', 'olijfgroen', 'zilver', 'royale', 'zune', 'royale-noir', 'energy-blue', 'klassiek'],
           value: colorScheme,
           description: 'Kleur van vensters en knoppen'
+        },
+        {
+          id: 'changeWallpaper',
+          label: 'Bureaublad achtergrond',
+          type: 'button',
+          description: 'Kies een achtergrondafbeelding of kleur voor uw bureaublad'
         }
       ]
     },
@@ -125,9 +135,15 @@ function ControlPane() {
       title: 'Gebruikersaccounts',
       description: 'Wijzig gebruikersaccount en privacy-instellingen',
       settings: [
-        { 
-          id: 'changePassword', 
-          label: 'Wachtwoord wijzigen', 
+        {
+          id: 'changeAvatar',
+          label: 'Profielfoto wijzigen',
+          type: 'button',
+          description: 'Wijzig uw profielfoto of kies een standaard avatar'
+        },
+        {
+          id: 'changePassword',
+          label: 'Wachtwoord wijzigen',
           type: 'button',
           description: 'Wijzig uw accountwachtwoord'
         },
@@ -306,8 +322,12 @@ function ControlPane() {
                       <button 
                         className="dx-button cp-action-button"
                         onClick={() => {
-                          if (setting.id === 'changePassword') {
-                            setShowPasswordModal(true); // ✅ Show modal
+                          if (setting.id === 'changeWallpaper') {
+                            setShowWallpaperModal(true);
+                          } else if (setting.id === 'changeAvatar') {
+                            setShowAvatarModal(true);
+                          } else if (setting.id === 'changePassword') {
+                            setShowPasswordModal(true);
                           } else if (setting.id === 'resetSettings') {
                             if (window.confirm('Weet je zeker dat je alle instellingen wilt resetten?')) {
                               resetSettings();
@@ -347,6 +367,12 @@ function ControlPane() {
       )}
       {showPasswordModal && (
         <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
+      {showAvatarModal && (
+        <AvatarPickerModal onClose={() => setShowAvatarModal(false)} />
+      )}
+      {showWallpaperModal && (
+        <WallpaperPickerModal onClose={() => setShowWallpaperModal(false)} />
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useReducer, useRef } from 'react';
 import { gun, user } from './gun';
 import { log } from './utils/debug';
 import { createListenerManager } from './utils/gunListenerManager';
+import { useAvatar } from './contexts/AvatarContext';
 
 const reducer = (state, message) => {
   if (state.messageMap[message.id]) return state;
@@ -11,6 +12,7 @@ const reducer = (state, message) => {
 };
 
 function ChatPane() {
+  const { getAvatar } = useAvatar();
   const [messageText, setMessageText] = useState('');
   const [state, dispatch] = useReducer(reducer, { messages: [], messageMap: {} });
   const messagesAreaRef = useRef(null);
@@ -86,7 +88,7 @@ function ChatPane() {
           ))}
         </div>
         <aside className="chat-sidebar">
-          <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username || user.is?.alias || 'User'}`} alt="avatar" className="chat-avatar-img" />
+          <img src={getAvatar(username || user.is?.alias || 'User')} alt="avatar" className="chat-avatar-img" />
           <button className={`dx-button nudge-btn ${!canNudge ? 'disabled' : ''}`} onClick={() => { if(canNudge){ setCanNudge(false); gun.get('CHAT_NUDGES').put({time: Date.now()}); setTimeout(()=>setCanNudge(true), 5000); } }} disabled={!canNudge} style={{ marginTop: '10px', width: '90%' }}>Nudge!</button>
         </aside>
       </div>

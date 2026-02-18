@@ -40,19 +40,6 @@ export const getChatRoomId = (user1, user2) => {
   return `CHAT_${getContactPairId(user1, user2)}`;
 };
 
-/**
- * Genereert een DiceBear avatar URL voor een username.
- * Gebruikt de avataaars style voor consistente, herkenbare avatars.
- * 
- * @param {string} username - Username als seed voor de avatar
- * @returns {string} DiceBear avatar URL
- * 
- * @example
- * getAvatarUrl('alice') // 'https://api.dicebear.com/7.x/avataaars/svg?seed=alice'
- */
-export const getAvatarUrl = (username) => {
-  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
-};
 
 /**
  * Genereert een unieke message ID.
@@ -89,7 +76,6 @@ export const formatMessageTime = (timestamp) => {
 export default {
   getContactPairId,
   getChatRoomId,
-  getAvatarUrl,
   generateMessageId,
   generateSessionId,
   formatMessageTime

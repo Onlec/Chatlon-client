@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { gun, user } from './gun';
 import { log } from './utils/debug';
+import { useAvatar } from './contexts/AvatarContext';
 
-function LoginScreen({ onLoginSuccess }) {
+function LoginScreen({ onLoginSuccess, fadeIn }) {
+  const { getAvatar, setMyAvatar } = useAvatar();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
@@ -114,7 +116,12 @@ function LoginScreen({ onLoginSuccess }) {
         user.auth(username, password, (authAck) => {
           if (!authAck.err) {
             setError('');
-            
+
+            // Wijs een willekeurige standaard avatar toe
+            const presets = ['cat.jpg', 'egg.jpg', 'crab.jpg', 'blocks.jpg', 'pug.jpg'];
+            const randomPreset = presets[Math.floor(Math.random() * presets.length)];
+            setMyAvatar(randomPreset, 'preset');
+
             if (rememberMe) {
               localStorage.setItem('chatlon_credentials', JSON.stringify({ username, password }));
               localStorage.setItem('chatlon_remember_me', 'true');
@@ -126,7 +133,7 @@ function LoginScreen({ onLoginSuccess }) {
               users.add(username);
               localStorage.setItem('chatlon_users', JSON.stringify(Array.from(users)));
             }
-            
+
             onLoginSuccess(username);
           }
         });
@@ -174,6 +181,8 @@ function LoginScreen({ onLoginSuccess }) {
 
   return (
     <div className="xp-login">
+      {/* Fade from black — alleen na boot sequence */}
+      {fadeIn && <div className="login-fade-overlay" />}
       {/* Top Bar */}
       <div className="xp-top-bar">
         <div className="xp-top-text">
@@ -185,11 +194,17 @@ function LoginScreen({ onLoginSuccess }) {
       <div className="xp-main">
         {/* Left Side - Logo */}
         <div className="xp-left">
-          <div className="xp-logo-container">
-            <div className="xp-logo-top">Macrohard</div>
-            <div className="xp-logo-windows">
-              <span className="xp-logo-win">Panes</span>
-              <span className="xp-logo-xp">dX</span>
+          <div className="xp-brand-layout xp-login-brand-layout">
+            <div className="xp-brand-left">
+              <span className="xp-brand-microsoft">Macrohard</span>
+              <span className="xp-brand-windows">Panes<span className="xp-brand-xp">dX</span></span>
+            </div>
+            <div className="xp-brand-right">
+              <div className="xp-boot-logo">
+                <div className="xp-logo-stripe xp-stripe-green"></div>
+                <div className="xp-logo-stripe xp-stripe-blue"></div>
+                <div className="xp-logo-stripe xp-stripe-red"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -204,7 +219,7 @@ function LoginScreen({ onLoginSuccess }) {
             <div className="xp-password-panel">
               <div className="xp-user-selected">
                 <img
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username || 'guest'}`}
+                  src={getAvatar(username || 'guest')}
                   alt={username}
                   className="xp-avatar-large"
                 />
@@ -303,7 +318,7 @@ function LoginScreen({ onLoginSuccess }) {
                   onClick={() => handleUserClick(user)}
                 >
                   <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user}`}
+                    src={getAvatar(user)}
                     alt={user}
                     className="xp-avatar"
                   />

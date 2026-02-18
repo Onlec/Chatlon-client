@@ -7,6 +7,7 @@ function BootSequence({ onBootComplete }) {
   const [showCursor, setShowCursor] = useState(true);
   const [memoryCount, setMemoryCount] = useState(0);
   const [postLines, setPostLines] = useState([]);
+  const [fadeOut, setFadeOut] = useState(false);
   const { scanlinesEnabled } = useScanlinesPreference();  
   
   const biosBeepRef = useRef(null);
@@ -39,7 +40,7 @@ function BootSequence({ onBootComplete }) {
 
       // Build POST text line by line
       const logoRows = String.raw`
-█████╗ ██╗   ██╗███████╗       ██████╗ ██████╗ ██████╗ ███████╗
+██████╗ ██╗   ██╗███████╗       ██████╗ ██████╗ ██████╗ ███████╗
 ██╔══██╗██║   ██║██╔════╝      ██╔════╝██╔═══██╗██╔══██╗██╔════╝
 ███████║██║   ██║█████╗  █████╗██║     ██║   ██║██████╔╝█████╗  
 ██╔══██║██║   ██║██╔══╝  ╚════╝██║     ██║   ██║██╔══██╗██╔══╝  
@@ -100,13 +101,20 @@ function BootSequence({ onBootComplete }) {
   // XP Boot stage
   useEffect(() => {
     if (stage === 'xpboot') {
-      // Na 4 seconden naar login
+      // Na 3.2s fade-out starten, na 4s boot complete
+      const fadeTimer = setTimeout(() => {
+        setFadeOut(true);
+      }, 3200);
+
       const timer = setTimeout(() => {
         sessionStorage.setItem('chatlon_boot_complete', 'true');
         onBootComplete();
       }, 4000);
 
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(timer);
+      };
     }
   }, [stage, onBootComplete]);
 
@@ -142,17 +150,19 @@ function BootSequence({ onBootComplete }) {
       {stage === 'xpboot' && (
         <div className="xp-boot">
           <div className="xp-boot-content">
-            {/* XP Logo */}
-            <div className="xp-boot-logo">
-              <div className="xp-logo-stripe xp-stripe-green"></div>
-              <div className="xp-logo-stripe xp-stripe-blue"></div>
-              <div className="xp-logo-stripe xp-stripe-red"></div>
-            </div>
-
-            {/* XP Text */}
-            <div className="xp-boot-brand">
-              <span className="xp-brand-microsoft">Macrohard</span>
-              <span className="xp-brand-windows">Panes<span className="xp-brand-xp">dX</span></span>
+            {/* XP Logo + Brand — geïntegreerde layout */}
+            <div className="xp-brand-layout">
+              <div className="xp-brand-left">
+                <span className="xp-brand-microsoft">Macrohard</span>
+                <span className="xp-brand-windows">Panes<span className="xp-brand-xp">dX</span></span>
+              </div>
+              <div className="xp-brand-right">
+                <div className="xp-boot-logo">
+                  <div className="xp-logo-stripe xp-stripe-green"></div>
+                  <div className="xp-logo-stripe xp-stripe-blue"></div>
+                  <div className="xp-logo-stripe xp-stripe-red"></div>
+                </div>
+              </div>
             </div>
 
             {/* Authentic XP Loading Bar */}
@@ -175,6 +185,9 @@ function BootSequence({ onBootComplete }) {
           </div>
         </div>
       )}
+
+      {/* Fade to black overlay */}
+      {fadeOut && <div className="boot-fade-overlay" />}
 
       {/* Audio */}
       <audio ref={biosBeepRef} src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZXQ8NTqXi8bh2JAQufM7x4JdJCxVVrOXvs2sZCkaY4fHAeCwFKHzL8dyTQwoVYLXn7qVaEwxIpN/xu3AfBzaM0/PShTcHG2/E7+OaWQ8PVKzk775rHAU3jtLy0Yg4Bxxwxe7il1wPDk6o4vG/dyQEM3vO8d+VSRMUW7Pm76lZFAw=" />

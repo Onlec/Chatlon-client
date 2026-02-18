@@ -8,6 +8,7 @@ import { useWebRTC } from './hooks/useWebRTC';
 import CallPanel from './components/CallPanel';
 import { encryptMessage, decryptMessage, warmupEncryption } from './utils/encryption';
 import { useSounds } from './hooks/useSounds';
+import { useAvatar } from './contexts/AvatarContext';
 
 // ============================================
 // 1. REDUCER (Berichten logica)
@@ -340,9 +341,10 @@ function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, set
 }
 
 function AvatarDisplay({ name, isSelf }) {
+  const { getAvatar } = useAvatar();
   return (
     <div className="chat-avatar-container" style={isSelf ? { marginTop: 'auto' } : {}}>
-      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} alt={name} className="chat-display-picture" />
+      <img src={getAvatar(name)} alt={name} className="chat-display-picture" />
     </div>
   );
 }

@@ -34,30 +34,24 @@ function ChangePasswordModal({ onClose }) {
       return;
     }
 
-    // Try to re-authenticate with current password
     const username = user.is.alias;
-    
+
+    // Gun SEA: auth met { change: newPassword } om het wachtwoord te wijzigen
     user.auth(username, currentPassword, (ack) => {
       if (ack.err) {
         setError('Huidig wachtwoord is incorrect');
         return;
       }
 
-      // Current password correct, now change it
-      // Gun.js doesn't have built-in password change, so we need to:
-      // 1. Leave current session
-      // 2. Delete account
-      // 3. Recreate with new password
-      // This is a limitation of Gun.js SEA
-
-      // For now, show success and inform user to re-login
-      setSuccess(true);
-      log('[ChangePassword] Password change requested');
-      
-      setTimeout(() => {
-        alert('Let op: Gun.js ondersteunt geen wachtwoord wijzigen.\n\nOm uw wachtwoord te wijzigen:\n1. Log uit\n2. Maak een nieuw account aan\n\nUw oude account blijft bestaan.');
-        onClose();
-      }, 1000);
+      user.auth(username, currentPassword, (ack2) => {
+        if (ack2.err) {
+          setError('Wachtwoord wijzigen mislukt: ' + ack2.err);
+          return;
+        }
+        log('[ChangePassword] Password changed successfully');
+        setSuccess(true);
+        setTimeout(() => onClose(), 1500);
+      }, { change: newPassword });
     });
   };
 
