@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAvatar } from '../contexts/AvatarContext';
 import { user } from '../gun';
+import ModalPane from './ModalPane';
 
 const PRESET_AVATARS = [
   'cat.jpg', 'egg.jpg', 'crab.jpg', 'blocks.jpg', 'pug.jpg'
@@ -106,14 +107,8 @@ function AvatarPickerModal({ onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-dialog avatar-picker-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <span>Profielfoto wijzigen</span>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="modal-body">
+    <ModalPane title="Profielfoto wijzigen" icon="📸" onClose={onClose} width="480px">
+        <div className="modal-body avatar-picker-dialog">
           <div className="avatar-picker-current">
             <img src={currentAvatar} alt="Huidige avatar" className="avatar-picker-preview-img" />
             <div className="avatar-picker-current-label">Huidige foto</div>
@@ -186,8 +181,7 @@ function AvatarPickerModal({ onClose }) {
             <button className="dx-button" onClick={onClose}>Annuleren</button>
           </div>
         </div>
-      </div>
-    </div>
+    </ModalPane>
   );
 }
 

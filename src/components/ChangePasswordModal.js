@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { user } from '../gun';
 import { log } from '../utils/debug';
+import ModalPane from './ModalPane';
 
 function ChangePasswordModal({ onClose }) {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -56,13 +57,7 @@ function ChangePasswordModal({ onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Wachtwoord wijzigen</h3>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-
+    <ModalPane title="Wachtwoord wijzigen" icon="🔑" onClose={onClose} width="360px">
         <div className="modal-body">
           {success ? (
             <div className="success-message">
@@ -118,8 +113,7 @@ function ChangePasswordModal({ onClose }) {
             </form>
           )}
         </div>
-      </div>
-    </div>
+    </ModalPane>
   );
 }
 

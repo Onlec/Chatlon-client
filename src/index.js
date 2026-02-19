@@ -7,6 +7,7 @@ import { ScanlinesProvider } from './contexts/ScanlinesContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { AvatarProvider } from './contexts/AvatarContext';
 import { WallpaperProvider } from './contexts/WallpaperContext';
+import { DialogProvider } from './contexts/DialogContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -15,7 +16,9 @@ root.render(
       <ScanlinesProvider>
         <AvatarProvider>
           <WallpaperProvider>
-            <App />
+            <DialogProvider>
+              <App />
+            </DialogProvider>
           </WallpaperProvider>
         </AvatarProvider>
       </ScanlinesProvider>

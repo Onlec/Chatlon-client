@@ -9,6 +9,7 @@ import OptionsDialog from './components/OptionsDialog';
 import AddContactWizard from './components/AddContactWizard';
 import FriendRequestDialog from './components/FriendRequestDialog';
 import AvatarPickerModal from './components/AvatarPickerModal';
+import ModalPane from './components/ModalPane';
 
 
 function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange, onLogoff, onSignOut, onClosePane, nowPlaying, currentUserEmail, messengerSignedIn, setMessengerSignedIn }) {
@@ -31,6 +32,11 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   const [isEditingDisplayName, setIsEditingDisplayName] = useState(false);
   const [editDisplayName, setEditDisplayName] = useState('');
   const listenersRef = useRef(createListenerManager());
+  const statusBadgeRef = useRef(null);
+  const [groupsCollapsed, setGroupsCollapsed] = useState({ online: false, offline: false, blocked: true });
+  const toggleGroup = (key) => setGroupsCollapsed(prev => ({ ...prev, [key]: !prev[key] }));
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [taskPanelOpen, setTaskPanelOpen] = useState(true);
 
   // Sign-in flow states (isSignedIn komt van App.js via props)
   const isSignedIn = messengerSignedIn;
@@ -48,6 +54,18 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
       return creds.password || '';
     } catch { return ''; }
   })();
+
+  // Sluit status-popup bij klik buiten de badge
+  useEffect(() => {
+    if (!showStatusMenu) return;
+    const handleOutsideClick = (e) => {
+      if (statusBadgeRef.current && !statusBadgeRef.current.contains(e.target)) {
+        setShowStatusMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [showStatusMenu]);
 
   // Auto sign-in bij mount als ingesteld
   useEffect(() => {
@@ -297,6 +315,28 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
     return presence.value === 'offline';
   });
 
+  const renderContact = (contact, isOffline = false, isBlocked = false) => {
+    const presence = getPresenceStatus(contactPresence[contact.username]);
+    const personalMsg = contactPresence[contact.username]?.personalMessage;
+    return (
+      <div
+        key={contact.username}
+        className={`contact-item${isBlocked ? ' contact-item-blocked' : ''}`}
+        style={isOffline ? { opacity: 0.6 } : {}}
+        onDoubleClick={!isBlocked ? () => onOpenConversation && onOpenConversation(contact.username) : undefined}
+      >
+        <div className="contact-avatar-wrapper">
+          <img src={getAvatar(contact.username)} alt="" className="contact-avatar-thumb" />
+          <span className="contact-avatar-status" style={{ backgroundColor: isBlocked ? '#8C8C8C' : presence.color }} />
+        </div>
+        <div className="contact-item-details">
+          <div className="contact-name">{getDisplayName(contact.username)}</div>
+          {personalMsg && <div className="contact-personal-msg">{personalMsg}</div>}
+        </div>
+      </div>
+    );
+  };
+
   // Sign-in scherm
   if (!isSignedIn && !isSigningIn) {
     return (
@@ -396,6 +436,8 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
             })) },
             { label: 'Persoonlijk bericht wijzigen', onClick: () => setIsEditingMessage(true) },
             { separator: true },
+            { label: 'Ontvangen bestanden openen', disabled: true },
+            { separator: true },
             { label: 'Afmelden', onClick: handleSignOut },
             { label: 'Afsluiten', onClick: () => onClosePane && onClosePane() }
           ]}
@@ -407,11 +449,30 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
           onClose={() => setOpenMenu(prev => prev === 'contacten' ? null : prev)}
           onHover={() => openMenu && setOpenMenu('contacten')}
           items={[
-            { label: 'Contact toevoegen', onClick: () => setShowAddWizard(true) },
+            { label: 'Contact toevoegen...', onClick: () => setShowAddWizard(true) },
             { label: 'Contact verwijderen', disabled: true },
+            { label: 'Contact blokkeren', disabled: true },
             { separator: true },
-            { label: 'Groepen beheren', disabled: true },
-            { label: 'Geblokkeerde contacten', disabled: true }
+            { label: 'Groepen maken en beheren', disabled: true },
+            { label: 'Contacten sorteren op status', disabled: true },
+            { separator: true },
+            { label: 'Profiel van contact weergeven', disabled: true }
+          ]}
+        />
+        <DropdownMenu
+          label="Acties"
+          isOpen={openMenu === 'acties'}
+          onToggle={() => setOpenMenu(prev => prev === 'acties' ? null : 'acties')}
+          onClose={() => setOpenMenu(prev => prev === 'acties' ? null : prev)}
+          onHover={() => openMenu && setOpenMenu('acties')}
+          items={[
+            { label: 'Een chatbericht sturen', disabled: true },
+            { label: 'Een bestand of foto versturen', disabled: true },
+            { separator: true },
+            { label: 'Video- of spraakgesprek starten', disabled: true },
+            { separator: true },
+            { label: 'Een spel spelen', disabled: true },
+            { label: 'Uitnodiging voor activiteit', disabled: true }
           ]}
         />
         <DropdownMenu
@@ -423,8 +484,12 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
           items={[
             { label: 'Opties...', onClick: () => setShowOptionsDialog(true) },
             { separator: true },
+            { label: 'Installatie van audio/video', disabled: true },
+            { label: 'Weergavefoto wijzigen...', onClick: () => setShowAvatarPicker(true) },
+            { separator: true },
             { label: 'Nu afspelend tonen', checked: !!nowPlaying?.isPlaying, disabled: true },
-            { label: 'Verbonden met Spotify', disabled: true }
+            { label: 'Mijn emoticons', disabled: true },
+            { label: 'Mijn winks en achtergronden', disabled: true }
           ]}
         />
         <DropdownMenu
@@ -434,8 +499,10 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
           onClose={() => setOpenMenu(prev => prev === 'help' ? null : prev)}
           onHover={() => openMenu && setOpenMenu('help')}
           items={[
-            { label: 'Over Chatlon Messenger', onClick: () => setShowAboutDialog(true) },
-            { label: 'Sneltoetsen', disabled: true }
+            { label: 'Help-onderwerpen', disabled: true },
+            { label: 'Controleren op updates', disabled: true },
+            { separator: true },
+            { label: 'Over Chatlon Messenger', onClick: () => setShowAboutDialog(true) }
           ]}
         />
       </div>
@@ -449,7 +516,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
             className="contacts-user-avatar"
             onDoubleClick={() => setShowAvatarPicker(true)}
             title="Dubbelklik om profielfoto te wijzigen"
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', borderColor: currentStatus.color }}
           />
           <div className="contacts-user-details">
             {isEditingDisplayName ? (
@@ -471,19 +538,41 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
                 autoFocus
               />
             ) : (
-              <div
-                className="contacts-user-name"
-                onDoubleClick={() => {
-                  const current = getDisplayName(currentUser);
-                  setEditDisplayName(current === currentUser ? '' : current);
-                  setIsEditingDisplayName(true);
-                }}
-                title="Dubbelklik om weergavenaam te wijzigen"
-              >
-                {getDisplayName(currentUser)}
+              <div className="contacts-user-name-row" ref={statusBadgeRef}>
+                <div
+                  className="contacts-user-name"
+                  onDoubleClick={() => {
+                    const current = getDisplayName(currentUser);
+                    setEditDisplayName(current === currentUser ? '' : current);
+                    setIsEditingDisplayName(true);
+                  }}
+                  title="Dubbelklik om weergavenaam te wijzigen"
+                >
+                  {getDisplayName(currentUser)}
+                </div>
+                <span
+                  className="contacts-status-badge"
+                  style={{ backgroundColor: currentStatus.color }}
+                  title={`Status: ${currentStatus.label} — klik om te wijzigen`}
+                  onClick={() => setShowStatusMenu(prev => !prev)}
+                />
+                {showStatusMenu && (
+                  <div className="contacts-status-popup">
+                    {STATUS_OPTIONS.map(opt => (
+                      <div
+                        key={opt.value}
+                        className={`contacts-status-popup-item${myStatus === opt.value ? ' active' : ''}`}
+                        onClick={() => { handleStatusChange(opt.value); setShowStatusMenu(false); }}
+                      >
+                        <span className="contacts-status-popup-check">✓</span>
+                        <span className="contacts-status-popup-dot" style={{ backgroundColor: opt.color }} />
+                        <span>{opt.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-            <div className="contacts-user-subname">({currentUser})</div>
             {isEditingMessage ? (
               <input
                 className="contacts-personal-message-input"
@@ -509,34 +598,6 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
             )}
           </div>
         </div>
-
-        {/* Status selector */}
-        <div className="contacts-status-selector">
-          <div
-            className="contacts-status-current"
-            style={{ borderLeftColor: currentStatus.color }}
-          >
-            <span className="contacts-status-dot" style={{ backgroundColor: currentStatus.color }}></span>
-            <select
-              className="contacts-status-dropdown"
-              value={myStatus}
-              onChange={(e) => handleStatusChange(e.target.value)}
-            >
-              {STATUS_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Add contact button */}
-        <button
-          className="dx-button"
-          onClick={() => setShowAddWizard(true)}
-          style={{ marginTop: '8px', width: '100%' }}
-        >
-          + Contact toevoegen
-        </button>
       </div>
 
       {/* Pending requests (MSN-stijl met Allow/Block/Add checkboxes) */}
@@ -566,63 +627,62 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
             </div>
           ) : (
             <>
-              {onlineContacts.map((contact) => {
-                const presence = getPresenceStatus(contactPresence[contact.username]);
-                const personalMsg = contactPresence[contact.username]?.personalMessage;
-                return (
-                  <div
-                    key={contact.username}
-                    className="contact-item"
-                    onDoubleClick={() => onOpenConversation && onOpenConversation(contact.username)}
-                  >
-                    <span className="contact-status-dot" style={{ backgroundColor: presence.color }}></span>
-                    <div className="contact-inline">
-                      <span className="contact-name">{getDisplayName(contact.username)}</span>
-                      <span className="contact-status-label">({presence.label})</span>
-                      {personalMsg && <span className="contact-personal-msg"> - {personalMsg}</span>}
-                    </div>
-                  </div>
-                );
-              })}
-              {offlineContacts.map((contact) => {
-                const presence = getPresenceStatus(contactPresence[contact.username]);
-                const personalMsg = contactPresence[contact.username]?.personalMessage;
-                return (
-                  <div
-                    key={contact.username}
-                    className="contact-item"
-                    style={{ opacity: 0.6 }}
-                    onDoubleClick={() => onOpenConversation && onOpenConversation(contact.username)}
-                  >
-                    <span className="contact-status-dot" style={{ backgroundColor: presence.color }}></span>
-                    <div className="contact-inline">
-                      <span className="contact-name">{getDisplayName(contact.username)}</span>
-                      <span className="contact-status-label">({presence.label})</span>
-                      {personalMsg && <span className="contact-personal-msg"> - {personalMsg}</span>}
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="contacts-group-header" onClick={() => toggleGroup('online')}>
+                <span className="contacts-group-arrow">{groupsCollapsed.online ? '▶' : '▼'}</span>
+                <span>Online ({onlineContacts.length})</span>
+              </div>
+              {!groupsCollapsed.online && onlineContacts.map(contact => renderContact(contact))}
+
+              <div className="contacts-group-header" onClick={() => toggleGroup('offline')}>
+                <span className="contacts-group-arrow">{groupsCollapsed.offline ? '▶' : '▼'}</span>
+                <span>Offline ({offlineContacts.length})</span>
+              </div>
+              {!groupsCollapsed.offline && offlineContacts.map(contact => renderContact(contact, true))}
+
               {blockedContacts.length > 0 && (
-                <div className="contacts-blocked-section">
-                  <div className="contacts-group-header">Geblokkeerd ({blockedContacts.length})</div>
-                  {blockedContacts.map((contact) => (
-                    <div
-                      key={contact.username}
-                      className="contact-item contact-item-blocked"
-                    >
-                      <span className="contact-status-dot" style={{ backgroundColor: '#8C8C8C' }}></span>
-                      <div className="contact-inline">
-                        <span className="contact-name">{getDisplayName(contact.username)}</span>
-                        <span className="contact-status-label">(Geblokkeerd)</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <div className="contacts-group-header" onClick={() => toggleGroup('blocked')}>
+                    <span className="contacts-group-arrow">{groupsCollapsed.blocked ? '▶' : '▼'}</span>
+                    <span>Geblokkeerd ({blockedContacts.length})</span>
+                  </div>
+                  {!groupsCollapsed.blocked && blockedContacts.map(contact => renderContact(contact, false, true))}
+                </>
               )}
             </>
           )}
         </div>
+      </div>
+
+      {/* "Ik wil..." taakvenster */}
+      <div className="contacts-task-panel">
+        <div className="contacts-task-header" onClick={() => setTaskPanelOpen(prev => !prev)}>
+          <span className="contacts-task-arrow">{taskPanelOpen ? '▼' : '▶'}</span>
+          <span>Ik wil...</span>
+        </div>
+        {taskPanelOpen && (
+          <div className="contacts-task-list">
+            <div className="contacts-task-item" onClick={() => setShowAddWizard(true)}>
+              <span className="contacts-task-icon">🧑‍🤝‍🧑</span>
+              <span>Een contact toevoegen</span>
+            </div>
+            <div className="contacts-task-item" onClick={() => setIsEditingMessage(true)}>
+              <span className="contacts-task-icon">✏️</span>
+              <span>Persoonlijk bericht wijzigen</span>
+            </div>
+            <div className="contacts-task-item contacts-task-item-disabled">
+              <span className="contacts-task-icon">📁</span>
+              <span>Een bestand of foto verzenden</span>
+            </div>
+            <div className="contacts-task-item contacts-task-item-disabled">
+              <span className="contacts-task-icon">🎮</span>
+              <span>Een spel spelen</span>
+            </div>
+            <div className="contacts-task-item contacts-task-item-disabled">
+              <span className="contacts-task-icon">🔍</span>
+              <span>Zoeken naar een contact</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom banner */}
@@ -650,24 +710,20 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
 
       {/* Over Chatlon dialoog */}
       {showAboutDialog && (
-        <div className="modal-overlay" onClick={() => setShowAboutDialog(false)}>
-          <div className="modal-dialog" onClick={(e) => e.stopPropagation()} style={{ minWidth: 320 }}>
-            <div className="modal-header">
-              <h3>Over Chatlon Messenger</h3>
-              <button className="modal-close" onClick={() => setShowAboutDialog(false)}>✕</button>
+        <ModalPane title="Over Chatlon Messenger" icon="ℹ️" onClose={() => setShowAboutDialog(false)} width="320px">
+          <div style={{ textAlign: 'center', padding: '24px 16px', fontFamily: 'Tahoma, sans-serif' }}>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>Chatlon Messenger</div>
+            <div style={{ fontSize: '11px', color: '#666', marginBottom: '16px' }}>Versie 0.1 Alpha</div>
+            <div style={{ fontSize: '11px', color: '#444', lineHeight: '1.6' }}>
+              Een Macrohard Panes dX ervaring.<br />
+              Peer-to-peer chat met Gun.js & Trystero.<br /><br />
+              Nonprofit parodieproject.
             </div>
-            <div className="modal-body" style={{ textAlign: 'center', padding: '24px 16px' }}>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>Chatlon Messenger</div>
-              <div style={{ fontSize: '11px', color: '#666', marginBottom: '16px' }}>Versie 0.1 Alpha</div>
-              <div style={{ fontSize: '11px', color: '#444', lineHeight: '1.6' }}>
-                Een Macrohard Panes dX ervaring.<br />
-                Peer-to-peer chat met Gun.js & Trystero.<br /><br />
-                Nonprofit parodieproject.
-              </div>
-              <button className="dx-button" onClick={() => setShowAboutDialog(false)} style={{ marginTop: '16px' }}>OK</button>
+            <div style={{ marginTop: '16px' }}>
+              <button className="dx-button" onClick={() => setShowAboutDialog(false)}>OK</button>
             </div>
           </div>
-        </div>
+        </ModalPane>
       )}
     </div>
   );

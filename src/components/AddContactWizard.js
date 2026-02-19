@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ModalPane from './ModalPane';
 
 function AddContactWizard({ onClose, onSendRequest, currentUser, contacts }) {
   const [step, setStep] = useState(1);
@@ -36,13 +37,8 @@ function AddContactWizard({ onClose, onSendRequest, currentUser, contacts }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-dialog add-contact-wizard" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Contact toevoegen - Chatlon Messenger</h3>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal-body">
+    <ModalPane title="Contact toevoegen" icon="👥" onClose={onClose} width="440px">
+        <div className="modal-body add-contact-wizard">
           {/* Stap 1: Methode kiezen */}
           {step === 1 && (
             <div className="wizard-step">
@@ -156,8 +152,7 @@ function AddContactWizard({ onClose, onSendRequest, currentUser, contacts }) {
             </>
           )}
         </div>
-      </div>
-    </div>
+    </ModalPane>
   );
 }
 

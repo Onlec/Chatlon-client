@@ -4,6 +4,7 @@ import { useAvatar } from '../contexts/AvatarContext';
 import { useSettings } from '../contexts/SettingsContext';
 import AvatarPickerModal from './AvatarPickerModal';
 import ChangePasswordModal from './ChangePasswordModal';
+import ModalPane from './ModalPane';
 
 const TABS = [
   { id: 'account', label: 'Account', icon: '\uD83D\uDC64' },
@@ -16,12 +17,7 @@ function OptionsDialog({ onClose }) {
   const [activeTab, setActiveTab] = useState('account');
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-dialog options-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Opties - Chatlon Messenger</h3>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
+    <ModalPane title="Opties" icon="⚙️" onClose={onClose} width="500px">
         <div className="options-body">
           <div className="options-sidebar">
             {TABS.map(tab => (
@@ -45,8 +41,7 @@ function OptionsDialog({ onClose }) {
           <button className="dx-button" onClick={onClose}>OK</button>
           <button className="dx-button" onClick={onClose}>Annuleren</button>
         </div>
-      </div>
-    </div>
+    </ModalPane>
   );
 }
 

@@ -32,6 +32,7 @@ import { useScanlinesPreference } from './contexts/ScanlinesContext';
 import { useSettings } from './contexts/SettingsContext';
 import { useAvatar } from './contexts/AvatarContext';
 import { useWallpaper } from './contexts/WallpaperContext';
+import { useDialog } from './contexts/DialogContext';
 
 
 // Helper: lees lokale naam uit chatlon_users localStorage
@@ -74,6 +75,7 @@ function App() {
   const { getAvatar, getDisplayName } = useAvatar();
   const { getWallpaperStyle } = useWallpaper();
   const { playSound } = useSounds();
+  const { alert: xpAlert } = useDialog();
   
   // Toast notifications
   const { 
@@ -230,7 +232,7 @@ useEffect(() => {
       setIsLoggedIn(false);
       setCurrentUser('');
       
-      alert('Je bent aangemeld op een andere locatie. Deze sessie wordt afgesloten.');
+      xpAlert('Je bent aangemeld op een andere locatie. Deze sessie wordt afgesloten.', 'Sessie beëindigd');
       
       // Forceer reload naar login screen
       setTimeout(() => {
@@ -247,7 +249,7 @@ useEffect(() => {
     });
     activeTabNode.off();
   };
-}, [isLoggedIn, currentUser, cleanupPresence, cleanupListeners, resetShownToasts, resetAll]);
+}, [isLoggedIn, currentUser, cleanupPresence, cleanupListeners, resetShownToasts, resetAll, xpAlert]);
 
   // ============================================
   // AUTO-LOGIN CHECK

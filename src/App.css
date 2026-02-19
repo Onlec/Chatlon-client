@@ -2430,8 +2430,8 @@ div.pane-frame.maximized {
   background: var(--app-bg);
   border-bottom: 1px solid var(--toolbar-border);
   display: flex;
-  gap: 2px;
-  padding: 2px 4px;
+  gap: 0;
+  padding: 2px 0;
   font-size: var(--ui-font-size);
   flex-shrink: 0;
 }
@@ -2681,6 +2681,73 @@ div.pane-frame.maximized {
   padding-left: 8px;
 }
 
+.contacts-user-name-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.contacts-status-badge {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.3);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.contacts-status-badge:hover {
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.12);
+}
+
+.contacts-status-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: white;
+  border: 1px solid #808080;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.25);
+  z-index: 10000;
+  min-width: 160px;
+  padding: 2px 0;
+}
+
+.contacts-status-popup-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  cursor: default;
+  position: relative;
+}
+
+.contacts-status-popup-item:hover {
+  background: var(--menu-hover);
+  color: white;
+}
+
+.contacts-status-popup-item.active .contacts-status-popup-check {
+  visibility: visible;
+}
+
+.contacts-status-popup-check {
+  visibility: hidden;
+  font-size: 10px;
+  margin-right: -4px;
+}
+
+.contacts-status-popup-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.2);
+  flex-shrink: 0;
+}
+
 .contacts-status-dot {
   width: 10px;
   height: 10px;
@@ -2719,11 +2786,11 @@ div.pane-frame.maximized {
 .contact-item {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
+  gap: 6px;
+  padding: 3px 8px 3px 10px;
   cursor: pointer;
-  border-bottom: 1px solid var(--toolbar-bg);
-  overflow: hidden;
+  border-bottom: 1px solid #F0F4FA;
+  min-height: 30px;
 }
 
 .contact-item:hover {
@@ -2740,14 +2807,49 @@ div.pane-frame.maximized {
 }
 
 .contacts-group-header {
-  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
   font-weight: bold;
-  color: #666;
-  padding: 6px 10px 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-top: 1px solid #C0C0C0;
-  margin-top: 4px;
+  color: #1F3A66;
+  padding: 4px 8px;
+  background: linear-gradient(to bottom, #ECF3FF 0%, #D8E8FA 100%);
+  border-top: 1px solid #B0C8E8;
+  border-bottom: 1px solid #B0C8E8;
+  cursor: pointer;
+  user-select: none;
+  text-transform: none;
+  letter-spacing: normal;
+  margin-top: 0;
+}
+
+.contacts-group-header:hover {
+  background: linear-gradient(to bottom, #DDE8FF 0%, #C8D8F0 100%);
+}
+
+.contacts-group-arrow {
+  font-size: 8px;
+  color: #336;
+  width: 10px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.contact-avatar-thumb {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #C0C8D8;
+  border-radius: 2px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.contact-item-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .contact-inline {
@@ -2761,10 +2863,12 @@ div.pane-frame.maximized {
 }
 
 .contact-name {
-  font-size: var(--ui-font-size-md);
+  font-size: 11px;
   font-weight: bold;
   color: #000;
-  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .contact-status-label {
@@ -2774,8 +2878,8 @@ div.pane-frame.maximized {
 }
 
 .contact-personal-msg {
-  font-size: var(--ui-font-size-sm);
-  color: #999;
+  font-size: 10px;
+  color: #888;
   font-style: italic;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2788,6 +2892,90 @@ div.pane-frame.maximized {
   border-radius: 50%;
   border: 1px solid rgba(0,0,0,0.2);
   flex-shrink: 0;
+}
+
+.contact-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+}
+
+.contact-avatar-status {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid white;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+}
+
+.contacts-task-panel {
+  background: #EEF4FF;
+  border-top: 1px solid #B0C8E8;
+  flex-shrink: 0;
+}
+
+.contacts-task-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #1F3A66;
+  cursor: pointer;
+  user-select: none;
+  background: linear-gradient(to bottom, #D8E8FA 0%, #C8D8F0 100%);
+  border-bottom: 1px solid #B0C8E8;
+}
+
+.contacts-task-header:hover {
+  background: linear-gradient(to bottom, #C8D8F0 0%, #B8C8E0 100%);
+}
+
+.contacts-task-arrow {
+  font-size: 8px;
+  width: 10px;
+  text-align: center;
+}
+
+.contacts-task-list {
+  padding: 4px 0;
+}
+
+.contacts-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 20px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  color: #003399;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.contacts-task-item:hover {
+  color: #FF6600;
+}
+
+.contacts-task-icon {
+  font-size: 13px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.contacts-task-item-disabled {
+  color: #888;
+  text-decoration: none;
+  cursor: default;
+}
+
+.contacts-task-item-disabled:hover {
+  color: #888;
 }
 
 .contacts-bottom-banner {
@@ -6038,6 +6226,133 @@ div.pane-frame.maximized {
    MODAL COMPONENTS
    ============================================ */
 
+/* ============================================
+   MODALPANE — XP-authentieke modale dialoog
+   ============================================ */
+
+.modal-pane-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-pane-window {
+  position: relative;
+  min-width: 340px;
+  max-width: 90vw;
+  background: var(--app-bg, #ECE9D8);
+  border: 3px solid;
+  border-color: var(--win-border-light, #FFFFFF) var(--win-border-dark, #404040) var(--win-border-dark, #404040) var(--win-border-light, #FFFFFF);
+  box-shadow: 4px 4px 16px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.modal-pane-titlebar {
+  background: linear-gradient(
+    to bottom,
+    var(--win-titlebar-a, #0058e6) 0%,
+    var(--win-titlebar-b, #2596f3) 9%,
+    var(--win-titlebar-c, #0058e6) 18%,
+    var(--win-titlebar-c, #0058e6) 92%,
+    var(--win-titlebar-d, #0046ad) 100%
+  );
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  font-weight: bold;
+  font-size: var(--ui-font-size, 11px);
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.6);
+  user-select: none;
+  cursor: default;
+}
+
+/* Flash animatie: wisselt tussen actief (gekleurd) en inactief (grijs) */
+@keyframes modal-titlebar-flash {
+  0%   { filter: brightness(1); }
+  20%  { filter: brightness(0) grayscale(1) opacity(0.55); }
+  40%  { filter: brightness(1); }
+  60%  { filter: brightness(0) grayscale(1) opacity(0.55); }
+  80%  { filter: brightness(1); }
+  100% { filter: brightness(1); }
+}
+
+.modal-pane-titlebar.flashing {
+  animation: modal-titlebar-flash 0.5s ease-in-out;
+}
+
+.modal-pane-title-section {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+}
+
+.modal-pane-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.modal-pane-title {
+  color: white;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-pane-close {
+  width: 21px;
+  height: 21px;
+  background: #c0392b;
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 2px;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-pane-close:hover {
+  background: #e74c3c;
+}
+
+.modal-pane-close:active {
+  background: #a93226;
+}
+
+.modal-pane-body {
+  padding: 0;
+  overflow-y: auto;
+  max-height: calc(90vh - 60px);
+}
+
+/* XP confirm/alert dialoog inhoud */
+.xp-dialog-message {
+  font-size: var(--ui-font-size, 11px);
+  color: #000;
+  margin-bottom: 16px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.xp-dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -6169,8 +6484,8 @@ div.pane-frame.maximized {
 /* - - - AVATAR PICKER MODAL - - - - - - - - - */
 
 .avatar-picker-dialog {
-  min-width: 460px;
-  max-width: 520px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .avatar-picker-current {
@@ -6274,8 +6589,8 @@ div.pane-frame.maximized {
    ============================================= */
 
 .wallpaper-picker-dialog {
-  min-width: 520px;
-  max-width: 600px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .wallpaper-current {

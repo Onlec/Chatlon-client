@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useScanlinesPreference } from '../contexts/ScanlinesContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { useDialog } from '../contexts/DialogContext';
 import { user } from '../gun';
 import WallpaperPickerModal from './WallpaperPickerModal';
+import ChangePasswordModal from './ChangePasswordModal';
 import { clearAllCaches } from '../utils/cacheCleanup';
 import { log } from '../utils/debug';
 
@@ -11,9 +13,11 @@ const PRESET_AVATARS = ['cat.jpg', 'egg.jpg', 'crab.jpg', 'blocks.jpg', 'pug.jpg
 function ControlPane() {
   const { scanlinesEnabled, toggleScanlines } = useScanlinesPreference();
   const { settings, updateSetting, resetSettings } = useSettings();
+  const { confirm, alert } = useDialog();
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [showResetSuccess, setShowResetSuccess] = useState(false);
   const [showWallpaperModal, setShowWallpaperModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   // Account state (lokale naam + avatar uit localStorage)
   const currentEmail = user.is?.alias || '';
@@ -278,7 +282,25 @@ function ControlPane() {
                   {accountSaved && <span style={{ marginLeft: '10px', color: '#2a7d2a' }}>✓ Opgeslagen</span>}
                 </div>
               </div>
+
+              <div className="cp-setting-item">
+                <div className="cp-setting-main">
+                  <div className="cp-button-row">
+                    <label>Wachtwoord</label>
+                    <button className="dx-button cp-action-button" onClick={() => setShowPasswordModal(true)}>
+                      Wachtwoord wijzigen...
+                    </button>
+                  </div>
+                </div>
+                <div className="cp-setting-description">
+                  Wijzig het wachtwoord van uw Chatlon account
+                </div>
+              </div>
             </div>
+          )}
+
+          {showPasswordModal && (
+            <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
           )}
 
           {!selectedCategory.customRender && <div className="cp-settings-list">
@@ -324,19 +346,19 @@ function ControlPane() {
                       <label>{setting.label}</label>
                       <button 
                         className="dx-button cp-action-button"
-                        onClick={() => {
+                        onClick={async () => {
                           if (setting.id === 'changeWallpaper') {
                             setShowWallpaperModal(true);
                           } else if (setting.id === 'resetSettings') {
-                            if (window.confirm('Weet je zeker dat je alle instellingen wilt resetten?')) {
+                            if (await confirm('Weet je zeker dat je alle instellingen wilt resetten?', 'Instellingen resetten')) {
                               resetSettings();
                               setShowResetSuccess(true);
                               setTimeout(() => setShowResetSuccess(false), 3000);
                             }
                           } else if (setting.id === 'cleanupCache') {
-                            if (window.confirm('Dit wist tijdelijke gegevens en kan de app sneller maken.\n\nDoorgaan?')) {
+                            if (await confirm('Dit wist tijdelijke gegevens en kan de app sneller maken.\n\nDoorgaan?', 'Cache wissen')) {
                               const cleared = clearAllCaches();
-                              alert(`✓ ${cleared} cache(s) gewist.\n\nVoor beste resultaat, ververs de pagina.`);
+                              await alert(`✓ ${cleared} cache(s) gewist.\n\nVoor beste resultaat, ververs de pagina.`, 'Cache gewist');
                             }
                           } else if (setting.action) {
                             setting.action();

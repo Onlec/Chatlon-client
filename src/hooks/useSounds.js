@@ -8,11 +8,12 @@ import { log } from '../utils/debug';
  */
 const SOUNDS = {
   // MSN Messenger authentic sounds (deze URLs kan je vervangen met je eigen)
-  message: '/sounds/message.mp3',  // Upload naar public/sounds/
+  message: '/sounds/message.mp3',
   nudge: '/sounds/nudge.mp3',
   typing: '/sounds/typing.mp3',
   login: '/sounds/login.mp3',
   logoff: '/sounds/logoff.mp3',
+  error: '/sounds/error.mp3',
 };
 
 /**

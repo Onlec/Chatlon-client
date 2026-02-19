@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { gun, user } from './gun';
 import { log } from './utils/debug';
 import { useAvatar } from './contexts/AvatarContext';
+import { useDialog } from './contexts/DialogContext';
 
 const COLDMAIL_DOMAINS = ['@coldmail.com', '@coldmail.nl', '@coldmail.net'];
 
 function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
   const { setMyAvatar, setMyDisplayName } = useAvatar();
+  const { confirm } = useDialog();
   const [emailLocal, setEmailLocal] = useState('');
   const [emailDomain, setEmailDomain] = useState(COLDMAIL_DOMAINS[0]);
   const [localName, setLocalName] = useState('');
@@ -73,11 +75,11 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
       return;
     }
 
-    gun.get('ACTIVE_TAB').get(email).once((data) => {
+    gun.get('ACTIVE_TAB').get(email).once(async (data) => {
       if (data && data.heartbeat && (Date.now() - data.heartbeat < 10000)) {
-        const forceLogin = window.confirm(
-          'Dit account is al aangemeld in een ander venster.\n\n' +
-          'Wil je de andere sessie afbreken en hier inloggen?'
+        const forceLogin = await confirm(
+          'Dit account is al aangemeld in een ander venster.\n\nWil je de andere sessie afbreken en hier inloggen?',
+          'Al aangemeld'
         );
         if (!forceLogin) {
           setPassword('');
@@ -178,11 +180,11 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
         setIsAutoLogging(true);
         setError('');
 
-        gun.get('ACTIVE_TAB').get(userObj.email).once((data) => {
+        gun.get('ACTIVE_TAB').get(userObj.email).once(async (data) => {
           if (data && data.heartbeat && (Date.now() - data.heartbeat < 10000)) {
-            const forceLogin = window.confirm(
-              'Dit account is al aangemeld in een ander venster.\n\n' +
-              'Wil je de andere sessie afbreken en hier inloggen?'
+            const forceLogin = await confirm(
+              'Dit account is al aangemeld in een ander venster.\n\nWil je de andere sessie afbreken en hier inloggen?',
+              'Al aangemeld'
             );
             if (!forceLogin) {
               setIsAutoLogging(false);
@@ -215,10 +217,13 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
     setIsRegistering(false);
   };
 
-  const handleDeleteUser = (userObj, e) => {
+  const handleDeleteUser = async (userObj, e) => {
     e.stopPropagation();
 
-    const confirmed = window.confirm(`Wilt u ${userObj.localName} uit de lijst verwijderen?\n\nDit verwijdert alleen de snelkoppeling, niet het account.`);
+    const confirmed = await confirm(
+      `Wilt u ${userObj.localName} uit de lijst verwijderen?\n\nDit verwijdert alleen de snelkoppeling, niet het account.`,
+      'Gebruiker verwijderen'
+    );
 
     if (confirmed) {
       const updatedUsers = availableUsers.filter(u => u.email !== userObj.email);

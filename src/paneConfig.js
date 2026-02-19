@@ -16,8 +16,8 @@ const paneConfig = {
     icon: '👥',
     component: ContactsPane,
     label: 'Contacten',
-    defaultSize: { width: 240, height: 500 },
-    minSize: { width: 200, height: 400 },
+    defaultSize: { width: 280, height: 520 },
+    minSize: { width: 280, height: 400 },
     desktopIcon: 'favicon.ico',
     desktopLabel: 'Chatlon Messenger'
   },

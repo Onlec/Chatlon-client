@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useWallpaper } from '../contexts/WallpaperContext';
+import ModalPane from './ModalPane';
 
 const PRESET_WALLPAPERS = [
   'background.jpg'
@@ -129,14 +130,8 @@ function WallpaperPickerModal({ onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-dialog wallpaper-picker-dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <span>Bureaublad achtergrond</span>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="modal-body">
+    <ModalPane title="Bureaublad achtergrond" icon="🖼️" onClose={onClose} width="560px">
+        <div className="modal-body wallpaper-picker-dialog">
           <div className="wallpaper-current">
             {getCurrentPreview()}
             <div className="wallpaper-current-label">Huidige achtergrond</div>
@@ -230,8 +225,7 @@ function WallpaperPickerModal({ onClose }) {
             <button className="dx-button" onClick={onClose}>Annuleren</button>
           </div>
         </div>
-      </div>
-    </div>
+    </ModalPane>
   );
 }
 
