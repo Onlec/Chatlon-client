@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useReducer, useRef } from 'react';
-import { gun, user } from './gun';
-import { log } from './utils/debug';
-import { createListenerManager } from './utils/gunListenerManager';
-import { useAvatar } from './contexts/AvatarContext';
+import { gun, user } from '../../gun';
+import { log } from '../../utils/debug';
+import { createListenerManager } from '../../utils/gunListenerManager';
+import { useAvatar } from '../../contexts/AvatarContext';
 
 const reducer = (state, message) => {
   if (state.messageMap[message.id]) return state;

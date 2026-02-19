@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { useSounds } from '../hooks/useSounds';
+import { useSounds } from '../../hooks/useSounds';
 
 /**
  * ModalPane — XP-authentieke modale dialoog

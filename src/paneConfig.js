@@ -1,13 +1,13 @@
-import ChatPane from './ChatPane';
-import NotepadPane from './NotepadPane';
-import CalculatorPane from './CalculatorPane';
-import ContactsPane from './ContactsPane';
-import PaintPane from './PaintPane';
-import BrowserPane from './BrowserPane';
-import MediaPane from './MediaPane';
-import TeamTalkPane from './components/TeamTalkPane';
+import ChatPane from './components/panes/ChatPane';
+import NotepadPane from './components/panes/NotepadPane';
+import CalculatorPane from './components/panes/CalculatorPane';
+import ContactsPane from './components/panes/ContactsPane';
+import PaintPane from './components/panes/PaintPane';
+import BrowserPane from './components/panes/BrowserPane';
+import MediaPane from './components/panes/MediaPane';
+import TeamTalkPane from './components/panes/TeamTalkPane';
 import ControlPane from './components/ControlPane';
-import PinballPane from './components/PinballPane';
+import PinballPane from './components/panes/PinballPane';
 import { log } from './utils/debug';
 
 const paneConfig = {

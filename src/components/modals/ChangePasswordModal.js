@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { user } from '../gun';
-import { log } from '../utils/debug';
+import { user } from '../../gun';
+import { log } from '../../utils/debug';
 import ModalPane from './ModalPane';
 
 function ChangePasswordModal({ onClose }) {

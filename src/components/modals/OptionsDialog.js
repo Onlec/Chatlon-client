@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { user } from '../gun';
-import { useAvatar } from '../contexts/AvatarContext';
-import { useSettings } from '../contexts/SettingsContext';
+import { user } from '../../gun';
+import { useAvatar } from '../../contexts/AvatarContext';
+import { useSettings } from '../../contexts/SettingsContext';
 import AvatarPickerModal from './AvatarPickerModal';
 import ChangePasswordModal from './ChangePasswordModal';
 import ModalPane from './ModalPane';

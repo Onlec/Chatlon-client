@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useWallpaper } from '../contexts/WallpaperContext';
+import { useWallpaper } from '../../contexts/WallpaperContext';
 import ModalPane from './ModalPane';
 
 const PRESET_WALLPAPERS = [

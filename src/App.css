@@ -591,6 +591,10 @@
   box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
 }
 
+[data-theme="klassiek"] .start-btn::before {
+  display: none;
+}
+
 /* Taakbalk-tabs: vierkant, vlak, raised bevel */
 [data-theme="klassiek"] .taskbar-tab {
   border-radius: 0;
@@ -983,11 +987,13 @@ div.pane-frame.maximized {
   height: 100%;
   width: 90px;
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(
-    to right,
-    var(--startbtn-a) 0%,
-    var(--startbtn-b) 45%,
-    var(--startbtn-b) 55%,
+    to bottom,
+    var(--startbtn-b) 0%,
+    var(--startbtn-a) 49%,
+    color-mix(in srgb, var(--startbtn-a) 70%, black) 50%,
     var(--startbtn-a) 100%
   );
   color: white;
@@ -996,21 +1002,40 @@ div.pane-frame.maximized {
   padding: 0 15px;
   border: none;
   border-right: 1px solid var(--startbtn-border);
-  border-top-right-radius: 10px; 
+  border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
   cursor: pointer;
-  box-shadow: inset 1px 0 0 rgba(255,255,255,0.3);
+  box-shadow:
+    inset 1px 0 0 rgba(255,255,255,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    1px 1px 3px rgba(0,0,0,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.start-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.45) 0%,
+    rgba(255,255,255,0.12) 100%
+  );
+  pointer-events: none;
 }
 
 .start-btn:hover {
   background: linear-gradient(
-    to right,
-    var(--startbtn-hover-a) 0%,
-    var(--startbtn-hover-b) 45%,
-    var(--startbtn-hover-b) 55%,
+    to bottom,
+    var(--startbtn-hover-b) 0%,
+    var(--startbtn-hover-a) 49%,
+    color-mix(in srgb, var(--startbtn-hover-a) 70%, black) 50%,
     var(--startbtn-hover-a) 100%
   );
 }
@@ -2596,10 +2621,21 @@ div.pane-frame.maximized {
 }
 
 .contacts-user-section {
-  background: linear-gradient(to bottom, #FFFFFF 0%, #E8F2FD 100%);
-  border-bottom: 1px solid var(--btn-border);
+  background: linear-gradient(to bottom, #FFFFFF 0%, #CCE5FF 55%, #AAD4FF 100%);
+  border-bottom: 2px solid #7AB8F5;
   padding: 12px;
   flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+}
+
+.contacts-user-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
 }
 
 .contacts-user-info {
@@ -2626,6 +2662,10 @@ div.pane-frame.maximized {
   color: var(--link-color);
   margin-bottom: 0px;
   cursor: default;
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .contacts-displayname-input {
@@ -2652,6 +2692,10 @@ div.pane-frame.maximized {
   cursor: text;
   padding: 2px;
   border: 1px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
 }
 
 .contacts-personal-message:hover {
@@ -2684,22 +2728,30 @@ div.pane-frame.maximized {
 .contacts-user-name-row {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 5px;
+  align-items: flex-start;
+  gap: 4px;
 }
 
-.contacts-status-badge {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px solid rgba(0,0,0,0.3);
+.contacts-user-name-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.contacts-status-arrow {
+  font-size: 8px;
   cursor: pointer;
   flex-shrink: 0;
-  display: inline-block;
+  line-height: 1;
+  user-select: none;
+  color: #444;
+  margin-top: 3px;
+  transition: opacity 0.1s;
 }
 
-.contacts-status-badge:hover {
-  box-shadow: 0 0 0 2px rgba(0,0,0,0.12);
+.contacts-status-arrow:hover {
+  opacity: 0.6;
 }
 
 .contacts-status-popup {
@@ -2786,15 +2838,17 @@ div.pane-frame.maximized {
 .contact-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px 3px 10px;
+  gap: 5px;
+  padding: 2px 8px 2px 10px;
   cursor: pointer;
   border-bottom: 1px solid #F0F4FA;
-  min-height: 30px;
+  min-height: 20px;
 }
 
 .contact-item:hover {
-  background: linear-gradient(to right, #FFFACD 0%, #FFF9C4 100%);
+  background: linear-gradient(to bottom, rgba(255,255,255,0.85) 0%, rgba(180,220,255,0.7) 100%);
+  border-left: 2px solid #7AB8F5;
+  padding-left: 8px;
 }
 
 .contact-item-blocked {
@@ -2812,11 +2866,12 @@ div.pane-frame.maximized {
   gap: 5px;
   font-size: 11px;
   font-weight: bold;
-  color: #1F3A66;
+  color: #0A2B66;
   padding: 4px 8px;
-  background: linear-gradient(to bottom, #ECF3FF 0%, #D8E8FA 100%);
-  border-top: 1px solid #B0C8E8;
-  border-bottom: 1px solid #B0C8E8;
+  background: linear-gradient(to bottom, #C4DEFF 0%, #A0C8FF 100%);
+  border-top: 1px solid #7AB8F5;
+  border-bottom: 1px solid #7AB8F5;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.6);
   cursor: pointer;
   user-select: none;
   text-transform: none;
@@ -2825,7 +2880,7 @@ div.pane-frame.maximized {
 }
 
 .contacts-group-header:hover {
-  background: linear-gradient(to bottom, #DDE8FF 0%, #C8D8F0 100%);
+  background: linear-gradient(to bottom, #B0D4FF 0%, #88BAFF 100%);
 }
 
 .contacts-group-arrow {
@@ -2857,8 +2912,6 @@ div.pane-frame.maximized {
   align-items: baseline;
   gap: 3px;
   overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
   min-width: 0;
 }
 
@@ -2867,13 +2920,13 @@ div.pane-frame.maximized {
   font-weight: bold;
   color: #000;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .contact-status-label {
   font-size: var(--ui-font-size-sm);
   color: #555;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
@@ -2881,17 +2934,21 @@ div.pane-frame.maximized {
   font-size: 10px;
   color: #888;
   font-style: italic;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .contact-status-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   border: 1px solid rgba(0,0,0,0.2);
   flex-shrink: 0;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.6);
 }
 
 .contact-avatar-wrapper {
@@ -3030,8 +3087,8 @@ div.pane-frame.maximized {
 }
 
 .chat-toolbar {
-  background: var(--toolbar-bg);
-  border-bottom: 1px solid var(--toolbar-border);
+  background: linear-gradient(to bottom, #EEF6FF 0%, #D8ECFF 100%);
+  border-bottom: 1px solid #A8C8F0;
   padding: 4px 6px;
   display: flex;
   align-items: center;
@@ -3091,21 +3148,66 @@ div.pane-frame.maximized {
 
 .chat-contact-header {
   padding: 5px 10px 4px;
-  background: linear-gradient(to bottom, #EEF4FB 0%, #E3EDF8 100%);
-  border-bottom: 1px solid #C0D4EA;
-  line-height: 1.3;
+  background: linear-gradient(to bottom, #D4EAFF 0%, #B0D4FF 100%);
+  border-bottom: 2px solid #7AB8F5;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-contact-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
 }
 
 .chat-contact-header-from {
   font-size: var(--ui-font-size);
   color: #666;
-  margin-right: 4px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.chat-contact-header-right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.chat-contact-header-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
 }
 
 .chat-contact-header-name {
   font-size: var(--ui-font-size-md);
   font-weight: bold;
   color: var(--link-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-contact-header-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.chat-contact-header-status-label {
+  font-size: var(--ui-font-size-sm);
+  color: #444;
+  flex-shrink: 0;
 }
 
 .chat-contact-header-msg {
@@ -3120,7 +3222,7 @@ div.pane-frame.maximized {
 .chat-messages-display {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  padding: 12px 14px 8px;
   background: white;
   font-size: var(--ui-font-size-md);
 }
@@ -3132,8 +3234,8 @@ div.pane-frame.maximized {
 }
 
 .chat-input-toolbar {
-  background: var(--toolbar-bg);
-  border-bottom: 1px solid #D4D0C8;
+  background: linear-gradient(to bottom, #F4F9FF 0%, #E6F0FA 100%);
+  border-bottom: 1px solid #C0D4EA;
   padding: 2px 4px;
   display: flex;
   gap: 2px;
@@ -3158,26 +3260,64 @@ div.pane-frame.maximized {
   cursor: not-allowed;
 }
 
+.chat-input-body {
+  display: flex;
+  align-items: stretch;
+  padding: 6px 8px;
+  gap: 8px;
+}
+
 .chat-input-text {
-  width: 100%;
-  min-height: 74px;
-  max-height: 120px;
-  border: none;
-  padding: 6px;
+  flex: 1;
+  height: 107px;
+  border: 1px solid #C0D4EA;
+  border-radius: 4px;
+  padding: 6px 8px;
   font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
   font-size: var(--ui-font-size-md);
-  resize: vertical;
+  resize: none;
   outline: none;
   box-sizing: border-box;
 }
 
+.chat-input-text:focus {
+  border-color: #7AB8F5;
+}
+
+.chat-send-btn {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+  padding: 0;
+  border: 1px solid var(--btn-border);
+  border-radius: 6px;
+  background: var(--btn-face);
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+  font-size: var(--ui-font-size);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.chat-send-btn:hover { background: var(--btn-highlight); }
+.chat-send-btn:active { background: var(--btn-shadow); }
+
+.chat-message.self .message-header strong { color: #00008B; }
+.chat-message.contact .message-header strong { color: #8B0000; }
+
 .chat-right-column {
   width: 120px;
-  background: var(--toolbar-bg);
-  border-left: 1px solid #D4D0C8;
+  background: linear-gradient(to bottom, #EEF6FF 0%, #D8ECFF 100%);
+  border-left: 1px solid #A8C8F0;
   display: flex;
   flex-direction: column;
-  padding: 8px 8px 0 8px;
+  padding: 8px;
   flex-shrink: 0;
 }
 
@@ -3191,9 +3331,19 @@ div.pane-frame.maximized {
 .chat-display-picture {
   width: 96px;
   height: 96px;
-  border: 2px solid var(--btn-border);
+  border: 2px solid #7AB8F5;
+  border-radius: 4px;
   background: white;
   padding: 2px;
+  box-shadow: 0 2px 8px rgba(0,100,220,0.2), inset 0 0 0 1px rgba(255,255,255,0.8);
+}
+
+.chat-message-system {
+  text-align: center;
+  color: #888;
+  font-size: 11px;
+  padding: 4px 0;
+  font-style: italic;
 }
 
 
@@ -3202,16 +3352,12 @@ div.pane-frame.maximized {
    ================================================ */
 
 .emoticon-picker {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  margin-bottom: 4px;
   background: white;
   border: 1px solid var(--btn-border);
   border-radius: 4px;
   box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
   padding: 8px;
-  z-index: 1000;
+  z-index: 99999;
   min-width: 280px;
   max-height: 320px;
   overflow-y: auto;
@@ -5058,6 +5204,62 @@ div.pane-frame.maximized {
 }
 
 /* ============================================
+   LOGOFF SCREEN
+   ============================================ */
+
+.logoff-screen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #1a3a6e 0%, #2a5aaa 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.logoff-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.logoff-logo {
+  font-size: 32px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.logoff-message {
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  font-family: 'Tahoma', sans-serif;
+}
+
+.logoff-progress {
+  width: 220px;
+  height: 14px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.logoff-progress-bar {
+  height: 100%;
+  background: linear-gradient(to right, #5aaff5, #a0d8ff);
+  border-radius: 7px;
+  animation: logoff-fill 2.5s ease-in forwards;
+}
+
+@keyframes logoff-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ============================================
    SHUTDOWN SCREEN
    ============================================ */
 
@@ -5198,6 +5400,12 @@ div.pane-frame.maximized {
 /* ================================================
    22. LEGACY MESSAGES
    ================================================ */
+
+/* Basisstijl voor een bericht */
+.chat-message {
+  margin-bottom: 8px;
+  padding: 2px 4px;
+}
 
 /* De container voor een oud bericht */
 .chat-message.legacy {

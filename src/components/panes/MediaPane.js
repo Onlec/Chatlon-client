@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { log } from './utils/debug';
+import { log } from '../../utils/debug';
 
 function MediaPane({ onNowPlayingChange }) {
   const [isPlaying, setIsPlaying] = useState(false);

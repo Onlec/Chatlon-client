@@ -7,8 +7,8 @@
  */
 
 import React, { useState } from 'react';
-import { useTrysteroTeamTalk } from '../hooks/useTrysteroTeamTalk';
-import { user } from '../gun';
+import { useTrysteroTeamTalk } from '../../hooks/useTrysteroTeamTalk';
+import { user } from '../../gun';
 
 function TeamTalkPane() {
   const currentUser = user.is?.alias || 'Anoniem';

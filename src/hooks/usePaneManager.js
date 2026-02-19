@@ -482,6 +482,17 @@ const focusPane = useCallback((paneName) => {
   }, [savedPositions, panes, conversations]);
 
   /**
+   * Sluit alle openstaande gesprekken.
+   * Gebruik bij afmelden uit Chatlon Messenger.
+   */
+  const closeAllConversations = useCallback(() => {
+    setConversations({});
+    setPaneOrder(prev => prev.filter(p => !p.startsWith('conv_')));
+    setActivePane(prev => (prev && prev.startsWith('conv_')) ? null : prev);
+    log('[usePaneManager] All conversations closed');
+  }, []);
+
+  /**
    * Reset alle panes en conversations.
    * Gebruik bij logout.
    */
@@ -542,6 +553,7 @@ const focusPane = useCallback((paneName) => {
     setNotificationTime,
     clearNotificationTime,
     closeConversation,
+    closeAllConversations,
     minimizeConversation,
     toggleMaximizeConversation,
     

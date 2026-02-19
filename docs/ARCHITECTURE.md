@@ -57,6 +57,12 @@ All managed centrally by `App.js`.
 - Systray icon verschijnt na eerste sign-in, toont online status
 - Systray "Afsluiten" = sign-out messenger + pane sluiten (niet desktop logoff)
 
+### ConversationPane UI Conventions
+- **Kleur-gecodeerde berichten**: eigen berichten krijgen class `self` (naam in donkerblauw `#00008B`), berichten van de ander krijgen class `contact` (naam in donkerrood `#8B0000`)
+- **Statusbalk in header**: toont gekleurde status-dot + label naast de contactnaam (via `PRESENCE_MAP`)
+- **Stuur-knop**: expliciete "Verzenden"-knop naast het tekstinvoerveld; textarea heeft `resize: none` en vaste hoogte (geen vrije resize door gebruiker)
+- **Invoergebied**: flex-layout (`.chat-input-body`), textarea neemt resterende breedte, knop is `64×64px` en gecentreerd via `margin: auto 0`
+
 ---
 
 ## 🔫 Gun.js Architecture
@@ -227,13 +233,57 @@ Lokale per-device data (niet gesynchroniseerd):
 
 ---
 
+## 📁 Source Structure
+
+```
+src/
+  components/
+    modals/       ← ModalPane, FriendRequestDialog, OptionsDialog,
+                     AddContactWizard, AvatarPickerModal,
+                     WallpaperPickerModal, ChangePasswordModal
+    panes/        ← ChatPane, ContactsPane, ConversationPane,
+                     BrowserPane, MediaPane, NotepadPane,
+                     PaintPane, CalculatorPane, TeamTalkPane, PinballPane
+    screens/      ← LoginScreen, BootSequence
+    CallPanel.js
+    ControlPane.js
+    DropdownMenu.js
+    Pane.js
+    ToastNotification.js
+  contexts/       ← AvatarContext, DialogContext, ScanlinesContext, SettingsContext
+  hooks/          ← useSounds, useWebRTC, useGroupCallMesh, …
+  utils/          ← debug, chatUtils, encryption, emoticons,
+                     gunListenerManager, presenceUtils, …
+  App.js          ← global orchestrator (see Window Manager)
+  App.css         ← single stylesheet
+  gun.js          ← singleton Gun instance
+  paneConfig.js   ← pane registry (imports from components/panes/)
+  index.js
+```
+
+### Rules
+- `gun.js` stays in `src/` root — imported by too many files to be moved safely
+- `paneConfig.js` stays in `src/` root — avoids circular-path issues with `Pane.js`
+- All new screen-level (full-screen) components go in `components/screens/`
+- All new modal/dialog components go in `components/modals/`
+- All new feature panes go in `components/panes/`
+- `emoticons.js` lives in `utils/` — it is data/utility, not a component
+
+---
+
 ## 🎨 UI & Styling
 
 ### Styling Rules
 - Single CSS file (`App.css`)
-- XP-style look is mandatory
+- XP-style look is mandatory; Frutiger Aero accents (blue gradients, gloss overlays) are allowed
 - No UI frameworks
 - No CSS-in-JS
+
+### Frutiger Aero Conventions
+- Gloss effect via `::before` pseudo-element: `height: 40–50%; background: linear-gradient(to bottom, rgba(255,255,255,0.75), rgba(255,255,255,0))`
+- Blue gradients use the range `#D4EAFF → #7AB8F5 → #AAD4FF`
+- Status dots get 3D glow: `box-shadow: 0 1px 3px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.6)`
+- Avatar/display-picture borders: `2px solid #7AB8F5; border-radius: 4px`
 
 ### React Portals
 - Dropdown menus gebruiken `ReactDOM.createPortal` om buiten pane overflow te renderen

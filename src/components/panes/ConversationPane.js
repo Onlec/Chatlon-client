@@ -1,20 +1,39 @@
 import React, { useEffect, useState, useReducer, useRef, useCallback } from 'react';
-import { gun, user } from './gun';
-import { convertEmoticons, getEmoticonCategories } from './emoticons';
-import { getContactPairId } from './utils/chatUtils';
-import { log } from './utils/debug';
-import { createListenerManager } from './utils/gunListenerManager';
-import { useWebRTC } from './hooks/useWebRTC';
-import CallPanel from './components/CallPanel';
-import { encryptMessage, decryptMessage, warmupEncryption } from './utils/encryption';
-import { useSounds } from './hooks/useSounds';
-import { useAvatar } from './contexts/AvatarContext';
+import ReactDOM from 'react-dom';
+import { gun, user } from '../../gun';
+import { convertEmoticons, getEmoticonCategories } from '../../utils/emoticons';
+import { getContactPairId } from '../../utils/chatUtils';
+import { log } from '../../utils/debug';
+import { createListenerManager } from '../../utils/gunListenerManager';
+import { useWebRTC } from '../../hooks/useWebRTC';
+import CallPanel from '../CallPanel';
+import { encryptMessage, decryptMessage, warmupEncryption } from '../../utils/encryption';
+import { useSounds } from '../../hooks/useSounds';
+import { useAvatar } from '../../contexts/AvatarContext';
+
+// ============================================
+// 0. PRESENCE HELPER
+// ============================================
+const PRESENCE_MAP = {
+  online:  { color: '#00A400', label: 'Online' },
+  away:    { color: '#FFAA00', label: 'Afwezig' },
+  busy:    { color: '#CC0000', label: 'Bezet' },
+  offline: { color: '#8C8C8C', label: 'Offline' },
+};
+function getPresence(raw) {
+  return PRESENCE_MAP[raw?.status] || PRESENCE_MAP.offline;
+}
 
 // ============================================
 // 1. REDUCER (Berichten logica)
 // ============================================
 const reducer = (state, action) => {
   if (action.type === 'RESET') return { messages: [], messageMap: {} };
+  if (action.type === 'SYSTEM') {
+    // Systeemberichten (nudge, etc.) hebben een unieke id en worden niet gededupliceerd via messageMap
+    const systemMsg = { ...action, isSystem: true };
+    return { ...state, messages: [...state.messages, systemMsg] };
+  }
   if (state.messageMap[action.id]) return state;
 
   const newMessageMap = { ...state.messageMap, [action.id]: action };
@@ -25,7 +44,7 @@ const reducer = (state, action) => {
 // ============================================
 // 2. HOOFDCOMPONENT
 // ============================================
-function ConversationPane({ contactName, lastNotificationTime, clearNotificationTime }) {
+function ConversationPane({ contactName, lastNotificationTime, clearNotificationTime, contactPresenceData, onNudge }) {
   const { playSound } = useSounds();
   const [state, dispatch] = useReducer(reducer, { messages: [], messageMap: {} });
   const [messageText, setMessageText] = useState('');
@@ -35,7 +54,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const [canNudge, setCanNudge] = useState(true);
   const [showEmoticonPicker, setShowEmoticonPicker] = useState(false);
   const [isContactTyping, setIsContactTyping] = useState(false);
-  const [contactPresence, setContactPresence] = useState(null);
+  const contactPresence = contactPresenceData ?? null;
   const { getDisplayName } = useAvatar();
 
   const messagesAreaRef = useRef(null);
@@ -86,7 +105,15 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     if (!canNudge || !currentSessionId) return;
     setCanNudge(false);
     playSound('nudge');
-    gun.get(`NUDGE_${currentSessionId}`).put({ time: Date.now(), from: user.is?.alias });
+    const nudgeTime = Date.now();
+    gun.get(`NUDGE_${currentSessionId}`).put({ time: nudgeTime, from: user.is?.alias });
+    // Systeembericht in eigen chat
+    dispatch({
+      type: 'SYSTEM',
+      id: `nudge_${nudgeTime}`,
+      from: user.is?.alias,
+      timeRef: nudgeTime,
+    });
     setTimeout(() => setCanNudge(true), 5000);
   }, [canNudge, currentSessionId, playSound]);
 
@@ -115,13 +142,6 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     }
   }, [contactName]);
 
-  // Presence listener voor contact
-  useEffect(() => {
-    if (!contactName) return;
-    const node = gun.get('PRESENCE').get(contactName);
-    node.on((data) => { if (data) setContactPresence(data); });
-    return () => node.off();
-  }, [contactName]);
 
   useEffect(() => {
     if (!currentSessionId) return;
@@ -144,9 +164,17 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     nudgeNode.on(data => {
       if (data?.time > lastProcessedNudge.current && data.from === contactName) {
         lastProcessedNudge.current = data.time;
-        playSound('nudge'); // ✅ Use hook
+        playSound('nudge');
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 600);
+        // Systeembericht in de chat
+        dispatch({
+          type: 'SYSTEM',
+          id: `nudge_${data.time}`,
+          from: contactName,
+          timeRef: data.time,
+        });
+        // Toast + taakbalk wordt afgehandeld door de globale NudgeMonitor in App.js
       }
     });
 
@@ -203,11 +231,20 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
       <div className="chat-chat-container">
         <div className="chat-left-column">
           <div className="chat-contact-header">
-            <span className="chat-contact-header-from">Van:</span>
-            <span className="chat-contact-header-name">{getDisplayName(contactName)}</span>
-            {contactPresence?.personalMessage && (
-              <div className="chat-contact-header-msg">{contactPresence.personalMessage}</div>
-            )}
+            <span className="chat-contact-header-from">Naar:</span>
+            <div className="chat-contact-header-right">
+              <div className="chat-contact-header-name-row">
+                <span className="chat-contact-header-name">{getDisplayName(contactName)}</span>
+                <span className="chat-contact-header-status-dot"
+                  style={{ backgroundColor: getPresence(contactPresence).color }} />
+                <span className="chat-contact-header-status-label">
+                  {getPresence(contactPresence).label}
+                </span>
+              </div>
+              {contactPresence?.personalMessage && (
+                <div className="chat-contact-header-msg">{contactPresence.personalMessage}</div>
+              )}
+            </div>
           </div>
           <div className="chat-messages-display" ref={messagesAreaRef}>
             {state.messages.length > displayLimit && (
@@ -216,7 +253,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
               </button>
             )}
             {state.messages.slice(-displayLimit).map((msg, i, arr) => (
-              <ChatMessage key={msg.id} msg={msg} prevMsg={arr[i-1]} />
+              <ChatMessage key={msg.id} msg={msg} prevMsg={arr[i-1]} currentUser={user.is?.alias} />
             ))}
           </div>
           <div className="typing-indicator-bar">
@@ -300,13 +337,29 @@ function ChatToolbar({ onNudge, canNudge, onStartCall, callState }) {  const too
   );
 }
 
-function ChatMessage({ msg, prevMsg }) {
+function ChatMessage({ msg, prevMsg, currentUser }) {
   const { getDisplayName } = useAvatar();
   const isFirstNew = prevMsg?.isLegacy && !msg.isLegacy;
+
+  // Systeembericht (nudge melding)
+  if (msg.isSystem) {
+    const isSelf = msg.from === currentUser;
+    const name = getDisplayName(msg.from);
+    return (
+      <>
+        {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
+        <div className="chat-message-system">
+          ⚡ {isSelf ? 'Je hebt' : <strong>{name}</strong>}{isSelf ? ' een nudge gestuurd.' : ' heeft een nudge gestuurd.'}
+        </div>
+      </>
+    );
+  }
+
+  const selfClass = msg.sender === currentUser ? 'self' : 'contact';
   return (
     <>
       {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
-      <div className={`chat-message ${msg.isLegacy ? 'legacy' : ''}`}>
+      <div className={`chat-message ${msg.isLegacy ? 'legacy' : ''} ${selfClass}`}>
         <div className="message-header"><strong>{getDisplayName(msg.sender)}</strong> zegt ({msg.timestamp}):</div>
         <div className="message-content">{convertEmoticons(msg.content)}</div>
       </div>
@@ -315,12 +368,27 @@ function ChatMessage({ msg, prevMsg }) {
 }
 
 function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, setShowPicker, pickerRef, insertEmoticon }) {
+  const emojiBtn = useRef(null);
+  const [pickerPos, setPickerPos] = useState({ bottom: 0, left: 0 });
+
+  const handleTogglePicker = () => {
+    if (!showPicker && emojiBtn.current) {
+      const rect = emojiBtn.current.getBoundingClientRect();
+      setPickerPos({ bottom: window.innerHeight - rect.top + 4, left: rect.left });
+    }
+    setShowPicker(!showPicker);
+  };
+
   return (
     <div className="chat-input-container">
       <div className="chat-input-toolbar">
-        <button className="chat-input-tool" onClick={() => setShowPicker(!showPicker)}>😊</button>
-        {showPicker && (
-          <div className="emoticon-picker" ref={pickerRef}>
+        <button ref={emojiBtn} className="chat-input-tool" onClick={handleTogglePicker}>😊</button>
+        {showPicker && ReactDOM.createPortal(
+          <div
+            className="emoticon-picker"
+            ref={pickerRef}
+            style={{ position: 'fixed', bottom: pickerPos.bottom, left: pickerPos.left }}
+          >
             {Object.entries(getEmoticonCategories()).map(([cat, emos]) => (
               <div key={cat} className="emoticon-category">
                 <div className="emoticon-grid">
@@ -328,16 +396,20 @@ function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, set
                 </div>
               </div>
             ))}
-          </div>
+          </div>,
+          document.body
         )}
         <button className="chat-input-tool" onClick={onNudge} disabled={!canNudge}>⚡</button>
       </div>
-      <textarea 
-        className="chat-input-text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-      />
+      <div className="chat-input-body">
+        <textarea
+          className="chat-input-text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+        />
+        <button className="chat-send-btn" onClick={onSend}>Verzenden</button>
+      </div>
     </div>
   );
 }

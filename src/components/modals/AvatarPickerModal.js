@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAvatar } from '../contexts/AvatarContext';
-import { user } from '../gun';
+import { useAvatar } from '../../contexts/AvatarContext';
+import { user } from '../../gun';
 import ModalPane from './ModalPane';
 
 const PRESET_AVATARS = [

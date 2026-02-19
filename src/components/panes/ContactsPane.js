@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { gun, user } from './gun';
-import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
-import { log } from './utils/debug';
-import { createListenerManager } from './utils/gunListenerManager';
-import { useAvatar } from './contexts/AvatarContext';
-import DropdownMenu from './components/DropdownMenu';
-import OptionsDialog from './components/OptionsDialog';
-import AddContactWizard from './components/AddContactWizard';
-import FriendRequestDialog from './components/FriendRequestDialog';
-import AvatarPickerModal from './components/AvatarPickerModal';
-import ModalPane from './components/ModalPane';
+import { gun, user } from '../../gun';
+import { STATUS_OPTIONS, getPresenceStatus } from '../../utils/presenceUtils';
+import { log } from '../../utils/debug';
+import { createListenerManager } from '../../utils/gunListenerManager';
+import { useAvatar } from '../../contexts/AvatarContext';
+import DropdownMenu from '../DropdownMenu';
+import OptionsDialog from '../modals/OptionsDialog';
+import AddContactWizard from '../modals/AddContactWizard';
+import FriendRequestDialog from '../modals/FriendRequestDialog';
+import AvatarPickerModal from '../modals/AvatarPickerModal';
+import ModalPane from '../modals/ModalPane';
 
 
-function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange, onLogoff, onSignOut, onClosePane, nowPlaying, currentUserEmail, messengerSignedIn, setMessengerSignedIn }) {
+function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange, onLogoff, onSignOut, onClosePane, nowPlaying, currentUserEmail, messengerSignedIn, setMessengerSignedIn, onContactOnline, onPresenceChange }) {
   const { getAvatar, getDisplayName, setMyDisplayName } = useAvatar();
   // FIX: Gebruik props als ze beschikbaar zijn, anders lokale state
   const [localStatus, setLocalStatus] = useState('online');
@@ -33,7 +33,14 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   const [editDisplayName, setEditDisplayName] = useState('');
   const listenersRef = useRef(createListenerManager());
   const statusBadgeRef = useRef(null);
+  const prevContactPresenceRef = useRef({});
+  const onContactOnlineRef = useRef(onContactOnline);
+  onContactOnlineRef.current = onContactOnline;
+  const onPresenceChangeRef = useRef(onPresenceChange);
+  onPresenceChangeRef.current = onPresenceChange;
   const [groupsCollapsed, setGroupsCollapsed] = useState({ online: false, offline: false, blocked: true });
+  const [pendingPanelCollapsed, setPendingPanelCollapsed] = useState(false);
+  const [collapsedRequests, setCollapsedRequests] = useState(new Set());
   const toggleGroup = (key) => setGroupsCollapsed(prev => ({ ...prev, [key]: !prev[key] }));
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [taskPanelOpen, setTaskPanelOpen] = useState(true);
@@ -123,9 +130,9 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
         if (data) setPersonalMessage(data);
       });
 
-      // Luister naar contactenlijst (accepted + blocked)
+      // Luister naar contactenlijst (accepted + blocked + pending)
       user.get('contacts').map().on((contactData, contactId) => {
-        if (contactData && (contactData.status === 'accepted' || contactData.status === 'blocked')) {
+        if (contactData && (contactData.status === 'accepted' || contactData.status === 'blocked' || contactData.status === 'pending')) {
           setContacts(prev => {
             const existing = prev.find(c => c.username === contactData.username);
             if (existing) {
@@ -146,18 +153,49 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
             }];
           });
 
-          // Setup presence listener voor dit contact (ook voor blocked, voor weergave)
+          // Setup presence listener voor dit contact (voor UI-weergave + toast)
           if (!listenersRef.current.has(contactData.username)) {
             const node = gun.get('PRESENCE').get(contactData.username);
+            // Sla PRIMITIEVE waarden op als prev-state (niet het Gun object zelf!).
+            // Gun.js muteert zijn dataobjecten in-place, waardoor object-referenties
+            // onbruikbaar zijn als prev-state — prev en new worden dan altijd identiek.
+            // prevContactPresenceRef.current[username] = { lastSeen: number, statusValue: string } | null | undefined
+            const username = contactData.username;
             node.on((presenceData) => {
-              if (presenceData) {
-                setContactPresence(prev => ({
-                  ...prev,
-                  [contactData.username]: presenceData
-                }));
+              const newStatus = getPresenceStatus(presenceData);
+
+              // Eerste call: bepaal beginstand, evt. toast als contact al online was
+              if (!(username in prevContactPresenceRef.current)) {
+                if (presenceData) {
+                  prevContactPresenceRef.current[username] = {
+                    lastSeen: presenceData.lastSeen || 0,
+                    statusValue: newStatus.value
+                  };
+                  // Zet UI bij
+                  if (onPresenceChangeRef.current) onPresenceChangeRef.current(username, presenceData);
+                  setContactPresence(prev => ({ ...prev, [username]: { ...presenceData } }));
+                } else {
+                  prevContactPresenceRef.current[username] = null;
+                }
+                return;
               }
+
+              if (!presenceData) return;
+
+              const prevStatusValue = prevContactPresenceRef.current[username]?.statusValue ?? 'offline';
+
+              // Toasts worden ALLEEN vanuit App.js PresenceMonitor gestuurd (centrale plek).
+              // ContactsPane listener is alleen voor UI-weergave (online/offline iconen).
+
+              // Sla nieuwe state op als primitieven
+              prevContactPresenceRef.current[username] = {
+                lastSeen: presenceData.lastSeen || 0,
+                statusValue: newStatus.value
+              };
+              if (onPresenceChangeRef.current) onPresenceChangeRef.current(username, presenceData);
+              setContactPresence(prev => ({ ...prev, [username]: { ...presenceData } }));
             });
-            listenersRef.current.add(contactData.username, node);
+            listenersRef.current.add(username, node);
           }
         }
       });
@@ -207,8 +245,10 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
 
   const handlePersonalMessageSave = () => {
     if (user.is) {
-      user.get('personalMessage').put(personalMessage);
-      gun.get('PRESENCE').get(user.is.alias).put({ personalMessage: personalMessage });
+      const truncated = personalMessage.slice(0, 50);
+      user.get('personalMessage').put(truncated);
+      gun.get('PRESENCE').get(user.is.alias).put({ personalMessage: truncated });
+      setPersonalMessage(truncated);
     }
     setIsEditingMessage(false);
   };
@@ -225,6 +265,19 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
       to: trimmedEmail,
       status: 'pending',
       timestamp: Date.now()
+    });
+
+    // Sla op als pending contact zodat het direct zichtbaar is (ook na refresh)
+    user.get('contacts').get(trimmedEmail).put({
+      username: trimmedEmail,
+      status: 'pending',
+      timestamp: Date.now()
+    });
+
+    // Direct lokaal toevoegen zodat het contact meteen zichtbaar is als offline
+    setContacts(prev => {
+      if (prev.find(c => c.username === trimmedEmail)) return prev;
+      return [...prev, { username: trimmedEmail, avatar: trimmedEmail, status: 'offline', contactStatus: 'pending' }];
     });
 
     // Voeg toe aan PUBLIC friend requests space (zodat ontvanger het kan zien)
@@ -290,8 +343,8 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   // Gebruik STATUS_OPTIONS van presenceUtils.js
   const currentStatus = STATUS_OPTIONS.find(s => s.value === myStatus) || STATUS_OPTIONS[0];
 
-  // Splits contacten: actief (accepted) vs geblokkeerd
-  const activeContacts = contacts.filter(c => c.contactStatus !== 'blocked');
+  // Splits contacten: alleen geaccepteerde vs geblokkeerde (pending niet tonen in lijst)
+  const activeContacts = contacts.filter(c => c.contactStatus === 'accepted');
   const blockedContacts = contacts.filter(c => c.contactStatus === 'blocked');
 
   // Sorteer actieve contacten op online status
@@ -318,6 +371,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   const renderContact = (contact, isOffline = false, isBlocked = false) => {
     const presence = getPresenceStatus(contactPresence[contact.username]);
     const personalMsg = contactPresence[contact.username]?.personalMessage;
+    const statusColor = isBlocked ? '#8C8C8C' : presence.color;
     return (
       <div
         key={contact.username}
@@ -325,13 +379,13 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
         style={isOffline ? { opacity: 0.6 } : {}}
         onDoubleClick={!isBlocked ? () => onOpenConversation && onOpenConversation(contact.username) : undefined}
       >
-        <div className="contact-avatar-wrapper">
-          <img src={getAvatar(contact.username)} alt="" className="contact-avatar-thumb" />
-          <span className="contact-avatar-status" style={{ backgroundColor: isBlocked ? '#8C8C8C' : presence.color }} />
-        </div>
+        <span className="contact-status-dot" style={{ backgroundColor: statusColor }} />
         <div className="contact-item-details">
-          <div className="contact-name">{getDisplayName(contact.username)}</div>
-          {personalMsg && <div className="contact-personal-msg">{personalMsg}</div>}
+          <div className="contact-inline">
+            <span className="contact-name">{getDisplayName(contact.username)}</span>
+            <span className="contact-status-label"> ({presence.label})</span>
+            {personalMsg && <span className="contact-personal-msg"> – {personalMsg}</span>}
+          </div>
         </div>
       </div>
     );
@@ -523,7 +577,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
               <input
                 className="contacts-displayname-input"
                 value={editDisplayName}
-                onChange={(e) => setEditDisplayName(e.target.value)}
+                onChange={(e) => setEditDisplayName(e.target.value.slice(0, 30))}
                 onBlur={() => {
                   setMyDisplayName(editDisplayName.trim());
                   setIsEditingDisplayName(false);
@@ -535,27 +589,53 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
                   }
                   if (e.key === 'Escape') setIsEditingDisplayName(false);
                 }}
+                maxLength={30}
                 autoFocus
               />
             ) : (
               <div className="contacts-user-name-row" ref={statusBadgeRef}>
-                <div
-                  className="contacts-user-name"
-                  onDoubleClick={() => {
-                    const current = getDisplayName(currentUser);
-                    setEditDisplayName(current === currentUser ? '' : current);
-                    setIsEditingDisplayName(true);
-                  }}
-                  title="Dubbelklik om weergavenaam te wijzigen"
-                >
-                  {getDisplayName(currentUser)}
-                </div>
                 <span
-                  className="contacts-status-badge"
-                  style={{ backgroundColor: currentStatus.color }}
+                  className="contacts-status-arrow"
                   title={`Status: ${currentStatus.label} — klik om te wijzigen`}
                   onClick={() => setShowStatusMenu(prev => !prev)}
-                />
+                >▼</span>
+                <div className="contacts-user-name-col">
+                  <div
+                    className="contacts-user-name"
+                    onDoubleClick={() => {
+                      const current = getDisplayName(currentUser);
+                      setEditDisplayName(current === currentUser ? '' : current);
+                      setIsEditingDisplayName(true);
+                    }}
+                    title="Dubbelklik om weergavenaam te wijzigen"
+                  >
+                    {getDisplayName(currentUser)}
+                  </div>
+                  {isEditingMessage ? (
+                    <input
+                      className="contacts-personal-message-input"
+                      value={personalMessage}
+                      onChange={(e) => setPersonalMessage(e.target.value.slice(0, 50))}
+                      onBlur={handlePersonalMessageSave}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handlePersonalMessageSave();
+                        if (e.key === 'Escape') setIsEditingMessage(false);
+                      }}
+                      placeholder="Wat denk je nu?"
+                      maxLength={50}
+                      autoFocus
+                    />
+                  ) : (
+                    <div
+                      className="contacts-personal-message"
+                      onClick={() => setIsEditingMessage(true)}
+                    >
+                      {nowPlaying?.isPlaying
+                        ? `\uD83C\uDFB5 ${nowPlaying.artist} \u2013 ${nowPlaying.title}`
+                        : (personalMessage || 'Wat denk je nu?')}
+                    </div>
+                  )}
+                </div>
                 {showStatusMenu && (
                   <div className="contacts-status-popup">
                     {STATUS_OPTIONS.map(opt => (
@@ -573,48 +653,50 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
                 )}
               </div>
             )}
-            {isEditingMessage ? (
-              <input
-                className="contacts-personal-message-input"
-                value={personalMessage}
-                onChange={(e) => setPersonalMessage(e.target.value)}
-                onBlur={handlePersonalMessageSave}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handlePersonalMessageSave();
-                  if (e.key === 'Escape') setIsEditingMessage(false);
-                }}
-                placeholder="Wat denk je nu?"
-                autoFocus
-              />
-            ) : (
-              <div
-                className="contacts-personal-message"
-                onClick={() => setIsEditingMessage(true)}
-              >
-                {nowPlaying?.isPlaying
-                  ? `\uD83C\uDFB5 ${nowPlaying.artist} \u2013 ${nowPlaying.title}`
-                  : (personalMessage || 'Wat denk je nu?')}
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Pending requests (MSN-stijl met Allow/Block/Add checkboxes) */}
+      {/* Pending requests — inklappbaar paneel + per verzoek */}
       {pendingRequests.length > 0 && (
         <div className="pending-requests-section">
-          <div className="pending-requests-header">
+          <div
+            className="pending-requests-header"
+            onClick={() => setPendingPanelCollapsed(prev => !prev)}
+            style={{ cursor: 'pointer', userSelect: 'none' }}
+          >
+            <span className="contacts-group-arrow">{pendingPanelCollapsed ? '▶' : '▼'}</span>
             Vriendenverzoeken ({pendingRequests.length})
           </div>
-          {pendingRequests.map((request) => (
-            <FriendRequestDialog
-              key={request.id}
-              request={request}
-              onAccept={handleAcceptRequest}
-              onDecline={handleDeclineRequest}
-              onDismiss={handleDismissRequest}
-            />
-          ))}
+          {!pendingPanelCollapsed && pendingRequests.map((request) => {
+            const isCollapsed = collapsedRequests.has(request.id);
+            const toggleRequest = () => setCollapsedRequests(prev => {
+              const next = new Set(prev);
+              if (next.has(request.id)) next.delete(request.id);
+              else next.add(request.id);
+              return next;
+            });
+            return (
+              <div key={request.id} className="pending-request-wrapper">
+                <div
+                  className="pending-request-row-header"
+                  onClick={toggleRequest}
+                  style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', fontSize: 11 }}
+                >
+                  <span style={{ fontSize: 9 }}>{isCollapsed ? '▶' : '▼'}</span>
+                  <span>{request.from}</span>
+                </div>
+                {!isCollapsed && (
+                  <FriendRequestDialog
+                    request={request}
+                    onAccept={handleAcceptRequest}
+                    onDecline={handleDeclineRequest}
+                    onDismiss={handleDismissRequest}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { gun, user } from './gun';
-import { log } from './utils/debug';
-import { useAvatar } from './contexts/AvatarContext';
-import { useDialog } from './contexts/DialogContext';
+import { gun, user } from '../../gun';
+import { log } from '../../utils/debug';
+import { useAvatar } from '../../contexts/AvatarContext';
+import { useDialog } from '../../contexts/DialogContext';
 
 const COLDMAIL_DOMAINS = ['@coldmail.com', '@coldmail.nl', '@coldmail.net'];
 

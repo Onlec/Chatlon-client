@@ -87,12 +87,13 @@ export function AvatarProvider({ children }) {
 
   const setMyDisplayName = useCallback((displayName) => {
     if (!user.is) return;
+    const truncated = String(displayName).slice(0, 30);
     const username = user.is.alias;
     gun.get('PROFILES').get(username).put({
-      displayName: displayName,
+      displayName: truncated,
       updatedAt: Date.now()
     });
-    setDisplayNameCache(prev => ({ ...prev, [username]: displayName }));
+    setDisplayNameCache(prev => ({ ...prev, [username]: truncated }));
   }, []);
 
   const clearMyAvatar = useCallback(() => {

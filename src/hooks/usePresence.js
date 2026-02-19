@@ -26,7 +26,7 @@ import { log } from '../utils/debug';
  * @example
  * const { userStatus, handleStatusChange, cleanup } = usePresence(isLoggedIn, currentUser);
  */
-export function usePresence(isLoggedIn, currentUser) {
+export function usePresence(isLoggedIn, currentUser, isActive = true) {
   const [userStatus, setUserStatus] = useState('online');
   const [isManualStatus, setIsManualStatus] = useState(false);
   
@@ -141,6 +141,12 @@ export function usePresence(isLoggedIn, currentUser) {
   useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
 
+    if (!isActive) {
+      // Messenger afgemeld — zet offline en start geen heartbeat
+      setOfflinePresence();
+      return;
+    }
+
     log('[usePresence] Starting heartbeat for:', currentUser);
 
     // Initial presence update
@@ -158,7 +164,7 @@ export function usePresence(isLoggedIn, currentUser) {
         presenceIntervalRef.current = null;
       }
     };
-  }, [isLoggedIn, currentUser, updatePresence, checkAutoAway]);
+  }, [isLoggedIn, currentUser, isActive, updatePresence, checkAutoAway, setOfflinePresence]);
 
   // beforeunload effect - set offline bij page close
   useEffect(() => {

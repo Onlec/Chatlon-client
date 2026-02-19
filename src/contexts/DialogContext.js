@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import ModalPane from '../components/ModalPane';
+import ModalPane from '../components/modals/ModalPane';
 
 const DialogContext = createContext(null);
 

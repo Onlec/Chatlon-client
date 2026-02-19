@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { log } from './utils/debug';
+import { log } from '../utils/debug';
 
 function ToastNotification({ toast, onClose, onClick }) {
   const [isClosing, setIsClosing] = useState(false);
@@ -51,7 +51,13 @@ function ToastNotification({ toast, onClose, onClick }) {
         <div className="toast-text">
           <div className="toast-from">{toast.from}</div>
           <div className="toast-message">{toast.message}</div>
-          <div className="toast-hint">Klik om te antwoorden</div>
+          <div className="toast-hint">
+            {toast.type === 'presence'
+              ? 'Klik om een bericht te sturen'
+              : toast.type === 'nudge'
+              ? 'Klik om te antwoorden'
+              : 'Klik om te antwoorden'}
+          </div>
         </div>
       </div>
     </div>

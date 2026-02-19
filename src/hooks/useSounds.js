@@ -72,8 +72,27 @@ export function useSounds() {
     }
   };
 
+  /**
+   * Play a sound and return a Promise that resolves when it ends.
+   * Resolves immediately if sounds are disabled or the file fails to load.
+   */
+  const playSoundAsync = (soundName) => {
+    return new Promise((resolve) => {
+      if (!settings.systemSounds) { resolve(); return; }
+
+      const audio = audioRefs.current[soundName];
+      if (!audio) { resolve(); return; }
+
+      audio.currentTime = 0;
+      audio.addEventListener('ended', resolve, { once: true });
+      audio.addEventListener('error', resolve, { once: true });
+      audio.play().catch(() => resolve());
+    });
+  };
+
   return {
-    playSound
+    playSound,
+    playSoundAsync
   };
 }
 

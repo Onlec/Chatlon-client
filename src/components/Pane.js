@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { paneConfig } from './paneConfig';
-import { log } from './utils/debug';
+import { paneConfig } from '../paneConfig';
+import { log } from '../utils/debug';
 
 function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, onFocus, zIndex, type, savedSize, onSizeChange, initialPosition, onPositionChange, isActive }) {
   const paneRef = useRef(null);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { log } from './utils/debug';
-import { useScanlinesPreference } from './contexts/ScanlinesContext';
+import { log } from '../../utils/debug';
+import { useScanlinesPreference } from '../../contexts/ScanlinesContext';
 
 function BootSequence({ onBootComplete }) {
   const [stage, setStage] = useState('post'); // post, xpboot

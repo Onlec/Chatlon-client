@@ -3,8 +3,8 @@ import { useScanlinesPreference } from '../contexts/ScanlinesContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useDialog } from '../contexts/DialogContext';
 import { user } from '../gun';
-import WallpaperPickerModal from './WallpaperPickerModal';
-import ChangePasswordModal from './ChangePasswordModal';
+import WallpaperPickerModal from './modals/WallpaperPickerModal';
+import ChangePasswordModal from './modals/ChangePasswordModal';
 import { clearAllCaches } from '../utils/cacheCleanup';
 import { log } from '../utils/debug';
 

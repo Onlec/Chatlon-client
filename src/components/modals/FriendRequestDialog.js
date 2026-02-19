@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAvatar } from '../contexts/AvatarContext';
+import { useAvatar } from '../../contexts/AvatarContext';
 
 function FriendRequestDialog({ request, onAccept, onDecline, onDismiss }) {
   const { getAvatar } = useAvatar();

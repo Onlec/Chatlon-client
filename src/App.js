@@ -6,11 +6,11 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import Pane from './Pane';
-import LoginScreen from './LoginScreen';
-import ConversationPane from './ConversationPane';
-import BootSequence from './BootSequence';
-import ToastNotification from './ToastNotification';
+import Pane from './components/Pane';
+import LoginScreen from './components/screens/LoginScreen';
+import ConversationPane from './components/panes/ConversationPane';
+import BootSequence from './components/screens/BootSequence';
+import ToastNotification from './components/ToastNotification';
 import ControlPane from './components/ControlPane';
 import { gun, user } from './gun';
 import { paneConfig } from './paneConfig';
@@ -26,7 +26,8 @@ import { usePaneManager } from './hooks/usePaneManager';
 import { useMessageListeners } from './hooks/useMessageListeners';
 
 import { runFullCleanup } from './utils/gunCleanup';
-import { STATUS_OPTIONS } from './utils/presenceUtils';
+import { getContactPairId } from './utils/chatUtils';
+import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
 import { clearEncryptionCache } from './utils/encryption';
 import { useScanlinesPreference } from './contexts/ScanlinesContext';
 import { useSettings } from './contexts/SettingsContext';
@@ -56,11 +57,14 @@ function App() {
   });
   const justBootedRef = useRef(false);
   const [isShutdown, setIsShutdown] = useState(false);
+  const [isLoggingOff, setIsLoggingOff] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
   const [unreadChats, setUnreadChats] = React.useState(new Set());
   const [nowPlaying, setNowPlaying] = useState(null);
   const [messengerSignedIn, setMessengerSignedIn] = useState(false);
+  const messengerSignedInRef = useRef(false); // ref voor gebruik in callbacks
+  messengerSignedInRef.current = messengerSignedIn; // altijd in sync
   const [showSystrayMenu, setShowSystrayMenu] = useState(false);
   const systrayMenuRef = useRef(null);
   const systrayIconRef = useRef(null);
@@ -74,7 +78,7 @@ function App() {
   const { settings } = useSettings();
   const { getAvatar, getDisplayName } = useAvatar();
   const { getWallpaperStyle } = useWallpaper();
-  const { playSound } = useSounds();
+  const { playSound, playSoundAsync } = useSounds();
   const { alert: xpAlert } = useDialog();
   
   // Toast notifications
@@ -103,6 +107,7 @@ function App() {
     focusPane,
     openConversation,
     closeConversation,
+    closeAllConversations,
     minimizeConversation,
     toggleMaximizeConversation,
     getZIndex,
@@ -119,11 +124,11 @@ function App() {
   } = usePaneManager();
 
   // Presence management
-  const { 
-    userStatus, 
-    handleStatusChange, 
-    cleanup: cleanupPresence 
-  } = usePresence(isLoggedIn, currentUser);
+  const {
+    userStatus,
+    handleStatusChange,
+    cleanup: cleanupPresence
+  } = usePresence(isLoggedIn, currentUser, messengerSignedIn);
 
   
 
@@ -141,13 +146,13 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   const conv = conversationsRef.current[chatPaneId];
   const isOpen = conv && conv.isOpen && !conv.isMinimized;
 
-  // STAP A: Update alleen de ongelezen status (geen venster openen!)
-  if (!isFocused || !isOpen) {
+  // STAP A: Ongelezen status + systray bolletje — alleen als Messenger actief is
+  if (messengerSignedInRef.current && (!isFocused || !isOpen)) {
     setUnreadChats(prev => new Set(prev).add(chatPaneId));
   }
 
-  // STAP B: Altijd toast tonen als we niet in de chat zitten
-  if (!isFocused) {
+  // STAP B: Toast en geluid alleen als Chatlon Messenger actief is
+  if (!isFocused && messengerSignedInRef.current) {
     playSound('message')
     const toastKey = `msg_${msgId}`;
     if (settings.toastNotifications) {
@@ -309,10 +314,11 @@ useEffect(() => {
   };
 
   
-  const handleLogoff = () => {
+  const handleLogoff = async () => {
     log('[App] Logging off...');
 
-    playSound('logoff');
+    // Toon logoff-scherm direct
+    setIsLoggingOff(true);
 
     // Cleanup
     cleanupPresence();
@@ -321,9 +327,17 @@ useEffect(() => {
     resetAll();
     clearEncryptionCache();
 
-    // FIX: Reset initialized flag
     hasInitializedRef.current = false;
     setMessengerSignedIn(false);
+
+    // Reset PresenceMonitor refs zodat ze schoon zijn bij eventuele herlogin
+    presencePrevRef.current = {};
+    presenceListenersRef.current.forEach(node => { if (node.off) node.off(); });
+    presenceListenersRef.current = new Map();
+    // Reset NudgeMonitor refs
+    nudgeListenersRef.current.forEach(node => { if (node.off) node.off(); });
+    nudgeListenersRef.current = new Map();
+    lastProcessedNudgeRef.current = {};
 
     // BELANGRIJK: Wis credentials als "onthoud mij" NIET actief is
     const rememberMe = localStorage.getItem('chatlon_remember_me') === 'true';
@@ -336,10 +350,9 @@ useEffect(() => {
     setIsLoggedIn(false);
     setCurrentUser('');
 
-    // Wacht tot logoff geluid klaar is, dan reload
-    setTimeout(() => {
-      window.location.reload();
-    }, 1500);
+    // Wacht tot het logoff-geluid volledig is afgespeeld, dan pas reload
+    await playSoundAsync('logoff');
+    window.location.reload();
   };
   // Trigger boot sequence bij shutdown/restart via Start menu
   const handleShutdown = () => {
@@ -365,10 +378,175 @@ useEffect(() => {
 
   const currentStatusOption = STATUS_OPTIONS.find(s => s.value === userStatus) || STATUS_OPTIONS[0];
 
+  // Gedeelde presence state — gevuld door ContactsPane, gelezen door ConversationPane
+  const [sharedContactPresence, setSharedContactPresence] = React.useState({});
+
+  const handlePresenceChange = React.useCallback((username, presenceData) => {
+    setSharedContactPresence(prev => ({ ...prev, [username]: presenceData }));
+  }, []);
+
+  const handleContactOnline = React.useCallback((contactUsername) => {
+    console.log('[handleContactOnline] aangeroepen voor:', contactUsername, '| toastNotifications:', settings.toastNotifications, '| messengerSignedIn:', messengerSignedInRef.current);
+    if (!messengerSignedInRef.current) return;
+    if (!settings.toastNotifications) return;
+    showToast({
+      type: 'presence',
+      contactName: contactUsername,
+      from: getDisplayName(contactUsername),
+      message: 'is nu online',
+      avatar: getAvatar(contactUsername),
+    });
+  }, [showToast, getAvatar, getDisplayName, settings.toastNotifications]);
+
+  const handleNudge = React.useCallback((contactUsername) => {
+    if (!messengerSignedInRef.current) return;
+
+    const chatPaneId = `conv_${contactUsername}`;
+    const isFocused = activePaneRef.current === chatPaneId;
+    const conv = conversationsRef.current[chatPaneId];
+    const isOpen = conv && conv.isOpen && !conv.isMinimized;
+
+    // Identiek aan nieuw bericht:
+    // Stap A — taakbalk knipperen + gesprek tonen in taakbalk (ook als nog niet open)
+    if (!isFocused || !isOpen) {
+      setUnreadChats(prev => new Set(prev).add(chatPaneId));
+    }
+
+    // Stap B — toast (alleen als niet gefocust)
+    if (!isFocused && settings.toastNotifications) {
+      showToast({
+        type: 'nudge',
+        contactName: contactUsername,
+        from: getDisplayName(contactUsername),
+        message: 'heeft je een nudge gestuurd!',
+        avatar: getAvatar(contactUsername),
+      });
+    }
+  }, [showToast, getAvatar, getDisplayName, settings.toastNotifications, activePaneRef, conversationsRef, setUnreadChats]);
+
+  const handleNudgeRef = React.useRef(handleNudge);
+  handleNudgeRef.current = handleNudge;
+
+  // Ref zodat de Gun-listener altijd de actuele callback heeft
+  const handleContactOnlineRef = React.useRef(handleContactOnline);
+  handleContactOnlineRef.current = handleContactOnline;
+
+  // Persistent refs voor PresenceMonitor — overleven React StrictMode double-mount cleanup.
+  // Als ze lokaal in het effect staan worden ze gereset bij de tweede mount,
+  // waardoor beginstand opnieuw opgeslagen wordt en de offline→online transitie gemist wordt.
+  const presencePrevRef = React.useRef({});        // { username: { lastSeen, statusValue } }
+  const presenceListenersRef = React.useRef(new Map()); // username -> gun node
+  const nudgeListenersRef = React.useRef(new Map());   // username -> gun nudge node
+  const lastProcessedNudgeRef = React.useRef({});       // username -> last nudge timestamp
+
+  // Presence monitoring — altijd actief, ongeacht of ContactsPane open is
+  React.useEffect(() => {
+    if (!isLoggedIn || !currentUser) return;
+
+    log('[PresenceMonitor] Start voor:', currentUser);
+    // Gebruik REFS voor prevPresence en contactListeners zodat ze React StrictMode
+    // double-mount overleven. Als ze lokaal in het effect staan, worden ze gereset
+    // bij de tweede mount — dan slaat de eerste Gun callback de beginstand opnieuw
+    // op en wordt de offline→online transitie nooit gezien.
+    const prevPresence = presencePrevRef.current;
+    const contactListeners = presenceListenersRef.current;
+
+    user.get('contacts').map().on((contactData) => {
+      if (!contactData || !contactData.username || contactData.status !== 'accepted') return;
+      const username = contactData.username;
+      if (contactListeners.has(username)) return;
+
+      log('[PresenceMonitor] Listener op voor contact:', username);
+      const node = gun.get('PRESENCE').get(username);
+      node.on((presenceData) => {
+        // Eerste call: sla beginstand op als primitieven, geen toast.
+        // ‘username in prevPresence’ is false bij de echte allereerste call.
+        // Na StrictMode cleanup+remount is de data al in prevPresence (via ref) —
+        // dan slaan we de beginstand NIET opnieuw op en blijft de transitie zichtbaar.
+        if (!(username in prevPresence)) {
+          if (presenceData) {
+            prevPresence[username] = {
+              lastSeen: presenceData.lastSeen || 0,
+              statusValue: getPresenceStatus(presenceData).value
+            };
+          } else {
+            prevPresence[username] = null;
+          }
+          return;
+        }
+        if (!presenceData) return;
+
+        const newStatus = getPresenceStatus(presenceData);
+        const prevStatusValue = prevPresence[username]?.statusValue ?? 'offline';
+
+        log('[PresenceMonitor]', username, '| prev:', prevStatusValue, '→ new:', newStatus.value);
+
+        if (prevStatusValue === 'offline' && newStatus.value !== 'offline') {
+          log('[PresenceMonitor] ONLINE TRANSITIE voor:', username);
+          handleContactOnlineRef.current(username);
+        }
+
+        // Sla nieuwe state op als primitieven (nooit als object-referentie)
+        prevPresence[username] = {
+          lastSeen: presenceData.lastSeen || 0,
+          statusValue: newStatus.value
+        };
+      });
+      contactListeners.set(username, node);
+    });
+
+    // Geen cleanup van listeners — ze leven via refs.
+    // Als de gebruiker uitlogt worden ze handmatig opgeruimd.
+  }, [isLoggedIn, currentUser]);
+
+  // Nudge monitor — luistert naar nudges voor alle contacten, ook als gesprek niet open is.
+  // Identieke structuur als PresenceMonitor: persistent refs, overleeft StrictMode double-mount.
+  React.useEffect(() => {
+    if (!isLoggedIn || !currentUser) return;
+
+    const nudgeListeners = nudgeListenersRef.current;
+    const lastProcessedNudge = lastProcessedNudgeRef.current;
+
+    user.get('contacts').map().on((contactData) => {
+      if (!contactData || !contactData.username || contactData.status !== 'accepted') return;
+      const username = contactData.username;
+      if (nudgeListeners.has(username)) return;
+
+      // Zoek de sessie-ID op voor dit contact, dan luister naar nudges
+      const pairId = getContactPairId(currentUser, username);
+      gun.get('ACTIVE_SESSIONS').get(pairId).get('sessionId').on((sessionId) => {
+        if (!sessionId || nudgeListeners.has(username)) return;
+
+        log('[NudgeMonitor] Listener op voor contact:', username, 'sessie:', sessionId);
+        const nudgeNode = gun.get(`NUDGE_${sessionId}`);
+        // Initialiseer timestamp zodat oude nudges geen toast triggeren
+        if (!(username in lastProcessedNudge)) {
+          lastProcessedNudge[username] = Date.now();
+        }
+
+        nudgeNode.on((data) => {
+          if (!data?.time || !data?.from) return;
+          if (data.from !== username) return; // alleen van het contact, niet van onszelf
+          if (data.time <= lastProcessedNudge[username]) return; // geen oude nudges
+          lastProcessedNudge[username] = data.time;
+
+          log('[NudgeMonitor] Nudge ontvangen van:', username);
+          handleNudgeRef.current(username);
+        });
+
+        nudgeListeners.set(username, nudgeNode);
+      });
+    });
+
+    // Geen cleanup — leven via refs, opgeruimd bij logout.
+  }, [isLoggedIn, currentUser]);
+
   const handleToastClick = (toast) => {
   if (toast.type === 'message') {
     const paneId = `conv_${toast.contactName}`;
-    // Gebruik de nieuwe klik-logica om alles in één keer te doen
+    onTaskbarClick(paneId);
+  } else if (toast.type === 'presence') {
+    const paneId = `conv_${toast.contactName}`;
     onTaskbarClick(paneId);
   } else if (toast.type === 'friendRequest') {
     openPane('contacts');
@@ -396,6 +574,23 @@ const onTaskbarClick = React.useCallback((paneId) => {
     handleTaskbarClick(paneId);
   }
 }, [handleTaskbarClick, openConversation]);
+
+  // ============================================
+  // RENDER: LOGOFF SCREEN
+  // ============================================
+  if (isLoggingOff) {
+    return (
+      <div className="logoff-screen">
+        <div className="logoff-content">
+          <div className="logoff-logo">Chatlon</div>
+          <div className="logoff-message">U wordt afgemeld...</div>
+          <div className="logoff-progress">
+            <div className="logoff-progress-bar" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ============================================
   // RENDER: SHUTDOWN SCREEN
@@ -490,12 +685,14 @@ const onTaskbarClick = React.useCallback((paneId) => {
                     userStatus={userStatus}
                     onStatusChange={handleStatusChange}
                     onLogoff={handleLogoff}
-                    onSignOut={() => handleStatusChange('offline')}
-                    onClosePane={() => closePane('contacts')}
+                    onSignOut={() => { closeAllConversations(); }}
+                    onClosePane={() => { closeAllConversations(); setMessengerSignedIn(false); closePane('contacts'); }}
                     nowPlaying={nowPlaying}
                     currentUserEmail={currentUser}
                     messengerSignedIn={messengerSignedIn}
                     setMessengerSignedIn={setMessengerSignedIn}
+                    onContactOnline={handleContactOnline}
+                    onPresenceChange={handlePresenceChange}
                   />
                 ) : paneName === 'media' ? (
                   <Component
@@ -533,7 +730,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
                 initialPosition={getInitialPosition(convId)}
                 onPositionChange={(newPosition) => handlePositionChange(convId, newPosition)}
               >
-                <ConversationPane contactName={conv.contactName} lastNotificationTime={unreadMetadata[conv.contactName]} clearNotificationTime={clearNotificationTime} />
+                <ConversationPane contactName={conv.contactName} lastNotificationTime={unreadMetadata[conv.contactName]} clearNotificationTime={clearNotificationTime} contactPresenceData={sharedContactPresence[conv.contactName]} onNudge={handleNudge} />
               </Pane>
             </div>
           );
@@ -702,11 +899,11 @@ const onTaskbarClick = React.useCallback((paneId) => {
               <div className="dropdown-item" onClick={() => { openPane('contacts'); setShowSystrayMenu(false); }}>
                 <span className="dropdown-item-label">Chatlon openen</span>
               </div>
-              <div className="dropdown-item" onClick={() => { setMessengerSignedIn(false); handleStatusChange('offline'); setShowSystrayMenu(false); }}>
+              <div className="dropdown-item" onClick={() => { closeAllConversations(); setMessengerSignedIn(false); setShowSystrayMenu(false); }}>
                 <span className="dropdown-item-label">Afmelden</span>
               </div>
               <div className="dropdown-separator" />
-              <div className="dropdown-item" onClick={() => { setMessengerSignedIn(false); handleStatusChange('offline'); closePane('contacts'); setShowSystrayMenu(false); }}>
+              <div className="dropdown-item" onClick={() => { closeAllConversations(); setMessengerSignedIn(false); closePane('contacts'); setShowSystrayMenu(false); }}>
                 <span className="dropdown-item-label">Afsluiten</span>
               </div>
             </div>

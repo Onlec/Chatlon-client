@@ -65,6 +65,11 @@ export function useToasts(options = {}) {
     if (toastData.type === 'nudge') {
       return `nudge_${toastData.from}_${Date.now()}`;
     }
+    if (toastData.type === 'presence') {
+      // Cooldown van 5 seconden per contact (voor debugging; later verhogen)
+      const timeBucket = Math.floor(Date.now() / 5000);
+      return `presence_${toastData.contactName}_${timeBucket}`;
+    }
     return `toast_${Date.now()}_${Math.random()}`;
   }, []);
 
