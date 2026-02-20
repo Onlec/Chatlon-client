@@ -25,6 +25,7 @@ const fallbackAvatar = (username) => {
 export function AvatarProvider({ children }) {
   const [avatarCache, setAvatarCache] = useState({});
   const [displayNameCache, setDisplayNameCache] = useState({});
+  const displayNameCacheRef = useRef({}); // altijd up-to-date, ook in stale Gun callbacks
   const listenersRef = useRef(new Set());
 
   const subscribeAvatar = useCallback((username) => {
@@ -52,7 +53,9 @@ export function AvatarProvider({ children }) {
       const newDisplayName = profileData.displayName || '';
       setDisplayNameCache(prev => {
         if (prev[username] === newDisplayName) return prev;
-        return { ...prev, [username]: newDisplayName };
+        const next = { ...prev, [username]: newDisplayName };
+        displayNameCacheRef.current = next; // ref direct bijwerken
+        return next;
       });
     });
   }, []);
@@ -81,9 +84,29 @@ export function AvatarProvider({ children }) {
 
   const getDisplayName = useCallback((username) => {
     if (!username) return '';
-    subscribeAvatar(username);
-    return displayNameCache[username] || username;
+    subscribeAvatar(username); // start Gun listener als nog niet actief
+    return displayNameCacheRef.current[username] || displayNameCache[username] || username;
   }, [displayNameCache, subscribeAvatar]);
+
+  // Versie die wacht tot de naam geladen is (voor toasts die direct na verbinding komen)
+  const getDisplayNameAsync = useCallback((username, timeout = 1500) => {
+    if (!username) return Promise.resolve('');
+    // Als de naam al in de cache zit, direct teruggeven
+    if (displayNameCacheRef.current[username]) {
+      return Promise.resolve(displayNameCacheRef.current[username]);
+    }
+    subscribeAvatar(username);
+    return new Promise((resolve) => {
+      const start = Date.now();
+      const check = () => {
+        const name = displayNameCacheRef.current[username];
+        if (name) return resolve(name);
+        if (Date.now() - start > timeout) return resolve(username); // fallback naar email
+        setTimeout(check, 100);
+      };
+      check();
+    });
+  }, [subscribeAvatar]);
 
   const setMyDisplayName = useCallback((displayName) => {
     if (!user.is) return;
@@ -109,7 +132,7 @@ export function AvatarProvider({ children }) {
   }, []);
 
   return (
-    <AvatarContext.Provider value={{ getAvatar, setMyAvatar, clearMyAvatar, getDisplayName, setMyDisplayName, presets: PRESET_AVATARS }}>
+    <AvatarContext.Provider value={{ getAvatar, setMyAvatar, clearMyAvatar, getDisplayName, getDisplayNameAsync, setMyDisplayName, presets: PRESET_AVATARS }}>
       {children}
     </AvatarContext.Provider>
   );

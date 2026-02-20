@@ -29,11 +29,6 @@ function getPresence(raw) {
 // ============================================
 const reducer = (state, action) => {
   if (action.type === 'RESET') return { messages: [], messageMap: {} };
-  if (action.type === 'SYSTEM') {
-    // Systeemberichten (nudge, etc.) hebben een unieke id en worden niet gededupliceerd via messageMap
-    const systemMsg = { ...action, isSystem: true };
-    return { ...state, messages: [...state.messages, systemMsg] };
-  }
   if (state.messageMap[action.id]) return state;
 
   const newMessageMap = { ...state.messageMap, [action.id]: action };
@@ -103,17 +98,20 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
 
   const sendNudge = useCallback(() => {
     if (!canNudge || !currentSessionId) return;
+    const currentUser = user.is?.alias;
     setCanNudge(false);
     playSound('nudge');
     const nudgeTime = Date.now();
-    gun.get(`NUDGE_${currentSessionId}`).put({ time: nudgeTime, from: user.is?.alias });
-    // Systeembericht in eigen chat
-    dispatch({
-      type: 'SYSTEM',
-      id: `nudge_${nudgeTime}`,
-      from: user.is?.alias,
+    const nudgeKey = `${currentUser}_nudge_${nudgeTime}`;
+    // Sla op in chat-node zodat beide partijen het zien in de geschiedenis
+    gun.get(currentSessionId).get(nudgeKey).put({
+      sender: currentUser,
+      content: '__nudge__',  // niet-leeg zodat message listeners het niet filteren
+      type: 'nudge',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timeRef: nudgeTime,
     });
+    gun.get(`NUDGE_${currentSessionId}`).put({ time: nudgeTime, from: currentUser });
     setTimeout(() => setCanNudge(true), 5000);
   }, [canNudge, currentSessionId, playSound]);
 
@@ -151,9 +149,16 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     const typingNode = gun.get(`TYPING_${currentSessionId}`);
 
     chatNode.map().on(async (data, id) => {
-      if (!data?.content) return;
+      if (!data?.sender) return;
       const boundary = lastNotificationTime ? (lastNotificationTime - 2000) : (windowOpenTimeRef.current - 1000);
 
+      if (data.type === 'nudge') {
+        // Nudge systeembericht — geen decryptie nodig, markeer als leeg voor weergave
+        dispatch({ ...data, content: '', id, isLegacy: data.timeRef < boundary });
+        return;
+      }
+
+      if (!data?.content || data.content === '__nudge__') return;
       // Decrypt content — de afzender is het contact OF wijzelf
       const decryptContact = data.sender === user.is?.alias ? contactName : data.sender;
       const decryptedContent = await decryptMessage(data.content, decryptContact);
@@ -164,17 +169,10 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     nudgeNode.on(data => {
       if (data?.time > lastProcessedNudge.current && data.from === contactName) {
         lastProcessedNudge.current = data.time;
+        // Geluid + schudden — systeembericht komt via de chat-node listener
         playSound('nudge');
         setIsShaking(true);
         setTimeout(() => setIsShaking(false), 600);
-        // Systeembericht in de chat
-        dispatch({
-          type: 'SYSTEM',
-          id: `nudge_${data.time}`,
-          from: contactName,
-          timeRef: data.time,
-        });
-        // Toast + taakbalk wordt afgehandeld door de globale NudgeMonitor in App.js
       }
     });
 
@@ -341,15 +339,15 @@ function ChatMessage({ msg, prevMsg, currentUser }) {
   const { getDisplayName } = useAvatar();
   const isFirstNew = prevMsg?.isLegacy && !msg.isLegacy;
 
-  // Systeembericht (nudge melding)
-  if (msg.isSystem) {
-    const isSelf = msg.from === currentUser;
-    const name = getDisplayName(msg.from);
+  // Systeembericht (nudge melding) — opgeslagen in chat-node met type: 'nudge'
+  if (msg.type === 'nudge') {
+    const isSelf = msg.sender === currentUser;
+    const name = getDisplayName(msg.sender);
     return (
       <>
         {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
         <div className="chat-message-system">
-          ⚡ {isSelf ? 'Je hebt' : <strong>{name}</strong>}{isSelf ? ' een nudge gestuurd.' : ' heeft een nudge gestuurd.'}
+          ⚡ {isSelf ? 'Je hebt een nudge gestuurd.' : <><strong>{name}</strong> heeft een nudge gestuurd.</>}
         </div>
       </>
     );

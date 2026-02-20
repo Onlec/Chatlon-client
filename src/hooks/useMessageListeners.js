@@ -137,26 +137,14 @@ export function useMessageListeners({
         // Decrypt voor preview
         const decryptedContent = await decryptMessage(data.content, contactName);
 
-        // Geef door aan App.js (voor de oranje taakbalk)
+        // Geef door aan App.js — handleIncomingMessage doet toast, geluid en taakbalk
         if (onMessage) {
           onMessage({ ...data, content: decryptedContent }, contactName, id, activeSessionId);
         }
 
-        // Toon Toast als het venster niet gefocust is
-        
-        if (!isConversationActive(contactName)) {
-            if (onNotification) {
-            onNotification(contactName, data.timeRef);
-          }
-          showToast({
-            from: contactName,
-            message: decryptedContent,
-            avatar: getAvatar(contactName),
-            contactName: contactName,
-            type: 'message',
-            messageId: id,
-            sessionId: activeSessionId
-          });
+        // Notificatie-timestamp registreren
+        if (!isConversationActive(contactName) && onNotification) {
+          onNotification(contactName, data.timeRef);
         }
       }
     });

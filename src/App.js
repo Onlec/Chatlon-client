@@ -26,7 +26,6 @@ import { usePaneManager } from './hooks/usePaneManager';
 import { useMessageListeners } from './hooks/useMessageListeners';
 
 import { runFullCleanup } from './utils/gunCleanup';
-import { getContactPairId } from './utils/chatUtils';
 import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
 import { clearEncryptionCache } from './utils/encryption';
 import { useScanlinesPreference } from './contexts/ScanlinesContext';
@@ -65,6 +64,7 @@ function App() {
   const [messengerSignedIn, setMessengerSignedIn] = useState(false);
   const messengerSignedInRef = useRef(false); // ref voor gebruik in callbacks
   messengerSignedInRef.current = messengerSignedIn; // altijd in sync
+
   const [showSystrayMenu, setShowSystrayMenu] = useState(false);
   const systrayMenuRef = useRef(null);
   const systrayIconRef = useRef(null);
@@ -77,6 +77,9 @@ function App() {
   // ============================================
   const { settings } = useSettings();
   const { getAvatar, getDisplayName } = useAvatar();
+  // Refs zodat Gun-callbacks altijd de meest actuele versie hebben
+  const getDisplayNameRef = useRef(getDisplayName);
+  getDisplayNameRef.current = getDisplayName;
   const { getWallpaperStyle } = useWallpaper();
   const { playSound, playSoundAsync } = useSounds();
   const { alert: xpAlert } = useDialog();
@@ -153,22 +156,26 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
 
   // STAP B: Toast en geluid alleen als Chatlon Messenger actief is
   if (!isFocused && messengerSignedInRef.current) {
-    playSound('message')
-    const toastKey = `msg_${msgId}`;
-    if (settings.toastNotifications) {
+    const isNudge = msg.type === 'nudge';
+    // Geluid: nudge heeft eigen geluid via ConversationPane, geen berichtgeluid
+    if (!isNudge) playSound('message');
+    // Toast: nudge krijgt eigen toast via handleNudge, geen berichtentoast
+    if (!isNudge && settings.toastNotifications) {
+      const toastKey = `msg_${msgId}`;
       shownToastsRef.current.add(toastKey);
       showToast({
         type: 'message',
         contactName: senderName,
-        from: getDisplayName(senderName),
+        from: getDisplayNameRef.current(senderName),
         message: msg.content,
         avatar: getAvatar(senderName),
         messageId: msgId,
         sessionId: sessionId
       });
     }
+    if (isNudge) handleNudgeRef.current(senderName);
   }
-}, [currentUser, showToast, setUnreadChats, activePaneRef, conversationsRef, shownToastsRef, playSound, settings, getAvatar, getDisplayName]);
+}, [currentUser, showToast, setUnreadChats, activePaneRef, conversationsRef, shownToastsRef, playSound, settings, getAvatar]);
   // Message listeners initialisatie
   const { 
     cleanup: cleanupListeners 
@@ -177,11 +184,18 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
     currentUser,
     conversationsRef,
     activePaneRef,
-    onMessage: handleIncomingMessage, // Geef onze opgeschoonde handler door
+    onMessage: handleIncomingMessage,
     onNotification: (contactName, timeRef) => {
       setNotificationTime(contactName, timeRef);
     },
-    showToast,
+    // showToast wrapper: zorg dat altijd de displaynaam getoond wordt
+    showToast: (toastData) => {
+      const identifier = toastData.contactName || toastData.from || '';
+      showToast({
+        ...toastData,
+        from: getDisplayNameRef.current(identifier) || identifier,
+      });
+    },
     shownToastsRef,
     getAvatar
   });
@@ -334,10 +348,6 @@ useEffect(() => {
     presencePrevRef.current = {};
     presenceListenersRef.current.forEach(node => { if (node.off) node.off(); });
     presenceListenersRef.current = new Map();
-    // Reset NudgeMonitor refs
-    nudgeListenersRef.current.forEach(node => { if (node.off) node.off(); });
-    nudgeListenersRef.current = new Map();
-    lastProcessedNudgeRef.current = {};
 
     // BELANGRIJK: Wis credentials als "onthoud mij" NIET actief is
     const rememberMe = localStorage.getItem('chatlon_remember_me') === 'true';
@@ -400,29 +410,20 @@ useEffect(() => {
 
   const handleNudge = React.useCallback((contactUsername) => {
     if (!messengerSignedInRef.current) return;
-
+    // Taakbalk + gesprek openen wordt al gedaan via handleIncomingMessage (useMessageListeners).
+    // handleNudge hoeft alleen de toast te tonen.
     const chatPaneId = `conv_${contactUsername}`;
     const isFocused = activePaneRef.current === chatPaneId;
-    const conv = conversationsRef.current[chatPaneId];
-    const isOpen = conv && conv.isOpen && !conv.isMinimized;
-
-    // Identiek aan nieuw bericht:
-    // Stap A — taakbalk knipperen + gesprek tonen in taakbalk (ook als nog niet open)
-    if (!isFocused || !isOpen) {
-      setUnreadChats(prev => new Set(prev).add(chatPaneId));
-    }
-
-    // Stap B — toast (alleen als niet gefocust)
     if (!isFocused && settings.toastNotifications) {
       showToast({
         type: 'nudge',
         contactName: contactUsername,
-        from: getDisplayName(contactUsername),
+        from: getDisplayNameRef.current(contactUsername),
         message: 'heeft je een nudge gestuurd!',
         avatar: getAvatar(contactUsername),
       });
     }
-  }, [showToast, getAvatar, getDisplayName, settings.toastNotifications, activePaneRef, conversationsRef, setUnreadChats]);
+  }, [showToast, getAvatar, getDisplayName, settings.toastNotifications, activePaneRef]);
 
   const handleNudgeRef = React.useRef(handleNudge);
   handleNudgeRef.current = handleNudge;
@@ -436,8 +437,6 @@ useEffect(() => {
   // waardoor beginstand opnieuw opgeslagen wordt en de offline→online transitie gemist wordt.
   const presencePrevRef = React.useRef({});        // { username: { lastSeen, statusValue } }
   const presenceListenersRef = React.useRef(new Map()); // username -> gun node
-  const nudgeListenersRef = React.useRef(new Map());   // username -> gun nudge node
-  const lastProcessedNudgeRef = React.useRef({});       // username -> last nudge timestamp
 
   // Presence monitoring — altijd actief, ongeacht of ContactsPane open is
   React.useEffect(() => {
@@ -499,47 +498,6 @@ useEffect(() => {
     // Als de gebruiker uitlogt worden ze handmatig opgeruimd.
   }, [isLoggedIn, currentUser]);
 
-  // Nudge monitor — luistert naar nudges voor alle contacten, ook als gesprek niet open is.
-  // Identieke structuur als PresenceMonitor: persistent refs, overleeft StrictMode double-mount.
-  React.useEffect(() => {
-    if (!isLoggedIn || !currentUser) return;
-
-    const nudgeListeners = nudgeListenersRef.current;
-    const lastProcessedNudge = lastProcessedNudgeRef.current;
-
-    user.get('contacts').map().on((contactData) => {
-      if (!contactData || !contactData.username || contactData.status !== 'accepted') return;
-      const username = contactData.username;
-      if (nudgeListeners.has(username)) return;
-
-      // Zoek de sessie-ID op voor dit contact, dan luister naar nudges
-      const pairId = getContactPairId(currentUser, username);
-      gun.get('ACTIVE_SESSIONS').get(pairId).get('sessionId').on((sessionId) => {
-        if (!sessionId || nudgeListeners.has(username)) return;
-
-        log('[NudgeMonitor] Listener op voor contact:', username, 'sessie:', sessionId);
-        const nudgeNode = gun.get(`NUDGE_${sessionId}`);
-        // Initialiseer timestamp zodat oude nudges geen toast triggeren
-        if (!(username in lastProcessedNudge)) {
-          lastProcessedNudge[username] = Date.now();
-        }
-
-        nudgeNode.on((data) => {
-          if (!data?.time || !data?.from) return;
-          if (data.from !== username) return; // alleen van het contact, niet van onszelf
-          if (data.time <= lastProcessedNudge[username]) return; // geen oude nudges
-          lastProcessedNudge[username] = data.time;
-
-          log('[NudgeMonitor] Nudge ontvangen van:', username);
-          handleNudgeRef.current(username);
-        });
-
-        nudgeListeners.set(username, nudgeNode);
-      });
-    });
-
-    // Geen cleanup — leven via refs, opgeruimd bij logout.
-  }, [isLoggedIn, currentUser]);
 
   const handleToastClick = (toast) => {
   if (toast.type === 'message') {
