@@ -24,10 +24,15 @@ import { useToasts } from './hooks/useToasts';
 import { usePresence } from './hooks/usePresence';
 import { usePaneManager } from './hooks/usePaneManager';
 import { useMessageListeners } from './hooks/useMessageListeners';
+import { useActiveTabSessionGuard } from './hooks/useActiveTabSessionGuard';
 
 import { runFullCleanup } from './utils/gunCleanup';
 import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
 import { clearEncryptionCache } from './utils/encryption';
+import {
+  POST_LOGIN_CLEANUP_DELAY_MS,
+  SESSION_RELOAD_DELAY_MS
+} from './utils/sessionConstants';
 import { useScanlinesPreference } from './contexts/ScanlinesContext';
 import { useSettings } from './contexts/SettingsContext';
 import { useAvatar } from './contexts/AvatarContext';
@@ -42,6 +47,20 @@ function getLocalUserInfo(email) {
     const normalized = users.map(u => typeof u === 'string' ? { email: u, localName: u } : u);
     return normalized.find(u => u.email === email) || null;
   } catch { return null; }
+}
+
+function getOrCreateTabClientId() {
+  const key = 'chatlon_tab_client_id';
+  let id = sessionStorage.getItem(key);
+  if (!id) {
+    id = `client_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    sessionStorage.setItem(key, id);
+  }
+  return id;
+}
+
+function isRememberMeEnabled() {
+  return localStorage.getItem('chatlon_remember_me') === 'true';
 }
 
 function App() {
@@ -68,8 +87,14 @@ function App() {
   const [showSystrayMenu, setShowSystrayMenu] = useState(false);
   const systrayMenuRef = useRef(null);
   const systrayIconRef = useRef(null);
+  const tabClientIdRef = useRef(getOrCreateTabClientId());
+  const cleanupTimeoutRef = useRef(null);
+  const conflictHandlerRef = useRef(null);
+  const sessionGenerationRef = useRef(0);
+  const authStateRef = useRef({ isLoggedIn: false, currentUser: '' });
+  authStateRef.current = { isLoggedIn, currentUser };
 
-  // FIX: Track of we al geïnitialiseerd zijn om dubbele openPane te voorkomen
+  // FIX: Track of we al geÃ¯nitialiseerd zijn om dubbele openPane te voorkomen
   const hasInitializedRef = useRef(false);
 
   // ============================================
@@ -149,7 +174,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   const conv = conversationsRef.current[chatPaneId];
   const isOpen = conv && conv.isOpen && !conv.isMinimized;
 
-  // STAP A: Ongelezen status + systray bolletje — alleen als Messenger actief is
+  // STAP A: Ongelezen status + systray bolletje â€” alleen als Messenger actief is
   if (messengerSignedInRef.current && (!isFocused || !isOpen)) {
     setUnreadChats(prev => new Set(prev).add(chatPaneId));
   }
@@ -208,67 +233,20 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   } = useSuperpeer(isLoggedIn, currentUser);
 
 
-  // ============================================
-  // ACTIVE TAB HEARTBEAT (Cross-browser)
-  // ============================================
-  // NEW
-useEffect(() => {
-  if (!isLoggedIn || !currentUser) return;
-
-  const tabId = `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  log('[App] Starting session with tabId:', tabId);
-
-  // Claim sessie
-  gun.get('ACTIVE_TAB').get(currentUser).put({
-    tabId: tabId,
-    heartbeat: Date.now()
-  });
-
-  // Heartbeat elke 5s
-  const heartbeatInterval = setInterval(() => {
-    gun.get('ACTIVE_TAB').get(currentUser).put({
-      tabId: tabId,
-      heartbeat: Date.now()
-    });
-  }, 5000);
-
-  // Luister of een andere tab ons verdringt
-  const activeTabNode = gun.get('ACTIVE_TAB').get(currentUser);
-  const listener = activeTabNode.on((data) => {
-    if (data && data.tabId && data.tabId !== tabId) {
-      log('[App] Detected other session, logging off. Their tabId:', data.tabId);
-      clearInterval(heartbeatInterval);
-      activeTabNode.off();
-      
-      // Cleanup en logout
-      cleanupPresence();
-      cleanupListeners();
-      resetShownToasts();
-      resetAll();
-      clearEncryptionCache();
-      hasInitializedRef.current = false;
-      user.leave();
-      setIsLoggedIn(false);
-      setCurrentUser('');
-      
-      xpAlert('Je bent aangemeld op een andere locatie. Deze sessie wordt afgesloten.', 'Sessie beëindigd');
-      
-      // Forceer reload naar login screen
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+  const {
+    beginSessionClose,
+    resetSessionState,
+    consumeSessionKickAlert
+  } = useActiveTabSessionGuard({
+    isLoggedIn,
+    currentUser,
+    tabClientId: tabClientIdRef.current,
+    onConflict: (data) => {
+      if (conflictHandlerRef.current) {
+        conflictHandlerRef.current(data);
+      }
     }
   });
-
-  return () => {
-    clearInterval(heartbeatInterval);
-    gun.get('ACTIVE_TAB').get(currentUser).put({
-      tabId: null,
-      heartbeat: 0
-    });
-    activeTabNode.off();
-  };
-}, [isLoggedIn, currentUser, cleanupPresence, cleanupListeners, resetShownToasts, resetAll, xpAlert]);
 
   // ============================================
   // AUTO-LOGIN CHECK
@@ -289,6 +267,7 @@ useEffect(() => {
         hasInitializedRef.current = true;
         
         log('[App] User already logged in:', user.is.alias);
+        resetSessionState();
         setIsLoggedIn(true);
         setCurrentUser(user.is.alias);
         
@@ -310,31 +289,26 @@ useEffect(() => {
     }, 100);
 
     return () => clearInterval(pollInterval);
-  }, []); // FIX: Lege dependency array - alleen bij mount
+  }, [resetSessionState]); // FIX: Alleen bij mount in praktijk; resetSessionState is stabiel
 
   // ============================================
   // HANDLERS
   // ============================================
-  
-  const handleLoginSuccess = (username) => {
-    log('[App] Login success:', username);
-    hasInitializedRef.current = true;
-    setIsLoggedIn(true);
-    setCurrentUser(username);
 
-    playSound('login');
-    
-    setTimeout(() => runFullCleanup(username), 5000);
+  const clearPendingCleanupTimeout = () => {
+    if (cleanupTimeoutRef.current) {
+      clearTimeout(cleanupTimeoutRef.current);
+      cleanupTimeoutRef.current = null;
+    }
   };
 
-  
-  const handleLogoff = async () => {
-    log('[App] Logging off...');
+  const resetPresenceMonitorState = () => {
+    presencePrevRef.current = {};
+    presenceListenersRef.current.forEach(node => { if (node.off) node.off(); });
+    presenceListenersRef.current = new Map();
+  };
 
-    // Toon logoff-scherm direct
-    setIsLoggingOff(true);
-
-    // Cleanup
+  const runSessionTeardown = () => {
     cleanupPresence();
     cleanupListeners();
     resetShownToasts();
@@ -343,36 +317,137 @@ useEffect(() => {
 
     hasInitializedRef.current = false;
     setMessengerSignedIn(false);
+    resetPresenceMonitorState();
+    clearPendingCleanupTimeout();
 
-    // Reset PresenceMonitor refs zodat ze schoon zijn bij eventuele herlogin
-    presencePrevRef.current = {};
-    presenceListenersRef.current.forEach(node => { if (node.off) node.off(); });
-    presenceListenersRef.current = new Map();
-
-    // BELANGRIJK: Wis credentials als "onthoud mij" NIET actief is
-    const rememberMe = localStorage.getItem('chatlon_remember_me') === 'true';
-    if (!rememberMe) {
+    if (!isRememberMeEnabled()) {
       localStorage.removeItem('chatlon_credentials');
     }
 
-    // Logout
     user.leave();
     setIsLoggedIn(false);
     setCurrentUser('');
+  };
 
-    // Wacht tot het logoff-geluid volledig is afgespeeld, dan pas reload
-    await playSoundAsync('logoff');
-    window.location.reload();
-  };
-  // Trigger boot sequence bij shutdown/restart via Start menu
-  const handleShutdown = () => {
-    sessionStorage.removeItem('chatlon_boot_complete');
-    // Optioneel: ook localStorage credentials wissen als "niet onthouden" actief was
-    if (!localStorage.getItem('chatlon_remember_me')) {
-      localStorage.removeItem('chatlon_credentials');
+  const closeSession = async ({
+    reason,
+    showLogoffScreen = false,
+    playLogoffSound = false,
+    showConflictAlert = false,
+    postClose = 'reload'
+  }) => {
+    if (!beginSessionClose()) {
+      log('[App] Session close already in progress, skipping:', reason);
+      return false;
     }
-    window.location.reload();
+    sessionGenerationRef.current += 1;
+
+    log('[App] Closing session. Reason:', reason);
+
+    if (showLogoffScreen) {
+      setIsLoggingOff(true);
+    }
+
+    runSessionTeardown();
+
+    if (showConflictAlert && consumeSessionKickAlert()) {
+      void xpAlert('Je bent aangemeld op een andere locatie. Deze sessie wordt afgesloten.', 'Sessie beëindigd');
+    }
+
+    const finishClose = () => {
+      if (postClose === 'shutdown_boot_reload') {
+        sessionStorage.removeItem('chatlon_boot_complete');
+        window.location.reload();
+        return;
+      }
+      if (postClose === 'stay_on_login') {
+        setIsLoggingOff(false);
+        return;
+      }
+      window.location.reload();
+    };
+
+    if (postClose !== 'reload' && postClose !== 'shutdown_boot_reload' && postClose !== 'stay_on_login') {
+      log('[App] Unknown postClose mode, defaulting to reload:', postClose);
+    }
+
+    if (playLogoffSound) {
+      await playSoundAsync('logoff');
+      finishClose();
+      return true;
+    }
+
+    setTimeout(() => {
+      finishClose();
+    }, SESSION_RELOAD_DELAY_MS);
+    return true;
   };
+
+  conflictHandlerRef.current = () => {
+    void closeSession({
+      reason: 'conflict',
+      showLogoffScreen: true,
+      playLogoffSound: true,
+      showConflictAlert: true,
+      postClose: 'stay_on_login'
+    });
+  };
+  
+  const handleLoginSuccess = (username) => {
+    log('[App] Login success:', username);
+    sessionGenerationRef.current += 1;
+    const cleanupGeneration = sessionGenerationRef.current;
+    hasInitializedRef.current = true;
+    resetSessionState();
+    setIsLoggedIn(true);
+    setCurrentUser(username);
+
+    playSound('login');
+
+    clearPendingCleanupTimeout();
+    cleanupTimeoutRef.current = setTimeout(() => {
+      const authState = authStateRef.current;
+      if (
+        sessionGenerationRef.current !== cleanupGeneration ||
+        !authState.isLoggedIn ||
+        authState.currentUser !== username
+      ) {
+        log('[App] Skipping stale delayed cleanup for:', username);
+        cleanupTimeoutRef.current = null;
+        return;
+      }
+      runFullCleanup(username);
+      cleanupTimeoutRef.current = null;
+    }, POST_LOGIN_CLEANUP_DELAY_MS);
+  };
+
+  
+  const handleLogoff = async () => {
+    log('[App] Logging off...');
+    await closeSession({
+      reason: 'manual_logoff',
+      showLogoffScreen: true,
+      playLogoffSound: true,
+      postClose: 'stay_on_login'
+    });
+  };
+  // Trigger shutdown vanuit ingelogde sessie via dezelfde teardown pipeline.
+  const handleShutdown = async () => {
+    log('[App] Shutting down...');
+    await closeSession({
+      reason: 'manual_shutdown',
+      showLogoffScreen: true,
+      playLogoffSound: true,
+      postClose: 'shutdown_boot_reload'
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      clearPendingCleanupTimeout();
+    };
+  }, []);
+
   // Systray menu click-outside
   useEffect(() => {
     if (!showSystrayMenu) return;
@@ -388,7 +463,7 @@ useEffect(() => {
 
   const currentStatusOption = STATUS_OPTIONS.find(s => s.value === userStatus) || STATUS_OPTIONS[0];
 
-  // Gedeelde presence state — gevuld door ContactsPane, gelezen door ConversationPane
+  // Gedeelde presence state â€” gevuld door ContactsPane, gelezen door ConversationPane
   const [sharedContactPresence, setSharedContactPresence] = React.useState({});
 
   const handlePresenceChange = React.useCallback((username, presenceData) => {
@@ -432,35 +507,53 @@ useEffect(() => {
   const handleContactOnlineRef = React.useRef(handleContactOnline);
   handleContactOnlineRef.current = handleContactOnline;
 
-  // Persistent refs voor PresenceMonitor — overleven React StrictMode double-mount cleanup.
+  // Persistent refs voor PresenceMonitor â€” overleven React StrictMode double-mount cleanup.
   // Als ze lokaal in het effect staan worden ze gereset bij de tweede mount,
-  // waardoor beginstand opnieuw opgeslagen wordt en de offline→online transitie gemist wordt.
+  // waardoor beginstand opnieuw opgeslagen wordt en de offlineâ†’online transitie gemist wordt.
   const presencePrevRef = React.useRef({});        // { username: { lastSeen, statusValue } }
   const presenceListenersRef = React.useRef(new Map()); // username -> gun node
 
-  // Presence monitoring — altijd actief, ongeacht of ContactsPane open is
+  // Presence monitoring â€” altijd actief, ongeacht of ContactsPane open is
   React.useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
 
     log('[PresenceMonitor] Start voor:', currentUser);
     // Gebruik REFS voor prevPresence en contactListeners zodat ze React StrictMode
     // double-mount overleven. Als ze lokaal in het effect staan, worden ze gereset
-    // bij de tweede mount — dan slaat de eerste Gun callback de beginstand opnieuw
-    // op en wordt de offline→online transitie nooit gezien.
+    // bij de tweede mount â€” dan slaat de eerste Gun callback de beginstand opnieuw
+    // op en wordt de offlineâ†’online transitie nooit gezien.
     const prevPresence = presencePrevRef.current;
     const contactListeners = presenceListenersRef.current;
 
-    user.get('contacts').map().on((contactData) => {
-      if (!contactData || !contactData.username || contactData.status !== 'accepted') return;
-      const username = contactData.username;
+    const detachPresenceListener = (username) => {
+      const existing = contactListeners.get(username);
+      if (!existing) return;
+      if (existing.off) existing.off();
+      contactListeners.delete(username);
+      delete prevPresence[username];
+      log('[PresenceMonitor] Listener verwijderd voor contact:', username);
+    };
+
+    const contactsMapNode = user.get('contacts').map();
+    contactsMapNode.on((contactData, key) => {
+      const usernameFromData = typeof contactData?.username === 'string' ? contactData.username : '';
+      const fallbackUsername = typeof key === 'string' ? key : '';
+      const username = usernameFromData || fallbackUsername;
+      const isEligible = Boolean(contactData && username && contactData.status === 'accepted');
+
+      if (!isEligible) {
+        if (username) detachPresenceListener(username);
+        return;
+      }
+
       if (contactListeners.has(username)) return;
 
       log('[PresenceMonitor] Listener op voor contact:', username);
       const node = gun.get('PRESENCE').get(username);
       node.on((presenceData) => {
         // Eerste call: sla beginstand op als primitieven, geen toast.
-        // ‘username in prevPresence’ is false bij de echte allereerste call.
-        // Na StrictMode cleanup+remount is de data al in prevPresence (via ref) —
+        // â€˜username in prevPresenceâ€™ is false bij de echte allereerste call.
+        // Na StrictMode cleanup+remount is de data al in prevPresence (via ref) â€”
         // dan slaan we de beginstand NIET opnieuw op en blijft de transitie zichtbaar.
         if (!(username in prevPresence)) {
           if (presenceData) {
@@ -478,7 +571,7 @@ useEffect(() => {
         const newStatus = getPresenceStatus(presenceData);
         const prevStatusValue = prevPresence[username]?.statusValue ?? 'offline';
 
-        log('[PresenceMonitor]', username, '| prev:', prevStatusValue, '→ new:', newStatus.value);
+        log('[PresenceMonitor]', username, '| prev:', prevStatusValue, 'â†’ new:', newStatus.value);
 
         if (prevStatusValue === 'offline' && newStatus.value !== 'offline') {
           log('[PresenceMonitor] ONLINE TRANSITIE voor:', username);
@@ -493,9 +586,10 @@ useEffect(() => {
       });
       contactListeners.set(username, node);
     });
+    return () => {
+      contactsMapNode.off();
+    };
 
-    // Geen cleanup van listeners — ze leven via refs.
-    // Als de gebruiker uitlogt worden ze handmatig opgeruimd.
   }, [isLoggedIn, currentUser]);
 
 
@@ -566,7 +660,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
               setHasBooted(false);
             }}
           >
-            <span className="power-on-icon">⏻</span>
+            <span className="power-on-icon">â»</span>
           </button>
           <div className="power-on-hint">Druk op de aan/uit-knop om de computer te starten</div>
         </div>
@@ -753,6 +847,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
           </div>
           <div className="start-menu-footer">
             <button className="logoff-btn" onClick={handleLogoff}>Log Off</button>
+            <button className="shutdown-btn" onClick={handleShutdown}>Shut Down</button>
           </div>
         </div>
       )}
@@ -763,11 +858,11 @@ const onTaskbarClick = React.useCallback((paneId) => {
           className={`start-btn ${isStartOpen ? 'pressed' : ''}`} 
           onClick={(e) => { e.stopPropagation(); toggleStartMenu(); }}
         >
-          <span className="start-icon">🪟</span> Start
+          <span className="start-icon">ðŸªŸ</span> Start
         </button>
         
         <div className="taskbar-items">
-  {/* We maken een unieke lijst van alles wat open is ÉN alles wat ongelezen is */}
+  {/* We maken een unieke lijst van alles wat open is Ã‰N alles wat ongelezen is */}
   {Array.from(new Set([...paneOrder, ...Array.from(unreadChats)])).map((paneId) => {
     
   // NEW - Met title tooltips
@@ -785,7 +880,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
         onClick={() => onTaskbarClick(paneId)}
         title={`${getDisplayName(contactName)} - Gesprek`}
       >
-        <span className="taskbar-icon">💬</span>
+        <span className="taskbar-icon">ðŸ’¬</span>
         <span>{getDisplayName(contactName)}</span>
       </div>
     );
@@ -809,17 +904,17 @@ const onTaskbarClick = React.useCallback((paneId) => {
 </div>
 
         <div className="systray">
-          {isSuperpeer && <span className="superpeer-badge" title={`Superpeer actief | ${connectedSuperpeers} peer(s) verbonden`}>📡</span>}
+          {isSuperpeer && <span className="superpeer-badge" title={`Superpeer actief | ${connectedSuperpeers} peer(s) verbonden`}>ðŸ“¡</span>}
           {isLoggedIn && (
             <span
               className={`relay-status-badge ${relayStatus.anyOnline ? 'relay-online' : 'relay-offline'}`}
               title={relayStatus.anyOnline
                 ? `Relay verbonden${isSuperpeer ? ' | Superpeer actief' : ''} | ${connectedSuperpeers} peer(s)`
-                : 'Relay offline — klik om te reconnecten'
+                : 'Relay offline â€” klik om te reconnecten'
               }
               onClick={() => !relayStatus.anyOnline && forceReconnect()}
             >
-              {relayStatus.anyOnline ? '🟢' : '🔴'}
+              {relayStatus.anyOnline ? 'ðŸŸ¢' : 'ðŸ”´'}
             </span>
           )}
           {isLoggedIn && messengerSignedIn && (
@@ -829,7 +924,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
               title={`Chatlon - ${currentStatusOption.label} (${getDisplayName(currentUser)})`}
               onClick={(e) => { e.stopPropagation(); setShowSystrayMenu(prev => !prev); }}
             >
-              <span className="systray-chatlon-figure">💬</span>
+              <span className="systray-chatlon-figure">ðŸ’¬</span>
               <span className="systray-status-dot" style={{ backgroundColor: currentStatusOption.color }}></span>
             </span>
           )}
@@ -886,3 +981,4 @@ const onTaskbarClick = React.useCallback((paneId) => {
 }
 
 export default App;
+

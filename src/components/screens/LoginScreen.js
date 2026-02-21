@@ -3,8 +3,18 @@ import { gun, user } from '../../gun';
 import { log } from '../../utils/debug';
 import { useAvatar } from '../../contexts/AvatarContext';
 import { useDialog } from '../../contexts/DialogContext';
+import { ACTIVE_TAB_FRESH_MS } from '../../utils/sessionConstants';
 
 const COLDMAIL_DOMAINS = ['@coldmail.com', '@coldmail.nl', '@coldmail.net'];
+const TAB_CLIENT_ID_KEY = 'chatlon_tab_client_id';
+
+function isForeignActiveSession(activeTabData, localTabClientId) {
+  if (!activeTabData || !activeTabData.heartbeat) return false;
+  if (Date.now() - activeTabData.heartbeat >= ACTIVE_TAB_FRESH_MS) return false;
+  // Zelfde tab-client ID is geen "andere sessie".
+  if (localTabClientId && activeTabData.clientId === localTabClientId) return false;
+  return true;
+}
 
 function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
   const { setMyAvatar, setMyDisplayName } = useAvatar();
@@ -75,8 +85,9 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
       return;
     }
 
+    const localTabClientId = sessionStorage.getItem(TAB_CLIENT_ID_KEY);
     gun.get('ACTIVE_TAB').get(email).once(async (data) => {
-      if (data && data.heartbeat && (Date.now() - data.heartbeat < 10000)) {
+      if (isForeignActiveSession(data, localTabClientId)) {
         const forceLogin = await confirm(
           'Dit account is al aangemeld in een ander venster.\n\nWil je de andere sessie afbreken en hier inloggen?',
           'Al aangemeld'
@@ -180,8 +191,9 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
         setIsAutoLogging(true);
         setError('');
 
+        const localTabClientId = sessionStorage.getItem(TAB_CLIENT_ID_KEY);
         gun.get('ACTIVE_TAB').get(userObj.email).once(async (data) => {
-          if (data && data.heartbeat && (Date.now() - data.heartbeat < 10000)) {
+          if (isForeignActiveSession(data, localTabClientId)) {
             const forceLogin = await confirm(
               'Dit account is al aangemeld in een ander venster.\n\nWil je de andere sessie afbreken en hier inloggen?',
               'Al aangemeld'
