@@ -1,11 +1,12 @@
 // src/hooks/useMessageListeners.js
 /**
- * Message Listeners Hook - OPTIE A
- * 
- * Simpele "oudste sessie wint" logica.
- * Geen openBy tracking nodig, geen cleanup nodig.
- * 
- * Luistert naar ACTIVE_SESSIONS en volgt automatisch de actieve sessie.
+ * Message listeners hook.
+ *
+ * Keeps Gun listener lifecycle explicit:
+ * - one contacts map listener
+ * - one friend request listener
+ * - per-contact ACTIVE_SESSIONS pointer listener
+ * - per-contact active chat node listener
  */
 
 import { useEffect, useRef, useCallback } from 'react';
@@ -14,9 +15,15 @@ import { getContactPairId } from '../utils/chatUtils';
 import { log } from '../utils/debug';
 import { createListenerManager } from '../utils/gunListenerManager';
 import { decryptMessage } from '../utils/encryption';
+import { canAttachContactListeners } from '../utils/contactModel';
+
+const CONTACTS_LISTENER_KEY = 'contactsMap';
+const FRIEND_REQUESTS_LISTENER_KEY = 'friendRequests';
+const pairActiveSessionKey = (pairId) => `pair:${pairId}:activeSession`;
+const pairChatKey = (pairId) => `pair:${pairId}:chat`;
 
 /**
- * Hook voor message en friend request listeners.
+ * Hook for message and friend request listeners.
  */
 export function useMessageListeners({
   isLoggedIn,
@@ -29,51 +36,49 @@ export function useMessageListeners({
   onNotification,
   getAvatar
 }) {
-  // Tracking refs
   const listenersRef = useRef(createListenerManager());
-  const listenerStartTimeRef = useRef(null);
   const activeSessionsRef = useRef({});
 
   /**
-   * Check of een conversation open en actief is.
+   * Check if a conversation is open and currently active.
    */
   const isConversationActive = useCallback((contactName) => {
     const convId = `conv_${contactName}`;
     const conv = conversationsRef.current[convId];
-    
+
     const isConvOpen = conv && conv.isOpen && !conv.isMinimized;
     const isConvActive = activePaneRef.current === convId;
-    
-    log('[useMessageListeners] isConversationActive check:', {
-      contactName,
-      convId,
-      hasConv: !!conv,
-      isOpen: conv?.isOpen,
-      isMinimized: conv?.isMinimized,
-      result: isConvOpen && isConvActive
-    });
-    
+
     return isConvOpen && isConvActive;
   }, [conversationsRef, activePaneRef]);
 
   /**
-   * Setup listener voor friend requests.
+   * Remove all listeners for a single contact pair.
+   */
+  const detachContactListener = useCallback((pairId) => {
+    listenersRef.current.remove(pairChatKey(pairId));
+    listenersRef.current.remove(pairActiveSessionKey(pairId));
+    delete activeSessionsRef.current[pairId];
+  }, []);
+
+  /**
+   * Setup listener for friend requests.
    */
   const setupFriendRequestListener = useCallback(() => {
     if (!user.is || !currentUser) return;
+    if (listenersRef.current.has(FRIEND_REQUESTS_LISTENER_KEY)) return;
 
     const listenerStartTime = Date.now();
     log('[useMessageListeners] Setting up friend request listener for:', currentUser);
 
     const friendRequestsNode = gun.get('friendRequests').get(currentUser);
-    
+
     friendRequestsNode.map().on((requestData, requestId) => {
       if (!requestData || !requestData.from || requestData.status !== 'pending') {
         return;
       }
 
       const requestTimestamp = requestData.timestamp || 0;
-
       if (requestTimestamp < listenerStartTime) {
         return;
       }
@@ -84,119 +89,130 @@ export function useMessageListeners({
       }
 
       shownToastsRef.current.add(toastKey);
-      log('[useMessageListeners] Showing friend request toast from:', requestData.from);
-
       showToast({
         from: requestData.from,
         message: 'wil je toevoegen als contact',
         avatar: getAvatar(requestData.from),
         type: 'friendRequest',
-        requestId: requestId
+        requestId
       });
     });
 
-    listenersRef.current.add('friendRequests', friendRequestsNode);
-  }, [currentUser, showToast, shownToastsRef, getAvatar]);
+    listenersRef.current.add(FRIEND_REQUESTS_LISTENER_KEY, friendRequestsNode);
+  }, [currentUser, getAvatar, showToast, shownToastsRef]);
 
   /**
-   * Setup listener voor messages van een specifiek contact.
-   * OPTIE A: Simpele sessie tracking - volg ACTIVE_SESSIONS
+   * Setup listener for messages from a specific contact.
+   * Follows ACTIVE_SESSIONS and safely swaps chat listeners on session changes.
    */
   const setupContactMessageListener = useCallback((contactName, pairId) => {
-  // 1. Voorkom dubbele listeners per contact (Ref blijft bestaan tussen renders)
-  if (listenersRef.current.has(pairId)) {
-    return;
-  }
+    const activeKey = pairActiveSessionKey(pairId);
+    const chatKey = pairChatKey(pairId);
 
-  log(`[useMessageListeners] 🛡️ Start persistente listener voor: ${contactName}`);
+    if (listenersRef.current.has(activeKey)) {
+      return;
+    }
 
-  let currentSessionId = null;
-  const activeSessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
+    log('[useMessageListeners] Start persistent listener for contact:', contactName);
 
-  // We luisteren specifiek naar de sessionId pointer
-  activeSessionNode.get('sessionId').on((activeSessionId) => {
-    if (!activeSessionId || activeSessionId === currentSessionId) return;
-    
-    currentSessionId = activeSessionId;
-    log(`[useMessageListeners] 📡 Hook verbonden met sessie-node: ${activeSessionId}`);
+    const activeSessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
+    activeSessionNode.get('sessionId').on((activeSessionId) => {
+      const previousSessionId = activeSessionsRef.current[pairId];
 
-    gun.get(activeSessionId).map().on(async (data, id) => {
-      if (!data || !data.content || !data.sender) return;
-      if (data.sender === (user.is && user.is.alias)) return;
+      if (!activeSessionId) {
+        if (previousSessionId) {
+          listenersRef.current.remove(chatKey);
+          delete activeSessionsRef.current[pairId];
+        }
+        return;
+      }
 
-      const msgKey = `processed_${id}`;
-      if (shownToastsRef.current.has(msgKey)) return;
-      shownToastsRef.current.add(msgKey);
+      if (activeSessionId === previousSessionId) {
+        return;
+      }
 
-      const now = Date.now();
-      const isRecent = data.timeRef > (now - 15000);
+      activeSessionsRef.current[pairId] = activeSessionId;
+      listenersRef.current.remove(chatKey);
 
-      if (isRecent) {
-        log('[useMessageListeners] 📨 Bericht ontvangen:', contactName);
+      log('[useMessageListeners] Following active session for contact:', {
+        contactName,
+        pairId,
+        activeSessionId
+      });
 
-        // Decrypt voor preview
+      const chatNode = gun.get(activeSessionId);
+      chatNode.map().on(async (data, id) => {
+        if (!data || !data.content || !data.sender) return;
+        if (data.sender === (user.is && user.is.alias)) return;
+
+        const msgKey = `processed_${activeSessionId}_${id}`;
+        if (shownToastsRef.current.has(msgKey)) return;
+        shownToastsRef.current.add(msgKey);
+
+        const now = Date.now();
+        const isRecent = data.timeRef > (now - 15000);
+        if (!isRecent) return;
+
         const decryptedContent = await decryptMessage(data.content, contactName);
 
-        // Geef door aan App.js — handleIncomingMessage doet toast, geluid en taakbalk
         if (onMessage) {
           onMessage({ ...data, content: decryptedContent }, contactName, id, activeSessionId);
         }
 
-        // Notificatie-timestamp registreren
         if (!isConversationActive(contactName) && onNotification) {
           onNotification(contactName, data.timeRef);
         }
-      }
-    });
-  });
+      });
 
-  // Markeer als actief zonder cleanup toe te voegen
-  listenersRef.current.add(pairId, activeSessionNode);
-  
-}, [onMessage, isConversationActive, showToast, getAvatar, onNotification, shownToastsRef]);
+      listenersRef.current.add(chatKey, chatNode);
+    });
+
+    listenersRef.current.add(activeKey, activeSessionNode);
+  }, [isConversationActive, onMessage, onNotification, shownToastsRef]);
+
   /**
-   * Setup listeners voor alle contacten.
+   * Setup listeners for all contacts.
    */
   const setupMessageListeners = useCallback(() => {
     if (!user.is || !currentUser) return;
+    if (listenersRef.current.has(CONTACTS_LISTENER_KEY)) return;
 
-    log('[useMessageListeners] 🚀 Setting up message listeners for:', currentUser);
-    listenerStartTimeRef.current = Date.now();
+    log('[useMessageListeners] Setting up message listeners for:', currentUser);
 
-    user.get('contacts').map().on((contactData) => {
-      if (contactData && contactData.status === 'accepted') {
-        const contactName = contactData.username;
-        const pairId = getContactPairId(currentUser, contactName);
-        
-        log('[useMessageListeners] 📋 Setting up listener for contact:', contactName);
+    const contactsNode = user.get('contacts');
+    contactsNode.map().on((contactData, contactKey) => {
+      const contactName = (contactData && contactData.username) || contactKey;
+      if (!contactName || typeof contactName !== 'string' || contactName === '_' || contactName === currentUser) {
+        return;
+      }
+
+      const pairId = getContactPairId(currentUser, contactName);
+      if (contactData && canAttachContactListeners(contactData)) {
         setupContactMessageListener(contactName, pairId);
+      } else {
+        detachContactListener(pairId);
       }
     });
-  }, [currentUser, setupContactMessageListener]);
+
+    listenersRef.current.add(CONTACTS_LISTENER_KEY, contactsNode);
+  }, [currentUser, detachContactListener, setupContactMessageListener]);
 
   /**
-   * Cleanup alle listeners.
+   * Cleanup all listeners.
    */
   const cleanup = useCallback(() => {
-    log('[useMessageListeners] 🧹 Cleaning up all listeners');
+    log('[useMessageListeners] Cleaning up all listeners');
     listenersRef.current.cleanup();
     activeSessionsRef.current = {};
   }, []);
 
-  // Setup listeners when logged in
-useEffect(() => {
-  if (!isLoggedIn || !currentUser) return;
+  // Setup listeners when logged in.
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser) return;
 
-  // Alleen opstarten als er nog geen listeners zijn
-  if (listenersRef.current.size === 0) {
-    log('[useMessageListeners] 🚀 Initializing persistent listeners...');
     setupMessageListeners();
     setupFriendRequestListener();
-  }
-
-  // Verwijder de cleanup die alles stopt bij elke kleine re-render
-  // Alleen cleanen bij ECHTE logout (gebeurt in handleLogoff in App.js)
-}, [isLoggedIn, currentUser]);
+  }, [isLoggedIn, currentUser, setupMessageListeners, setupFriendRequestListener]);
 
   return {
     cleanup,

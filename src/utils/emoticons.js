@@ -46,10 +46,21 @@ export const emoticons = Object.values(EMOTICON_CATEGORIES)
 /** Gesorteerde keys voor conversion (langste eerst) */
 const sortedKeys = Object.keys(emoticons).sort((a, b) => b.length - a.length);
 
+const normalizeEmoticonInput = (text) => {
+  if (typeof text === 'string') return text;
+  if (text === null || text === undefined) return '';
+  if (typeof text === 'number' || typeof text === 'boolean' || typeof text === 'bigint') {
+    return String(text);
+  }
+  return '[Ongeldig bericht]';
+};
+
 /** Convert text emoticons naar emoji */
 export const convertEmoticons = (text) => {
-  if (!text) return '';
-  let result = text;
+  const normalizedText = normalizeEmoticonInput(text);
+  if (!normalizedText) return '';
+
+  let result = normalizedText;
   sortedKeys.forEach(key => {
     const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(^|\\s)${escapedKey}(?=\\s|$)`, 'g');

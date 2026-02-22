@@ -27,6 +27,7 @@ export function AvatarProvider({ children }) {
   const [displayNameCache, setDisplayNameCache] = useState({});
   const displayNameCacheRef = useRef({}); // altijd up-to-date, ook in stale Gun callbacks
   const listenersRef = useRef(new Set());
+  const pendingSubscriptionsRef = useRef(new Set());
 
   const subscribeAvatar = useCallback((username) => {
     if (!username || listenersRef.current.has(username)) return;
@@ -60,11 +61,22 @@ export function AvatarProvider({ children }) {
     });
   }, []);
 
+  // Voorkomt setState-in-render waarschuwingen wanneer getAvatar/getDisplayName
+  // tijdens render worden aangeroepen en Gun direct een callback geeft.
+  const scheduleProfileSubscription = useCallback((username) => {
+    if (!username || listenersRef.current.has(username) || pendingSubscriptionsRef.current.has(username)) return;
+    pendingSubscriptionsRef.current.add(username);
+    setTimeout(() => {
+      pendingSubscriptionsRef.current.delete(username);
+      subscribeAvatar(username);
+    }, 0);
+  }, [subscribeAvatar]);
+
   const getAvatar = useCallback((username) => {
     if (!username) return fallbackAvatar('unknown');
-    subscribeAvatar(username);
+    scheduleProfileSubscription(username);
     return avatarCache[username] || fallbackAvatar(username);
-  }, [avatarCache, subscribeAvatar]);
+  }, [avatarCache, scheduleProfileSubscription]);
 
   const setMyAvatar = useCallback((avatarValue, avatarType) => {
     if (!user.is) return;
@@ -84,9 +96,9 @@ export function AvatarProvider({ children }) {
 
   const getDisplayName = useCallback((username) => {
     if (!username) return '';
-    subscribeAvatar(username); // start Gun listener als nog niet actief
+    scheduleProfileSubscription(username); // start Gun listener als nog niet actief
     return displayNameCacheRef.current[username] || displayNameCache[username] || username;
-  }, [displayNameCache, subscribeAvatar]);
+  }, [displayNameCache, scheduleProfileSubscription]);
 
   // Versie die wacht tot de naam geladen is (voor toasts die direct na verbinding komen)
   const getDisplayNameAsync = useCallback((username, timeout = 1500) => {
@@ -95,7 +107,7 @@ export function AvatarProvider({ children }) {
     if (displayNameCacheRef.current[username]) {
       return Promise.resolve(displayNameCacheRef.current[username]);
     }
-    subscribeAvatar(username);
+    scheduleProfileSubscription(username);
     return new Promise((resolve) => {
       const start = Date.now();
       const check = () => {
@@ -106,7 +118,7 @@ export function AvatarProvider({ children }) {
       };
       check();
     });
-  }, [subscribeAvatar]);
+  }, [scheduleProfileSubscription]);
 
   const setMyDisplayName = useCallback((displayName) => {
     if (!user.is) return;

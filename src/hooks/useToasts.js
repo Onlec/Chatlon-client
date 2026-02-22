@@ -26,7 +26,7 @@ import { log } from '../utils/debug';
  * Hook voor toast notificatie management.
  * 
  * @param {Object} options - Configuratie opties
- * @param {string} [options.soundUrl='/nudge.mp3'] - URL voor notificatie geluid
+ * @param {string} [options.soundUrl='/sounds/message.mp3'] - URL voor notificatie geluid
  * @param {number} [options.maxToasts=5] - Maximum aantal gelijktijdige toasts
  * @returns {Object} Toast state en functies
  * 
@@ -43,7 +43,7 @@ import { log } from '../utils/debug';
  */
 export function useToasts(options = {}) {
   const {
-    soundUrl = '/alert.mp3',
+    soundUrl = '/sounds/message.mp3',
     maxToasts = 5
   } = options;
 

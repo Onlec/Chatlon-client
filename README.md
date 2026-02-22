@@ -1,217 +1,70 @@
-# 💬 Chatlon
+# Getting Started with Create React App
 
-**Early-2000s chat & desktop recreation**  
-React + Gun.js + Trystero  
-Parody branding: Panes (Windows), dX (XP), Macrohard (Microsoft), Chatlon (MSN)
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
----
+## Available Scripts
 
-## 🎯 Project Goal
+In the project directory, you can run:
 
-Chatlon recreates the *look, feel and behavior* of early-2000s chat messengers
-inside a retro Panes dX-style desktop environment.
+### `npm start`
 
-The focus is on:
-- Authentic UX over modern conventions
-- Real-time peer-to-peer messaging
-- Simple, hackable architecture
-- Minimal abstractions, maximal clarity
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-> If it wouldn't feel at home in 2004, it probably doesn't belong here.
+The page will reload when you make changes.\
+You may also see any lint errors in the console.
 
----
+### `npm test`
 
-## ✨ Core Features
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-- 🪟 Panes dX-style desktop with window manager
-- 💬 1-on-1 private chat with E2E encryption (Gun.js + SEA)
-- 🎧 TeamTalk voice chat — serverless P2P via BitTorrent (Trystero)
-- 📞 1-on-1 audio calls (WebRTC via Gun signaling)
-- 👥 Contacts & friend requests
-- ✍️ Typing indicators & nudges
-- 😀 Classic emoticons
-- 🔔 Toast notifications
-- 🟢 True presence detection (heartbeat-based)
-- 🔒 End-to-end encryption for chat messages
-- 📡 Relay health monitoring with auto-reconnect
-- 🌐 Browser-to-browser peering & superpeer network
-- 🧮 Retro desktop apps (Calculator, Notepad, Paint, Media Player, Browser parody)
+### `npm run build`
 
----
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
-## 🧱 Tech Stack
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
 
-### Client
-- React (functional components only)
-- Gun.js + SEA (auth, realtime sync, encryption)
-- Trystero (BitTorrent P2P — TeamTalk voice chat)
-- Single CSS file (XP-style)
-- No external UI or state libraries
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### Server
-- Gun relay / persistence node
-- Hosted on Render
-- Required for login and persistent data
-- Not required for TeamTalk voice (fully P2P)
+### `npm run eject`
 
----
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-## 🗂 Project Structure (High Level)
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-```
-src/
-├── App.js                  # Central desktop shell & window manager
-├── paneConfig.js           # Pane registry
-├── gun.js                  # Single Gun instance
-├── App.css                 # Complete XP-style UI
-├── components/
-│   ├── TeamTalkPane.js     # Voice chat (Trystero P2P)
-│   └── ...                 # Other pane components
-├── hooks/
-│   ├── useTrysteroTeamTalk.js  # TeamTalk via Trystero
-│   ├── useWebRTC.js            # 1-on-1 calls via Gun
-│   ├── useGroupCallMesh.js     # Future: group calls via Gun mesh
-│   ├── usePresence.js          # Heartbeat presence
-│   ├── useSuperpeer.js         # Superpeer network
-│   └── ...
-├── utils/
-│   ├── encryption.js       # E2E encryption via Gun SEA
-│   ├── relayMonitor.js     # Relay health & auto-reconnect
-│   ├── gunCleanup.js       # Data compaction
-│   └── ...
-└── emoticons.js            # Classic emoticon mapping
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-docs/
-├── ARCHITECTURE.md         # Technical source of truth
-├── USAGE.md                # User guide & AI workflow
-└── TODO.md                 # Informal working list
-```
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-> Detailed rules and schemas live in `ARCHITECTURE.md`.
+## Learn More
 
----
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-## 🔒 Privacy & Encryption
+To learn React, check out the [React documentation](https://reactjs.org/).
 
-- Chat messages are end-to-end encrypted via Gun SEA (Diffie-Hellman key exchange)
-- WebRTC audio/video is always encrypted (SRTP/DTLS)
-- TeamTalk audio is encrypted peer-to-peer (WebRTC via Trystero)
-- Gun relay can see metadata but not message content
-- Backwards compatible with unencrypted legacy messages
+### Code Splitting
 
----
+This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-## 🎧 TeamTalk
+### Analyzing the Bundle Size
 
-TeamTalk is a voice chat feature inspired by TeamSpeak and Ventrilo.
+This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-- Create a server with a name and optional password
-- Share the server ID with friends
-- Join via server ID — fully peer-to-peer, no server needed
-- Audio via BitTorrent tracker signaling + WebRTC
-- Per-user volume control and mute
-- Speaking detection with visual indicators
-- Recent servers saved locally
+### Making a Progressive Web App
 
----
+This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
 
-## 🚨 Branding Rules (Non-Negotiable)
+### Advanced Configuration
 
-Trademarked names are **never** used in code, UI or documentation.
+This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-| ❌ Forbidden | ✅ Use Instead |
-|-------------|---------------|
-| Windows | Panes |
-| XP | dX |
-| Microsoft | Macrohard |
-| MSN | Chatlon |
-| TeamSpeak | TeamTalk |
+### Deployment
 
-This applies to:
-- Variable names
-- CSS classes
-- Comments
-- UI text
-- Documentation
+This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
----
+### `npm run build` fails to minify
 
-## 📐 Architectural Principles
-
-- One Gun instance, shared everywhere
-- App.js is the **only** global orchestrator
-- Window state lives only in App.js
-- Functional React components only
-- Refs are mandatory inside Gun callbacks
-- Authentic behavior > modern UX expectations
-- Gun for state & persistence, Trystero for voice transport
-
-> The full architecture and locked schemas are documented in `ARCHITECTURE.md`.
-
----
-
-## 🤖 AI Development Workflow (Summary)
-
-This project uses **multiple AI roles**:
-
-- **Claude** → primary implementation AI
-- **ChatGPT** → documentation & consistency checks
-- **Gemini** → debugging & feature design
-
-### Key Rule
-Claude **does not rewrite full files** unless explicitly asked.
-
-Claude outputs:
-- Exact blocks to replace
-- Exact new blocks to insert
-- Approximate line numbers or surrounding context
-
-The human developer always integrates changes manually.
-
-➡️ Full AI workflow rules live in `USAGE.md`.
-
----
-
-## 🚀 Getting Started
-
-```bash
-npm install
-npm start
-```
-
-Local development uses `.env.local` to connect to a local Gun server.
-Production uses `.env` with a hosted Gun relay.
-
-See `USAGE.md` for full setup and user flow.
-
----
-
-## 📄 Documentation Index
-
-| File | Purpose |
-|------|---------|
-| `README.md` | Project overview (this file) |
-| `ARCHITECTURE.md` | Technical source of truth |
-| `USAGE.md` | User guide & AI workflow |
-| `TODO.md` | Informal working list |
-
----
-
-## 🧠 Design Philosophy
-
-Chatlon intentionally avoids:
-- Modern flat UI patterns
-- Heavy abstractions
-- Over-engineering
-- Feature creep
-
-The goal is clarity, nostalgia and correctness, not scale or polish.
-
----
-
-## ⚠️ Disclaimer
-
-Chatlon is a nonprofit parody project.
-All branding is fictional and intentionally avoids real trademarks.
-
-No affiliation with Microsoft, MSN or Windows exists.
+This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)

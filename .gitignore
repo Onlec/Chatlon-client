@@ -10,9 +10,8 @@
 
 # production
 /build
-dist
 
-# miscgit 
+# misc
 .DS_Store
 .env.local
 .env.development.local
@@ -22,5 +21,3 @@ dist
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-radata/

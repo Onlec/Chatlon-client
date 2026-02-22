@@ -29,6 +29,7 @@ import { useActiveTabSessionGuard } from './hooks/useActiveTabSessionGuard';
 import { runFullCleanup } from './utils/gunCleanup';
 import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
 import { clearEncryptionCache } from './utils/encryption';
+import { canAttachPresenceListeners } from './utils/contactModel';
 import {
   POST_LOGIN_CLEANUP_DELAY_MS,
   SESSION_RELOAD_DELAY_MS,
@@ -490,17 +491,16 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   }, []);
 
   const handleContactOnline = React.useCallback((contactUsername) => {
-    console.log('[handleContactOnline] aangeroepen voor:', contactUsername, '| toastNotifications:', settings.toastNotifications, '| messengerSignedIn:', messengerSignedInRef.current);
     if (!messengerSignedInRef.current) return;
     if (!settings.toastNotifications) return;
     showToast({
       type: 'presence',
       contactName: contactUsername,
-      from: getDisplayName(contactUsername),
+      from: getDisplayNameRef.current(contactUsername),
       message: 'is nu online',
       avatar: getAvatar(contactUsername),
     });
-  }, [showToast, getAvatar, getDisplayName, settings.toastNotifications]);
+  }, [showToast, getAvatar, settings.toastNotifications]);
 
   const handleNudge = React.useCallback((contactUsername) => {
     if (!messengerSignedInRef.current) return;
@@ -517,7 +517,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
         avatar: getAvatar(contactUsername),
       });
     }
-  }, [showToast, getAvatar, getDisplayName, settings.toastNotifications, activePaneRef]);
+  }, [showToast, getAvatar, settings.toastNotifications, activePaneRef]);
 
   const handleNudgeRef = React.useRef(handleNudge);
   handleNudgeRef.current = handleNudge;
@@ -558,7 +558,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
       const usernameFromData = typeof contactData?.username === 'string' ? contactData.username : '';
       const fallbackUsername = typeof key === 'string' ? key : '';
       const username = usernameFromData || fallbackUsername;
-      const isEligible = Boolean(contactData && username && contactData.status === 'accepted');
+      const isEligible = Boolean(contactData && username && canAttachPresenceListeners(contactData));
 
       if (!isEligible) {
         if (username) detachPresenceListener(username);
@@ -590,7 +590,11 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
         const newStatus = getPresenceStatus(presenceData);
         const prevStatusValue = prevPresence[username]?.statusValue ?? 'offline';
 
-        log('[PresenceMonitor]', username, '| prev:', prevStatusValue, 'â†’ new:', newStatus.value);
+        if (prevStatusValue === newStatus.value) {
+          return;
+        }
+
+        log('[PresenceMonitor]', username, '| prev:', prevStatusValue, '-> new:', newStatus.value);
 
         if (prevStatusValue === 'offline' && newStatus.value !== 'offline') {
           log('[PresenceMonitor] ONLINE TRANSITIE voor:', username);

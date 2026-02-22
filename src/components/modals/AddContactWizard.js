@@ -21,7 +21,7 @@ function AddContactWizard({ onClose, onSendRequest, currentUser, contacts }) {
         setError('U kunt uzelf niet toevoegen');
         return;
       }
-      if (contacts.find(c => c.username === trimmed)) {
+      if (contacts.find(c => c.username === trimmed && c.contactStatus === 'accepted')) {
         setError('Dit contact staat al in uw lijst');
         return;
       }

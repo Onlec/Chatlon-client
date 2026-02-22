@@ -20,6 +20,7 @@ const PRESENCE_MAP = {
   busy:    { color: '#CC0000', label: 'Bezet' },
   offline: { color: '#8C8C8C', label: 'Offline' },
 };
+
 function getPresence(raw) {
   return PRESENCE_MAP[raw?.status] || PRESENCE_MAP.offline;
 }
@@ -78,48 +79,51 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   // --- Gun.js Handlers ---
   const sendMessage = useCallback(async () => {
     if (!messageText.trim() || !currentSessionId) return;
-    const currentUser = user.is?.alias;
+    const sender = user.is?.alias;
     const now = Date.now();
-    const messageKey = `${currentUser}_${now}_${Math.random().toString(36).substr(2, 9)}`;
+    const messageKey = `${sender}_${now}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Encrypt content voor verzending
     const encryptedContent = await encryptMessage(messageText, contactName);
 
     gun.get(currentSessionId).get(messageKey).put({
-      sender: currentUser,
+      sender,
       content: encryptedContent,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timeRef: now
     });
-    
-    gun.get(`TYPING_${currentSessionId}`).put({ user: currentUser, isTyping: false, timestamp: now });
+
+    gun.get(`TYPING_${currentSessionId}`).put({ user: sender, isTyping: false, timestamp: now });
     setMessageText('');
   }, [messageText, currentSessionId, contactName]);
 
   const sendNudge = useCallback(() => {
     if (!canNudge || !currentSessionId) return;
-    const currentUser = user.is?.alias;
+    const sender = user.is?.alias;
     setCanNudge(false);
     playSound('nudge');
     const nudgeTime = Date.now();
-    const nudgeKey = `${currentUser}_nudge_${nudgeTime}`;
+    const nudgeKey = `${sender}_nudge_${nudgeTime}`;
+
     // Sla op in chat-node zodat beide partijen het zien in de geschiedenis
     gun.get(currentSessionId).get(nudgeKey).put({
-      sender: currentUser,
-      content: '__nudge__',  // niet-leeg zodat message listeners het niet filteren
+      sender,
+      content: '__nudge__',
       type: 'nudge',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date(nudgeTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timeRef: nudgeTime,
     });
-    gun.get(`NUDGE_${currentSessionId}`).put({ time: nudgeTime, from: currentUser });
+
+    gun.get(`NUDGE_${currentSessionId}`).put({ time: nudgeTime, from: sender });
     setTimeout(() => setCanNudge(true), 5000);
   }, [canNudge, currentSessionId, playSound]);
 
   // --- Effects (Sessie & Listeners) ---
   useEffect(() => {
-    const currentUser = user.is?.alias;
-    if (!currentUser || !contactName) return;
-    const pairId = getContactPairId(currentUser, contactName);
+    const sender = user.is?.alias;
+    if (!sender || !contactName) return;
+
+    const pairId = getContactPairId(sender, contactName);
     const sessionRef = gun.get('ACTIVE_SESSIONS').get(pairId);
 
     sessionRef.get('sessionId').once((id) => {
@@ -139,7 +143,6 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
       warmupEncryption(contactName);
     }
   }, [contactName]);
-
 
   useEffect(() => {
     if (!currentSessionId) return;
@@ -166,7 +169,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
       dispatch({ ...data, content: decryptedContent, id, isLegacy: data.timeRef < boundary });
     });
 
-    nudgeNode.on(data => {
+    nudgeNode.on((data) => {
       if (data?.time > lastProcessedNudge.current && data.from === contactName) {
         lastProcessedNudge.current = data.time;
         // Geluid + schudden — systeembericht komt via de chat-node listener
@@ -176,7 +179,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
       }
     });
 
-  typingNode.on((data) => {
+    typingNode.on((data) => {
       if (data && data.isTyping && data.user === contactName) {
         const now = Date.now();
         if (now - data.timestamp < 4000) {
@@ -191,17 +194,18 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       }
     });
+
     //chatListenersRef.current.add('chat', chatNode);
     chatListenersRef.current.add('nudge', nudgeNode);
     chatListenersRef.current.add('typing', typingNode);
 
     return () => { chatListenersRef.current.cleanup(); };
-  }, [currentSessionId, contactName, lastNotificationTime]);
+  }, [currentSessionId, contactName, lastNotificationTime, playSound]);
 
   // Scroll effect
   useEffect(() => {
     if (state.messages.length > prevMsgCountRef.current && prevMsgCountRef.current !== 0) {
-      setDisplayLimit(prev => prev + 1);
+      setDisplayLimit((prev) => prev + 1);
     }
     prevMsgCountRef.current = state.messages.length;
     if (messagesAreaRef.current) messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
@@ -210,7 +214,8 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   return (
     <div className={`chat-conversation ${isShaking ? 'nudge-active' : ''}`}>
       <ChatTopMenu />
-        <ChatToolbar onNudge={sendNudge} canNudge={canNudge} onStartCall={startCall} callState={callState} />      <CallPanel
+      <ChatToolbar onNudge={sendNudge} canNudge={canNudge} onStartCall={startCall} callState={callState} />
+      <CallPanel
         callState={callState}
         contactName={contactName}
         isMuted={isMuted}
@@ -233,11 +238,8 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
             <div className="chat-contact-header-right">
               <div className="chat-contact-header-name-row">
                 <span className="chat-contact-header-name">{getDisplayName(contactName)}</span>
-                <span className="chat-contact-header-status-dot"
-                  style={{ backgroundColor: getPresence(contactPresence).color }} />
-                <span className="chat-contact-header-status-label">
-                  {getPresence(contactPresence).label}
-                </span>
+                <span className="chat-contact-header-status-dot" style={{ backgroundColor: getPresence(contactPresence).color }} />
+                <span className="chat-contact-header-status-label">{getPresence(contactPresence).label}</span>
               </div>
               {contactPresence?.personalMessage && (
                 <div className="chat-contact-header-msg">{contactPresence.personalMessage}</div>
@@ -246,29 +248,29 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
           </div>
           <div className="chat-messages-display" ref={messagesAreaRef}>
             {state.messages.length > displayLimit && (
-              <button className="load-more-btn" onClick={() => setDisplayLimit(p => p + 25)}>
+              <button className="load-more-btn" onClick={() => setDisplayLimit((p) => p + 25)}>
                 --- Laad oudere berichten ({state.messages.length - displayLimit} resterend) ---
               </button>
             )}
             {state.messages.slice(-displayLimit).map((msg, i, arr) => (
-              <ChatMessage key={msg.id} msg={msg} prevMsg={arr[i-1]} currentUser={user.is?.alias} />
+              <ChatMessage key={msg.id} msg={msg} prevMsg={arr[i - 1]} currentUser={user.is?.alias} />
             ))}
           </div>
           <div className="typing-indicator-bar">
             {isContactTyping && <em>{getDisplayName(contactName)} is aan het typen...</em>}
           </div>
-          <ChatInput 
+          <ChatInput
             value={messageText}
             onChange={(val) => {
               // Play typing sound on new character
               if (val.length > messageText.length) {
                 const now = Date.now();
-                if (now - lastTypingSoundRef.current > 100) { // Max 1 sound per 100ms
+                if (now - lastTypingSoundRef.current > 100) {
                   playSound('typing');
                   lastTypingSoundRef.current = now;
                 }
               }
-              
+
               setMessageText(val);
               const now = Date.now();
               if (now - lastTypingSignal.current > 1000) {
@@ -282,7 +284,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
             showPicker={showEmoticonPicker}
             setShowPicker={setShowEmoticonPicker}
             pickerRef={emoticonPickerRef}
-            insertEmoticon={(emo) => setMessageText(prev => prev + emo + ' ')}
+            insertEmoticon={(emo) => setMessageText((prev) => prev + emo + ' ')}
           />
         </div>
 
@@ -302,12 +304,13 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
 function ChatTopMenu() {
   return (
     <div className="chat-menubar">
-      {['Bestand', 'Bewerken', 'Acties', 'Extra', 'Help'].map(m => <span key={m} className="chat-menu-item">{m}</span>)}
+      {['Bestand', 'Bewerken', 'Acties', 'Extra', 'Help'].map((m) => <span key={m} className="chat-menu-item">{m}</span>)}
     </div>
   );
 }
 
-function ChatToolbar({ onNudge, canNudge, onStartCall, callState }) {  const tools = [
+function ChatToolbar({ onNudge, canNudge, onStartCall, callState }) {
+  const tools = [
     { icon: '👥', label: 'Uitnodigen' },
     { icon: '📎', label: 'Bestand' },
     { icon: '🎥', label: 'Video' },
@@ -317,9 +320,9 @@ function ChatToolbar({ onNudge, canNudge, onStartCall, callState }) {  const too
   ];
   return (
     <div className="chat-toolbar">
-      {tools.map(t => (
-        <button 
-          key={t.label} 
+      {tools.map((t) => (
+        <button
+          key={t.label}
           className={`chat-toolbar-btn ${t.disabled ? 'disabled' : ''}`}
           onClick={t.onClick || undefined}
           disabled={t.disabled}
@@ -390,7 +393,7 @@ function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, set
             {Object.entries(getEmoticonCategories()).map(([cat, emos]) => (
               <div key={cat} className="emoticon-category">
                 <div className="emoticon-grid">
-                  {emos.map(e => <button key={e.text} onClick={() => { insertEmoticon(e.text); setShowPicker(false); }}>{e.emoji}</button>)}
+                  {emos.map((e) => <button key={e.text} onClick={() => { insertEmoticon(e.text); setShowPicker(false); }}>{e.emoji}</button>)}
                 </div>
               </div>
             ))}
