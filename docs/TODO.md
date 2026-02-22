@@ -18,20 +18,25 @@ AI systems must NOT treat this section as architecture or rules.
 - [ ] Chat ordering edge case on simultaneous sends
 - [ ] Contact status not always updating instantly
 - [ ] TeamTalk: server naam lookup via Gun registry kan traag zijn bij eerste keer
-
+- [x] Automated regression tests for session handover/conflict flows (based on `docs/SESSION_FLOWS.md`)
+- [ ] Automated regression test for malformed message payloads in `convertEmoticons` (prevent `result.replace` crashes)
 ### UI / UX
 - [ ] Z-index edge case when minimizing/restoring panes
 - [ ] Window focus can desync after rapid open/close
 - [ ] Toast overlap in rare multi-notification scenarios
-
+- [x] Session-conflict melding: vervang blocking alert door non-blocking login-banner (sticky, handmatig wegklikbaar)
+- [ ] Mojibake/encoding cleanup in UI text and icons (e.g. `App.js`, `ToastNotification.js`, `emoticons.js`)
 ### Tech / Cleanup
 - [ ] Remove leftover debug logs
 - [ ] Normalize Gun listeners cleanup
 - [ ] Verify ref usage in all Gun callbacks
 - [ ] Oude Gun TeamTalk nodes (TEAMTALK/channels/*, TEAMTALK/signaling/*) opruimen
-- [ ] useTeamTalkMesh.js hernoemen naar useGroupCallMesh.js (bewaard voor groepsgesprekken)
+- [x] useTeamTalkMesh.js hernoemen naar useGroupCallMesh.js (bewaard voor groepsgesprekken)
 - [ ] useTeamTalk.js opruimen — niet meer nodig voor TeamTalk, bewaren voor groepsgesprekken
-
+- [ ] `ConversationPane` listener lifecycle fix: ensure `chatNode.map().on(...)` is properly registered/cleaned to prevent duplicate listeners
+- [ ] `useMessageListeners` listener lifecycle hardening: cleanup contact-map and per-session chat listeners to prevent duplicate subscriptions after handovers/relogin
+- [ ] Remove remaining production `console.log`/debug leftovers (e.g. `App.js` `handleContactOnline`)
+- [ ] Add dev utility to reset relationship state for test accounts (contacts/invites/requests/privacy nodes)
 ### Toekomstige Features
 - [ ] Groepsgesprekken in Chatlon Messenger (hergebruik Gun mesh code)
 - [ ] Credits / cosmetica systeem (verdienen, shop, thema's)
@@ -43,8 +48,8 @@ AI systems must NOT treat this section as architecture or rules.
 ### MSN Authenticiteit (hoge prioriteit)
 - [ ] **Contactgroepen** — vouwbare categorieën (Friends / Family / Work) in ContactsPane; Gun-node per gebruiker met groepsmapping
 - [ ] **Berichtopmaak** — vet, cursief, kleur, lettertype per bericht in ConversationPane; toolbar-knoppen bestaan al visueel maar hebben geen handler
-- [ ] **Aangepaste profielfoto** — gebruiker uploadt eigen foto (base64 opslaan in Gun); huidig: alleen DiceBear-avatars op basis van gebruikersnaam
-- [ ] **"Contact is nu online"-melding** — Toast + geluid wanneer contact van offline → online gaat; usePresence volgt status al, trigger-logica ontbreekt
+- [x] **Aangepaste profielfoto** — gebruiker uploadt eigen foto (base64 opslaan in Gun); huidig: alleen DiceBear-avatars op basis van gebruikersnaam
+- [x] **"Contact is nu online"-melding** — Toast + geluid wanneer contact van offline → online gaat; usePresence volgt status al, trigger-logica ontbreekt
 - [ ] **Offline berichtenwachtrij** — berichten gestuurd terwijl contact offline is, afleveren bij reconnect via Gun.js persistentie
 
 ### Functionaliteit
@@ -53,7 +58,7 @@ AI systems must NOT treat this section as architecture or rules.
 - [ ] **Contacten blokkeren** — "Blokkeer"-optie op contact; Gun-node BLOCKED_BY_\<user\> bijhouden en gefilterd weergeven
 
 ### Stabiliteit / UX
-- [ ] **Verbindingsstatus-indicator** — kleine indicator in taakbalk ("Verbonden" / "Opnieuw verbinden..."); relayMonitor.js utility bestaat al
+- [x] **Verbindingsstatus-indicator** — kleine indicator in taakbalk ("Verbonden" / "Opnieuw verbinden..."); relayMonitor.js utility bestaat al
 - [ ] **Foutherstel-UI** — zichtbare melding bij relay-uitval of verbindingsverlies
 
 ### Apps afmaken (placeholders)

@@ -1657,6 +1657,60 @@ div.pane-frame.maximized {
   padding-left: 60px;
 }
 
+.xp-right-content {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.xp-session-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 236, 153, 0.8);
+  background: rgba(66, 36, 10, 0.45);
+  color: #fff8dc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.xp-session-banner-text {
+  min-width: 0;
+}
+
+.xp-session-banner-title {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.xp-session-banner-message {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.xp-session-banner-close {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.xp-session-banner-close:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
 .xp-autologin-message {
   display: flex;
   align-items: center;

@@ -8,7 +8,7 @@ Run these checks after any changes touching `App.js`, auth, presence, or `useAct
 - Cross-window handover behavior
 - Same-window relogin behavior
 - Auto-login recall behavior
-- Alert and cleanup behavior during conflict events
+- Conflict banner and cleanup behavior during conflict events
 
 ## Preconditions
 - Gun relay running and reachable.
@@ -36,6 +36,7 @@ Expected:
 Expected:
 - Context A is kicked once.
 - Context B remains logged in.
+- Context A lands on login with a non-blocking conflict banner.
 - No repeating conflict cleanup loop in logs.
 
 ### 3) Same Account Handover Back (A -> B -> A)
@@ -45,7 +46,7 @@ Expected:
 Expected:
 - Context B is kicked once.
 - Context A remains logged in.
-- No repeated alerts on login screen.
+- No repeated conflict banner loop on login screen.
 
 ### 4) Different Accounts in Separate Contexts
 1. Login account X in Context A.
@@ -62,6 +63,7 @@ Expected:
 Expected:
 - Session initializes without stale session-kick alert.
 - No unexpected immediate logout.
+- Any old conflict banner is absent after successful login.
 
 ### 6) Conflict Burst Safety
 1. Trigger a real session conflict (scenario 2 or 3).
@@ -70,6 +72,7 @@ Expected:
 Expected:
 - Single cleanup cycle for one conflict event.
 - No repeated `Detected other session` loop after logout state is reached.
+- At most one sticky conflict banner is shown per conflict event.
 
 ### 7) Rapid Dual-Login Race
 1. Open Context A and Context B for the same account.
@@ -116,16 +119,38 @@ Expected:
 Good:
 - One `Detected other session` per real handover.
 - One cleanup sequence following that event.
-- At most one conflict alert per conflict event.
+- At most one conflict banner per conflict event.
 - `Skipping stale delayed cleanup` only when session changes before delayed cleanup.
 - Presence detach logs only when contacts become ineligible.
 
 Bad:
 - Repeating `Detected other session` every heartbeat interval.
-- Session-kick popup repeating while on login screen.
+- Conflict banner reappearing without a new conflict event.
 - Older tab teardown nulls ACTIVE_TAB while newer tab is active.
 - Online toast appears for removed/non-accepted contacts.
 - Delayed cleanup from old session affects current logged-in state.
+
+## Automation Coverage Map (Core)
+
+Automated (unit/component):
+- Session ownership decisions (`src/utils/sessionOwnership.test.js`)
+  - stale heartbeat ignore
+  - same clientId ignore
+  - newer/older owner resolution
+  - lexical tie-break
+  - legacy fallback via tabId timestamp
+- Session notice lifecycle (`src/utils/sessionNotice.test.js`)
+  - save/load roundtrip
+  - TTL expiry cleanup
+  - explicit clear behavior
+- Login conflict banner UX (`src/components/screens/LoginScreen.test.js`)
+  - banner renders with conflict notice
+  - dismiss callback fired
+  - login UI remains interactive while banner is visible
+
+Manual (keep in checklist):
+- Scenario 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+- Browser-context behavior (A/B takeover), real relay timing, and teardown race observation.
 
 ## Notes Template
 - Date:

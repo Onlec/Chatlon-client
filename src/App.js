@@ -31,13 +31,24 @@ import { STATUS_OPTIONS, getPresenceStatus } from './utils/presenceUtils';
 import { clearEncryptionCache } from './utils/encryption';
 import {
   POST_LOGIN_CLEANUP_DELAY_MS,
-  SESSION_RELOAD_DELAY_MS
+  SESSION_RELOAD_DELAY_MS,
+  SESSION_POST_CLOSE_RELOAD,
+  SESSION_POST_CLOSE_STAY_ON_LOGIN,
+  SESSION_POST_CLOSE_SHUTDOWN_BOOT_RELOAD,
+  SESSION_CLOSE_REASON_CONFLICT,
+  SESSION_CLOSE_REASON_MANUAL_LOGOFF,
+  SESSION_CLOSE_REASON_MANUAL_SHUTDOWN
 } from './utils/sessionConstants';
+import {
+  createConflictSessionNotice,
+  saveSessionNotice,
+  loadSessionNotice,
+  clearSessionNotice
+} from './utils/sessionNotice';
 import { useScanlinesPreference } from './contexts/ScanlinesContext';
 import { useSettings } from './contexts/SettingsContext';
 import { useAvatar } from './contexts/AvatarContext';
 import { useWallpaper } from './contexts/WallpaperContext';
-import { useDialog } from './contexts/DialogContext';
 
 
 // Helper: lees lokale naam uit chatlon_users localStorage
@@ -78,6 +89,7 @@ function App() {
   const [isLoggingOff, setIsLoggingOff] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
+  const [sessionNotice, setSessionNotice] = useState(() => loadSessionNotice());
   const [unreadChats, setUnreadChats] = React.useState(new Set());
   const [nowPlaying, setNowPlaying] = useState(null);
   const [messengerSignedIn, setMessengerSignedIn] = useState(false);
@@ -107,7 +119,6 @@ function App() {
   getDisplayNameRef.current = getDisplayName;
   const { getWallpaperStyle } = useWallpaper();
   const { playSound, playSoundAsync } = useSounds();
-  const { alert: xpAlert } = useDialog();
   
   // Toast notifications
   const { 
@@ -302,6 +313,11 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
     }
   };
 
+  const dismissSessionNotice = React.useCallback(() => {
+    clearSessionNotice();
+    setSessionNotice(null);
+  }, []);
+
   const resetPresenceMonitorState = () => {
     presencePrevRef.current = {};
     presenceListenersRef.current.forEach(node => { if (node.off) node.off(); });
@@ -334,7 +350,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
     showLogoffScreen = false,
     playLogoffSound = false,
     showConflictAlert = false,
-    postClose = 'reload'
+    postClose = SESSION_POST_CLOSE_RELOAD
   }) => {
     if (!beginSessionClose()) {
       log('[App] Session close already in progress, skipping:', reason);
@@ -351,23 +367,25 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
     runSessionTeardown();
 
     if (showConflictAlert && consumeSessionKickAlert()) {
-      void xpAlert('Je bent aangemeld op een andere locatie. Deze sessie wordt afgesloten.', 'Sessie beëindigd');
+      const notice = createConflictSessionNotice();
+      saveSessionNotice(notice);
+      setSessionNotice(notice);
     }
 
     const finishClose = () => {
-      if (postClose === 'shutdown_boot_reload') {
+      if (postClose === SESSION_POST_CLOSE_SHUTDOWN_BOOT_RELOAD) {
         sessionStorage.removeItem('chatlon_boot_complete');
         window.location.reload();
         return;
       }
-      if (postClose === 'stay_on_login') {
+      if (postClose === SESSION_POST_CLOSE_STAY_ON_LOGIN) {
         setIsLoggingOff(false);
         return;
       }
       window.location.reload();
     };
 
-    if (postClose !== 'reload' && postClose !== 'shutdown_boot_reload' && postClose !== 'stay_on_login') {
+    if (postClose !== SESSION_POST_CLOSE_RELOAD && postClose !== SESSION_POST_CLOSE_SHUTDOWN_BOOT_RELOAD && postClose !== SESSION_POST_CLOSE_STAY_ON_LOGIN) {
       log('[App] Unknown postClose mode, defaulting to reload:', postClose);
     }
 
@@ -385,11 +403,11 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
 
   conflictHandlerRef.current = () => {
     void closeSession({
-      reason: 'conflict',
+      reason: SESSION_CLOSE_REASON_CONFLICT,
       showLogoffScreen: true,
       playLogoffSound: true,
       showConflictAlert: true,
-      postClose: 'stay_on_login'
+      postClose: SESSION_POST_CLOSE_STAY_ON_LOGIN
     });
   };
   
@@ -399,6 +417,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
     const cleanupGeneration = sessionGenerationRef.current;
     hasInitializedRef.current = true;
     resetSessionState();
+    dismissSessionNotice();
     setIsLoggedIn(true);
     setCurrentUser(username);
 
@@ -425,20 +444,20 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   const handleLogoff = async () => {
     log('[App] Logging off...');
     await closeSession({
-      reason: 'manual_logoff',
+      reason: SESSION_CLOSE_REASON_MANUAL_LOGOFF,
       showLogoffScreen: true,
       playLogoffSound: true,
-      postClose: 'stay_on_login'
+      postClose: SESSION_POST_CLOSE_STAY_ON_LOGIN
     });
   };
   // Trigger shutdown vanuit ingelogde sessie via dezelfde teardown pipeline.
   const handleShutdown = async () => {
     log('[App] Shutting down...');
     await closeSession({
-      reason: 'manual_shutdown',
+      reason: SESSION_CLOSE_REASON_MANUAL_SHUTDOWN,
       showLogoffScreen: true,
       playLogoffSound: true,
-      postClose: 'shutdown_boot_reload'
+      postClose: SESSION_POST_CLOSE_SHUTDOWN_BOOT_RELOAD
     });
   };
 
@@ -681,7 +700,15 @@ const onTaskbarClick = React.useCallback((paneId) => {
   if (!isLoggedIn) {
     const fromBoot = justBootedRef.current;
     justBootedRef.current = false;
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} fadeIn={fromBoot} onShutdown={() => setIsShutdown(true)} />;
+    return (
+      <LoginScreen
+        onLoginSuccess={handleLoginSuccess}
+        fadeIn={fromBoot}
+        onShutdown={() => setIsShutdown(true)}
+        sessionNotice={sessionNotice}
+        onDismissSessionNotice={dismissSessionNotice}
+      />
+    );
   }
 
   // ============================================
@@ -981,4 +1008,3 @@ const onTaskbarClick = React.useCallback((paneId) => {
 }
 
 export default App;
-

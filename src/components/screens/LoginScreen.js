@@ -4,19 +4,12 @@ import { log } from '../../utils/debug';
 import { useAvatar } from '../../contexts/AvatarContext';
 import { useDialog } from '../../contexts/DialogContext';
 import { ACTIVE_TAB_FRESH_MS } from '../../utils/sessionConstants';
+import { isForeignActiveSession } from '../../utils/sessionOwnership';
 
 const COLDMAIL_DOMAINS = ['@coldmail.com', '@coldmail.nl', '@coldmail.net'];
 const TAB_CLIENT_ID_KEY = 'chatlon_tab_client_id';
 
-function isForeignActiveSession(activeTabData, localTabClientId) {
-  if (!activeTabData || !activeTabData.heartbeat) return false;
-  if (Date.now() - activeTabData.heartbeat >= ACTIVE_TAB_FRESH_MS) return false;
-  // Zelfde tab-client ID is geen "andere sessie".
-  if (localTabClientId && activeTabData.clientId === localTabClientId) return false;
-  return true;
-}
-
-function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
+function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null, onDismissSessionNotice }) {
   const { setMyAvatar, setMyDisplayName } = useAvatar();
   const { confirm } = useDialog();
   const [emailLocal, setEmailLocal] = useState('');
@@ -87,7 +80,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
 
     const localTabClientId = sessionStorage.getItem(TAB_CLIENT_ID_KEY);
     gun.get('ACTIVE_TAB').get(email).once(async (data) => {
-      if (isForeignActiveSession(data, localTabClientId)) {
+      if (isForeignActiveSession(data, localTabClientId, Date.now(), ACTIVE_TAB_FRESH_MS)) {
         const forceLogin = await confirm(
           'Dit account is al aangemeld in een ander venster.\n\nWil je de andere sessie afbreken en hier inloggen?',
           'Al aangemeld'
@@ -193,7 +186,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
 
         const localTabClientId = sessionStorage.getItem(TAB_CLIENT_ID_KEY);
         gun.get('ACTIVE_TAB').get(userObj.email).once(async (data) => {
-          if (isForeignActiveSession(data, localTabClientId)) {
+          if (isForeignActiveSession(data, localTabClientId, Date.now(), ACTIVE_TAB_FRESH_MS)) {
             const forceLogin = await confirm(
               'Dit account is al aangemeld in een ander venster.\n\nWil je de andere sessie afbreken en hier inloggen?',
               'Al aangemeld'
@@ -328,9 +321,29 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
 
         {/* Right Side - Users */}
         <div className="xp-right">
-          {selectedUser || isRegistering ? (
-            // PASSWORD VIEW
-            <div className="xp-password-panel">
+          <div className="xp-right-content">
+            {sessionNotice?.type === 'conflict' && (
+              <div className="xp-session-banner" role="status" aria-live="polite">
+                <div className="xp-session-banner-text">
+                  <div className="xp-session-banner-title">{sessionNotice.title}</div>
+                  <div className="xp-session-banner-message">{sessionNotice.message}</div>
+                </div>
+                {onDismissSessionNotice && (
+                  <button
+                    type="button"
+                    className="xp-session-banner-close"
+                    onClick={onDismissSessionNotice}
+                    aria-label="Sessie melding sluiten"
+                  >
+                    &times;
+                  </button>
+                )}
+              </div>
+            )}
+
+            {selectedUser || isRegistering ? (
+              // PASSWORD VIEW
+              <div className="xp-password-panel">
               <div className="xp-user-selected">
                 <img
                   src={getLocalAvatar(selectedUser === 'manual' ? 'guest' : selectedUser)}
@@ -436,10 +449,10 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
               <div className="xp-hint-text">
                 Tip: Druk op Enter nadat u uw wachtwoord hebt getypt
               </div>
-            </div>
-          ) : (
-            // USER SELECTION VIEW
-            <div className="xp-user-panel">
+              </div>
+            ) : (
+              // USER SELECTION VIEW
+              <div className="xp-user-panel">
               {availableUsers.length === 0 && (
                 <div className="xp-no-users-hint">
                   <span className="xp-hint-icon">&#8505;&#65039;</span>
@@ -514,7 +527,8 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown }) {
                 <span className="xp-username">Nieuwe gebruiker</span>
               </div>
             </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
