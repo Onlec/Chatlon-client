@@ -267,6 +267,32 @@ Automated:
 Manual:
 - C1, C2, C3, C4, C5, C6 in real browser contexts with real relay timing.
 
+## Conversation Module Map (Current Runtime)
+
+Use this map when changing conversation code to avoid drift:
+- `src/components/panes/ConversationPane.js`
+  - orchestration shell (state wiring, pane-level callbacks, layout composition)
+- `src/components/panes/conversation/sessionController.js`
+  - session bootstrap/follow (`.on + .once + delayed create`, generation-safe cleanup)
+- `src/components/panes/conversation/streamController.js`
+  - chat/nudge/typing stream attach-detach lifecycle with generation guards
+- `src/components/panes/conversation/windowPolicy.js`
+  - pure visible-window/autoscroll/load-older policy
+- `src/components/panes/conversation/conversationState.js`
+  - message normalization + reducer ordering/dedupe contract
+- `src/components/panes/conversation/ChatTopMenu.js`
+- `src/components/panes/conversation/ChatToolbar.js`
+- `src/components/panes/conversation/ChatMessage.js`
+- `src/components/panes/conversation/ChatInput.js`
+- `src/components/panes/conversation/AvatarDisplay.js`
+  - presentation-only UI components (no session/stream ownership)
+
+Rule of thumb:
+- Behavior changes in session/stream/window state require test updates in:
+  - `src/components/panes/ConversationPane.behavior.test.js`
+  - `src/components/panes/ConversationPane.listeners.test.js`
+  - `src/components/panes/conversation/conversationState.test.js`
+
 ## Notes Template
 - Date:
 - Branch/commit:

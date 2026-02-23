@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useReducer, useRef, useCallback } from 'react';
-import ReactDOM from 'react-dom';
 import { gun, user } from '../../gun';
-import { convertEmoticons, getEmoticonCategories } from '../../utils/emoticons';
 import { getContactPairId } from '../../utils/chatUtils';
 import { useWebRTC } from '../../hooks/useWebRTC';
 import CallPanel from '../CallPanel';
@@ -10,9 +8,22 @@ import { useSounds } from '../../hooks/useSounds';
 import { useAvatar } from '../../contexts/AvatarContext';
 import {
   conversationReducer,
-  createInitialConversationState,
-  normalizeIncomingMessage
+  createInitialConversationState
 } from './conversation/conversationState';
+import { startSessionBootstrap } from './conversation/sessionController';
+import { startConversationStreams } from './conversation/streamController';
+import {
+  countNonLegacyMessages,
+  computeVisibleTarget,
+  getLoadOlderLimit,
+  shouldAutoScroll,
+  NEAR_BOTTOM_THRESHOLD_PX
+} from './conversation/windowPolicy';
+import ChatTopMenu from './conversation/ChatTopMenu';
+import ChatToolbar from './conversation/ChatToolbar';
+import ChatMessage from './conversation/ChatMessage';
+import ChatInput from './conversation/ChatInput';
+import AvatarDisplay from './conversation/AvatarDisplay';
 
 // ============================================
 // 0. PRESENCE HELPER
@@ -66,6 +77,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const lastTypingSoundRef = useRef(0);
   const playSoundRef = useRef(playSound);
   const hasLoadedOlderRef = useRef(false);
+  const currentUserAliasRef = useRef(currentUser);
 
   const {
     callState,
@@ -127,104 +139,44 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   }, [playSound]);
 
   useEffect(() => {
+    currentUserAliasRef.current = currentUser;
+  }, [currentUser]);
+
+  useEffect(() => {
     currentSessionIdRef.current = currentSessionId;
   }, [currentSessionId]);
 
   useEffect(() => {
     const sender = user.is?.alias;
     if (!sender || !contactName) return;
-    const sessionGeneration = sessionGenerationRef.current + 1;
-    sessionGenerationRef.current = sessionGeneration;
 
-    const pairId = getContactPairId(sender, contactName);
-    const sessionRef = gun.get('ACTIVE_SESSIONS').get(pairId);
-    const sessionIdNode = sessionRef.get('sessionId');
-
-    sessionInitAttemptedRef.current = false;
-    currentSessionIdRef.current = null;
-    setCurrentSessionId(null);
-    dispatch({ type: 'RESET' });
-    setDisplayLimit(5);
-    hasLoadedOlderRef.current = false;
-    prevMsgCountRef.current = 0;
-    windowOpenTimeRef.current = Date.now();
-    boundaryRef.current = lastNotificationTime
-      ? (lastNotificationTime - 2000)
-      : (windowOpenTimeRef.current - 1000);
-
-    if (typeof clearNotificationTime === 'function') {
-      clearNotificationTime(contactName);
-    }
-
-    const applySessionId = (id) => {
-      if (sessionGenerationRef.current !== sessionGeneration) return;
-      const normalizedId = typeof id === 'string' && id.trim() ? id : null;
-
-      if (normalizedId) {
-        if (sessionCreateTimeoutRef.current) {
-          clearTimeout(sessionCreateTimeoutRef.current);
-          sessionCreateTimeoutRef.current = null;
-        }
-        sessionInitAttemptedRef.current = true;
-        currentSessionIdRef.current = normalizedId;
+    return startSessionBootstrap({
+      gun,
+      sender,
+      contactName,
+      sessionGenerationRef,
+      sessionInitAttemptedRef,
+      sessionCreateTimeoutRef,
+      currentSessionIdRef,
+      onSessionResolved: (normalizedId) => {
         setCurrentSessionId((prev) => (prev === normalizedId ? prev : normalizedId));
-        return;
+      },
+      onResetForContact: () => {
+        setCurrentSessionId(null);
+        dispatch({ type: 'RESET' });
+        setDisplayLimit(5);
+        hasLoadedOlderRef.current = false;
+        prevMsgCountRef.current = 0;
+        windowOpenTimeRef.current = Date.now();
+        boundaryRef.current = lastNotificationTime
+          ? (lastNotificationTime - 2000)
+          : (windowOpenTimeRef.current - 1000);
+
+        if (typeof clearNotificationTime === 'function') {
+          clearNotificationTime(contactName);
+        }
       }
-
-      if (sessionInitAttemptedRef.current || sessionCreateTimeoutRef.current) return;
-      sessionInitAttemptedRef.current = true;
-
-      // Invariants:
-      // 1) transient empty session values must not cause duplicate creates;
-      // 2) only the current generation may create/claim session state;
-      // 3) delayed create must be cancel-safe on unmount/contact switch.
-      const scheduleSessionCreateIfMissing = () => {
-        // Gun can emit transient null before a real value arrives.
-        // Delay creation briefly and cancel if a valid session appears.
-        sessionCreateTimeoutRef.current = setTimeout(() => {
-        sessionCreateTimeoutRef.current = null;
-        if (sessionGenerationRef.current !== sessionGeneration) return;
-        if (currentSessionIdRef.current) return;
-
-        // Confirm with a fresh read before creating a new session ID.
-        sessionIdNode.once((latestId) => {
-          if (sessionGenerationRef.current !== sessionGeneration) return;
-          const normalizedLatestId = typeof latestId === 'string' && latestId.trim()
-            ? latestId.trim()
-            : null;
-
-          if (normalizedLatestId) {
-            currentSessionIdRef.current = normalizedLatestId;
-            setCurrentSessionId((prev) => (prev === normalizedLatestId ? prev : normalizedLatestId));
-            return;
-          }
-
-          const newId = `CHAT_${pairId}_${Date.now()}`;
-          currentSessionIdRef.current = newId;
-          setCurrentSessionId(newId);
-          sessionRef.put({ sessionId: newId, lastActivity: Date.now() });
-        });
-      }, 800);
-      };
-
-      scheduleSessionCreateIfMissing();
-    };
-
-    const sessionSubscription = sessionIdNode.on(applySessionId);
-    // Ensure first-load initialization for brand new pairs where `.on` can lag.
-    sessionIdNode.once(applySessionId);
-
-    return () => {
-      sessionGenerationRef.current += 1;
-      if (sessionSubscription && typeof sessionSubscription.off === 'function') {
-        sessionSubscription.off();
-      }
-      sessionInitAttemptedRef.current = false;
-      if (sessionCreateTimeoutRef.current) {
-        clearTimeout(sessionCreateTimeoutRef.current);
-        sessionCreateTimeoutRef.current = null;
-      }
-    };
+    });
   }, [contactName]);
 
   // Warmup encryptie bij openen conversatie
@@ -237,118 +189,38 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   useEffect(() => {
     if (!currentSessionId) return;
 
-    const streamGeneration = streamGenerationRef.current + 1;
-    streamGenerationRef.current = streamGeneration;
-
-    const chatNode = gun.get(currentSessionId);
-    const nudgeNode = gun.get(`NUDGE_${currentSessionId}`);
-    const typingNode = gun.get(`TYPING_${currentSessionId}`);
-
-    const chatSubscription = chatNode.map().on(async (data, id) => {
-      const normalizedBaseMessage = normalizeIncomingMessage(data, id, {
-        fallbackTimeRef: Date.now()
-      });
-      if (!normalizedBaseMessage) return;
-      const boundary = boundaryRef.current;
-
-      if (normalizedBaseMessage.type === 'nudge') {
-        if (streamGenerationRef.current !== streamGeneration) return;
-        const normalizedNudge = {
-          ...normalizedBaseMessage,
-          content: '',
-          isLegacy: normalizedBaseMessage.timeRef < boundary
-        };
-        dispatch({ type: 'UPSERT_MESSAGE', payload: normalizedNudge });
-        return;
-      }
-
-      if (!normalizedBaseMessage.content || normalizedBaseMessage.content === '__nudge__') return;
-      if (streamGenerationRef.current !== streamGeneration) return;
-      const decryptContact = normalizedBaseMessage.sender === user.is?.alias
-        ? contactName
-        : normalizedBaseMessage.sender;
-      const decryptedContent = await decryptMessage(normalizedBaseMessage.content, decryptContact);
-
-      if (streamGenerationRef.current !== streamGeneration) return;
-      const normalizedMessage = {
-        ...normalizedBaseMessage,
-        content: decryptedContent,
-        isLegacy: normalizedBaseMessage.timeRef < boundary
-      };
-      dispatch({ type: 'UPSERT_MESSAGE', payload: normalizedMessage });
+    return startConversationStreams({
+      gun,
+      currentSessionId,
+      contactName,
+      boundaryRef,
+      streamGenerationRef,
+      lastProcessedNudgeRef: lastProcessedNudge,
+      shakeTimeoutRef,
+      typingTimeoutRef,
+      playSoundRef,
+      onMessage: (message) => {
+        dispatch({ type: 'UPSERT_MESSAGE', payload: message });
+      },
+      onShakeChange: setIsShaking,
+      onTypingChange: setIsContactTyping,
+      decryptMessage,
+      currentUserAliasRef
     });
-
-    const nudgeSubscription = nudgeNode.on((data) => {
-      if (streamGenerationRef.current !== streamGeneration) return;
-      if (data?.time > lastProcessedNudge.current && data.from === contactName) {
-        lastProcessedNudge.current = data.time;
-        playSoundRef.current?.('nudge');
-        if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
-        setIsShaking(true);
-        shakeTimeoutRef.current = setTimeout(() => {
-          if (streamGenerationRef.current !== streamGeneration) return;
-          setIsShaking(false);
-          shakeTimeoutRef.current = null;
-        }, 600);
-      }
-    });
-
-    const typingSubscription = typingNode.on((data) => {
-      if (streamGenerationRef.current !== streamGeneration) return;
-      if (data && data.isTyping && data.user === contactName) {
-        const now = Date.now();
-        if (now - data.timestamp < 4000) {
-          setIsContactTyping(true);
-          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = setTimeout(() => {
-            if (streamGenerationRef.current !== streamGeneration) return;
-            setIsContactTyping(false);
-            typingTimeoutRef.current = null;
-          }, 3000);
-        }
-      } else if (data && !data.isTyping && data.user === contactName) {
-        setIsContactTyping(false);
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = null;
-        }
-      }
-    });
-
-    return () => {
-      streamGenerationRef.current += 1;
-      if (chatSubscription && typeof chatSubscription.off === 'function') {
-        chatSubscription.off();
-      }
-      if (nudgeSubscription && typeof nudgeSubscription.off === 'function') {
-        nudgeSubscription.off();
-      }
-      if (typingSubscription && typeof typingSubscription.off === 'function') {
-        typingSubscription.off();
-      }
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = null;
-      }
-      if (shakeTimeoutRef.current) {
-        clearTimeout(shakeTimeoutRef.current);
-        shakeTimeoutRef.current = null;
-      }
-    };
   }, [currentSessionId, contactName]);
 
   // Scroll effect
   useEffect(() => {
     const messagesNode = messagesAreaRef.current;
     const wasNearBottom = messagesNode
-      ? ((messagesNode.scrollHeight - messagesNode.scrollTop - messagesNode.clientHeight) <= 48)
+      ? ((messagesNode.scrollHeight - messagesNode.scrollTop - messagesNode.clientHeight) <= NEAR_BOTTOM_THRESHOLD_PX)
       : true;
 
     if (state.messages.length > prevMsgCountRef.current) {
       // Keep window predictable: always 5 legacy + all non-legacy messages.
       // This prevents double-count growth during async/batched hydration.
-      const nonLegacyCount = state.messages.filter((msg) => msg && !msg.isLegacy).length;
-      const visibleTarget = Math.min(state.messages.length, 5 + nonLegacyCount);
+      const nonLegacyCount = countNonLegacyMessages(state.messages);
+      const visibleTarget = computeVisibleTarget(state.messages.length, nonLegacyCount);
       if (visibleTarget > displayLimit) {
         setDisplayLimit(visibleTarget);
       }
@@ -361,7 +233,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     prevMsgCountRef.current = state.messages.length;
 
     if (!messagesNode) return;
-    if (wasNearBottom || !hasLoadedOlderRef.current) {
+    if (shouldAutoScroll({ wasNearBottom, hasLoadedOlder: hasLoadedOlderRef.current })) {
       messagesNode.scrollTop = messagesNode.scrollHeight;
     }
   }, [state.messages]);
@@ -405,7 +277,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
             {state.messages.length > displayLimit && (
               <button className="load-more-btn" onClick={() => {
                 hasLoadedOlderRef.current = true;
-                setDisplayLimit((p) => p + 25);
+                setDisplayLimit((p) => getLoadOlderLimit(p));
               }}>
                 --- Laad oudere berichten ({state.messages.length - displayLimit} resterend) ---
               </button>
@@ -453,134 +325,6 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
           <AvatarDisplay name={user.is?.alias} isSelf />
         </div>
       </div>
-    </div>
-  );
-}
-
-// ============================================
-// 3. SUB-COMPONENTEN (Gedefinieerd voor gebruik)
-// ============================================
-
-function ChatTopMenu() {
-  return (
-    <div className="chat-menubar">
-      {['Bestand', 'Bewerken', 'Acties', 'Extra', 'Help'].map((m) => <span key={m} className="chat-menu-item">{m}</span>)}
-    </div>
-  );
-}
-
-function ChatToolbar({ onNudge, canNudge, onStartCall, callState }) {
-  const tools = [
-    { icon: '👥', label: 'Uitnodigen' },
-    { icon: '📎', label: 'Bestand' },
-    { icon: '🎥', label: 'Video' },
-    { icon: '🎤', label: 'Spraak', onClick: onStartCall, disabled: callState !== 'idle' },
-    { icon: '🎮', label: 'Activiteiten' },
-    { icon: '🎲', label: 'Spelletjes' }
-  ];
-  return (
-    <div className="chat-toolbar">
-      {tools.map((t) => (
-        <button
-          key={t.label}
-          className={`chat-toolbar-btn ${t.disabled ? 'disabled' : ''}`}
-          onClick={t.onClick || undefined}
-          disabled={t.disabled}
-        >
-          <span className="chat-toolbar-icon">{t.icon}</span>
-          <span className="chat-toolbar-label">{t.label}</span>
-        </button>
-      ))}
-      <div className="chat-toolbar-separator"></div>
-      <button className="chat-toolbar-btn">🚫</button>
-      <button className="chat-toolbar-btn">🖌️</button>
-    </div>
-  );
-}
-
-function ChatMessage({ msg, prevMsg, currentUser }) {
-  const { getDisplayName } = useAvatar();
-  const isFirstNew = prevMsg?.isLegacy && !msg.isLegacy;
-
-  // Systeembericht (nudge melding) — opgeslagen in chat-node met type: 'nudge'
-  if (msg.type === 'nudge') {
-    const isSelf = msg.sender === currentUser;
-    const name = getDisplayName(msg.sender);
-    return (
-      <>
-        {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
-        <div className="chat-message-system">
-          ⚡ {isSelf ? 'Je hebt een nudge gestuurd.' : <><strong>{name}</strong> heeft een nudge gestuurd.</>}
-        </div>
-      </>
-    );
-  }
-
-  const selfClass = msg.sender === currentUser ? 'self' : 'contact';
-  return (
-    <>
-      {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
-      <div className={`chat-message ${msg.isLegacy ? 'legacy' : ''} ${selfClass}`}>
-        <div className="message-header"><strong>{getDisplayName(msg.sender)}</strong> zegt ({msg.timestamp}):</div>
-        <div className="message-content">{convertEmoticons(msg.content)}</div>
-      </div>
-    </>
-  );
-}
-
-function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, setShowPicker, pickerRef, insertEmoticon, isSessionReady }) {
-  const emojiBtn = useRef(null);
-  const [pickerPos, setPickerPos] = useState({ bottom: 0, left: 0 });
-
-  const handleTogglePicker = () => {
-    if (!showPicker && emojiBtn.current) {
-      const rect = emojiBtn.current.getBoundingClientRect();
-      setPickerPos({ bottom: window.innerHeight - rect.top + 4, left: rect.left });
-    }
-    setShowPicker(!showPicker);
-  };
-
-  return (
-    <div className="chat-input-container">
-      <div className="chat-input-toolbar">
-        <button ref={emojiBtn} className="chat-input-tool" onClick={handleTogglePicker}>😊</button>
-        {showPicker && ReactDOM.createPortal(
-          <div
-            className="emoticon-picker"
-            ref={pickerRef}
-            style={{ position: 'fixed', bottom: pickerPos.bottom, left: pickerPos.left }}
-          >
-            {Object.entries(getEmoticonCategories()).map(([cat, emos]) => (
-              <div key={cat} className="emoticon-category">
-                <div className="emoticon-grid">
-                  {emos.map((e) => <button key={e.text} onClick={() => { insertEmoticon(e.text); setShowPicker(false); }}>{e.emoji}</button>)}
-                </div>
-              </div>
-            ))}
-          </div>,
-          document.body
-        )}
-        <button className="chat-input-tool" onClick={onNudge} disabled={!canNudge}>⚡</button>
-      </div>
-      <div className="chat-input-body">
-        <textarea
-          className="chat-input-text"
-          value={value}
-          disabled={!isSessionReady}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-        />
-        <button className="chat-send-btn" onClick={onSend} disabled={!isSessionReady}>Verzenden</button>
-      </div>
-    </div>
-  );
-}
-
-function AvatarDisplay({ name, isSelf }) {
-  const { getAvatar } = useAvatar();
-  return (
-    <div className="chat-avatar-container" style={isSelf ? { marginTop: 'auto' } : {}}>
-      <img src={getAvatar(name)} alt={name} className="chat-display-picture" />
     </div>
   );
 }
