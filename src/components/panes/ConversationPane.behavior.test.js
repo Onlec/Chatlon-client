@@ -94,6 +94,14 @@ const { gun, __mockGetNode: mockGetNode, __mockNodeStore: mockNodeStore } = requ
 const ConversationPane = require('./ConversationPane').default;
 
 describe('ConversationPane behavior guards', () => {
+  beforeAll(() => {
+    jest.useFakeTimers();
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
   beforeEach(() => {
     mockNodeStore.clear();
     mockPlaySound.mockClear();
@@ -172,5 +180,301 @@ describe('ConversationPane behavior guards', () => {
     });
 
     expect(mockPlaySound).toHaveBeenCalledTimes(1);
+  });
+
+  test('creates a new session once when none exists and enables input', async () => {
+    const clearNotificationTime = jest.fn();
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={1000}
+        clearNotificationTime={clearNotificationTime}
+        contactPresenceData={null}
+        isActive
+      />
+    );
+
+    const sessionIdNode = mockGetNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId');
+    // Simulate "no existing session" on confirm read.
+    sessionIdNode.once.mockImplementation((cb) => cb(null));
+
+    act(() => {
+      sessionIdNode.__emit(null);
+      jest.advanceTimersByTime(801);
+    });
+
+    await waitFor(() => {
+      expect(mockGetNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com').put).toHaveBeenCalledTimes(1);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('textbox').disabled).toBe(false);
+      expect(screen.getByRole('button', { name: 'Verzenden' }).disabled).toBe(false);
+    });
+  });
+
+  test('does not create duplicate sessions during quick reopen/race events', async () => {
+    const clearNotificationTime = jest.fn();
+    const { rerender } = render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={1000}
+        clearNotificationTime={clearNotificationTime}
+        contactPresenceData={null}
+        isActive
+      />
+    );
+
+    const sessionIdNode = mockGetNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId');
+    sessionIdNode.once.mockImplementation((cb) => cb(null));
+
+    // Trigger several transient empties rapidly.
+    act(() => {
+      sessionIdNode.__emit(null);
+      sessionIdNode.__emit(null);
+      sessionIdNode.__emit('');
+      jest.advanceTimersByTime(801);
+    });
+
+    const sessionRoot = mockGetNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com');
+    await waitFor(() => {
+      expect(sessionRoot.put).toHaveBeenCalledTimes(1);
+    });
+
+    // Reopen same conversation quickly; first generation timer should not create again.
+    rerender(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={2000}
+        clearNotificationTime={clearNotificationTime}
+        contactPresenceData={null}
+        isActive
+      />
+    );
+
+    act(() => {
+      sessionIdNode.__emit('CHAT_alice_bob_existing');
+      jest.advanceTimersByTime(801);
+    });
+
+    // No second create write after existing session is announced.
+    await waitFor(() => {
+      expect(sessionRoot.put).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  test('ignores chat stream noise and renders only valid messages', async () => {
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={1000}
+        clearNotificationTime={jest.fn()}
+        contactPresenceData={null}
+        isActive
+      />
+    );
+
+    const sessionIdNode = mockGetNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId');
+    act(() => {
+      sessionIdNode.__emit('CHAT_alice_bob_ready');
+    });
+
+    await waitFor(() => {
+      expect(mockGetNode('CHAT_alice_bob_ready').map).toHaveBeenCalledTimes(1);
+    });
+
+    const chatNode = mockGetNode('CHAT_alice_bob_ready');
+    act(() => {
+      chatNode.__emitMap({ sender: 'bob@example.com', content: 'meta-underscore', timeRef: Date.now() }, '_');
+      chatNode.__emitMap({ sender: 'bob@example.com', content: 'meta-hash', timeRef: Date.now() }, '#');
+      chatNode.__emitMap({ sender: '', content: 'missing-sender', timeRef: Date.now() }, 'msg-no-sender');
+      chatNode.__emitMap({ sender: 'bob@example.com', content: '', timeRef: Date.now() }, 'msg-no-content');
+      chatNode.__emitMap({ sender: 'bob@example.com', content: 'valid-message', timeRef: Date.now() }, 'msg-valid');
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('meta-underscore')).toBeNull();
+      expect(screen.queryByText('meta-hash')).toBeNull();
+      expect(screen.queryByText('missing-sender')).toBeNull();
+      expect(document.querySelectorAll('.chat-message')).toHaveLength(1);
+    });
+  });
+
+  test('legacy backlog does not auto-grow visible window, non-legacy arrivals do', async () => {
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={Date.now()}
+        clearNotificationTime={jest.fn()}
+        contactPresenceData={null}
+        isActive
+      />
+    );
+
+    const sessionIdNode = mockGetNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId');
+    act(() => {
+      sessionIdNode.__emit('CHAT_alice_bob_ready');
+    });
+
+    const chatNode = mockGetNode('CHAT_alice_bob_ready');
+    act(() => {
+      for (let i = 0; i < 8; i += 1) {
+        chatNode.__emitMap(
+          { sender: 'bob@example.com', content: `legacy-${i}`, timeRef: Date.now() - 60000 - i },
+          `legacy-${i}`
+        );
+      }
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('.chat-message').length).toBe(5);
+      expect(screen.getByText(/Laad oudere berichten/)).toBeInTheDocument();
+    });
+
+    act(() => {
+      chatNode.__emitMap(
+        { sender: 'bob@example.com', content: 'fresh-live', timeRef: Date.now() },
+        'fresh-live'
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('.chat-message').length).toBe(6);
+    });
+  });
+
+  test('rapid non-legacy burst remains visible without message loss', async () => {
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={1000}
+        clearNotificationTime={jest.fn()}
+        contactPresenceData={null}
+        isActive
+      />
+    );
+
+    const sessionIdNode = mockGetNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId');
+    act(() => {
+      sessionIdNode.__emit('CHAT_alice_bob_ready');
+    });
+
+    const chatNode = mockGetNode('CHAT_alice_bob_ready');
+    act(() => {
+      for (let i = 0; i < 20; i += 1) {
+        chatNode.__emitMap(
+          { sender: 'bob@example.com', content: `burst-${i}`, timeRef: Date.now() + i },
+          `burst-${i}`
+        );
+      }
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('.chat-message').length).toBe(20);
+    });
+  });
+
+  test('initial mixed hydration shows 5 legacy plus all unread non-legacy messages', async () => {
+    const now = Date.now();
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={now}
+        clearNotificationTime={jest.fn()}
+        contactPresenceData={null}
+        isActive
+      />
+    );
+
+    const sessionIdNode = mockGetNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId');
+    act(() => {
+      sessionIdNode.__emit('CHAT_alice_bob_ready');
+    });
+
+    const chatNode = mockGetNode('CHAT_alice_bob_ready');
+    act(() => {
+      // Older backlog (legacy)
+      for (let i = 0; i < 20; i += 1) {
+        chatNode.__emitMap(
+          { sender: 'bob@example.com', content: `old-${i}`, timeRef: now - 60000 - i },
+          `old-${i}`
+        );
+      }
+      // Unread recent messages (non-legacy)
+      for (let i = 0; i < 6; i += 1) {
+        chatNode.__emitMap(
+          { sender: 'bob@example.com', content: `new-${i}`, timeRef: now + i },
+          `new-${i}`
+        );
+      }
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('.chat-message').length).toBe(11);
+      expect(screen.getByText(/Laad oudere berichten/)).toBeInTheDocument();
+    });
+  });
+
+  test('does not double-count legacy window when unread burst is large', async () => {
+    const now = Date.now();
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={now}
+        clearNotificationTime={jest.fn()}
+        contactPresenceData={null}
+        isActive
+      />
+    );
+
+    const sessionIdNode = mockGetNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId');
+    act(() => {
+      sessionIdNode.__emit('CHAT_alice_bob_ready');
+    });
+
+    const chatNode = mockGetNode('CHAT_alice_bob_ready');
+    act(() => {
+      for (let i = 0; i < 30; i += 1) {
+        chatNode.__emitMap(
+          { sender: 'bob@example.com', content: `old-${i}`, timeRef: now - 60000 - i },
+          `old-${i}`
+        );
+      }
+      for (let i = 0; i < 10; i += 1) {
+        chatNode.__emitMap(
+          { sender: 'bob@example.com', content: `new-${i}`, timeRef: now + i },
+          `new-${i}`
+        );
+      }
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      // Expected window: 5 legacy + 10 unread non-legacy = 15 (not 25).
+      expect(document.querySelectorAll('.chat-message').length).toBe(15);
+    });
   });
 });

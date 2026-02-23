@@ -183,6 +183,90 @@ Manual (keep in checklist):
 - Scenario 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
 - Browser-context behavior (A/B takeover), real relay timing, and teardown race observation.
 
+## Conversation Regression Appendix (MSN Parity)
+
+Use this checklist after any change in:
+- `src/components/panes/ConversationPane.js`
+- `src/hooks/useMessageListeners.js`
+- `src/components/panes/conversation/*`
+
+### Conversation Scenarios
+
+### C1) Closed chat incoming message
+1. B keeps conversation with A closed.
+2. A sends a message to B.
+
+Expected:
+- B gets toast.
+- B taskbar conversation tab flickers/unread.
+- Conversation does not auto-open.
+
+### C2) Minimized or unfocused incoming message
+1. B opens conversation with A and then minimizes it (or focuses another pane).
+2. A sends a message to B.
+
+Expected:
+- B gets toast + taskbar unread/flicker.
+- No forced auto-open.
+
+### C3) Typing indicator parity
+1. A starts typing in open conversation with B.
+2. A stops typing.
+
+Expected:
+- B sees typing indicator quickly.
+- Indicator clears on stop/timeout.
+- No permanently stuck typing state after close/reopen.
+
+### C4) Nudge parity
+1. A sends nudge to B while chat closed.
+2. Repeat with chat open/unfocused.
+
+Expected:
+- Nudge side effects fire once per unique nudge timestamp.
+- Taskbar/toast behavior remains consistent with current UX rules.
+- No duplicate nudge effects from one nudge event.
+
+### C5) Legacy boundary on open
+1. Build backlog in a conversation.
+2. Keep chat closed; receive N unread messages.
+3. Open chat from taskbar.
+
+Expected:
+- Visible window = 5 legacy + all unread non-legacy.
+- Not only 5 total.
+- No double-count bug (`legacy = 5 + unread` plus unread again).
+- "Load older" still works for deeper history.
+
+### C6) Conversation cleanup boundary
+1. Close conversation pane.
+2. Trigger incoming traffic from peer.
+
+Expected:
+- No orphan in-pane listener side effects.
+- Incoming flow still handled by global message listener path (toast/unread rules).
+- Reopen shows correct history and boundary behavior.
+
+## Conversation Automation Coverage
+
+Automated:
+- `src/components/panes/conversation/conversationState.test.js`
+  - normalization guards (`_`, `#`, invalid sender/id)
+  - reducer dedupe/order/reset
+- `src/components/panes/ConversationPane.behavior.test.js`
+  - session-ready gating
+  - one-time nudge side effects
+  - create-once session bootstrap
+  - no duplicate create in quick race/reopen
+  - noise filtering in stream ingestion
+  - legacy/non-legacy visible window behavior
+  - burst visibility regression checks
+- `src/components/panes/ConversationPane.listeners.test.js`
+  - listener lifecycle stability across session changes
+
+Manual:
+- C1, C2, C3, C4, C5, C6 in real browser contexts with real relay timing.
+
 ## Notes Template
 - Date:
 - Branch/commit:

@@ -8,6 +8,11 @@ import CallPanel from '../CallPanel';
 import { encryptMessage, decryptMessage, warmupEncryption } from '../../utils/encryption';
 import { useSounds } from '../../hooks/useSounds';
 import { useAvatar } from '../../contexts/AvatarContext';
+import {
+  conversationReducer,
+  createInitialConversationState,
+  normalizeIncomingMessage
+} from './conversation/conversationState';
 
 // ============================================
 // 0. PRESENCE HELPER
@@ -24,36 +29,15 @@ function getPresence(raw) {
 }
 
 // ============================================
-// 1. REDUCER (Berichten logica)
-// ============================================
-const reducer = (state, action) => {
-  if (action.type === 'RESET') return { messages: [], messageMap: {} };
-  const messageId = (typeof action.id === 'string' || typeof action.id === 'number')
-    ? String(action.id)
-    : '';
-  if (!messageId || state.messageMap[messageId]) return state;
-
-  const normalizedMessage = {
-    ...action,
-    id: messageId,
-    timeRef: Number(action.timeRef) || Date.now()
-  };
-
-  const newMessageMap = { ...state.messageMap, [messageId]: normalizedMessage };
-  const sortedMessages = Object.values(newMessageMap).sort((a, b) => {
-    const delta = Number(a.timeRef || 0) - Number(b.timeRef || 0);
-    if (delta !== 0) return delta;
-    return String(a.id).localeCompare(String(b.id));
-  });
-  return { messageMap: newMessageMap, messages: sortedMessages };
-};
-
-// ============================================
 // 2. HOOFDCOMPONENT
 // ============================================
+// Canonical runtime path:
+// ConversationPane owns live session/stream lifecycle end-to-end.
+// Historical split runtime hooks under ./conversation/ are intentionally retired
+// to avoid divergence between test helpers and production behavior.
 function ConversationPane({ contactName, lastNotificationTime, clearNotificationTime, contactPresenceData }) {
   const { playSound } = useSounds();
-  const [state, dispatch] = useReducer(reducer, { messages: [], messageMap: {} });
+  const [state, dispatch] = useReducer(conversationReducer, createInitialConversationState());
   const [messageText, setMessageText] = useState('');
   const [displayLimit, setDisplayLimit] = useState(5);
   const [currentSessionId, setCurrentSessionId] = useState(null);
@@ -81,6 +65,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const currentUser = user.is?.alias;
   const lastTypingSoundRef = useRef(0);
   const playSoundRef = useRef(playSound);
+  const hasLoadedOlderRef = useRef(false);
 
   const {
     callState,
@@ -160,6 +145,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     setCurrentSessionId(null);
     dispatch({ type: 'RESET' });
     setDisplayLimit(5);
+    hasLoadedOlderRef.current = false;
     prevMsgCountRef.current = 0;
     windowOpenTimeRef.current = Date.now();
     boundaryRef.current = lastNotificationTime
@@ -188,9 +174,14 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
       if (sessionInitAttemptedRef.current || sessionCreateTimeoutRef.current) return;
       sessionInitAttemptedRef.current = true;
 
-      // Gun can emit transient null before a real value arrives.
-      // Delay creation briefly and cancel if a valid session appears.
-      sessionCreateTimeoutRef.current = setTimeout(() => {
+      // Invariants:
+      // 1) transient empty session values must not cause duplicate creates;
+      // 2) only the current generation may create/claim session state;
+      // 3) delayed create must be cancel-safe on unmount/contact switch.
+      const scheduleSessionCreateIfMissing = () => {
+        // Gun can emit transient null before a real value arrives.
+        // Delay creation briefly and cancel if a valid session appears.
+        sessionCreateTimeoutRef.current = setTimeout(() => {
         sessionCreateTimeoutRef.current = null;
         if (sessionGenerationRef.current !== sessionGeneration) return;
         if (currentSessionIdRef.current) return;
@@ -214,6 +205,9 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
           sessionRef.put({ sessionId: newId, lastActivity: Date.now() });
         });
       }, 800);
+      };
+
+      scheduleSessionCreateIfMissing();
     };
 
     const sessionSubscription = sessionIdNode.on(applySessionId);
@@ -251,22 +245,37 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
     const typingNode = gun.get(`TYPING_${currentSessionId}`);
 
     const chatSubscription = chatNode.map().on(async (data, id) => {
-      if (!data?.sender) return;
+      const normalizedBaseMessage = normalizeIncomingMessage(data, id, {
+        fallbackTimeRef: Date.now()
+      });
+      if (!normalizedBaseMessage) return;
       const boundary = boundaryRef.current;
 
-      if (data.type === 'nudge') {
+      if (normalizedBaseMessage.type === 'nudge') {
         if (streamGenerationRef.current !== streamGeneration) return;
-        dispatch({ ...data, content: '', id, isLegacy: data.timeRef < boundary });
+        const normalizedNudge = {
+          ...normalizedBaseMessage,
+          content: '',
+          isLegacy: normalizedBaseMessage.timeRef < boundary
+        };
+        dispatch({ type: 'UPSERT_MESSAGE', payload: normalizedNudge });
         return;
       }
 
-      if (!data?.content || data.content === '__nudge__') return;
+      if (!normalizedBaseMessage.content || normalizedBaseMessage.content === '__nudge__') return;
       if (streamGenerationRef.current !== streamGeneration) return;
-      const decryptContact = data.sender === user.is?.alias ? contactName : data.sender;
-      const decryptedContent = await decryptMessage(data.content, decryptContact);
+      const decryptContact = normalizedBaseMessage.sender === user.is?.alias
+        ? contactName
+        : normalizedBaseMessage.sender;
+      const decryptedContent = await decryptMessage(normalizedBaseMessage.content, decryptContact);
 
       if (streamGenerationRef.current !== streamGeneration) return;
-      dispatch({ ...data, content: decryptedContent, id, isLegacy: data.timeRef < boundary });
+      const normalizedMessage = {
+        ...normalizedBaseMessage,
+        content: decryptedContent,
+        isLegacy: normalizedBaseMessage.timeRef < boundary
+      };
+      dispatch({ type: 'UPSERT_MESSAGE', payload: normalizedMessage });
     });
 
     const nudgeSubscription = nudgeNode.on((data) => {
@@ -330,14 +339,31 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
 
   // Scroll effect
   useEffect(() => {
-    if (state.messages.length > prevMsgCountRef.current && prevMsgCountRef.current !== 0) {
-      const latestMsg = state.messages[state.messages.length - 1];
-      if (latestMsg && !latestMsg.isLegacy) {
-        setDisplayLimit((prev) => prev + 1);
+    const messagesNode = messagesAreaRef.current;
+    const wasNearBottom = messagesNode
+      ? ((messagesNode.scrollHeight - messagesNode.scrollTop - messagesNode.clientHeight) <= 48)
+      : true;
+
+    if (state.messages.length > prevMsgCountRef.current) {
+      // Keep window predictable: always 5 legacy + all non-legacy messages.
+      // This prevents double-count growth during async/batched hydration.
+      const nonLegacyCount = state.messages.filter((msg) => msg && !msg.isLegacy).length;
+      const visibleTarget = Math.min(state.messages.length, 5 + nonLegacyCount);
+      if (visibleTarget > displayLimit) {
+        setDisplayLimit(visibleTarget);
       }
     }
+
+    if (state.messages.length < prevMsgCountRef.current) {
+      hasLoadedOlderRef.current = false;
+    }
+
     prevMsgCountRef.current = state.messages.length;
-    if (messagesAreaRef.current) messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
+
+    if (!messagesNode) return;
+    if (wasNearBottom || !hasLoadedOlderRef.current) {
+      messagesNode.scrollTop = messagesNode.scrollHeight;
+    }
   }, [state.messages]);
 
   return (
@@ -377,7 +403,10 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
           </div>
           <div className="chat-messages-display" ref={messagesAreaRef}>
             {state.messages.length > displayLimit && (
-              <button className="load-more-btn" onClick={() => setDisplayLimit((p) => p + 25)}>
+              <button className="load-more-btn" onClick={() => {
+                hasLoadedOlderRef.current = true;
+                setDisplayLimit((p) => p + 25);
+              }}>
                 --- Laad oudere berichten ({state.messages.length - displayLimit} resterend) ---
               </button>
             )}

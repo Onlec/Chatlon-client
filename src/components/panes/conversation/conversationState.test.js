@@ -16,6 +16,8 @@ describe('conversationState', () => {
     expect(normalizeIncomingMessage(null, 'id-1')).toBeNull();
     expect(normalizeIncomingMessage({ sender: '' }, 'id-1')).toBeNull();
     expect(normalizeIncomingMessage({ sender: 'alice' }, '')).toBeNull();
+    expect(normalizeIncomingMessage({ sender: 'alice' }, '_')).toBeNull();
+    expect(normalizeIncomingMessage({ sender: 'alice' }, '#')).toBeNull();
   });
 
   test('normalizeIncomingMessage applies numeric timeRef fallback', () => {
@@ -77,4 +79,3 @@ describe('conversationState', () => {
     expect(resetState).toEqual(createInitialConversationState());
   });
 });
-
