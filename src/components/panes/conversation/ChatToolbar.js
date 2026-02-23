@@ -2,12 +2,12 @@ import React from 'react';
 
 function ChatToolbar({ onNudge, canNudge, onStartCall, callState }) {
   const tools = [
-    { icon: 'ðŸ‘¥', label: 'Uitnodigen' },
-    { icon: 'ðŸ“Ž', label: 'Bestand' },
-    { icon: 'ðŸŽ¥', label: 'Video' },
-    { icon: 'ðŸŽ¤', label: 'Spraak', onClick: onStartCall, disabled: callState !== 'idle' },
-    { icon: 'ðŸŽ®', label: 'Activiteiten' },
-    { icon: 'ðŸŽ²', label: 'Spelletjes' }
+    { icon: '\u{1F465}', label: 'Uitnodigen' },
+    { icon: '\u{1F4CE}', label: 'Bestand' },
+    { icon: '\u{1F3A5}', label: 'Video' },
+    { icon: '\u{1F3A4}', label: 'Spraak', onClick: onStartCall, disabled: callState !== 'idle' },
+    { icon: '\u{1F3AE}', label: 'Activiteiten' },
+    { icon: '\u{1F3B2}', label: 'Spelletjes' }
   ];
   return (
     <div className="chat-toolbar">
@@ -23,8 +23,8 @@ function ChatToolbar({ onNudge, canNudge, onStartCall, callState }) {
         </button>
       ))}
       <div className="chat-toolbar-separator"></div>
-      <button className="chat-toolbar-btn">ðŸš«</button>
-      <button className="chat-toolbar-btn">ðŸ–Œï¸</button>
+      <button className="chat-toolbar-btn">{'\u{1F6AB}'}</button>
+      <button className="chat-toolbar-btn">{'\u{1F58C}\uFE0F'}</button>
     </div>
   );
 }

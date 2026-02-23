@@ -107,7 +107,7 @@ function App() {
   const authStateRef = useRef({ isLoggedIn: false, currentUser: '' });
   authStateRef.current = { isLoggedIn, currentUser };
 
-  // FIX: Track of we al geÃ¯nitialiseerd zijn om dubbele openPane te voorkomen
+  // FIX: Track of we al geinitialiseerd zijn om dubbele openPane te voorkomen
   const hasInitializedRef = useRef(false);
 
   // ============================================
@@ -186,7 +186,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   const conv = conversationsRef.current[chatPaneId];
   const isOpen = conv && conv.isOpen && !conv.isMinimized;
 
-  // STAP A: Ongelezen status + systray bolletje â€” alleen als Messenger actief is
+  // STAP A: Ongelezen status + systray bolletje - alleen als Messenger actief is
   if (messengerSignedInRef.current && (!isFocused || !isOpen)) {
     setUnreadChats(prev => new Set(prev).add(chatPaneId));
   }
@@ -484,7 +484,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
 
   const currentStatusOption = STATUS_OPTIONS.find(s => s.value === userStatus) || STATUS_OPTIONS[0];
 
-  // Gedeelde presence state â€” gevuld door ContactsPane, gelezen door ConversationPane
+  // Gedeelde presence state - gevuld door ContactsPane, gelezen door ConversationPane
   const [sharedContactPresence, setSharedContactPresence] = React.useState({});
 
   const handlePresenceChange = React.useCallback((username, presenceData) => {
@@ -527,21 +527,21 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   const handleContactOnlineRef = React.useRef(handleContactOnline);
   handleContactOnlineRef.current = handleContactOnline;
 
-  // Persistent refs voor PresenceMonitor â€” overleven React StrictMode double-mount cleanup.
+  // Persistent refs voor PresenceMonitor - overleven React StrictMode double-mount cleanup.
   // Als ze lokaal in het effect staan worden ze gereset bij de tweede mount,
-  // waardoor beginstand opnieuw opgeslagen wordt en de offlineâ†’online transitie gemist wordt.
+  // waardoor beginstand opnieuw opgeslagen wordt en de offline->online transitie gemist wordt.
   const presencePrevRef = React.useRef({});        // { username: { lastSeen, statusValue } }
   const presenceListenersRef = React.useRef(new Map()); // username -> gun node
 
-  // Presence monitoring â€” altijd actief, ongeacht of ContactsPane open is
+  // Presence monitoring - altijd actief, ongeacht of ContactsPane open is
   React.useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
 
     log('[PresenceMonitor] Start voor:', currentUser);
     // Gebruik REFS voor prevPresence en contactListeners zodat ze React StrictMode
     // double-mount overleven. Als ze lokaal in het effect staan, worden ze gereset
-    // bij de tweede mount â€” dan slaat de eerste Gun callback de beginstand opnieuw
-    // op en wordt de offlineâ†’online transitie nooit gezien.
+    // bij de tweede mount - dan slaat de eerste Gun callback de beginstand opnieuw
+    // op en wordt de offline->online transitie nooit gezien.
     const prevPresence = presencePrevRef.current;
     const contactListeners = presenceListenersRef.current;
 
@@ -572,8 +572,8 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
       const node = gun.get('PRESENCE').get(username);
       node.on((presenceData) => {
         // Eerste call: sla beginstand op als primitieven, geen toast.
-        // â€˜username in prevPresenceâ€™ is false bij de echte allereerste call.
-        // Na StrictMode cleanup+remount is de data al in prevPresence (via ref) â€”
+        // 'username in prevPresence' is false bij de echte allereerste call.
+        // Na StrictMode cleanup+remount is de data al in prevPresence (via ref) -
         // dan slaan we de beginstand NIET opnieuw op en blijft de transitie zichtbaar.
         if (!(username in prevPresence)) {
           if (presenceData) {
@@ -684,7 +684,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
               setHasBooted(false);
             }}
           >
-            <span className="power-on-icon">â»</span>
+            <span className="power-on-icon">{'\u23FB'}</span>
           </button>
           <div className="power-on-hint">Druk op de aan/uit-knop om de computer te starten</div>
         </div>
@@ -890,11 +890,11 @@ const onTaskbarClick = React.useCallback((paneId) => {
           className={`start-btn ${isStartOpen ? 'pressed' : ''}`} 
           onClick={(e) => { e.stopPropagation(); toggleStartMenu(); }}
         >
-          <span className="start-icon">ðŸªŸ</span> Start
+          <span className="start-icon">{'\u{1FA9F}'}</span> Start
         </button>
         
         <div className="taskbar-items">
-  {/* We maken een unieke lijst van alles wat open is Ã‰N alles wat ongelezen is */}
+  {/* We maken een unieke lijst van alles wat open is EN alles wat ongelezen is */}
   {Array.from(new Set([...paneOrder, ...Array.from(unreadChats)])).map((paneId) => {
     
   // NEW - Met title tooltips
@@ -912,7 +912,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
         onClick={() => onTaskbarClick(paneId)}
         title={`${getDisplayName(contactName)} - Gesprek`}
       >
-        <span className="taskbar-icon">ðŸ’¬</span>
+        <span className="taskbar-icon">{'\u{1F4AC}'}</span>
         <span>{getDisplayName(contactName)}</span>
       </div>
     );
@@ -936,17 +936,17 @@ const onTaskbarClick = React.useCallback((paneId) => {
 </div>
 
         <div className="systray">
-          {isSuperpeer && <span className="superpeer-badge" title={`Superpeer actief | ${connectedSuperpeers} peer(s) verbonden`}>ðŸ“¡</span>}
+          {isSuperpeer && <span className="superpeer-badge" title={`Superpeer actief | ${connectedSuperpeers} peer(s) verbonden`}>{'\u{1F4E1}'}</span>}
           {isLoggedIn && (
             <span
               className={`relay-status-badge ${relayStatus.anyOnline ? 'relay-online' : 'relay-offline'}`}
               title={relayStatus.anyOnline
                 ? `Relay verbonden${isSuperpeer ? ' | Superpeer actief' : ''} | ${connectedSuperpeers} peer(s)`
-                : 'Relay offline â€” klik om te reconnecten'
+                : 'Relay offline - klik om te reconnecten'
               }
               onClick={() => !relayStatus.anyOnline && forceReconnect()}
             >
-              {relayStatus.anyOnline ? 'ðŸŸ¢' : 'ðŸ”´'}
+              {relayStatus.anyOnline ? '\u{1F7E2}' : '\u{1F534}'}
             </span>
           )}
           {isLoggedIn && messengerSignedIn && (
@@ -956,7 +956,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
               title={`Chatlon - ${currentStatusOption.label} (${getDisplayName(currentUser)})`}
               onClick={(e) => { e.stopPropagation(); setShowSystrayMenu(prev => !prev); }}
             >
-              <span className="systray-chatlon-figure">ðŸ’¬</span>
+              <span className="systray-chatlon-figure">{'\u{1F4AC}'}</span>
               <span className="systray-status-dot" style={{ backgroundColor: currentStatusOption.color }}></span>
             </span>
           )}
@@ -1013,3 +1013,6 @@ const onTaskbarClick = React.useCallback((paneId) => {
 }
 
 export default App;
+
+
+

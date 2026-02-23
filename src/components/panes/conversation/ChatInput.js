@@ -17,7 +17,7 @@ function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, set
   return (
     <div className="chat-input-container">
       <div className="chat-input-toolbar">
-        <button ref={emojiBtn} className="chat-input-tool" onClick={handleTogglePicker}>ðŸ˜Š</button>
+        <button ref={emojiBtn} className="chat-input-tool" onClick={handleTogglePicker}>{'\u{1F60A}'}</button>
         {showPicker && ReactDOM.createPortal(
           <div
             className="emoticon-picker"
@@ -34,7 +34,7 @@ function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, set
           </div>,
           document.body
         )}
-        <button className="chat-input-tool" onClick={onNudge} disabled={!canNudge}>âš¡</button>
+        <button className="chat-input-tool" onClick={onNudge} disabled={!canNudge}>{'\u26A1'}</button>
       </div>
       <div className="chat-input-body">
         <textarea
