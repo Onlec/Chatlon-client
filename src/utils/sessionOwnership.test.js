@@ -146,4 +146,38 @@ describe('sessionOwnership', () => {
     });
     expect(shouldYield).toBe(true);
   });
+
+  test('shouldYieldToIncomingSession ignores different account owner', () => {
+    const shouldYield = shouldYieldToIncomingSession({
+      incoming: {
+        tabId: 'client_1_other_9000_z',
+        heartbeat: 9000,
+        account: 'bob@example.com',
+        clientId: 'remote',
+        sessionStartedAt: 9000
+      },
+      currentUser: 'alice@example.com',
+      localTabClientId: 'mine',
+      sessionStartMs: 6000,
+      myTabId: 'client_1_mine_6000_a'
+    });
+    expect(shouldYield).toBe(false);
+  });
+
+  test('shouldYieldToIncomingSession ignores identical tabId', () => {
+    const shouldYield = shouldYieldToIncomingSession({
+      incoming: {
+        tabId: 'client_1_mine_6000_a',
+        heartbeat: 9000,
+        account: 'alice@example.com',
+        clientId: 'remote',
+        sessionStartedAt: 9000
+      },
+      currentUser: 'alice@example.com',
+      localTabClientId: 'mine',
+      sessionStartMs: 6000,
+      myTabId: 'client_1_mine_6000_a'
+    });
+    expect(shouldYield).toBe(false);
+  });
 });

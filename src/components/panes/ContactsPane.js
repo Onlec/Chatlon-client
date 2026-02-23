@@ -283,6 +283,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
     // Voeg toe aan PUBLIC friend requests space (zodat ontvanger het kan zien)
     gun.get('friendRequests').get(trimmedEmail).get(requestId).put({
       from: currentUser,
+      to: trimmedEmail,
       status: 'pending',
       timestamp: Date.now()
     });

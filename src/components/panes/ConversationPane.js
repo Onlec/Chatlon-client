@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom';
 import { gun, user } from '../../gun';
 import { convertEmoticons, getEmoticonCategories } from '../../utils/emoticons';
 import { getContactPairId } from '../../utils/chatUtils';
-import { log } from '../../utils/debug';
-import { createListenerManager } from '../../utils/gunListenerManager';
 import { useWebRTC } from '../../hooks/useWebRTC';
 import CallPanel from '../CallPanel';
 import { encryptMessage, decryptMessage, warmupEncryption } from '../../utils/encryption';
@@ -30,17 +28,30 @@ function getPresence(raw) {
 // ============================================
 const reducer = (state, action) => {
   if (action.type === 'RESET') return { messages: [], messageMap: {} };
-  if (state.messageMap[action.id]) return state;
+  const messageId = (typeof action.id === 'string' || typeof action.id === 'number')
+    ? String(action.id)
+    : '';
+  if (!messageId || state.messageMap[messageId]) return state;
 
-  const newMessageMap = { ...state.messageMap, [action.id]: action };
-  const sortedMessages = Object.values(newMessageMap).sort((a, b) => a.timeRef - b.timeRef);
+  const normalizedMessage = {
+    ...action,
+    id: messageId,
+    timeRef: Number(action.timeRef) || Date.now()
+  };
+
+  const newMessageMap = { ...state.messageMap, [messageId]: normalizedMessage };
+  const sortedMessages = Object.values(newMessageMap).sort((a, b) => {
+    const delta = Number(a.timeRef || 0) - Number(b.timeRef || 0);
+    if (delta !== 0) return delta;
+    return String(a.id).localeCompare(String(b.id));
+  });
   return { messageMap: newMessageMap, messages: sortedMessages };
 };
 
 // ============================================
 // 2. HOOFDCOMPONENT
 // ============================================
-function ConversationPane({ contactName, lastNotificationTime, clearNotificationTime, contactPresenceData, onNudge }) {
+function ConversationPane({ contactName, lastNotificationTime, clearNotificationTime, contactPresenceData }) {
   const { playSound } = useSounds();
   const [state, dispatch] = useReducer(reducer, { messages: [], messageMap: {} });
   const [messageText, setMessageText] = useState('');
@@ -60,9 +71,16 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   const lastTypingSignal = useRef(0);
   const windowOpenTimeRef = useRef(Date.now());
   const prevMsgCountRef = useRef(0);
-  const chatListenersRef = useRef(createListenerManager());
+  const sessionInitAttemptedRef = useRef(false);
+  const sessionGenerationRef = useRef(0);
+  const sessionCreateTimeoutRef = useRef(null);
+  const currentSessionIdRef = useRef(null);
+  const boundaryRef = useRef(lastNotificationTime ? (lastNotificationTime - 2000) : (windowOpenTimeRef.current - 1000));
+  const streamGenerationRef = useRef(0);
+  const shakeTimeoutRef = useRef(null);
   const currentUser = user.is?.alias;
   const lastTypingSoundRef = useRef(0);
+  const playSoundRef = useRef(playSound);
 
   const {
     callState,
@@ -120,21 +138,99 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
 
   // --- Effects (Sessie & Listeners) ---
   useEffect(() => {
+    playSoundRef.current = playSound;
+  }, [playSound]);
+
+  useEffect(() => {
+    currentSessionIdRef.current = currentSessionId;
+  }, [currentSessionId]);
+
+  useEffect(() => {
     const sender = user.is?.alias;
     if (!sender || !contactName) return;
+    const sessionGeneration = sessionGenerationRef.current + 1;
+    sessionGenerationRef.current = sessionGeneration;
 
     const pairId = getContactPairId(sender, contactName);
     const sessionRef = gun.get('ACTIVE_SESSIONS').get(pairId);
+    const sessionIdNode = sessionRef.get('sessionId');
 
-    sessionRef.get('sessionId').once((id) => {
-      if (id) {
-        setCurrentSessionId(id);
-      } else {
-        const newId = `CHAT_${pairId}_${Date.now()}`;
-        sessionRef.put({ sessionId: newId, lastActivity: Date.now() });
-        setCurrentSessionId(newId);
+    sessionInitAttemptedRef.current = false;
+    currentSessionIdRef.current = null;
+    setCurrentSessionId(null);
+    dispatch({ type: 'RESET' });
+    setDisplayLimit(5);
+    prevMsgCountRef.current = 0;
+    windowOpenTimeRef.current = Date.now();
+    boundaryRef.current = lastNotificationTime
+      ? (lastNotificationTime - 2000)
+      : (windowOpenTimeRef.current - 1000);
+
+    if (typeof clearNotificationTime === 'function') {
+      clearNotificationTime(contactName);
+    }
+
+    const applySessionId = (id) => {
+      if (sessionGenerationRef.current !== sessionGeneration) return;
+      const normalizedId = typeof id === 'string' && id.trim() ? id : null;
+
+      if (normalizedId) {
+        if (sessionCreateTimeoutRef.current) {
+          clearTimeout(sessionCreateTimeoutRef.current);
+          sessionCreateTimeoutRef.current = null;
+        }
+        sessionInitAttemptedRef.current = true;
+        currentSessionIdRef.current = normalizedId;
+        setCurrentSessionId((prev) => (prev === normalizedId ? prev : normalizedId));
+        return;
       }
-    });
+
+      if (sessionInitAttemptedRef.current || sessionCreateTimeoutRef.current) return;
+      sessionInitAttemptedRef.current = true;
+
+      // Gun can emit transient null before a real value arrives.
+      // Delay creation briefly and cancel if a valid session appears.
+      sessionCreateTimeoutRef.current = setTimeout(() => {
+        sessionCreateTimeoutRef.current = null;
+        if (sessionGenerationRef.current !== sessionGeneration) return;
+        if (currentSessionIdRef.current) return;
+
+        // Confirm with a fresh read before creating a new session ID.
+        sessionIdNode.once((latestId) => {
+          if (sessionGenerationRef.current !== sessionGeneration) return;
+          const normalizedLatestId = typeof latestId === 'string' && latestId.trim()
+            ? latestId.trim()
+            : null;
+
+          if (normalizedLatestId) {
+            currentSessionIdRef.current = normalizedLatestId;
+            setCurrentSessionId((prev) => (prev === normalizedLatestId ? prev : normalizedLatestId));
+            return;
+          }
+
+          const newId = `CHAT_${pairId}_${Date.now()}`;
+          currentSessionIdRef.current = newId;
+          setCurrentSessionId(newId);
+          sessionRef.put({ sessionId: newId, lastActivity: Date.now() });
+        });
+      }, 800);
+    };
+
+    const sessionSubscription = sessionIdNode.on(applySessionId);
+    // Ensure first-load initialization for brand new pairs where `.on` can lag.
+    sessionIdNode.once(applySessionId);
+
+    return () => {
+      sessionGenerationRef.current += 1;
+      if (sessionSubscription && typeof sessionSubscription.off === 'function') {
+        sessionSubscription.off();
+      }
+      sessionInitAttemptedRef.current = false;
+      if (sessionCreateTimeoutRef.current) {
+        clearTimeout(sessionCreateTimeoutRef.current);
+        sessionCreateTimeoutRef.current = null;
+      }
+    };
   }, [contactName]);
 
   // Warmup encryptie bij openen conversatie
@@ -147,65 +243,98 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
   useEffect(() => {
     if (!currentSessionId) return;
 
+    const streamGeneration = streamGenerationRef.current + 1;
+    streamGenerationRef.current = streamGeneration;
+
     const chatNode = gun.get(currentSessionId);
     const nudgeNode = gun.get(`NUDGE_${currentSessionId}`);
     const typingNode = gun.get(`TYPING_${currentSessionId}`);
 
-    chatNode.map().on(async (data, id) => {
+    const chatSubscription = chatNode.map().on(async (data, id) => {
       if (!data?.sender) return;
-      const boundary = lastNotificationTime ? (lastNotificationTime - 2000) : (windowOpenTimeRef.current - 1000);
+      const boundary = boundaryRef.current;
 
       if (data.type === 'nudge') {
-        // Nudge systeembericht — geen decryptie nodig, markeer als leeg voor weergave
+        if (streamGenerationRef.current !== streamGeneration) return;
         dispatch({ ...data, content: '', id, isLegacy: data.timeRef < boundary });
         return;
       }
 
       if (!data?.content || data.content === '__nudge__') return;
-      // Decrypt content — de afzender is het contact OF wijzelf
+      if (streamGenerationRef.current !== streamGeneration) return;
       const decryptContact = data.sender === user.is?.alias ? contactName : data.sender;
       const decryptedContent = await decryptMessage(data.content, decryptContact);
 
+      if (streamGenerationRef.current !== streamGeneration) return;
       dispatch({ ...data, content: decryptedContent, id, isLegacy: data.timeRef < boundary });
     });
 
-    nudgeNode.on((data) => {
+    const nudgeSubscription = nudgeNode.on((data) => {
+      if (streamGenerationRef.current !== streamGeneration) return;
       if (data?.time > lastProcessedNudge.current && data.from === contactName) {
         lastProcessedNudge.current = data.time;
-        // Geluid + schudden — systeembericht komt via de chat-node listener
-        playSound('nudge');
+        playSoundRef.current?.('nudge');
+        if (shakeTimeoutRef.current) clearTimeout(shakeTimeoutRef.current);
         setIsShaking(true);
-        setTimeout(() => setIsShaking(false), 600);
+        shakeTimeoutRef.current = setTimeout(() => {
+          if (streamGenerationRef.current !== streamGeneration) return;
+          setIsShaking(false);
+          shakeTimeoutRef.current = null;
+        }, 600);
       }
     });
 
-    typingNode.on((data) => {
+    const typingSubscription = typingNode.on((data) => {
+      if (streamGenerationRef.current !== streamGeneration) return;
       if (data && data.isTyping && data.user === contactName) {
         const now = Date.now();
         if (now - data.timestamp < 4000) {
           setIsContactTyping(true);
           if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
           typingTimeoutRef.current = setTimeout(() => {
+            if (streamGenerationRef.current !== streamGeneration) return;
             setIsContactTyping(false);
+            typingTimeoutRef.current = null;
           }, 3000);
         }
       } else if (data && !data.isTyping && data.user === contactName) {
         setIsContactTyping(false);
-        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
+        }
       }
     });
 
-    //chatListenersRef.current.add('chat', chatNode);
-    chatListenersRef.current.add('nudge', nudgeNode);
-    chatListenersRef.current.add('typing', typingNode);
-
-    return () => { chatListenersRef.current.cleanup(); };
-  }, [currentSessionId, contactName, lastNotificationTime, playSound]);
+    return () => {
+      streamGenerationRef.current += 1;
+      if (chatSubscription && typeof chatSubscription.off === 'function') {
+        chatSubscription.off();
+      }
+      if (nudgeSubscription && typeof nudgeSubscription.off === 'function') {
+        nudgeSubscription.off();
+      }
+      if (typingSubscription && typeof typingSubscription.off === 'function') {
+        typingSubscription.off();
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      if (shakeTimeoutRef.current) {
+        clearTimeout(shakeTimeoutRef.current);
+        shakeTimeoutRef.current = null;
+      }
+    };
+  }, [currentSessionId, contactName]);
 
   // Scroll effect
   useEffect(() => {
     if (state.messages.length > prevMsgCountRef.current && prevMsgCountRef.current !== 0) {
-      setDisplayLimit((prev) => prev + 1);
+      const latestMsg = state.messages[state.messages.length - 1];
+      if (latestMsg && !latestMsg.isLegacy) {
+        setDisplayLimit((prev) => prev + 1);
+      }
     }
     prevMsgCountRef.current = state.messages.length;
     if (messagesAreaRef.current) messagesAreaRef.current.scrollTop = messagesAreaRef.current.scrollHeight;
@@ -272,6 +401,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
               }
 
               setMessageText(val);
+              if (!currentSessionId) return;
               const now = Date.now();
               if (now - lastTypingSignal.current > 1000) {
                 gun.get(`TYPING_${currentSessionId}`).put({ user: user.is?.alias, isTyping: val.length > 0, timestamp: now });
@@ -285,6 +415,7 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
             setShowPicker={setShowEmoticonPicker}
             pickerRef={emoticonPickerRef}
             insertEmoticon={(emo) => setMessageText((prev) => prev + emo + ' ')}
+            isSessionReady={Boolean(currentSessionId)}
           />
         </div>
 
@@ -368,7 +499,7 @@ function ChatMessage({ msg, prevMsg, currentUser }) {
   );
 }
 
-function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, setShowPicker, pickerRef, insertEmoticon }) {
+function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, setShowPicker, pickerRef, insertEmoticon, isSessionReady }) {
   const emojiBtn = useRef(null);
   const [pickerPos, setPickerPos] = useState({ bottom: 0, left: 0 });
 
@@ -406,10 +537,11 @@ function ChatInput({ value, onChange, onSend, onNudge, canNudge, showPicker, set
         <textarea
           className="chat-input-text"
           value={value}
+          disabled={!isSessionReady}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
         />
-        <button className="chat-send-btn" onClick={onSend}>Verzenden</button>
+        <button className="chat-send-btn" onClick={onSend} disabled={!isSessionReady}>Verzenden</button>
       </div>
     </div>
   );
@@ -425,3 +557,4 @@ function AvatarDisplay({ name, isSelf }) {
 }
 
 export default ConversationPane;
+

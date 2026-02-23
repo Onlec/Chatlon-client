@@ -77,6 +77,12 @@ export function useMessageListeners({
       if (!requestData || !requestData.from || requestData.status !== 'pending') {
         return;
       }
+      if (requestData.from === currentUser) {
+        return;
+      }
+      if (requestData.to && requestData.to !== currentUser) {
+        return;
+      }
 
       const requestTimestamp = requestData.timestamp || 0;
       if (requestTimestamp < listenerStartTime) {
@@ -118,49 +124,66 @@ export function useMessageListeners({
     const activeSessionNode = gun.get('ACTIVE_SESSIONS').get(pairId);
     activeSessionNode.get('sessionId').on((activeSessionId) => {
       const previousSessionId = activeSessionsRef.current[pairId];
+      const normalizedSessionId = typeof activeSessionId === 'string'
+        ? activeSessionId.trim()
+        : '';
 
-      if (!activeSessionId) {
-        if (previousSessionId) {
-          listenersRef.current.remove(chatKey);
-          delete activeSessionsRef.current[pairId];
-        }
+      // Gun can emit transient null/empty snapshots for child fields.
+      // Do not detach a healthy listener on those transient values.
+      if (!normalizedSessionId) {
         return;
       }
 
-      if (activeSessionId === previousSessionId) {
+      if (normalizedSessionId === previousSessionId) {
         return;
       }
 
-      activeSessionsRef.current[pairId] = activeSessionId;
+      activeSessionsRef.current[pairId] = normalizedSessionId;
       listenersRef.current.remove(chatKey);
 
       log('[useMessageListeners] Following active session for contact:', {
         contactName,
         pairId,
-        activeSessionId
+        activeSessionId: normalizedSessionId
       });
 
-      const chatNode = gun.get(activeSessionId);
+      const chatNode = gun.get(normalizedSessionId);
       chatNode.map().on(async (data, id) => {
         if (!data || !data.content || !data.sender) return;
         if (data.sender === (user.is && user.is.alias)) return;
+        if (id === '_' || id === '#') return;
 
-        const msgKey = `processed_${activeSessionId}_${id}`;
-        if (shownToastsRef.current.has(msgKey)) return;
-        shownToastsRef.current.add(msgKey);
+        const normalizedMessageId = ((typeof id === 'string' || typeof id === 'number') && String(id).trim())
+          ? String(id)
+          : `${String(data.sender)}_${Number(data.timeRef) || Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+        // Dedupe only for stable IDs to avoid suppressing valid messages
+        // when Gun emits transient/incomplete keys.
+        const hasStableId = normalizedMessageId !== '_' && normalizedMessageId !== '#';
+        if (hasStableId) {
+          const msgKey = `processed_${normalizedSessionId}_${normalizedMessageId}`;
+          if (shownToastsRef.current.has(msgKey)) return;
+          shownToastsRef.current.add(msgKey);
+        }
 
         const now = Date.now();
-        const isRecent = data.timeRef > (now - 15000);
+        const messageTimeRef = Number(data.timeRef) || 0;
+        const isRecent = messageTimeRef > (now - 60000);
         if (!isRecent) return;
 
         const decryptedContent = await decryptMessage(data.content, contactName);
 
         if (onMessage) {
-          onMessage({ ...data, content: decryptedContent }, contactName, id, activeSessionId);
+          onMessage(
+            { ...data, content: decryptedContent, timeRef: messageTimeRef || now },
+            contactName,
+            normalizedMessageId,
+            normalizedSessionId
+          );
         }
 
         if (!isConversationActive(contactName) && onNotification) {
-          onNotification(contactName, data.timeRef);
+          onNotification(contactName, messageTimeRef || now);
         }
       });
 

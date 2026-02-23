@@ -192,14 +192,13 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   }
 
   // STAP B: Toast en geluid alleen als Chatlon Messenger actief is
-  if (!isFocused && messengerSignedInRef.current) {
+  // Toon ook wanneer chat gesloten/minimized is, zelfs als deze pane-id nog active lijkt.
+  if ((!isFocused || !isOpen) && messengerSignedInRef.current) {
     const isNudge = msg.type === 'nudge';
     // Geluid: nudge heeft eigen geluid via ConversationPane, geen berichtgeluid
     if (!isNudge) playSound('message');
     // Toast: nudge krijgt eigen toast via handleNudge, geen berichtentoast
     if (!isNudge && settings.toastNotifications) {
-      const toastKey = `msg_${msgId}`;
-      shownToastsRef.current.add(toastKey);
       showToast({
         type: 'message',
         contactName: senderName,
@@ -212,7 +211,7 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
     }
     if (isNudge) handleNudgeRef.current(senderName);
   }
-}, [currentUser, showToast, setUnreadChats, activePaneRef, conversationsRef, shownToastsRef, playSound, settings, getAvatar]);
+}, [currentUser, showToast, setUnreadChats, activePaneRef, conversationsRef, playSound, settings, getAvatar]);
   // Message listeners initialisatie
   const { 
     cleanup: cleanupListeners 
@@ -403,6 +402,8 @@ const handleIncomingMessage = React.useCallback((msg, senderName, msgId, session
   };
 
   conflictHandlerRef.current = () => {
+    const authState = authStateRef.current;
+    if (!authState.isLoggedIn || !authState.currentUser) return;
     void closeSession({
       reason: SESSION_CLOSE_REASON_CONFLICT,
       showLogoffScreen: true,
@@ -813,7 +814,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
                 initialPosition={getInitialPosition(convId)}
                 onPositionChange={(newPosition) => handlePositionChange(convId, newPosition)}
               >
-                <ConversationPane contactName={conv.contactName} lastNotificationTime={unreadMetadata[conv.contactName]} clearNotificationTime={clearNotificationTime} contactPresenceData={sharedContactPresence[conv.contactName]} onNudge={handleNudge} />
+                <ConversationPane contactName={conv.contactName} lastNotificationTime={unreadMetadata[conv.contactName]} clearNotificationTime={clearNotificationTime} contactPresenceData={sharedContactPresence[conv.contactName]} />
               </Pane>
             </div>
           );

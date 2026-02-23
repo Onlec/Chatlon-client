@@ -114,6 +114,33 @@ Expected:
 - Context A teardown does not clear B's ACTIVE_TAB record.
 - No ownership flip-flop or ghost kick after handover.
 
+### 11) Conversation Reopen Toast Continuity
+1. Login account B in Context A.
+2. From account A (other context), send one message to B while B's conversation is closed.
+3. Verify B gets toast + taskbar unread.
+4. Open B's conversation with A, then close it.
+5. Send another message from A to B.
+
+Expected:
+- B still gets toast + taskbar unread after reopen/close cycles.
+- This remains true when B minimizes the conversation or leaves it open but unfocused.
+- No "works only once after login" behavior.
+
+### 12) Cross-Account Isolation Stress (A/B across X/Y)
+1. Login account A in Context X.
+2. Login account A in Context Y (X should be kicked once).
+3. Login account B in Context X.
+4. Login account B in Context Y.
+5. Login account A again in Context X.
+
+Expected:
+- Step 2: only A@X is kicked; A@Y remains active.
+- Step 3: B@X logs in and stays active (no repeated kick loop).
+- Step 4: only B@X is kicked; B@Y remains active.
+- Step 5: only A's own other session may be replaced (newest A wins).
+- A and B never kick each other across accounts.
+- No repeated `Detected other session` loop for B after step 3.
+
 ## Quick Log Signals
 
 Good:
@@ -129,6 +156,8 @@ Bad:
 - Older tab teardown nulls ACTIVE_TAB while newer tab is active.
 - Online toast appears for removed/non-accepted contacts.
 - Delayed cleanup from old session affects current logged-in state.
+- Message toast flow stops after opening/closing a conversation once.
+- Account A login causes account B session to be kicked (or vice versa).
 
 ## Automation Coverage Map (Core)
 
@@ -147,9 +176,11 @@ Automated (unit/component):
   - banner renders with conflict notice
   - dismiss callback fired
   - login UI remains interactive while banner is visible
+- Message listener continuity (`src/hooks/useMessageListeners.test.js`)
+  - transient empty `ACTIVE_SESSIONS` event does not break incoming message/toast path
 
 Manual (keep in checklist):
-- Scenario 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+- Scenario 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
 - Browser-context behavior (A/B takeover), real relay timing, and teardown race observation.
 
 ## Notes Template

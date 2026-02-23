@@ -12,8 +12,8 @@ import { WallpaperProvider } from './contexts/WallpaperContext';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <DialogProvider>
-      <SettingsProvider>
+    <SettingsProvider>
+      <DialogProvider>
         <ScanlinesProvider>
           <AvatarProvider>
             <WallpaperProvider>
@@ -21,8 +21,8 @@ root.render(
             </WallpaperProvider>
           </AvatarProvider>
         </ScanlinesProvider>
-      </SettingsProvider>
-    </DialogProvider>
+      </DialogProvider>
+    </SettingsProvider>
   </React.StrictMode>
 );
 

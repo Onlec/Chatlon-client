@@ -46,12 +46,14 @@ export function useActiveTabSessionGuard({
   useEffect(() => {
     if (!isLoggedIn || !currentUser || !tabClientId) return;
 
+    let effectActive = true;
     const sessionStartedAt = Date.now();
     const tabId = `${tabClientId}_${sessionStartedAt}_${Math.random().toString(36).substr(2, 9)}`;
     log('[App] Starting session with tabId:', tabId);
     const activeTabUserNode = gun.get('ACTIVE_TAB').get(currentUser);
 
     const writeClaim = () => {
+      if (!effectActive) return;
       activeTabUserNode.put({
         tabId,
         heartbeat: Date.now(),
@@ -81,6 +83,7 @@ export function useActiveTabSessionGuard({
     // Luister of een andere tab ons verdringt
     const activeTabNode = gun.get('ACTIVE_TAB').get(currentUser);
     activeTabNode.on((data) => {
+      if (!effectActive) return;
       if (isLoggedInRef.current === false) return;
       if (isSessionClosingRef.current) return;
 
@@ -100,6 +103,7 @@ export function useActiveTabSessionGuard({
     });
 
     return () => {
+      effectActive = false;
       clearInterval(heartbeatInterval);
       // Invariant: startup claim bursts must never survive an unmount/login handover.
       earlyClaimTimers.forEach((timer) => clearTimeout(timer));
