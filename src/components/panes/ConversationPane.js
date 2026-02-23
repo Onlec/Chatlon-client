@@ -168,6 +168,10 @@ function ConversationPane({ contactName, lastNotificationTime, clearNotification
         hasLoadedOlderRef.current = false;
         prevMsgCountRef.current = 0;
         windowOpenTimeRef.current = Date.now();
+        // Snapshot boundary policy:
+        // lastNotificationTime is captured at conversation open/reset.
+        // While the same pane remains open, we do not live-update this boundary.
+        // This keeps legacy vs new split stable during an active session.
         boundaryRef.current = lastNotificationTime
           ? (lastNotificationTime - 2000)
           : (windowOpenTimeRef.current - 1000);
