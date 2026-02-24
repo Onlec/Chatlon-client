@@ -19,9 +19,11 @@ const SEA = Gun.SEA;
 
 // Cache voor gedeelde geheimen (1x berekenen per contact per sessie)
 const secretCache = {};
+const secretPromiseCache = {};
 
 // Cache voor publieke sleutels
 const pubKeyCache = {};
+const pubKeyPromiseCache = {};
 
 /**
  * Haal de publieke sleutel (epub) op van een contact.
@@ -35,7 +37,11 @@ export async function getContactPublicKey(contactName) {
     return pubKeyCache[contactName];
   }
 
-  return new Promise((resolve) => {
+  if (pubKeyPromiseCache[contactName]) {
+    return pubKeyPromiseCache[contactName];
+  }
+
+  const lookupPromise = new Promise((resolve) => {
     gun.get('~@' + contactName).once((data) => {
       if (!data) {
         log('[Encryption] No user found for:', contactName);
@@ -66,7 +72,13 @@ export async function getContactPublicKey(contactName) {
         }
       });
     });
+  }).finally(() => {
+    delete pubKeyPromiseCache[contactName];
   });
+
+  pubKeyPromiseCache[contactName] = lookupPromise;
+  return lookupPromise;
+
 }
 
 /**
@@ -81,29 +93,40 @@ export async function getSharedSecret(contactName) {
     return secretCache[contactName];
   }
 
-  const contactEpub = await getContactPublicKey(contactName);
-  if (!contactEpub) {
-    log('[Encryption] Cannot create secret: no public key for', contactName);
-    return null;
+  if (secretPromiseCache[contactName]) {
+    return secretPromiseCache[contactName];
   }
 
-  const myPair = user._.sea;
-  if (!myPair) {
-    log('[Encryption] Cannot create secret: user not authenticated');
-    return null;
-  }
-
-  try {
-    const secret = await SEA.secret(contactEpub, myPair);
-    if (secret) {
-      secretCache[contactName] = secret;
-      log('[Encryption] Shared secret created for:', contactName);
+  const secretPromise = (async () => {
+    const contactEpub = await getContactPublicKey(contactName);
+    if (!contactEpub) {
+      log('[Encryption] Cannot create secret: no public key for', contactName);
+      return null;
     }
-    return secret;
-  } catch (err) {
-    log('[Encryption] Error creating secret:', err.message);
-    return null;
-  }
+
+    const myPair = user._.sea;
+    if (!myPair) {
+      log('[Encryption] Cannot create secret: user not authenticated');
+      return null;
+    }
+
+    try {
+      const secret = await SEA.secret(contactEpub, myPair);
+      if (secret) {
+        secretCache[contactName] = secret;
+        log('[Encryption] Shared secret created for:', contactName);
+      }
+      return secret;
+    } catch (err) {
+      log('[Encryption] Error creating secret:', err.message);
+      return null;
+    }
+  })().finally(() => {
+    delete secretPromiseCache[contactName];
+  });
+
+  secretPromiseCache[contactName] = secretPromise;
+  return secretPromise;
 }
 
 /**
@@ -190,6 +213,8 @@ export async function warmupEncryption(contactName) {
 export function clearEncryptionCache() {
   Object.keys(secretCache).forEach(k => delete secretCache[k]);
   Object.keys(pubKeyCache).forEach(k => delete pubKeyCache[k]);
+  Object.keys(secretPromiseCache).forEach(k => delete secretPromiseCache[k]);
+  Object.keys(pubKeyPromiseCache).forEach(k => delete pubKeyPromiseCache[k]);
   log('[Encryption] Cache cleared');
 }
 

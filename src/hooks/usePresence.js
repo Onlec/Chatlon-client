@@ -10,7 +10,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { gun, user } from '../gun';
 import {
   PRESENCE_HEARTBEAT_INTERVAL,
-  PRESENCE_TIMEOUT,
   AUTO_AWAY_TIMEOUT,
   STATUS_OPTIONS
 } from '../utils/presenceUtils';
@@ -35,6 +34,7 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
   const isManualStatusRef = useRef(isManualStatus);
   const presenceIntervalRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
+  const cleanupInProgressRef = useRef(false);
 
   // Sync refs met state
   useEffect(() => {
@@ -50,6 +50,7 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
    * @param {string} status - Status value
    */
   const updatePresence = useCallback((status) => {
+    if (cleanupInProgressRef.current) return;
     if (!user.is || !currentUser) return;
 
     const presenceData = {
@@ -76,6 +77,13 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
     });
     log('[usePresence] Set offline presence');
   }, [currentUser]);
+
+  const stopHeartbeat = useCallback(() => {
+    if (presenceIntervalRef.current) {
+      clearInterval(presenceIntervalRef.current);
+      presenceIntervalRef.current = null;
+    }
+  }, []);
 
   /**
    * Handle manual status change by user.
@@ -125,13 +133,13 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
    * Cleanup function for logout/unmount.
    */
   const cleanup = useCallback(() => {
+    if (cleanupInProgressRef.current) return;
+    cleanupInProgressRef.current = true;
+    stopHeartbeat();
     setOfflinePresence();
-    if (presenceIntervalRef.current) {
-      clearInterval(presenceIntervalRef.current);
-      presenceIntervalRef.current = null;
-    }
     log('[usePresence] Cleanup completed');
-  }, [setOfflinePresence]);
+    cleanupInProgressRef.current = false;
+  }, [setOfflinePresence, stopHeartbeat]);
 
   // ============================================
   // EFFECTS
@@ -143,6 +151,7 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
 
     if (!isActive) {
       // Messenger afgemeld — zet offline en start geen heartbeat
+      stopHeartbeat();
       setOfflinePresence();
       return;
     }
@@ -159,12 +168,9 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
     }, PRESENCE_HEARTBEAT_INTERVAL);
 
     return () => {
-      if (presenceIntervalRef.current) {
-        clearInterval(presenceIntervalRef.current);
-        presenceIntervalRef.current = null;
-      }
+      stopHeartbeat();
     };
-  }, [isLoggedIn, currentUser, isActive, updatePresence, checkAutoAway, setOfflinePresence]);
+  }, [isLoggedIn, currentUser, isActive, updatePresence, checkAutoAway, setOfflinePresence, stopHeartbeat]);
 
   // beforeunload effect - set offline bij page close
   useEffect(() => {

@@ -50,3 +50,22 @@ export function canAttachPresenceListeners(contactData = {}) {
     && normalized.inList !== false
     && normalized.visibility !== 'limbo';
 }
+
+export function resolveContactUsername(contactData = {}, contactKey = '') {
+  const usernameFromData = typeof contactData?.username === 'string' ? contactData.username.trim() : '';
+  const usernameFromKey = typeof contactKey === 'string' ? contactKey.trim() : '';
+  return usernameFromData || usernameFromKey || '';
+}
+
+export function getPresenceEligibility(contactData = {}, contactKey = '') {
+  const username = resolveContactUsername(contactData, contactKey);
+  if (!username || !contactData) {
+    return { username, eligible: false };
+  }
+  // Canonical rule-set:
+  // accepted && inList !== false && visibility !== 'limbo'
+  return {
+    username,
+    eligible: canAttachPresenceListeners(contactData)
+  };
+}

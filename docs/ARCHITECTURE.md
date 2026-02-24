@@ -364,3 +364,15 @@ The shell command bus supports these command types:
 - `CLOSE_PANE`
 - `TOGGLE_START`
 - `OPEN_CONTACTS`
+
+## Presence Ownership Matrix
+- `hooks/usePresence.js`
+  - Owner van **self presence lifecycle** (`PRESENCE/<currentUser>`): heartbeat, manual status, auto-away, offline writes bij sign-out/teardown.
+- `hooks/usePresenceCoordinator.js`
+  - Owner van **contact presence listeners**: attach/detach op basis van `canAttachPresenceListeners`.
+  - Owner van **offline->online transitie detectie** voor contacten.
+  - Levert `contactPresence` map voor UI-consumers.
+- `hooks/useMessengerCoordinator.js`
+  - Owner van **presence toast policy** (wanneer en hoe online-toasts worden getoond).
+- `components/panes/ContactsPane.js`
+  - **Consumer only** van `contactPresenceMap`; geen eigen Gun presence listeners.

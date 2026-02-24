@@ -26,7 +26,6 @@ function PaneLayer({
   currentUser,
   messengerSignedIn,
   messengerCoordinator,
-  handlePresenceChange,
   setNowPlaying,
   toggleMaximizeConversation,
   closeConversation,
@@ -73,8 +72,7 @@ function PaneLayer({
                   currentUserEmail={currentUser}
                   messengerSignedIn={messengerSignedIn}
                   setMessengerSignedIn={setMessengerSignedIn}
-                  onContactOnline={messengerCoordinator.handleContactOnline}
-                  onPresenceChange={handlePresenceChange}
+                  contactPresenceMap={sharedContactPresence}
                 />
               ) : paneName === 'media' ? (
                 <Component onNowPlayingChange={setNowPlaying} />

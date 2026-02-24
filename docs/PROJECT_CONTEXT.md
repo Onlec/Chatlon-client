@@ -33,6 +33,7 @@ Keep it concise, factual, and current.
 - Contacts, presence, messenger state:
   - `gun-client/src/components/panes/ContactsPane.js`
   - `gun-client/src/hooks/usePresence.js`
+  - `gun-client/src/hooks/usePresenceCoordinator.js`
 - Conversations and encrypted chat:
   - `gun-client/src/components/panes/ConversationPane.js`
   - `gun-client/src/utils/encryption.js`
@@ -55,6 +56,10 @@ Keep it concise, factual, and current.
 
 ## 6. Watchlist (Keep Updated)
 - Conversation listener lifecycle and cleanup correctness.
+- Presence ownership split correctness:
+  - `usePresence` = self lifecycle
+  - `usePresenceCoordinator` = contact listeners + transitions
+  - `ContactsPane` = consumer only
 - Portal usage alignment with architecture portal-root rules.
 - Superpeer qualification timing and related comments/docs consistency.
 - Gun signaling cleanup staying aligned with active schemas.
@@ -99,3 +104,12 @@ Copy/paste in a new chat:
 ## 12. Last Updated
 - Date: 2026-02-24
 - Reason: App shell modularization completed through manager split + command bus + context menu foundation.
+
+## 13. Presence Regression Coverage
+- `src/hooks/usePresenceCoordinator.test.js`
+  - attach/detach by eligibility
+  - offline->online transition single-fire
+  - cleanup/remount baseline reset
+- `src/components/panes/ContactsPane.test.js`
+  - consumes `contactPresenceMap`
+  - does not attach per-contact `PRESENCE` listeners

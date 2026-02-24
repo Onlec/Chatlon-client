@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { gun, user } from '../../gun';
 import { STATUS_OPTIONS, getPresenceStatus } from '../../utils/presenceUtils';
 import { log } from '../../utils/debug';
-import { createListenerManager } from '../../utils/gunListenerManager';
 import { useAvatar } from '../../contexts/AvatarContext';
 import DropdownMenu from '../DropdownMenu';
 import OptionsDialog from '../modals/OptionsDialog';
@@ -12,7 +11,7 @@ import AvatarPickerModal from '../modals/AvatarPickerModal';
 import ModalPane from '../modals/ModalPane';
 
 
-function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange, onLogoff, onSignOut, onClosePane, nowPlaying, currentUserEmail, messengerSignedIn, setMessengerSignedIn, onContactOnline, onPresenceChange }) {
+function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange, onLogoff, onSignOut, onClosePane, nowPlaying, currentUserEmail, messengerSignedIn, setMessengerSignedIn, contactPresenceMap = {} }) {
   const { getAvatar, getDisplayName, setMyDisplayName } = useAvatar();
   // FIX: Gebruik props als ze beschikbaar zijn, anders lokale state
   const [localStatus, setLocalStatus] = useState('online');
@@ -21,7 +20,6 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   const [personalMessage, setPersonalMessage] = useState('');
   const [isEditingMessage, setIsEditingMessage] = useState(false);
   const [contacts, setContacts] = useState([]);
-  const [contactPresence, setContactPresence] = useState({}); // FIX: Track presence per contact
   const [pendingRequests, setPendingRequests] = useState([]);
   const [currentUser, setCurrentUser] = useState('');
   const [showAddWizard, setShowAddWizard] = useState(false);
@@ -31,13 +29,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [isEditingDisplayName, setIsEditingDisplayName] = useState(false);
   const [editDisplayName, setEditDisplayName] = useState('');
-  const listenersRef = useRef(createListenerManager());
   const statusBadgeRef = useRef(null);
-  const prevContactPresenceRef = useRef({});
-  const onContactOnlineRef = useRef(onContactOnline);
-  onContactOnlineRef.current = onContactOnline;
-  const onPresenceChangeRef = useRef(onPresenceChange);
-  onPresenceChangeRef.current = onPresenceChange;
   const [groupsCollapsed, setGroupsCollapsed] = useState({ online: false, offline: false, blocked: true });
   const [pendingPanelCollapsed, setPendingPanelCollapsed] = useState(false);
   const [collapsedRequests, setCollapsedRequests] = useState(new Set());
@@ -153,50 +145,8 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
             }];
           });
 
-          // Setup presence listener voor dit contact (voor UI-weergave + toast)
-          if (!listenersRef.current.has(contactData.username)) {
-            const node = gun.get('PRESENCE').get(contactData.username);
-            // Sla PRIMITIEVE waarden op als prev-state (niet het Gun object zelf!).
-            // Gun.js muteert zijn dataobjecten in-place, waardoor object-referenties
-            // onbruikbaar zijn als prev-state — prev en new worden dan altijd identiek.
-            // prevContactPresenceRef.current[username] = { lastSeen: number, statusValue: string } | null | undefined
-            const username = contactData.username;
-            node.on((presenceData) => {
-              const newStatus = getPresenceStatus(presenceData);
-
-              // Eerste call: bepaal beginstand, evt. toast als contact al online was
-              if (!(username in prevContactPresenceRef.current)) {
-                if (presenceData) {
-                  prevContactPresenceRef.current[username] = {
-                    lastSeen: presenceData.lastSeen || 0,
-                    statusValue: newStatus.value
-                  };
-                  // Zet UI bij
-                  if (onPresenceChangeRef.current) onPresenceChangeRef.current(username, presenceData);
-                  setContactPresence(prev => ({ ...prev, [username]: { ...presenceData } }));
-                } else {
-                  prevContactPresenceRef.current[username] = null;
-                }
-                return;
-              }
-
-              if (!presenceData) return;
-
-              const prevStatusValue = prevContactPresenceRef.current[username]?.statusValue ?? 'offline';
-
-              // Toasts worden ALLEEN vanuit App.js PresenceMonitor gestuurd (centrale plek).
-              // ContactsPane listener is alleen voor UI-weergave (online/offline iconen).
-
-              // Sla nieuwe state op als primitieven
-              prevContactPresenceRef.current[username] = {
-                lastSeen: presenceData.lastSeen || 0,
-                statusValue: newStatus.value
-              };
-              if (onPresenceChangeRef.current) onPresenceChangeRef.current(username, presenceData);
-              setContactPresence(prev => ({ ...prev, [username]: { ...presenceData } }));
-            });
-            listenersRef.current.add(username, node);
-          }
+          // Presence listeners worden centraal beheerd door App/usePresenceCoordinator.
+          // ContactsPane consumeert alleen contactPresenceMap voor render/sortering.
         }
       });
 
@@ -229,9 +179,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
     }
 
     // Cleanup
-    return () => {
-      listenersRef.current.cleanup();
-    };
+    return undefined;
   }, []);
 
   const handleStatusChange = (newStatus) => {
@@ -350,8 +298,8 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
 
   // Sorteer actieve contacten op online status
   const sortedContacts = [...activeContacts].sort((a, b) => {
-    const aPresence = getPresenceStatus(contactPresence[a.username]);
-    const bPresence = getPresenceStatus(contactPresence[b.username]);
+    const aPresence = getPresenceStatus(contactPresenceMap[a.username]);
+    const bPresence = getPresenceStatus(contactPresenceMap[b.username]);
     const aOnline = aPresence.value !== 'offline';
     const bOnline = bPresence.value !== 'offline';
     if (aOnline && !bOnline) return -1;
@@ -360,18 +308,18 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   });
 
   const onlineContacts = sortedContacts.filter(c => {
-    const presence = getPresenceStatus(contactPresence[c.username]);
+    const presence = getPresenceStatus(contactPresenceMap[c.username]);
     return presence.value !== 'offline';
   });
 
   const offlineContacts = sortedContacts.filter(c => {
-    const presence = getPresenceStatus(contactPresence[c.username]);
+    const presence = getPresenceStatus(contactPresenceMap[c.username]);
     return presence.value === 'offline';
   });
 
   const renderContact = (contact, isOffline = false, isBlocked = false) => {
-    const presence = getPresenceStatus(contactPresence[contact.username]);
-    const personalMsg = contactPresence[contact.username]?.personalMessage;
+    const presence = getPresenceStatus(contactPresenceMap[contact.username]);
+    const personalMsg = contactPresenceMap[contact.username]?.personalMessage;
     const statusColor = isBlocked ? '#8C8C8C' : presence.color;
     return (
       <div

@@ -327,3 +327,52 @@ Automated (unit):
 
 Manual (keep in checklist):
 - Full shell integration across desktop + taskbar + startmenu + systray in real browser contexts.
+
+## Presence Baseline Lock (Extraction Step 1)
+
+These invariants are locked before extracting presence ownership out of `App.js`.
+
+### Presence Invariants
+- Contact presence listeners are eligible only when `canAttachPresenceListeners(contactData)` is true.
+- Online transition toasts are emitted from the central App presence path only.
+- Ineligible contacts must be detached and must not keep stale presence listeners.
+- Session teardown paths (manual logoff, shutdown, conflict) must leave no active presence callbacks.
+
+### Presence Observability Signals
+Good:
+- One attach log per eligible contact: `Listener op voor contact`.
+- One detach log when eligibility is lost: `Listener verwijderd voor contact`.
+- One transition log per real status change: `prev: offline -> new: online`.
+
+Bad:
+- Repeated attach logs for the same contact without cleanup.
+- Online toasts for ineligible contacts (limbo/non-accepted/non-list).
+- Presence callbacks firing after logout/conflict cleanup.
+
+### Presence Manual Scenarios (Baseline)
+1. Accepted contact goes offline -> online:
+   - exactly one online toast.
+2. Contact becomes ineligible (remove/downgrade):
+   - listener detaches and no online toast follows.
+3. Conflict/logoff/shutdown:
+   - no presence logs or toasts after teardown completes.
+
+### Presence Ownership (Final after extraction)
+- `usePresence`: self heartbeat/status lifecycle only.
+- `usePresenceCoordinator`: contact presence listeners + transition detection.
+- `useMessengerCoordinator`: presence toast policy.
+- `ContactsPane`: read-only consumer of `contactPresenceMap`.
+
+### Presence Automation Coverage
+Automated:
+- `src/hooks/usePresenceCoordinator.test.js`
+  - listener attach/detach on eligibility changes
+  - offline->online transition fires once
+  - cleanup/remount does not create ghost transition toasts
+- `src/components/panes/ContactsPane.test.js`
+  - consumes presence via props
+  - no per-contact `PRESENCE/*` subscriptions in ContactsPane
+
+Manual:
+- Self presence lifecycle through messenger sign-in/sign-out and session close paths.
+- Browser-context validation of online transitions with real relay timing.

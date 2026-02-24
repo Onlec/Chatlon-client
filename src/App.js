@@ -9,7 +9,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import LoginScreen from './components/screens/LoginScreen';
 import BootSequence from './components/screens/BootSequence';
 import DesktopShell from './components/shell/DesktopShell';
-import { gun, user } from './gun';
+import { user } from './gun';
 import { paneConfig } from './paneConfig';
 import './App.css';
 import { log } from './utils/debug';
@@ -27,11 +27,10 @@ import { useSystrayManager } from './hooks/useSystrayManager';
 import { useDesktopManager } from './hooks/useDesktopManager';
 import { useDesktopCommandBus } from './hooks/useDesktopCommandBus';
 import { useContextMenuManager } from './hooks/useContextMenuManager';
+import { usePresenceCoordinator } from './hooks/usePresenceCoordinator';
 
 import { runFullCleanup } from './utils/gunCleanup';
-import { getPresenceStatus } from './utils/presenceUtils';
 import { clearEncryptionCache } from './utils/encryption';
-import { canAttachPresenceListeners } from './utils/contactModel';
 import {
   POST_LOGIN_CLEANUP_DELAY_MS,
   SESSION_RELOAD_DELAY_MS,
@@ -209,6 +208,12 @@ const onTaskbarClick = React.useCallback((paneId) => {
     openPane: desktopCommandBus.openPane,
     onTaskbarClick
   });
+
+  const { contactPresence: sharedContactPresence, resetPresenceState } = usePresenceCoordinator({
+    isLoggedIn,
+    currentUser,
+    onContactOnline: messengerCoordinator.handleContactOnline
+  });
   // Message listeners initialisatie
   const { 
     cleanup: cleanupListeners 
@@ -315,14 +320,12 @@ const onTaskbarClick = React.useCallback((paneId) => {
     setSessionNotice(null);
   }, []);
 
-  const resetPresenceMonitorState = () => {
-    presencePrevRef.current = {};
-    presenceListenersRef.current.forEach(node => { if (node.off) node.off(); });
-    presenceListenersRef.current = new Map();
-  };
-
   const runSessionTeardown = () => {
-    cleanupPresence();
+    try {
+      cleanupPresence();
+    } catch (err) {
+      log('[App] cleanupPresence failed:', err);
+    }
     cleanupListeners();
     resetShownToasts();
     resetAll();
@@ -330,7 +333,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
 
     hasInitializedRef.current = false;
     setMessengerSignedIn(false);
-    resetPresenceMonitorState();
+    resetPresenceState();
     clearPendingCleanupTimeout();
 
     if (!isRememberMeEnabled()) {
@@ -495,112 +498,8 @@ const onTaskbarClick = React.useCallback((paneId) => {
     enabled: FEATURE_FLAGS.contextMenus
   });
 
-  // Gedeelde presence state - gevuld door ContactsPane, gelezen door ConversationPane
-  const [sharedContactPresence, setSharedContactPresence] = React.useState({});
-
-  const handlePresenceChange = React.useCallback((username, presenceData) => {
-    setSharedContactPresence(prev => ({ ...prev, [username]: presenceData }));
-  }, []);
-
-  // Ref zodat de Gun-listener altijd de actuele callback heeft
-  const handleContactOnlineRef = React.useRef(messengerCoordinator.handleContactOnline);
-  handleContactOnlineRef.current = messengerCoordinator.handleContactOnline;
-
-  // Persistent refs voor PresenceMonitor - overleven React StrictMode double-mount cleanup.
-  // Als ze lokaal in het effect staan worden ze gereset bij de tweede mount,
-  // waardoor beginstand opnieuw opgeslagen wordt en de offline->online transitie gemist wordt.
-  const presencePrevRef = React.useRef({});        // { username: { lastSeen, statusValue } }
-  const presenceListenersRef = React.useRef(new Map()); // username -> gun node
-
-  // Presence monitoring - altijd actief, ongeacht of ContactsPane open is
-  React.useEffect(() => {
-    if (!isLoggedIn || !currentUser) return;
-
-    log('[PresenceMonitor] Start voor:', currentUser);
-    // Gebruik REFS voor prevPresence en contactListeners zodat ze React StrictMode
-    // double-mount overleven. Als ze lokaal in het effect staan, worden ze gereset
-    // bij de tweede mount - dan slaat de eerste Gun callback de beginstand opnieuw
-    // op en wordt de offline->online transitie nooit gezien.
-    const prevPresence = presencePrevRef.current;
-    const contactListeners = presenceListenersRef.current;
-
-    const detachPresenceListener = (username) => {
-      const existing = contactListeners.get(username);
-      if (!existing) return;
-      if (existing.off) existing.off();
-      contactListeners.delete(username);
-      delete prevPresence[username];
-      log('[PresenceMonitor] Listener verwijderd voor contact:', username);
-    };
-
-    const contactsMapNode = user.get('contacts').map();
-    contactsMapNode.on((contactData, key) => {
-      const usernameFromData = typeof contactData?.username === 'string' ? contactData.username : '';
-      const fallbackUsername = typeof key === 'string' ? key : '';
-      const username = usernameFromData || fallbackUsername;
-      const isEligible = Boolean(contactData && username && canAttachPresenceListeners(contactData));
-
-      if (!isEligible) {
-        if (username) detachPresenceListener(username);
-        return;
-      }
-
-      if (contactListeners.has(username)) return;
-
-      log('[PresenceMonitor] Listener op voor contact:', username);
-      const node = gun.get('PRESENCE').get(username);
-      node.on((presenceData) => {
-        // Eerste call: sla beginstand op als primitieven, geen toast.
-        // 'username in prevPresence' is false bij de echte allereerste call.
-        // Na StrictMode cleanup+remount is de data al in prevPresence (via ref) -
-        // dan slaan we de beginstand NIET opnieuw op en blijft de transitie zichtbaar.
-        if (!(username in prevPresence)) {
-          if (presenceData) {
-            prevPresence[username] = {
-              lastSeen: presenceData.lastSeen || 0,
-              statusValue: getPresenceStatus(presenceData).value
-            };
-          } else {
-            prevPresence[username] = null;
-          }
-          return;
-        }
-        if (!presenceData) return;
-
-        const newStatus = getPresenceStatus(presenceData);
-        const prevStatusValue = prevPresence[username]?.statusValue ?? 'offline';
-
-        if (prevStatusValue === newStatus.value) {
-          return;
-        }
-
-        log('[PresenceMonitor]', username, '| prev:', prevStatusValue, '-> new:', newStatus.value);
-
-        if (prevStatusValue === 'offline' && newStatus.value !== 'offline') {
-          log('[PresenceMonitor] ONLINE TRANSITIE voor:', username);
-          handleContactOnlineRef.current(username);
-        }
-
-        // Sla nieuwe state op als primitieven (nooit als object-referentie)
-        prevPresence[username] = {
-          lastSeen: presenceData.lastSeen || 0,
-          statusValue: newStatus.value
-        };
-      });
-      contactListeners.set(username, node);
-    });
-    return () => {
-      contactsMapNode.off();
-      contactListeners.forEach((node) => {
-        if (node?.off) node.off();
-      });
-      contactListeners.clear();
-      Object.keys(prevPresence).forEach((username) => {
-        delete prevPresence[username];
-      });
-    };
-
-  }, [isLoggedIn, currentUser]);
+  // Presence owner: usePresenceCoordinator.
+  // ContactsPane consumeert alleen sharedContactPresence en subscribe't niet zelf.
 
 
   // ============================================
@@ -704,7 +603,6 @@ const onTaskbarClick = React.useCallback((paneId) => {
         currentUser,
         messengerSignedIn,
         messengerCoordinator,
-        handlePresenceChange,
         setNowPlaying,
         toggleMaximizeConversation,
         closeConversation,
