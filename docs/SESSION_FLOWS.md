@@ -9,6 +9,10 @@ Run these checks after any changes touching `App.js`, auth, presence, or `useAct
 - Same-window relogin behavior
 - Auto-login recall behavior
 - Conflict banner and cleanup behavior during conflict events
+- Messaging shell baseline during App-shell modularization:
+  - message/nudge/presence toast routing must remain unchanged
+  - taskbar unread/flicker must remain unchanged
+  - startmenu and systray toggle behavior must remain unchanged
 
 ## Preconditions
 - Gun relay running and reachable.
@@ -178,10 +182,17 @@ Automated (unit/component):
   - login UI remains interactive while banner is visible
 - Message listener continuity (`src/hooks/useMessageListeners.test.js`)
   - transient empty `ACTIVE_SESSIONS` event does not break incoming message/toast path
+- Messenger coordinator policy (`src/hooks/useMessengerCoordinator.test.js`)
+  - incoming closed chat -> unread + message toast, no auto-open
+  - nudge follows nudge toast path (no duplicate message toast)
+  - presence toast respects notification setting
+  - toast click routing opens conversation or contacts pane
+  - stable handler identity with latest runtime refs (no stale closure regressions)
 
 Manual (keep in checklist):
 - Scenario 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12
 - Browser-context behavior (A/B takeover), real relay timing, and teardown race observation.
+- During shell modularization, rerun Conversation scenarios C1-C6 after each approved scope-step.
 
 ## Conversation Regression Appendix (MSN Parity)
 
@@ -302,3 +313,17 @@ Rule of thumb:
 - Failed scenarios: [ ]
 - Observed logs:
 - Follow-up actions:
+
+## Shell Automation Coverage
+Automated (unit):
+- `src/hooks/useTaskbarManager.test.js`
+  - taskbar click restores minimized pane and focuses it.
+- `src/hooks/useStartMenuManager.test.js`
+  - start menu toggle/close state transitions.
+- `src/hooks/useSystrayManager.test.js`
+  - systray menu open/close and action dispatch wrappers.
+- `src/hooks/useDesktopManager.test.js`
+  - desktop shortcut model and launch action wiring.
+
+Manual (keep in checklist):
+- Full shell integration across desktop + taskbar + startmenu + systray in real browser contexts.

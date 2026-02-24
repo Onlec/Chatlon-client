@@ -13,6 +13,7 @@ Keep it concise, factual, and current.
 
 ## 2. Architecture Rules (High Signal)
 - Global orchestration is centered in `gun-client/src/App.js`.
+- Messenger cross-pane policy orchestration is centralized in `gun-client/src/hooks/useMessengerCoordinator.js`.
 - Pane/window state is managed centrally (App + pane manager hook).
 - Functional React components only.
 - Gun callbacks should use refs for reactive values (avoid stale closures).
@@ -37,6 +38,8 @@ Keep it concise, factual, and current.
   - `gun-client/src/utils/encryption.js`
 - Message and friend request listeners:
   - `gun-client/src/hooks/useMessageListeners.js`
+- Messenger coordinator (toast/unread/taskbar policy):
+  - `gun-client/src/hooks/useMessengerCoordinator.js`
 - TeamTalk voice via Trystero:
   - `gun-client/src/components/panes/TeamTalkPane.js`
   - `gun-client/src/hooks/useTrysteroTeamTalk.js`
@@ -77,5 +80,22 @@ Copy/paste in a new chat:
 "Read `gun-client/docs/PROJECT_CONTEXT.md` first, then continue. If this file conflicts with code or architecture docs, trust code + `ARCHITECTURE.md`, then update this file."
 
 ## 9. Last Updated
-- Date: 2026-02-20
-- Reason: Initial project context file created for faster future conversations.
+- Date: 2026-02-24
+- Reason: Added messenger coordinator ownership and updated core flow references.
+
+## 10. Shell Modularization Map
+- Shell UI components: `src/components/shell/DesktopShell.js`, `DesktopShortcuts.js`, `PaneLayer.js`, `Taskbar.js`, `StartMenu.js`, `Systray.js`, `ContextMenuHost.js`.
+- Shell managers: `src/hooks/useWindowManager.js`, `useTaskbarManager.js`, `useStartMenuManager.js`, `useSystrayManager.js`, `useDesktopManager.js`.
+- Compatibility facade: `src/hooks/usePaneManager.js`.
+- Command bus: `src/hooks/useDesktopCommandBus.js` + `src/types/desktopCommands.js`.
+- Feature flags: `src/config/featureFlags.js` (`contextMenus` is off by default).
+
+## 11. Shell Test Coverage
+- `src/hooks/useTaskbarManager.test.js`
+- `src/hooks/useStartMenuManager.test.js`
+- `src/hooks/useSystrayManager.test.js`
+- `src/hooks/useDesktopManager.test.js`
+
+## 12. Last Updated
+- Date: 2026-02-24
+- Reason: App shell modularization completed through manager split + command bus + context menu foundation.

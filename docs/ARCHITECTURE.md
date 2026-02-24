@@ -343,3 +343,24 @@ This document is updated **only when**:
 - New transport layers are added
 
 Minor refactors do **not** belong here.
+## App Shell Ownership (Modularized)
+- `App.js`: top-level shell wiring, session/auth orchestration, provider composition.
+- `hooks/usePaneManager.js`: compatibility facade for pane/window contract used across the app.
+- `hooks/useWindowManager.js`: pane and conversation window lifecycle state.
+- `hooks/useTaskbarManager.js`: taskbar click routing behavior.
+- `hooks/useStartMenuManager.js`: start menu open/close state.
+- `hooks/useSystrayManager.js`: systray menu state and action dispatch wrappers.
+- `hooks/useDesktopManager.js`: desktop shortcut model and launch wiring.
+- `hooks/useDesktopCommandBus.js`: internal command routing contract between shell managers.
+- `hooks/useContextMenuManager.js`: context-menu foundation (feature-flagged, disabled by default).
+- `components/shell/*`: shell presentation components (desktop/taskbar/startmenu/systray/panel layer).
+
+## Internal Shell Commands
+The shell command bus supports these command types:
+- `OPEN_PANE`
+- `OPEN_CONVERSATION`
+- `FOCUS_PANE`
+- `MINIMIZE_PANE`
+- `CLOSE_PANE`
+- `TOGGLE_START`
+- `OPEN_CONTACTS`
