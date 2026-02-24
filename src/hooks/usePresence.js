@@ -35,6 +35,16 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
   const presenceIntervalRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
   const cleanupInProgressRef = useRef(false);
+  const heartbeatSeqRef = useRef(0);
+  const sessionIdRef = useRef('');
+  const tabIdRef = useRef('');
+
+  if (!sessionIdRef.current) {
+    sessionIdRef.current = `presence_session_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+  if (!tabIdRef.current) {
+    tabIdRef.current = sessionStorage.getItem('chatlon_tab_client_id') || '';
+  }
 
   // Sync refs met state
   useEffect(() => {
@@ -53,11 +63,19 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
     if (cleanupInProgressRef.current) return;
     if (!user.is || !currentUser) return;
 
+    const now = Date.now();
+    heartbeatSeqRef.current += 1;
+
     const presenceData = {
-      lastSeen: Date.now(),
+      lastSeen: now,
       lastActivity: lastActivityRef.current,
       status: status,
-      username: currentUser
+      username: currentUser,
+      heartbeatAt: now,
+      heartbeatSeq: heartbeatSeqRef.current,
+      sessionId: sessionIdRef.current,
+      tabId: tabIdRef.current,
+      source: 'messenger'
     };
 
     gun.get('PRESENCE').get(currentUser).put(presenceData);
@@ -70,10 +88,18 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
   const setOfflinePresence = useCallback(() => {
     if (!user.is || !currentUser) return;
 
+    const now = Date.now();
+    heartbeatSeqRef.current += 1;
+
     gun.get('PRESENCE').get(currentUser).put({
       lastSeen: 0,
       status: 'offline',
-      username: currentUser
+      username: currentUser,
+      heartbeatAt: now,
+      heartbeatSeq: heartbeatSeqRef.current,
+      sessionId: sessionIdRef.current,
+      tabId: tabIdRef.current,
+      source: 'messenger'
     });
     log('[usePresence] Set offline presence');
   }, [currentUser]);

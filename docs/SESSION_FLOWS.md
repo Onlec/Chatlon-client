@@ -357,6 +357,29 @@ Bad:
 3. Conflict/logoff/shutdown:
    - no presence logs or toasts after teardown completes.
 
+### Presence Robustness Baseline (Flap/Race/Load)
+Run these before and after each robustness step:
+1. Flap:
+   - same contact toggles online/offline quickly for 10-15s.
+   - expected baseline: no repeated listener reattach loops; transition logs stay bounded.
+2. Race:
+   - two browser contexts for same account; force handover and quick relogin.
+   - expected baseline: no ghost online transition after session teardown.
+3. Load:
+   - account with many contacts (or scripted fixture list).
+   - expected baseline: startup completes without UI freeze; attach logs are finite.
+
+### Presence Observability Counters (Step 1)
+`usePresenceCoordinator` now tracks debug counters in logs:
+- `attached`
+- `detached`
+- `transitionsEmitted`
+- `transitionsSuppressed`
+- `staleSkipped` (reserved for later stale-policy steps)
+
+Log point:
+- `[PresenceMonitor][metrics] cleanup snapshot`
+
 ### Presence Ownership (Final after extraction)
 - `usePresence`: self heartbeat/status lifecycle only.
 - `usePresenceCoordinator`: contact presence listeners + transition detection.
@@ -367,8 +390,18 @@ Bad:
 Automated:
 - `src/hooks/usePresenceCoordinator.test.js`
   - listener attach/detach on eligibility changes
-  - offline->online transition fires once
+  - priority immediate attach + queued attach
+  - offline->online / offline->away / appear-offline->online transitions fire once
+  - stale/out-of-order heartbeat replay suppression
   - cleanup/remount does not create ghost transition toasts
+  - idempotent cleanup behavior
+- `src/hooks/usePresence.test.js`
+  - messenger sign-in boundary (`isActive=false` => no heartbeat loop, offline write only)
+  - additive self-presence fields are written
+  - heartbeat sequence stays monotonic
+- `src/utils/presencePolicy.test.js`
+  - transition helper policy (`offline -> online|away|busy`)
+  - heartbeat freshness and stale-transition helper behavior
 - `src/components/panes/ContactsPane.test.js`
   - consumes presence via props
   - no per-contact `PRESENCE/*` subscriptions in ContactsPane
@@ -376,3 +409,31 @@ Automated:
 Manual:
 - Self presence lifecycle through messenger sign-in/sign-out and session close paths.
 - Browser-context validation of online transitions with real relay timing.
+
+### Presence Operational Checklist (Noisy Relay)
+Run this when relay jitter or packet reordering is suspected:
+1. Flap test:
+   - force repeated `online <-> offline` toggles for one contact (10-15s).
+   - expected: bounded transitions, no toast spam.
+2. Out-of-order replay test:
+   - replay older heartbeat payload after newer one (same contact).
+   - expected: stale update ignored; current status unchanged.
+3. Explicit offline test:
+   - set contact to `appear-offline`, then to `online`.
+   - expected: next `online` transition still emits exactly one toast.
+4. Scale test (100+ contacts):
+   - login and observe startup.
+   - expected: active/open conversation contacts attach immediately; others attach in queue without UI freeze.
+5. Teardown test:
+   - manual logoff / shutdown / conflict.
+   - expected: no post-teardown presence callbacks or toasts.
+
+Presence log signals:
+- Good:
+  - `Listener op voor contact` appears once per effective attach.
+  - `Suppressed stale/out-of-order update` appears only during replay/jitter.
+  - `ONLINE TRANSITIE` appears once per real offline->reachable transition.
+- Bad:
+  - repeated attach/detach loop for same contact without eligibility change.
+  - online toast missing after `appear-offline -> online`.
+  - presence callbacks after teardown completes.

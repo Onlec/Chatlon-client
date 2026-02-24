@@ -226,6 +226,42 @@ Lokale per-device data (niet gesynchroniseerd):
 - No reliance on Gun internal heuristics
 - TeamTalk presence via Trystero room events (binnen rooms)
 
+### Presence Ownership Matrix
+- `usePresence` owns self presence lifecycle only:
+  - heartbeat writes
+  - manual status changes
+  - offline writes on signout/shutdown/conflict cleanup
+- `usePresenceCoordinator` owns contact presence lifecycle:
+  - eligibility attach/detach
+  - transition detection
+  - stale/out-of-order suppression
+  - adaptive listener attach queue
+- `useMessengerCoordinator` owns toast policy for presence transitions.
+- `ContactsPane` is read-only consumer of `contactPresenceMap` and does not attach per-contact `PRESENCE/*` listeners.
+
+### Presence Record Contract (Additive)
+`PRESENCE/{email}` includes legacy and additive fields:
+- legacy: `lastSeen`, `lastActivity`, `status`, `username`
+- additive: `heartbeatAt`, `heartbeatSeq`, `sessionId`, `tabId`, `source`
+
+Compatibility rule:
+- readers remain compatible with legacy records and prefer additive fields when present.
+
+### Presence Policy
+- Transition policy uses hysteresis:
+  - online grace
+  - offline grace
+  - minimum dwell suppression
+- Explicit offline signals (`offline`, `appear-offline`, `lastSeen=0`) are treated as offline baseline immediately.
+- Online-toast transitions are emitted for `offline -> online|away|busy`.
+- Out-of-order updates are ignored using `(heartbeatAt, heartbeatSeq, sessionId)` ordering rules.
+
+### Presence Scale Policy
+- Adaptive attach strategy:
+  - Tier 1: priority contacts (active/open conversations) attach immediately.
+  - Tier 2: other eligible contacts attach in bounded batches.
+- Detach remains immediate for ineligible contacts.
+
 ### Refs & Callbacks
 - **Refs are mandatory** inside Gun callbacks
 - Never rely on stale closures
@@ -364,15 +400,3 @@ The shell command bus supports these command types:
 - `CLOSE_PANE`
 - `TOGGLE_START`
 - `OPEN_CONTACTS`
-
-## Presence Ownership Matrix
-- `hooks/usePresence.js`
-  - Owner van **self presence lifecycle** (`PRESENCE/<currentUser>`): heartbeat, manual status, auto-away, offline writes bij sign-out/teardown.
-- `hooks/usePresenceCoordinator.js`
-  - Owner van **contact presence listeners**: attach/detach op basis van `canAttachPresenceListeners`.
-  - Owner van **offline->online transitie detectie** voor contacten.
-  - Levert `contactPresence` map voor UI-consumers.
-- `hooks/useMessengerCoordinator.js`
-  - Owner van **presence toast policy** (wanneer en hoe online-toasts worden getoond).
-- `components/panes/ContactsPane.js`
-  - **Consumer only** van `contactPresenceMap`; geen eigen Gun presence listeners.

@@ -14,6 +14,10 @@ Keep it concise, factual, and current.
 ## 2. Architecture Rules (High Signal)
 - Global orchestration is centered in `gun-client/src/App.js`.
 - Messenger cross-pane policy orchestration is centralized in `gun-client/src/hooks/useMessengerCoordinator.js`.
+- Presence ownership is split and explicit:
+  - `usePresence` = self presence lifecycle/writes
+  - `usePresenceCoordinator` = contact presence listeners/transitions/policy
+  - `ContactsPane` = read-only consumer via `contactPresenceMap`
 - Pane/window state is managed centrally (App + pane manager hook).
 - Functional React components only.
 - Gun callbacks should use refs for reactive values (avoid stale closures).
@@ -56,10 +60,11 @@ Keep it concise, factual, and current.
 
 ## 6. Watchlist (Keep Updated)
 - Conversation listener lifecycle and cleanup correctness.
-- Presence ownership split correctness:
-  - `usePresence` = self lifecycle
-  - `usePresenceCoordinator` = contact listeners + transitions
-  - `ContactsPane` = consumer only
+- Presence policy stability:
+  - hysteresis (grace + dwell) remains deterministic
+  - explicit offline/appear-offline transitions still produce correct next online toast
+  - stale/out-of-order suppression does not hide valid transitions
+  - adaptive attach queue keeps active/open contacts realtime
 - Portal usage alignment with architecture portal-root rules.
 - Superpeer qualification timing and related comments/docs consistency.
 - Gun signaling cleanup staying aligned with active schemas.
@@ -107,9 +112,18 @@ Copy/paste in a new chat:
 
 ## 13. Presence Regression Coverage
 - `src/hooks/usePresenceCoordinator.test.js`
-  - attach/detach by eligibility
-  - offline->online transition single-fire
-  - cleanup/remount baseline reset
+  - eligibility attach/detach
+  - priority immediate attach + queued attach
+  - offline->online / offline->away / appear-offline->online transitions
+  - stale/out-of-order suppression
+  - cleanup/remount baseline reset + idempotent cleanup
+- `src/hooks/usePresence.test.js`
+  - messenger sign-in boundary (`isActive=false`)
+  - additive heartbeat fields (`heartbeatAt`, `heartbeatSeq`, `sessionId`, `tabId`, `source`)
+  - heartbeat seq monotonicity
+- `src/utils/presencePolicy.test.js`
+  - transition policy helpers
+  - heartbeat freshness and stale-transition logic
 - `src/components/panes/ContactsPane.test.js`
   - consumes `contactPresenceMap`
   - does not attach per-contact `PRESENCE` listeners

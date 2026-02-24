@@ -5,7 +5,7 @@
  * Orchestreert alle hooks en rendert de desktop omgeving.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import LoginScreen from './components/screens/LoginScreen';
 import BootSequence from './components/screens/BootSequence';
 import DesktopShell from './components/shell/DesktopShell';
@@ -209,10 +209,24 @@ const onTaskbarClick = React.useCallback((paneId) => {
     onTaskbarClick
   });
 
+  const priorityPresenceContacts = useMemo(() => {
+    const priority = new Set();
+    if (typeof activePane === 'string' && activePane.startsWith('conv_')) {
+      priority.add(activePane.replace('conv_', ''));
+    }
+    Object.entries(conversations || {}).forEach(([paneId, conv]) => {
+      if (!paneId.startsWith('conv_')) return;
+      if (!conv || !conv.isOpen || conv.isMinimized) return;
+      priority.add(paneId.replace('conv_', ''));
+    });
+    return Array.from(priority);
+  }, [activePane, conversations]);
+
   const { contactPresence: sharedContactPresence, resetPresenceState } = usePresenceCoordinator({
     isLoggedIn,
     currentUser,
-    onContactOnline: messengerCoordinator.handleContactOnline
+    onContactOnline: messengerCoordinator.handleContactOnline,
+    priorityContacts: priorityPresenceContacts
   });
   // Message listeners initialisatie
   const { 
