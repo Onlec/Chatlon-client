@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, render } from '@testing-library/react';
 import { usePresence } from './usePresence';
-import { PRESENCE_HEARTBEAT_INTERVAL } from '../utils/presenceUtils';
+import { AUTO_AWAY_TIMEOUT, PRESENCE_HEARTBEAT_INTERVAL } from '../utils/presenceUtils';
 
 jest.mock('../gun', () => {
   const nodeStore = new Map();
@@ -70,6 +70,23 @@ describe('usePresence', () => {
     expect(node.put).toHaveBeenCalledTimes(1);
   });
 
+  test('activity while messenger is not active does not publish presence updates', () => {
+    render(<Harness isLoggedIn currentUser="alice@example.com" isActive={false} />);
+    const node = getNode('PRESENCE/alice@example.com');
+    const callsBefore = node.put.mock.calls.length;
+
+    act(() => {
+      window.dispatchEvent(new Event('keydown'));
+      window.dispatchEvent(new Event('mousedown'));
+      jest.advanceTimersByTime(1200);
+    });
+
+    expect(node.put.mock.calls.length).toBe(callsBefore);
+    expect(node.put.mock.calls[node.put.mock.calls.length - 1][0]).toEqual(
+      expect.objectContaining({ status: 'offline' })
+    );
+  });
+
   test('heartbeat writes include additive fields and monotonic heartbeatSeq', () => {
     render(<Harness isLoggedIn currentUser="alice@example.com" isActive />);
     const node = getNode('PRESENCE/alice@example.com');
@@ -113,23 +130,13 @@ describe('usePresence', () => {
   });
 
   test('activity immediately restores auto-away to online (throttle bypass)', () => {
-    const nowSpy = jest.spyOn(Date, 'now');
-    nowSpy
-      .mockReturnValueOnce(1000) // initial refs
-      .mockReturnValueOnce(2000) // initial updatePresence on mount
-      .mockReturnValueOnce(2000 + 300001) // checkAutoAway now
-      .mockReturnValueOnce(2000 + 300001) // applyStatusTransition('away')->updatePresence
-      .mockReturnValueOnce(2000 + 300050) // activity event now (within 1s window)
-      .mockReturnValueOnce(2000 + 300050) // updateActivity sets lastActivity
-      .mockReturnValueOnce(2000 + 300050); // applyStatusTransition('online')->updatePresence
-
     render(<Harness isLoggedIn currentUser="alice@example.com" isActive />);
     const node = getNode('PRESENCE/alice@example.com');
     const callsBefore = node.put.mock.calls.length;
 
-    // Trigger auto-away via heartbeat tick.
+    // Trigger auto-away via inactivity timeout.
     act(() => {
-      jest.advanceTimersByTime(PRESENCE_HEARTBEAT_INTERVAL + 5);
+      jest.advanceTimersByTime(AUTO_AWAY_TIMEOUT + 10);
     });
     expect(node.put.mock.calls[node.put.mock.calls.length - 1][0]).toEqual(
       expect.objectContaining({ status: 'away' })
@@ -144,8 +151,6 @@ describe('usePresence', () => {
     expect(node.put.mock.calls[node.put.mock.calls.length - 1][0]).toEqual(
       expect.objectContaining({ status: 'online' })
     );
-
-    nowSpy.mockRestore();
   });
 
   test('activity does not change manual away status', () => {
@@ -186,5 +191,49 @@ describe('usePresence', () => {
     });
 
     expect(node.put.mock.calls.length).toBe(callsAfterManualBusy);
+  });
+
+  test('setting status to online re-enables auto-away mode', () => {
+    render(<Harness isLoggedIn currentUser="alice@example.com" isActive />);
+    const node = getNode('PRESENCE/alice@example.com');
+
+    act(() => {
+      latest.handleStatusChange('busy');
+    });
+    const callsAfterBusy = node.put.mock.calls.length;
+    expect(node.put.mock.calls[callsAfterBusy - 1][0]).toEqual(
+      expect.objectContaining({ status: 'busy' })
+    );
+
+    act(() => {
+      latest.handleStatusChange('online');
+    });
+    const callsAfterOnline = node.put.mock.calls.length;
+    expect(node.put.mock.calls[callsAfterOnline - 1][0]).toEqual(
+      expect.objectContaining({ status: 'online' })
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(AUTO_AWAY_TIMEOUT + 10);
+    });
+
+    expect(node.put.mock.calls[node.put.mock.calls.length - 1][0]).toEqual(
+      expect.objectContaining({ status: 'away' })
+    );
+  });
+
+  test('activity refreshes online presence immediately without waiting for heartbeat', () => {
+    render(<Harness isLoggedIn currentUser="alice@example.com" isActive />);
+    const node = getNode('PRESENCE/alice@example.com');
+    const callsBeforeActivity = node.put.mock.calls.length;
+
+    act(() => {
+      window.dispatchEvent(new Event('keydown'));
+    });
+
+    expect(node.put.mock.calls.length).toBe(callsBeforeActivity + 1);
+    expect(node.put.mock.calls[node.put.mock.calls.length - 1][0]).toEqual(
+      expect.objectContaining({ status: 'online' })
+    );
   });
 });

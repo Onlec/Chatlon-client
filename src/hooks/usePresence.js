@@ -33,8 +33,10 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
   const userStatusRef = useRef(userStatus);
   const isManualStatusRef = useRef(isManualStatus);
   const presenceIntervalRef = useRef(null);
+  const autoAwayTimeoutRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
   const cleanupInProgressRef = useRef(false);
+  const autoAwayActiveRef = useRef(false);
   const heartbeatSeqRef = useRef(0);
   const sessionIdRef = useRef('');
   const tabIdRef = useRef('');
@@ -111,26 +113,59 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
     }
   }, []);
 
+  const clearAutoAwayTimeout = useCallback(() => {
+    if (autoAwayTimeoutRef.current) {
+      clearTimeout(autoAwayTimeoutRef.current);
+      autoAwayTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleAutoAwayTimeout = useCallback(() => {
+    clearAutoAwayTimeout();
+    autoAwayTimeoutRef.current = setTimeout(() => {
+      if (isManualStatusRef.current) return;
+      if (userStatusRef.current !== 'online') return;
+      autoAwayActiveRef.current = true;
+      setUserStatus('away');
+      updatePresence('away');
+      log('[usePresence] Auto-away triggered');
+    }, AUTO_AWAY_TIMEOUT);
+  }, [clearAutoAwayTimeout, updatePresence]);
+
   /**
    * Unified status transition path for manual and automatic updates.
    * Keeps local state and presence writes consistent.
    */
   const applyStatusTransition = useCallback((nextStatus, options = {}) => {
     const { manual = false, reason = 'unknown' } = options;
+    if (reason === 'auto-away') {
+      autoAwayActiveRef.current = true;
+    } else if (reason === 'auto-return' || manual || nextStatus === 'online') {
+      autoAwayActiveRef.current = false;
+    }
     if (manual) {
       setIsManualStatus(true);
+    } else if (nextStatus === 'online') {
+      // 'Online' betekent terug naar automatische statusmodus.
+      setIsManualStatus(false);
     }
     setUserStatus(nextStatus);
     updatePresence(nextStatus);
+    if (manual || nextStatus !== 'online') {
+      clearAutoAwayTimeout();
+    } else {
+      scheduleAutoAwayTimeout();
+    }
     log('[usePresence] Status transition:', reason, '->', nextStatus);
-  }, [updatePresence]);
+  }, [clearAutoAwayTimeout, scheduleAutoAwayTimeout, updatePresence]);
 
   /**
    * Handle manual status change by user.
    * @param {string} newStatus - New status value
    */
   const handleStatusChange = useCallback((newStatus) => {
-    applyStatusTransition(newStatus, { manual: true, reason: 'manual' });
+    const manual = newStatus !== 'online';
+    applyStatusTransition(newStatus, { manual, reason: manual ? 'manual' : 'manual-online' });
     log('[usePresence] Manual status change:', newStatus);
   }, [applyStatusTransition]);
 
@@ -139,31 +174,24 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
    * Called on user interaction.
    */
   const updateActivity = useCallback(() => {
+    if (!isActive) return;
     lastActivityRef.current = Date.now();
 
     // Als status auto-away was en user is actief, zet terug naar online
     // (alleen als geen manual status is ingesteld)
-    if (!isManualStatusRef.current && userStatusRef.current === 'away') {
+    if (!isManualStatusRef.current && autoAwayActiveRef.current) {
       applyStatusTransition('online', { manual: false, reason: 'auto-return' });
+      return;
     }
-  }, [applyStatusTransition]);
 
-  /**
-   * Check for auto-away status.
-   * Called periodically by heartbeat.
-   */
-  const checkAutoAway = useCallback(() => {
-    // Skip als manual status is ingesteld
-    if (isManualStatusRef.current) return;
-
-    const now = Date.now();
-    const timeSinceActivity = now - lastActivityRef.current;
-
-    if (timeSinceActivity > AUTO_AWAY_TIMEOUT && userStatusRef.current === 'online') {
-      applyStatusTransition('away', { manual: false, reason: 'auto-away' });
-      log('[usePresence] Auto-away triggered');
+    // Als de user op online staat (niet manual) maar extern als away werd afgeleid
+    // op basis van oude lastActivity, push direct een presence refresh.
+    // Zo hoeft recovery niet te wachten op de volgende heartbeat tick.
+    if (!isManualStatusRef.current && userStatusRef.current === 'online') {
+      updatePresence('online');
+      scheduleAutoAwayTimeout();
     }
-  }, [applyStatusTransition]);
+  }, [applyStatusTransition, isActive, scheduleAutoAwayTimeout, updatePresence]);
 
   /**
    * Cleanup function for logout/unmount.
@@ -171,11 +199,13 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
   const cleanup = useCallback(() => {
     if (cleanupInProgressRef.current) return;
     cleanupInProgressRef.current = true;
+    autoAwayActiveRef.current = false;
+    clearAutoAwayTimeout();
     stopHeartbeat();
     setOfflinePresence();
     log('[usePresence] Cleanup completed');
     cleanupInProgressRef.current = false;
-  }, [setOfflinePresence, stopHeartbeat]);
+  }, [clearAutoAwayTimeout, setOfflinePresence, stopHeartbeat]);
 
   // ============================================
   // EFFECTS
@@ -186,7 +216,7 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
     if (!isLoggedIn || !currentUser) return;
 
     if (!isActive) {
-      // Messenger afgemeld — zet offline en start geen heartbeat
+      clearAutoAwayTimeout();
       stopHeartbeat();
       setOfflinePresence();
       return;
@@ -196,17 +226,20 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
 
     // Initial presence update
     updatePresence(userStatusRef.current);
+    if (!isManualStatusRef.current && userStatusRef.current === 'online') {
+      scheduleAutoAwayTimeout();
+    }
 
     // Start heartbeat interval
     presenceIntervalRef.current = setInterval(() => {
       updatePresence(userStatusRef.current);
-      checkAutoAway();
     }, PRESENCE_HEARTBEAT_INTERVAL);
 
     return () => {
+      clearAutoAwayTimeout();
       stopHeartbeat();
     };
-  }, [isLoggedIn, currentUser, isActive, updatePresence, checkAutoAway, setOfflinePresence, stopHeartbeat]);
+  }, [isLoggedIn, currentUser, isActive, updatePresence, scheduleAutoAwayTimeout, clearAutoAwayTimeout, setOfflinePresence, stopHeartbeat]);
 
   // beforeunload effect - set offline bij page close
   useEffect(() => {
@@ -225,7 +258,7 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
 
   // Activity detection effect - track user interactions
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !isActive) return;
 
     const activityEvents = ['mousedown', 'keydown', 'touchstart', 'scroll'];
 
@@ -238,7 +271,7 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
     const throttledHandler = () => {
       // Instant recovery path: if auto-away is active, recover immediately.
       // This bypasses normal activity throttling for the first interaction.
-      if (!isManualStatusRef.current && userStatusRef.current === 'away') {
+      if (!isManualStatusRef.current && autoAwayActiveRef.current) {
         handleActivity();
         lastUpdate = Date.now();
         return;
@@ -260,7 +293,7 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
         window.removeEventListener(event, throttledHandler);
       });
     };
-  }, [isLoggedIn, updateActivity]);
+  }, [isLoggedIn, isActive, updateActivity]);
 
   // ============================================
   // RETURN
@@ -286,3 +319,4 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
 }
 
 export default usePresence;
+
