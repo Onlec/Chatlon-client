@@ -112,15 +112,27 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
   }, []);
 
   /**
+   * Unified status transition path for manual and automatic updates.
+   * Keeps local state and presence writes consistent.
+   */
+  const applyStatusTransition = useCallback((nextStatus, options = {}) => {
+    const { manual = false, reason = 'unknown' } = options;
+    if (manual) {
+      setIsManualStatus(true);
+    }
+    setUserStatus(nextStatus);
+    updatePresence(nextStatus);
+    log('[usePresence] Status transition:', reason, '->', nextStatus);
+  }, [updatePresence]);
+
+  /**
    * Handle manual status change by user.
    * @param {string} newStatus - New status value
    */
   const handleStatusChange = useCallback((newStatus) => {
-    setIsManualStatus(true);
-    setUserStatus(newStatus);
-    updatePresence(newStatus);
+    applyStatusTransition(newStatus, { manual: true, reason: 'manual' });
     log('[usePresence] Manual status change:', newStatus);
-  }, [updatePresence]);
+  }, [applyStatusTransition]);
 
   /**
    * Update last activity timestamp.
@@ -132,10 +144,9 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
     // Als status auto-away was en user is actief, zet terug naar online
     // (alleen als geen manual status is ingesteld)
     if (!isManualStatusRef.current && userStatusRef.current === 'away') {
-      setUserStatus('online');
-      updatePresence('online');
+      applyStatusTransition('online', { manual: false, reason: 'auto-return' });
     }
-  }, [updatePresence]);
+  }, [applyStatusTransition]);
 
   /**
    * Check for auto-away status.
@@ -149,11 +160,10 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
     const timeSinceActivity = now - lastActivityRef.current;
 
     if (timeSinceActivity > AUTO_AWAY_TIMEOUT && userStatusRef.current === 'online') {
-      setUserStatus('away');
-      updatePresence('away');
+      applyStatusTransition('away', { manual: false, reason: 'auto-away' });
       log('[usePresence] Auto-away triggered');
     }
-  }, [updatePresence]);
+  }, [applyStatusTransition]);
 
   /**
    * Cleanup function for logout/unmount.
@@ -226,6 +236,14 @@ export function usePresence(isLoggedIn, currentUser, isActive = true) {
     // Throttle activity updates to max 1 per second
     let lastUpdate = 0;
     const throttledHandler = () => {
+      // Instant recovery path: if auto-away is active, recover immediately.
+      // This bypasses normal activity throttling for the first interaction.
+      if (!isManualStatusRef.current && userStatusRef.current === 'away') {
+        handleActivity();
+        lastUpdate = Date.now();
+        return;
+      }
+
       const now = Date.now();
       if (now - lastUpdate > 1000) {
         lastUpdate = now;

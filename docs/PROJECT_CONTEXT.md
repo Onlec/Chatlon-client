@@ -68,6 +68,8 @@ Keep it concise, factual, and current.
   - explicit offline/appear-offline transitions still produce correct next online toast
   - stale/out-of-order suppression does not hide valid transitions
   - adaptive attach queue keeps active/open contacts realtime
+  - self auto-away recovery updates local status to online instantly on first activity
+  - manual self statuses (`away`/`busy`) are never auto-reset by activity
 - Messenger hard-gate stability:
   - no retro message/friend-request toasts after messenger sign-in
   - no chat callbacks while messenger signed out
@@ -127,6 +129,8 @@ Copy/paste in a new chat:
   - messenger sign-in boundary (`isActive=false`)
   - additive heartbeat fields (`heartbeatAt`, `heartbeatSeq`, `sessionId`, `tabId`, `source`)
   - heartbeat seq monotonicity
+  - instant auto-away -> online local recovery
+  - manual `away/busy` activity guardrails
 - `src/utils/presencePolicy.test.js`
   - transition policy helpers
   - heartbeat freshness and stale-transition logic

@@ -412,6 +412,8 @@ Automated:
   - messenger sign-in boundary (`isActive=false` => no heartbeat loop, offline write only)
   - additive self-presence fields are written
   - heartbeat sequence stays monotonic
+  - auto-away activity recovery is instant for local status (`away -> online`)
+  - manual `away/busy` is not auto-reset by activity
 - `src/utils/presencePolicy.test.js`
   - transition helper policy (`offline -> online|away|busy`)
   - heartbeat freshness and stale-transition helper behavior
@@ -441,6 +443,12 @@ Run this when relay jitter or packet reordering is suspected:
 5. Teardown test:
    - manual logoff / shutdown / conflict.
    - expected: no post-teardown presence callbacks or toasts.
+6. Auto-away recovery test:
+   - force self status to auto-away, then perform first activity event.
+   - expected: local status label flips to online immediately (no throttle wait).
+7. Manual status guard test:
+   - set self status to manual `away` or `busy`, then perform activity.
+   - expected: status remains manual, no auto-reset to online.
 
 Presence log signals:
 - Good:
