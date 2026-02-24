@@ -222,11 +222,14 @@ const onTaskbarClick = React.useCallback((paneId) => {
     return Array.from(priority);
   }, [activePane, conversations]);
 
+  // Messenger active boundary: contact presence and chat listeners are only active
+  // while Chatlon Messenger itself is signed in.
   const { contactPresence: sharedContactPresence, resetPresenceState } = usePresenceCoordinator({
     isLoggedIn,
     currentUser,
     onContactOnline: messengerCoordinator.handleContactOnline,
-    priorityContacts: priorityPresenceContacts
+    priorityContacts: priorityPresenceContacts,
+    isMessengerActive: messengerSignedIn
   });
   // Message listeners initialisatie
   const { 
@@ -234,6 +237,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
   } = useMessageListeners({
     isLoggedIn,
     currentUser,
+    messengerSignedIn,
     conversationsRef,
     activePaneRef,
     onMessage: messengerCoordinator.handleIncomingMessage,
@@ -485,6 +489,17 @@ const onTaskbarClick = React.useCallback((paneId) => {
       clearPendingCleanupTimeout();
     };
   }, []);
+
+  // Hard guarantee: when messenger signs out/closes, all open conversations close.
+  useEffect(() => {
+    if (messengerSignedIn) return;
+    closeAllConversations();
+    setUnreadChats((prev) => {
+      if (!prev || prev.size === 0) return prev;
+      const next = new Set([...prev].filter((id) => !String(id).startsWith('conv_')));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [messengerSignedIn, closeAllConversations]);
 
   const systrayManager = useSystrayManager({
     userStatus,

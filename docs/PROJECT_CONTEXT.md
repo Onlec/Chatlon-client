@@ -14,6 +14,9 @@ Keep it concise, factual, and current.
 ## 2. Architecture Rules (High Signal)
 - Global orchestration is centered in `gun-client/src/App.js`.
 - Messenger cross-pane policy orchestration is centralized in `gun-client/src/hooks/useMessengerCoordinator.js`.
+- Desktop auth is not equal to messenger active state:
+  - chat listeners run only when messenger is signed in
+  - signed-out messenger means no message/friend-request/presence ingestie
 - Presence ownership is split and explicit:
   - `usePresence` = self presence lifecycle/writes
   - `usePresenceCoordinator` = contact presence listeners/transitions/policy
@@ -65,6 +68,9 @@ Keep it concise, factual, and current.
   - explicit offline/appear-offline transitions still produce correct next online toast
   - stale/out-of-order suppression does not hide valid transitions
   - adaptive attach queue keeps active/open contacts realtime
+- Messenger hard-gate stability:
+  - no retro message/friend-request toasts after messenger sign-in
+  - no chat callbacks while messenger signed out
 - Portal usage alignment with architecture portal-root rules.
 - Superpeer qualification timing and related comments/docs consistency.
 - Gun signaling cleanup staying aligned with active schemas.
@@ -127,3 +133,7 @@ Copy/paste in a new chat:
 - `src/components/panes/ContactsPane.test.js`
   - consumes `contactPresenceMap`
   - does not attach per-contact `PRESENCE` listeners
+- `src/hooks/useMessageListeners.test.js`
+  - messenger hard gate (`messengerSignedIn=false` => no message/friend-request attach)
+  - sign-in/sign-out transition attach-detach
+  - no retro replay toasts after re-sign-in

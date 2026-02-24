@@ -83,6 +83,7 @@ describe('useMessageListeners', () => {
       <HookHarness
         isLoggedIn
         currentUser="alice@example.com"
+        messengerSignedIn
         conversationsRef={conversationsRef}
         activePaneRef={activePaneRef}
         showToast={jest.fn()}
@@ -135,6 +136,7 @@ describe('useMessageListeners', () => {
       <HookHarness
         isLoggedIn
         currentUser="alice@example.com"
+        messengerSignedIn
         conversationsRef={{ current: {} }}
         activePaneRef={{ current: null }}
         showToast={showToast}
@@ -175,6 +177,257 @@ describe('useMessageListeners', () => {
           requestId: 'req-valid'
         })
       );
+    });
+  });
+
+  test('does not attach message/friend-request listeners while messenger is signed out', async () => {
+    const onMessage = jest.fn();
+    const onNotification = jest.fn();
+    const showToast = jest.fn();
+
+    render(
+      <HookHarness
+        isLoggedIn
+        currentUser="alice@example.com"
+        messengerSignedIn={false}
+        conversationsRef={{ current: {} }}
+        activePaneRef={{ current: null }}
+        showToast={showToast}
+        shownToastsRef={{ current: new Set() }}
+        onMessage={onMessage}
+        onNotification={onNotification}
+        getAvatar={() => '/avatar.png'}
+      />
+    );
+
+    getNode('user/contacts').__emitMap(
+      { username: 'bob@example.com', status: 'accepted', blocked: false, canMessage: true },
+      'bob@example.com'
+    );
+    getNode('friendRequests/alice@example.com').__emitMap(
+      { from: 'bob@example.com', to: 'alice@example.com', status: 'pending', timestamp: Date.now() + 100 },
+      'req1'
+    );
+    getNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId').__emit('CHAT_alice_bob_1');
+    getNode('CHAT_alice_bob_1').__emitMap(
+      { sender: 'bob@example.com', content: 'blocked', timeRef: Date.now() + 101 },
+      'msg-1'
+    );
+
+    await waitFor(() => {
+      expect(onMessage).toHaveBeenCalledTimes(0);
+      expect(onNotification).toHaveBeenCalledTimes(0);
+      expect(showToast).toHaveBeenCalledTimes(0);
+    });
+  });
+
+  test('attaches on sign-in and detaches again on sign-out transition', async () => {
+    const onMessage = jest.fn();
+    const onNotification = jest.fn();
+
+    const { rerender } = render(
+      <HookHarness
+        isLoggedIn
+        currentUser="alice@example.com"
+        messengerSignedIn={false}
+        conversationsRef={{ current: {} }}
+        activePaneRef={{ current: null }}
+        showToast={jest.fn()}
+        shownToastsRef={{ current: new Set() }}
+        onMessage={onMessage}
+        onNotification={onNotification}
+        getAvatar={() => '/avatar.png'}
+      />
+    );
+
+    // While signed out nothing should flow.
+    getNode('user/contacts').__emitMap(
+      { username: 'bob@example.com', status: 'accepted', blocked: false, canMessage: true },
+      'bob@example.com'
+    );
+    getNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId').__emit('CHAT_alice_bob_1');
+    getNode('CHAT_alice_bob_1').__emitMap(
+      { sender: 'bob@example.com', content: 'msg0', timeRef: Date.now() + 1 },
+      'msg-0'
+    );
+
+    await waitFor(() => {
+      expect(onMessage).toHaveBeenCalledTimes(0);
+    });
+
+    // Sign in: listeners should start.
+    rerender(
+      <HookHarness
+        isLoggedIn
+        currentUser="alice@example.com"
+        messengerSignedIn
+        conversationsRef={{ current: {} }}
+        activePaneRef={{ current: null }}
+        showToast={jest.fn()}
+        shownToastsRef={{ current: new Set() }}
+        onMessage={onMessage}
+        onNotification={onNotification}
+        getAvatar={() => '/avatar.png'}
+      />
+    );
+
+    getNode('user/contacts').__emitMap(
+      { username: 'bob@example.com', status: 'accepted', blocked: false, canMessage: true },
+      'bob@example.com'
+    );
+    getNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId').__emit('CHAT_alice_bob_1');
+    getNode('CHAT_alice_bob_1').__emitMap(
+      { sender: 'bob@example.com', content: 'msg1', timeRef: Date.now() + 2 },
+      'msg-1'
+    );
+
+    await waitFor(() => {
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onNotification).toHaveBeenCalledTimes(1);
+    });
+
+    // Sign out again: ingestie must stop.
+    rerender(
+      <HookHarness
+        isLoggedIn
+        currentUser="alice@example.com"
+        messengerSignedIn={false}
+        conversationsRef={{ current: {} }}
+        activePaneRef={{ current: null }}
+        showToast={jest.fn()}
+        shownToastsRef={{ current: new Set() }}
+        onMessage={onMessage}
+        onNotification={onNotification}
+        getAvatar={() => '/avatar.png'}
+      />
+    );
+
+    getNode('CHAT_alice_bob_1').__emitMap(
+      { sender: 'bob@example.com', content: 'msg2', timeRef: Date.now() + 3 },
+      'msg-2'
+    );
+
+    await waitFor(() => {
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onNotification).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  test('does not replay old friend request toast when signing in, only fresh requests', async () => {
+    const showToast = jest.fn();
+    const { rerender } = render(
+      <HookHarness
+        isLoggedIn
+        currentUser="alice@example.com"
+        messengerSignedIn={false}
+        conversationsRef={{ current: {} }}
+        activePaneRef={{ current: null }}
+        showToast={showToast}
+        shownToastsRef={{ current: new Set() }}
+        onMessage={jest.fn()}
+        onNotification={jest.fn()}
+        getAvatar={() => '/avatar.png'}
+      />
+    );
+
+    rerender(
+      <HookHarness
+        isLoggedIn
+        currentUser="alice@example.com"
+        messengerSignedIn
+        conversationsRef={{ current: {} }}
+        activePaneRef={{ current: null }}
+        showToast={showToast}
+        shownToastsRef={{ current: new Set() }}
+        onMessage={jest.fn()}
+        onNotification={jest.fn()}
+        getAvatar={() => '/avatar.png'}
+      />
+    );
+
+    const requestsNode = getNode('friendRequests/alice@example.com');
+    const oldTs = Date.now() - 1500;
+    requestsNode.__emitMap(
+      { from: 'bob@example.com', to: 'alice@example.com', status: 'pending', timestamp: oldTs },
+      'req-old'
+    );
+
+    await waitFor(() => {
+      expect(showToast).toHaveBeenCalledTimes(0);
+    });
+
+    requestsNode.__emitMap(
+      { from: 'bob@example.com', to: 'alice@example.com', status: 'pending', timestamp: Date.now() + 100 },
+      'req-fresh'
+    );
+
+    await waitFor(() => {
+      expect(showToast).toHaveBeenCalledTimes(1);
+      expect(showToast).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'friendRequest', requestId: 'req-fresh' })
+      );
+    });
+  });
+
+  test('does not replay old chat message when signing in, only fresh messages', async () => {
+    const onMessage = jest.fn();
+    const onNotification = jest.fn();
+
+    const { rerender } = render(
+      <HookHarness
+        isLoggedIn
+        currentUser="alice@example.com"
+        messengerSignedIn={false}
+        conversationsRef={{ current: {} }}
+        activePaneRef={{ current: null }}
+        showToast={jest.fn()}
+        shownToastsRef={{ current: new Set() }}
+        onMessage={onMessage}
+        onNotification={onNotification}
+        getAvatar={() => '/avatar.png'}
+      />
+    );
+
+    rerender(
+      <HookHarness
+        isLoggedIn
+        currentUser="alice@example.com"
+        messengerSignedIn
+        conversationsRef={{ current: {} }}
+        activePaneRef={{ current: null }}
+        showToast={jest.fn()}
+        shownToastsRef={{ current: new Set() }}
+        onMessage={onMessage}
+        onNotification={onNotification}
+        getAvatar={() => '/avatar.png'}
+      />
+    );
+
+    getNode('user/contacts').__emitMap(
+      { username: 'bob@example.com', status: 'accepted', blocked: false, canMessage: true },
+      'bob@example.com'
+    );
+    getNode('ACTIVE_SESSIONS/alice@example.com_bob@example.com/sessionId').__emit('CHAT_alice_bob_1');
+
+    const chatNode = getNode('CHAT_alice_bob_1');
+    chatNode.__emitMap(
+      { sender: 'bob@example.com', content: 'old', timeRef: Date.now() - 1500 },
+      'msg-old'
+    );
+
+    await waitFor(() => {
+      expect(onMessage).toHaveBeenCalledTimes(0);
+      expect(onNotification).toHaveBeenCalledTimes(0);
+    });
+
+    chatNode.__emitMap(
+      { sender: 'bob@example.com', content: 'fresh', timeRef: Date.now() + 50 },
+      'msg-fresh'
+    );
+
+    await waitFor(() => {
+      expect(onMessage).toHaveBeenCalledTimes(1);
+      expect(onNotification).toHaveBeenCalledTimes(1);
     });
   });
 });

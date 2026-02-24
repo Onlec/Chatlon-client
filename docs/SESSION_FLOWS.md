@@ -23,6 +23,19 @@ Run these checks after any changes touching `App.js`, auth, presence, or `useAct
 
 ## Scenarios
 
+### M0) Messenger Hard Gate (Desktop auth != Messenger active)
+1. Login op desktop met account B.
+2. Laat messenger afgemeld.
+3. Laat account A een bericht, nudge en friend request naar B sturen.
+4. Meld messenger op B opnieuw aan.
+5. Laat A opnieuw een nieuw bericht sturen.
+
+Expected:
+- Tijdens afmelding: geen chat ingestie, geen friend-request ingestie, geen toasts, geen unread/flicker.
+- Na heraanmelden: listeners starten opnieuw.
+- Geen retroactieve toasts voor events uit afgemelde periode.
+- Alleen nieuwe events na heraanmelding triggeren toast/unread gedrag.
+
 ### 1) Same Window Relogin
 1. Login in Context A.
 2. Log off from Start menu.
@@ -409,6 +422,7 @@ Automated:
 Manual:
 - Self presence lifecycle through messenger sign-in/sign-out and session close paths.
 - Browser-context validation of online transitions with real relay timing.
+- Messenger hard-gate validation (M0).
 
 ### Presence Operational Checklist (Noisy Relay)
 Run this when relay jitter or packet reordering is suspected:

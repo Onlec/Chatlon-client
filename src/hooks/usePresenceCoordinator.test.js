@@ -126,6 +126,67 @@ describe('usePresenceCoordinator', () => {
     expect(latest.hasPresenceListener('prio@example.com')).toBe(true);
   });
 
+  test('does not attach contact presence listeners while messenger is inactive', async () => {
+    render(
+      <Harness
+        isLoggedIn
+        currentUser="alice@example.com"
+        isMessengerActive={false}
+        onContactOnline={jest.fn()}
+      />
+    );
+
+    const contactsNode = getNode('user/contacts');
+    act(() => {
+      contactsNode.__emitMap(
+        { username: 'silent@example.com', status: 'accepted', blocked: false, canMessage: true, inList: true, visibility: 'full' },
+        'silent@example.com'
+      );
+    });
+
+    await waitFor(() => {
+      expect(latest.hasPresenceListener('silent@example.com')).toBe(false);
+      expect(latest.contactPresence['silent@example.com']).toBeUndefined();
+    });
+  });
+
+  test('detaches active presence listeners when messenger transitions to inactive', async () => {
+    const { rerender } = render(
+      <Harness
+        isLoggedIn
+        currentUser="alice@example.com"
+        isMessengerActive
+        onContactOnline={jest.fn()}
+      />
+    );
+
+    const contactsNode = getNode('user/contacts');
+    act(() => {
+      contactsNode.__emitMap(
+        { username: 'drop@example.com', status: 'accepted', blocked: false, canMessage: true, inList: true, visibility: 'full' },
+        'drop@example.com'
+      );
+    });
+
+    await waitFor(() => {
+      expect(latest.hasPresenceListener('drop@example.com')).toBe(true);
+    });
+
+    rerender(
+      <Harness
+        isLoggedIn
+        currentUser="alice@example.com"
+        isMessengerActive={false}
+        onContactOnline={jest.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(latest.hasPresenceListener('drop@example.com')).toBe(false);
+      expect(latest.contactPresence['drop@example.com']).toBeUndefined();
+    });
+  });
+
   test('non-priority eligible contact attaches via queue', async () => {
     jest.useFakeTimers();
     render(

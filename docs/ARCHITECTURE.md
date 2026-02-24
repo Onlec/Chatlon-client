@@ -227,6 +227,14 @@ Lokale per-device data (niet gesynchroniseerd):
 - TeamTalk presence via Trystero room events (binnen rooms)
 
 ### Presence Ownership Matrix
+- Desktop login and messenger sign-in are separate states:
+  - desktop auth grants shell access
+  - messenger sign-in is required for chat traffic
+- When messenger is signed out:
+  - no message ingestie
+  - no friend-request ingestie
+  - no contact-presence listeners
+  - no message/nudge/presence toasts
 - `usePresence` owns self presence lifecycle only:
   - heartbeat writes
   - manual status changes

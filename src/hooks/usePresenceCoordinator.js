@@ -15,7 +15,8 @@ export function usePresenceCoordinator({
   isLoggedIn,
   currentUser,
   onContactOnline,
-  priorityContacts = []
+  priorityContacts = [],
+  isMessengerActive = true
 }) {
   const [contactPresence, setContactPresence] = useState({});
   const [presenceMetaByUser, setPresenceMetaByUser] = useState({});
@@ -118,7 +119,11 @@ export function usePresenceCoordinator({
   }, [presenceMetaByUser]);
 
   useEffect(() => {
-    if (!isLoggedIn || !currentUser) return;
+    if (!isLoggedIn || !currentUser || !isMessengerActive) {
+      cleanupPresenceListeners();
+      setContactPresence({});
+      return;
+    }
 
     log('[PresenceMonitor] Start voor:', currentUser);
     const prevPresence = prevPresenceRef.current;
@@ -439,7 +444,7 @@ export function usePresenceCoordinator({
     return () => {
       cleanupPresenceListeners();
     };
-  }, [isLoggedIn, currentUser, detachPresenceListener, cleanupPresenceListeners]);
+  }, [isLoggedIn, currentUser, isMessengerActive, detachPresenceListener, cleanupPresenceListeners]);
 
   return {
     contactPresence,

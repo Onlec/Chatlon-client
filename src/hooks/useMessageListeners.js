@@ -28,6 +28,7 @@ const pairChatKey = (pairId) => `pair:${pairId}:chat`;
 export function useMessageListeners({
   isLoggedIn,
   currentUser,
+  messengerSignedIn,
   conversationsRef,
   activePaneRef,
   showToast,
@@ -114,6 +115,7 @@ export function useMessageListeners({
   const setupContactMessageListener = useCallback((contactName, pairId) => {
     const activeKey = pairActiveSessionKey(pairId);
     const chatKey = pairChatKey(pairId);
+    const listenerStartTime = Date.now();
 
     if (listenersRef.current.has(activeKey)) {
       return;
@@ -168,6 +170,7 @@ export function useMessageListeners({
 
         const now = Date.now();
         const messageTimeRef = Number(data.timeRef) || 0;
+        if (messageTimeRef && messageTimeRef < listenerStartTime) return;
         const isRecent = messageTimeRef > (now - 60000);
         if (!isRecent) return;
 
@@ -231,11 +234,14 @@ export function useMessageListeners({
 
   // Setup listeners when logged in.
   useEffect(() => {
-    if (!isLoggedIn || !currentUser) return;
+    if (!isLoggedIn || !currentUser || !messengerSignedIn) {
+      cleanup();
+      return;
+    }
 
     setupMessageListeners();
     setupFriendRequestListener();
-  }, [isLoggedIn, currentUser, setupMessageListeners, setupFriendRequestListener]);
+  }, [isLoggedIn, currentUser, messengerSignedIn, setupMessageListeners, setupFriendRequestListener, cleanup]);
 
   return {
     cleanup,
