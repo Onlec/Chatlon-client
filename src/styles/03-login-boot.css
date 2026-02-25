@@ -1,0 +1,1188 @@
+/* ================================================
+   13. PANES dX LOGIN SCREEN
+   ================================================ */
+
+/* ============================================
+   WINDOWS XP AUTHENTIC LOGIN SCREEN
+   ============================================ */
+
+.xp-login {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(to bottom, 
+    #5a7fbe 0%,
+    #4169b0 15%,
+    #3d62a8 30%,
+    #35569d 50%,
+    #2d4a91 70%,
+    #254080 85%,
+    #1d3466 100%
+  );
+  display: flex;
+  flex-direction: column;
+  font-family: 'Tahoma', 'Verdana', 'Segoe UI', Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* ============================================
+   TOP BAR
+   ============================================ */
+
+.xp-top-bar {
+  height: 50px;
+  background: linear-gradient(to bottom, 
+    rgba(0, 38, 99, 0.8) 0%,
+    rgba(0, 28, 74, 0.9) 100%
+  );
+  display: flex;
+  align-items: center;
+  padding: 0 30px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.xp-top-text {
+  color: #ffffff;
+  font-size: var(--ui-font-size);
+  font-weight: normal;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+
+.xp-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+/* ============================================
+   LEFT SIDE - LOGO
+   ============================================ */
+
+.xp-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 60px;
+}
+
+/* Login screen overrides verplaatst naar einde van brand-layout sectie */
+
+.xp-logo-top {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 300;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+  font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
+}
+
+.xp-logo-windows {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.xp-logo-win {
+  font-size: 52px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+  font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
+  letter-spacing: -2px;
+}
+
+.xp-logo-xp {
+  font-size: 52px;
+  font-weight: bold;
+  font-style: italic;
+  color: #ffffff;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+  font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
+  letter-spacing: -1px;
+}
+
+/* ============================================
+   CENTER DIVIDER
+   ============================================ */
+
+.xp-divider {
+  width: 2px;
+  height: 420px;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 5%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.1) 95%,
+    transparent 100%
+  );
+  box-shadow: 
+    1px 0 0 rgba(255, 255, 255, 0.15),
+    -1px 0 0 rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   RIGHT SIDE - USERS
+   ============================================ */
+
+.xp-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 60px;
+}
+
+.xp-right-content {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.xp-session-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 236, 153, 0.8);
+  background: rgba(66, 36, 10, 0.45);
+  color: #fff8dc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.xp-session-banner-text {
+  min-width: 0;
+}
+
+.xp-session-banner-title {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 2px;
+}
+
+.xp-session-banner-message {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.xp-session-banner-close {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.xp-session-banner-close:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.xp-autologin-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+.xp-autologin-text {
+  color: white;
+  font-size: 14px;
+  font-family: 'Franklin Gothic Medium', 'Tahoma', sans-serif;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* USER SELECTION PANEL */
+.xp-user-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 280px;
+}
+
+.xp-user-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(2px);
+}
+
+.xp-user-item:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* DELETE BUTTON */
+.xp-delete-user {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(200, 0, 0, 0.8);
+  border: 1px solid rgba(150, 0, 0, 0.9);
+  border-radius: 3px;
+  color: #ffffff;
+  font-size: var(--ui-font-size-md);
+  font-weight: bold;
+  cursor: pointer;
+  display: none; /* Verborgen by default */
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.xp-user-item:hover .xp-delete-user {
+  display: flex; /* Toon alleen bij hover */
+}
+
+.xp-delete-user:hover {
+  background: rgba(220, 0, 0, 1);
+  border-color: rgba(180, 0, 0, 1);
+  transform: scale(1.1);
+}
+
+.xp-delete-user:active {
+  transform: scale(0.95);
+}
+
+.xp-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 3px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: #ffffff;
+}
+
+.xp-guest-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(to bottom, #e8f0ff 0%, #d0e0ff 100%);
+}
+
+.xp-guest-icon {
+  font-size: 28px;
+  opacity: 0.7;
+}
+
+.xp-username {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* PASSWORD PANEL */
+.xp-password-panel {
+  min-width: 360px;
+}
+
+.xp-user-selected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.xp-avatar-large {
+  width: 64px;
+  height: 64px;
+  border-radius: 4px;
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  background: #ffffff;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.xp-username-large {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.xp-input-row {
+  margin-bottom: 20px;
+}
+
+.xp-label {
+  display: block;
+  color: #ffffff;
+  font-size: var(--ui-font-size-md);
+  margin-bottom: 8px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-text-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: 'Tahoma', Arial, sans-serif;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.xp-text-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.7);
+  background: #ffffff;
+  box-shadow: 
+    inset 0 1px 3px rgba(0, 0, 0, 0.1),
+    0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.xp-password-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.xp-password-input-group .xp-text-input {
+  flex: 1;
+}
+
+.xp-arrow-button {
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(to bottom, 
+    #7dc243 0%,
+    #6eb535 50%,
+    #5fa228 100%
+  );
+  border: 2px solid #4d8c1f;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xp-arrow-button:hover {
+  background: linear-gradient(to bottom, 
+    #8dd253 0%,
+    #7dc243 50%,
+    #6eb535 100%
+  );
+}
+
+.xp-arrow-button:active {
+  transform: translateY(1px);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.xp-arrow {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.xp-error-message {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 200, 200, 0.5);
+  border-radius: 3px;
+  color: #ffcccc;
+  font-size: var(--ui-font-size);
+  line-height: 1.4;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-hint-text {
+  margin-top: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--ui-font-size);
+  text-align: center;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-checkbox-row {
+  margin-top: 12px;
+}
+
+.xp-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--ui-font-size-md);
+  cursor: pointer;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.xp-checkbox-label input[type="checkbox"] {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}
+
+.xp-checkbox-label:hover {
+  color: #ffffff;
+}
+
+.xp-max-users-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 180, 0, 0.15);
+  border: 1px solid rgba(255, 180, 0, 0.4);
+  border-radius: 4px;
+  color: rgba(255, 220, 150, 0.95);
+  font-size: var(--ui-font-size);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-separator-item {
+  background: none;
+  border: none;
+  padding: 8px 20px;
+  cursor: default;
+  pointer-events: none;
+}
+
+.xp-separator-item:hover {
+  background: none;
+  border: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.xp-separator-line {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.2) 80%,
+    transparent 100%
+  );
+}
+
+/* Special items (andere gebruiker, nieuwe gebruiker) */
+.xp-special-item {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.xp-special-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Disabled state */
+.xp-user-item.xp-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.xp-user-item.xp-disabled .xp-guest-avatar {
+  opacity: 0.5;
+}
+
+.xp-user-item.xp-disabled .xp-username {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+
+/* ============================================
+   BOTTOM BAR
+   ============================================ */
+
+.xp-bottom-bar {
+  height: 60px;
+  background: linear-gradient(to bottom, 
+    rgba(0, 38, 99, 0.9) 0%,
+    rgba(0, 28, 74, 0.95) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  border-top: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.xp-bottom-left {
+  flex: 1;
+}
+
+.xp-back-link {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--ui-font-size);
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 6px 12px;
+  font-family: 'Tahoma', Arial, sans-serif;
+  transition: color 0.2s;
+}
+
+.xp-back-link:hover {
+  color: #ffffff;
+}
+
+.xp-bottom-right {
+  display: flex;
+  gap: 12px;
+}
+
+.xp-shutdown-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: linear-gradient(to bottom, 
+    #ff5555 0%,
+    #ee3333 50%,
+    #cc0000 100%
+  );
+  border: 2px solid #990000;
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: var(--ui-font-size-md);
+  font-weight: bold;
+  font-family: 'Tahoma', Arial, sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.xp-shutdown-button:hover {
+  background: linear-gradient(to bottom, 
+    #ff6666 0%,
+    #ff4444 50%,
+    #dd1111 100%
+  );
+  box-shadow: 
+    0 3px 8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.xp-shutdown-button:active {
+  transform: translateY(1px);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.xp-shutdown-icon {
+  font-size: 14px;
+}
+
+/* ============================================
+   LOADING SCREEN
+   ============================================ */
+
+.xp-login-loading {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+.xp-loading-text {
+  font-size: 52px;
+  color: #ffffff;
+  font-weight: 300;
+  text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.5);
+  font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.xp-loading-bar-container {
+  width: 320px;
+}
+
+.xp-loading-bar {
+  width: 100%;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.xp-loading-bar-inner {
+  height: 100%;
+  background: linear-gradient(to right, 
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+  background-size: 200% 100%;
+  animation: xp-loading-animation 1.8s ease-in-out infinite;
+  border-radius: 5px;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+}
+
+@keyframes xp-loading-animation {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.xp-no-users-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--ui-font-size-md);
+  margin-bottom: 12px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-hint-icon {
+  font-size: 16px;
+}
+
+/* ================================================
+
+   POST/BIOS STAGE (CRT Screen met ASCII)
+   ============================================ */
+
+.xp-post {
+  width: 100%;
+  height: 100%;
+  background: #000000;
+  color: #AAAAAA;
+  font-family: 'Courier New', 'Fixedsys', monospace;
+  font-size: 16px;
+  padding: 20px;
+  overflow: hidden;
+  position: relative;
+  animation: post-flicker 0.3s ease-in;
+}
+
+@keyframes post-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
+}
+
+.xp-post-content {
+  position: relative;
+  z-index: 3;
+  white-space: pre-wrap;
+  line-height: 1.3;
+  letter-spacing: 0.5px;
+}
+
+.xp-post-line {
+  margin: 1px 0;
+  text-shadow: 0 0 4px rgba(170, 170, 170, 0.4);
+}
+
+.xp-post-cursor {
+  display: inline-block;
+  background: #AAAAAA;
+  color: #000000;
+  padding: 0 4px;
+  margin-left: 2px;
+}
+
+.xp-post-footer {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 3;
+  font-size: 13px;
+  color: #666666;
+  border-top: 1px solid #333333;
+  padding-top: 10px;
+}
+
+.xp-hint {
+  color: #888888;
+  font-size: var(--ui-font-size);
+}
+
+/* ============================================
+   WINDOWS XP AUTHENTIC BOOT SEQUENCE
+   ============================================ */
+
+.boot-sequence {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  overflow: hidden;
+}
+
+/* ============================================
+   BIOS STAGE (Zwart scherm, witte tekst)
+   ============================================ */
+
+.xp-bios {
+  width: 100%;
+  height: 100%;
+  background: #000000;
+  display: flex;
+  align-items: flex-start;
+  padding: 30px 40px;
+}
+
+.xp-bios-content {
+  color: #FFFFFF;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.xp-bios-line {
+  margin: 3px 0;
+}
+
+.xp-bios-cursor {
+  background: #FFFFFF;
+  color: #000000;
+  padding: 0 4px;
+  margin-left: 3px;
+}
+
+/* ============================================
+   XP BOOT STAGE (Zwart met logo en loading bar)
+   ============================================ */
+
+.xp-boot {
+  width: 100%;
+  height: 100%;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xp-boot-content {
+  text-align: center;
+}
+
+/* =============================================
+   XP BRAND LAYOUT — Geïntegreerd logo + tekst
+   ============================================= */
+
+.xp-brand-layout {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 80px;
+  animation: xp-brand-appear 0.8s ease-out 0.4s backwards;
+}
+
+.xp-brand-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  animation: xp-brand-appear 0.8s ease-out 0.4s backwards;
+}
+
+.xp-brand-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-left: -140px;
+  margin-top: 10px;
+}
+
+/* Vlag-logo: 2x2 grid, kleiner, geïntegreerd naast tekst */
+.xp-boot-logo {
+  display: grid;
+  grid-template-columns: repeat(2, 52px);
+  gap: 6px;
+  transform: rotate(65deg);
+  margin-bottom: 0;
+  position: relative;
+  top: -30px;
+  animation: xp-logo-container-appear 0.6s ease-out 0.2s backwards;
+}
+
+.xp-logo-stripe {
+  width: 52px;
+  height: 52px;
+  border-radius: 3px;
+  animation: xp-stripe-appear 1s ease-out both;
+}
+
+.xp-stripe-red {
+  background: linear-gradient(135deg, #FF4400 0%, #CC2200 100%);
+  animation-delay: 0.1s;
+}
+
+.xp-stripe-green {
+  background: linear-gradient(135deg, #44DD44 0%, #22A022 100%);
+  animation-delay: 0.4s;
+}
+
+.xp-stripe-blue {
+  background: linear-gradient(135deg, #00BBFF 0%, #0066DD 100%);
+  animation-delay: 0.7s;
+}
+
+@keyframes xp-logo-container-appear {
+  from {
+    transform: rotate(65deg) scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(65deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes xp-stripe-appear {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes xp-brand-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Tekst styling */
+.xp-brand-microsoft {
+  display: block;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: normal;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.xp-brand-windows {
+  display: block;
+  color: #FFFFFF;
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Arial, sans-serif;
+  font-size: 42px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  line-height: 1;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.xp-brand-xp {
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Arial, sans-serif;
+  font-style: italic;
+  font-weight: bold;
+  font-size: 28px;
+  color: #FFC61A;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+  vertical-align: super;
+  line-height: 0;
+  margin-left: 2px;
+  animation: xp-brand-appear 0.8s ease-out 0.6s backwards;
+}
+
+/* Login screen: geen animaties, alles direct zichtbaar */
+.xp-login-brand-layout {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+.xp-login-brand-layout .xp-boot-logo {
+  animation: none !important;
+  transform: rotate(65deg);
+}
+
+.xp-login-brand-layout .xp-logo-stripe {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: scale(1);
+}
+
+.xp-login-brand-layout .xp-brand-left {
+  animation: none !important;
+}
+
+.xp-login-brand-layout .xp-brand-xp {
+  animation: none !important;
+}
+
+/* Boot → Login transitie overlays */
+.boot-fade-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999;
+  animation: fade-to-black 0.8s ease-in forwards;
+  pointer-events: none;
+}
+
+.login-fade-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999;
+  animation: fade-from-black 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes fade-to-black {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-from-black {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ============================================
+   LOGOFF SCREEN
+   ============================================ */
+
+.logoff-screen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #1a3a6e 0%, #2a5aaa 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.logoff-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.logoff-logo {
+  font-size: 32px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.logoff-message {
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  font-family: 'Tahoma', sans-serif;
+}
+
+.logoff-progress {
+  width: 220px;
+  height: 14px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.logoff-progress-bar {
+  height: 100%;
+  background: linear-gradient(to right, #5aaff5, #a0d8ff);
+  border-radius: 7px;
+  animation: logoff-fill 2.5s ease-in forwards;
+}
+
+@keyframes logoff-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ============================================
+   SHUTDOWN SCREEN
+   ============================================ */
+
+.shutdown-screen {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fade-from-black 0.8s ease-out;
+}
+
+.shutdown-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.shutdown-message {
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Arial, sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.power-on-button {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.power-on-button:hover {
+  border-color: rgba(100, 200, 255, 0.5);
+  background: rgba(100, 200, 255, 0.08);
+  box-shadow: 0 0 20px rgba(100, 200, 255, 0.15);
+}
+
+.power-on-button:active {
+  transform: scale(0.95);
+  background: rgba(100, 200, 255, 0.15);
+}
+
+.power-on-icon {
+  font-size: 32px;
+  color: rgba(255, 255, 255, 0.3);
+  transition: color 0.3s ease;
+}
+
+.power-on-button:hover .power-on-icon {
+  color: rgba(100, 200, 255, 0.7);
+}
+
+.power-on-hint {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 11px;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* ============================================
+   EXACT WINDOWS XP LOADING BAR
+   ============================================ */
+
+.xp-boot-loading {
+  width: 380px; /* Nog breder */
+  margin: 0 auto;
+  animation: xp-loading-appear 0.8s ease-out 0.6s backwards;
+}
+
+@keyframes xp-loading-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Container */
+.xp-loading-bar {
+  height: 16px;
+  background: #000000;
+  border: 1px solid #1B4D8C;
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  align-items: center;
+}
+
+/* Grotere vierkantjes */
+.xp-loading-block {
+  width: 18px;
+  height: 10px;
+  background: #000000; /* Zwart standaard */
+  flex-shrink: 0;
+  animation: xp-block-light 1.44s linear infinite;
+}
+
+/* Pulse animatie - alleen blauw tijdens actief, anders zwart */
+@keyframes xp-block-light {
+  0%, 16.67% {
+    background: linear-gradient(to bottom, 
+      #3399FF 0%,
+      #1E7DD6 50%,
+      #0D5EBB 100%
+    );
+    box-shadow: 
+      0 0 6px rgba(51, 153, 255, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  16.68%, 100% {
+    background: #000000; /* Volledig zwart */
+    box-shadow: none;
+  }
+}
+
+

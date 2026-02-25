@@ -1,0 +1,370 @@
+/* - - - KLASSIEK (Win98) structurele overrides - - - */
+
+/* Vensterframe: vierkant, 3D bevel, geen soft shadow */
+[data-theme="klassiek"] .pane-frame {
+  border-radius: 0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040, 2px 2px 0 #000;
+}
+
+/* Titelbalk: horizontaal gradient zoals Win98 */
+[data-theme="klassiek"] .pane-header {
+  background: linear-gradient(to right, var(--win-titlebar-a), var(--win-titlebar-b));
+  border-radius: 0;
+}
+
+/* Inactieve titelbalk: grijs in plaats van blauw */
+[data-theme="klassiek"] .pane-header.inactive {
+  background: linear-gradient(to right, #808080, #B0B0B0);
+}
+
+/* Titelbalk-knoppen: vierkant, raised bevel, geen rode close, zwarte iconen */
+[data-theme="klassiek"] .pane-btn {
+  border-radius: 0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+  background: var(--win-btn-bg);
+  color: #000000;
+}
+[data-theme="klassiek"] .pane-btn:active {
+  border-color: #808080 #DFDFDF #DFDFDF #808080;
+  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+}
+[data-theme="klassiek"] .pane-btn.close {
+  background: var(--win-btn-bg);
+}
+[data-theme="klassiek"] .pane-btn.close:hover {
+  background: var(--win-btn-bg);
+}
+
+/* Taakbalk: vlak, opgehoogde rand bovenaan */
+[data-theme="klassiek"] .taskbar {
+  background: var(--taskbar-a);
+  border-top: 2px solid #FFFFFF;
+  box-shadow: inset 0 1px 0 #DFDFDF;
+}
+
+/* Start-knop: vierkant, vlak, raised bevel, zwarte tekst */
+[data-theme="klassiek"] .start-btn {
+  border-radius: 0;
+  background: #C0C0C0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+  border-right: 2px solid #808080;
+  color: #000000;
+}
+[data-theme="klassiek"] .start-btn:hover {
+  background: #C0C0C0;
+}
+[data-theme="klassiek"] .start-btn.pressed {
+  background: #C0C0C0;
+  filter: none;
+  border-color: #808080 #DFDFDF #DFDFDF #808080;
+  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+}
+
+[data-theme="klassiek"] .start-btn::before {
+  display: none;
+}
+
+/* Taakbalk-tabs: vierkant, vlak, raised bevel */
+[data-theme="klassiek"] .taskbar-tab {
+  border-radius: 0;
+  background: #C0C0C0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+  color: #000000;
+}
+[data-theme="klassiek"] .taskbar-tab:hover {
+  background: #D4D0C8;
+}
+[data-theme="klassiek"] .taskbar-tab.active {
+  background: #C0C0C0;
+  border-color: #808080 #DFDFDF #DFDFDF #808080;
+  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+}
+
+/* Startmenu: vierkant, harde schaduw */
+[data-theme="klassiek"] .start-menu {
+  border-radius: 0;
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: 2px 2px 0 #000;
+}
+[data-theme="klassiek"] .start-menu-header {
+  background: var(--startmenu-header-a);
+}
+[data-theme="klassiek"] .start-menu-footer {
+  background: #C0C0C0;
+  border-top: 1px solid #808080;
+}
+[data-theme="klassiek"] .start-item {
+  border-radius: 0;
+}
+
+/* Knoppen: vierkant, vlak, raised bevel */
+[data-theme="klassiek"] .dx-button {
+  border-radius: 0;
+  background: var(--app-bg);
+  border: 2px solid;
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+}
+[data-theme="klassiek"] .dx-button:hover {
+  background: var(--app-bg);
+  border-color: #DFDFDF #808080 #808080 #DFDFDF;
+}
+[data-theme="klassiek"] .dx-button:active {
+  background: var(--app-bg);
+  border-color: #808080 #DFDFDF #DFDFDF #808080;
+  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+}
+
+/* Systray: zwarte tekst, geen text-shadow */
+[data-theme="klassiek"] .systray {
+  color: #000000;
+  text-shadow: none;
+}
+
+/* Desktop shortcuts: geen drop-shadow op iconen */
+[data-theme="klassiek"] .shortcut-icon {
+  filter: none;
+}
+
+/* ================================================
+   5. CHAT LAYOUT
+   ================================================ */
+.chat-main-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--app-bg);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.chat-info-bar {
+  background: #F1F1F1;
+  padding: 4px 8px; 
+  font-size: var(--ui-font-size); 
+  border-bottom: 1px solid var(--btn-border); 
+  color: #666;
+  flex-shrink: 0;
+}
+
+.chat-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background-color: white;
+}
+
+.chat-messages-area {
+  flex: 1;
+  padding: 10px;
+  overflow-y: scroll !important;
+  font-size: 13px;
+  min-height: 0;
+  background-color: #F7F7F7;
+}
+
+.chat-sidebar {
+  width: 110px; 
+  border-left: 1px solid var(--btn-border);
+  background: #F7F7F7; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  padding-top: 15px; 
+  flex-shrink: 0;
+}
+
+.chat-avatar-img {
+  width: 85px; 
+  height: 85px; 
+  border: 1px solid var(--btn-border); 
+  padding: 2px; 
+  background: white;
+  flex-shrink: 0;
+}
+
+.chat-input-section {
+  padding: 8px;
+  background: var(--app-bg);
+  border-top: 1px solid var(--btn-border);
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.chat-input-section textarea {
+  flex-grow: 1;
+  height: 45px;
+  min-height: 45px;
+  border: 1px solid var(--btn-border);
+  padding: 4px;
+  resize: none;
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+  font-size: var(--ui-font-size-md);
+}
+
+/* ================================================
+   7. CLASSIC OS ELEMENTEN
+   ================================================ */
+
+.dx-button {
+  padding: 4px 12px;
+  background: linear-gradient(to bottom, var(--app-bg) 0%, #F5F4F2 50%, var(--app-bg) 100%);
+  border: 1px solid;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: var(--ui-font-size);
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+  box-shadow: 
+    inset 1px 1px 0 #FFFFFF,
+    inset -1px -1px 0 #9C9C9C;
+}
+
+.dx-button:hover {
+  background: linear-gradient(to bottom, #FFF6D9 0%, #FFEFB8 50%, #FFF6D9 100%);
+  border-color: #F9B14D;
+}
+
+.dx-button:active:not(.disabled) {
+  background: linear-gradient(to bottom, #D8D0C8 0%, #E8E4DC 50%, #D8D0C8 100%);
+  box-shadow: 
+    inset 1px 1px 2px #808080,
+    inset -1px -1px 0 #FFFFFF;
+}
+
+.nudge-btn.disabled {
+  color: #808080 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(to bottom, #E8E8E8 0%, var(--toolbar-bg) 50%, #E8E8E8 100%) !important;
+  border-color: #A0A0A0 !important;
+  box-shadow: none !important;
+}
+
+
+
+/* ================================================
+   9. DE SHAKE ANIMATIE
+   ================================================ */
+
+.nudge-active {
+  animation: chat-shake 0.1s linear 6 !important;
+  position: relative;
+  z-index: 999;
+}
+
+@keyframes chat-shake {
+  0% { transform: translate(2px, 1px); }
+  25% { transform: translate(-2px, -2px); }
+  50% { transform: translate(-1px, 2px); }
+  75% { transform: translate(2px, -1px); }
+  100% { transform: translate(0px, 0px); }
+}
+
+/* ================================================
+   10. CHAT LOGIN SCHERM
+   ================================================ */
+
+.chat-login-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--app-bg);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.chat-login-header {
+  width: 100%;
+  max-width: 250px;
+  margin-bottom: 20px;
+}
+
+.chat-login-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-login-logo {
+  font-size: 48px;
+  background: white;
+  border: 1px solid var(--btn-border);
+  border-radius: 4px;
+  padding: 10px;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+.chat-login-title {
+  font-weight: bold;
+  color: var(--link-color);
+  font-size: 14px;
+}
+
+.chat-login-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 220px;
+  gap: 8px;
+}
+
+.chat-login-body label {
+  font-size: var(--ui-font-size);
+  color: #000;
+  font-weight: bold;
+}
+
+.dx-input {
+  border: 1px solid var(--btn-border);
+  padding: 3px 4px;
+  font-size: var(--ui-font-size-md);
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+  outline: none;
+  background: white;
+}
+
+.dx-input:focus {
+  border-color: var(--link-color-light);
+  box-shadow: 0 0 2px rgba(0,102,204,0.5);
+}
+
+.chat-login-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.dx-button.secondary {
+  background: linear-gradient(to bottom, var(--toolbar-bg) 0%, #FAFAFA 50%, var(--toolbar-bg) 100%);
+}
+
+.chat-login-footer {
+  margin-top: 25px;
+  font-size: var(--ui-font-size-sm);
+}
+
+.chat-login-footer a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+.chat-login-footer a:hover {
+  text-decoration: underline;
+  color: var(--link-color-light);
+}
+
+

@@ -1,0 +1,453 @@
+
+/* ================================================
+   THEMA VARIABELEN
+   ================================================ */
+
+/* Lettergrootte variabelen — standaard (normaal) */
+:root {
+  --ui-font-size:    11px;  /* Basis UI tekst */
+  --ui-font-size-md: 12px;  /* Licht groter: namen, labels */
+  --ui-font-size-sm: 10px;  /* Klein secundair */
+  --ui-font-size-xs:  9px;  /* Heel klein */
+}
+
+/*
+  SCOPED overrides: enkel van kracht binnen desktop-shell containers.
+  Boot-sequence en login-scherm (buiten .pane-frame / .taskbar /
+  .start-menu / .shortcuts-area) gebruiken altijd de :root defaults.
+*/
+
+/* Klein */
+[data-fontsize="klein"] .pane-frame,
+[data-fontsize="klein"] .taskbar,
+[data-fontsize="klein"] .start-menu,
+[data-fontsize="klein"] .shortcuts-area {
+  --ui-font-size:    10px;
+  --ui-font-size-md: 11px;
+  --ui-font-size-sm:  9px;
+  --ui-font-size-xs:  8px;
+}
+
+/* Groot */
+[data-fontsize="groot"] .pane-frame,
+[data-fontsize="groot"] .taskbar,
+[data-fontsize="groot"] .start-menu,
+[data-fontsize="groot"] .shortcuts-area {
+  --ui-font-size:    13px;
+  --ui-font-size-md: 14px;
+  --ui-font-size-sm: 12px;
+  --ui-font-size-xs: 10px;
+}
+
+/* Standaard: Windows XP Blauw (Luna) */
+:root {
+  /* Venster chrome */
+  --win-bg:               #ECE9D8;
+  --win-frame-border:     #0054E3;
+  --win-frame-shadow:     #0831D9;
+  --win-titlebar-a:       #0058e6;
+  --win-titlebar-b:       #2596f3;
+  --win-titlebar-c:       #0058e6;
+  --win-titlebar-d:       #0046ad;
+  --win-content-border:   #7F9DB9;
+  --win-btn-bg:           #3f8cf3;
+
+  /* Taakbalk */
+  --taskbar-a:            #245edb;
+  --taskbar-b:            #3f8cf3;
+  --taskbar-c:            #245edb;
+  --taskbar-d:            #1941a5;
+  --tab-a:                #3E82F7;
+  --tab-b:                #2B6FCE;
+  --tab-hover-a:          #5199F8;
+  --tab-hover-b:          #3E82F7;
+  --tab-active-a:         #1E52B7;
+  --tab-active-b:         #1941A5;
+
+  /* Start-knop */
+  --startbtn-a:           #3FA142;
+  --startbtn-b:           #61BB46;
+  --startbtn-border:      #165C1F;
+  --startbtn-hover-a:     #4FB64F;
+  --startbtn-hover-b:     #6FD14F;
+
+  /* Startmenu */
+  --startmenu-border:     #245EDC;
+  --startmenu-header-a:   #5199F8;
+  --startmenu-header-b:   #245EDC;
+  --startmenu-item-hover: #316AC5;
+  --startmenu-rightcol:   #D3E5FA;
+  --startmenu-divider:    #C1D2EE;
+  --startmenu-footer-bdr: #1659C5;
+  --startmenu-pinned:     #00156E;
+
+  --menu-hover:           #316AC5;
+  --app-bg:               #ECE9D8;
+  --toolbar-bg:           #F0F0F0;
+  --toolbar-border:       #919B9C;
+  --link-color:           #003399;
+  --link-color-light:     #0066CC;
+  --btn-border:           #7F9DB9;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #ECE9D8;
+  --input-border:         #7F9DB9;
+  --sidebar-bg:           #F0F0F0;
+}
+
+/* Thema: Olijfgroen (Luna Olive Green - authentiek) */
+[data-theme="olijfgroen"] {
+  --win-bg:               #ECE9D8;
+  --win-frame-border:     #6E7B38;
+  --win-frame-shadow:     #4E5725;
+  --win-titlebar-a:       #5B7526;
+  --win-titlebar-b:       #92A45C;
+  --win-titlebar-c:       #5B7526;
+  --win-titlebar-d:       #3E5118;
+  --win-content-border:   #8E9E6C;
+  --win-btn-bg:           #92A45C;
+
+  --taskbar-a:            #6D7128;
+  --taskbar-b:            #8C8D43;
+  --taskbar-c:            #6D7128;
+  --taskbar-d:            #4A4E18;
+  --tab-a:                #83863C;
+  --tab-b:                #6D7128;
+  --tab-hover-a:          #969A4C;
+  --tab-hover-b:          #83863C;
+  --tab-active-a:         #4E5220;
+  --tab-active-b:         #3A3D14;
+
+  --startbtn-a:           #3FA142;
+  --startbtn-b:           #61BB46;
+  --startbtn-border:      #165C1F;
+  --startbtn-hover-a:     #4FB64F;
+  --startbtn-hover-b:     #6FD14F;
+
+  --startmenu-border:     #6E7B38;
+  --startmenu-header-a:   #92A45C;
+  --startmenu-header-b:   #5B7526;
+  --startmenu-item-hover: #6D7128;
+  --startmenu-rightcol:   #D6DFC0;
+  --startmenu-divider:    #BCC4A0;
+  --startmenu-footer-bdr: #4E5725;
+  --startmenu-pinned:     #2A3010;
+
+  --menu-hover:           #6D7128;
+  --app-bg:               #ECE9D8;
+  --toolbar-bg:           #EDE9D4;
+  --toolbar-border:       #8A8A6C;
+  --link-color:           #3A4A10;
+  --link-color-light:     #5B7526;
+  --btn-border:           #8E9E6C;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #ECE9D8;
+  --input-border:         #8E9E6C;
+  --sidebar-bg:           #EDE9D4;
+}
+
+/* Thema: Zilver (Luna Silver - authentiek) */
+[data-theme="zilver"] {
+  --win-bg:               #EBE9ED;
+  --win-frame-border:     #5E7CA0;
+  --win-frame-shadow:     #3C546E;
+  --win-titlebar-a:       #5E7CA0;
+  --win-titlebar-b:       #9AB4D0;
+  --win-titlebar-c:       #5E7CA0;
+  --win-titlebar-d:       #3C546E;
+  --win-content-border:   #9CA2AC;
+  --win-btn-bg:           #9AB4D0;
+
+  --taskbar-a:            #7C8EA4;
+  --taskbar-b:            #A4B4C8;
+  --taskbar-c:            #7C8EA4;
+  --taskbar-d:            #5A6A80;
+  --tab-a:                #96A8BC;
+  --tab-b:                #7C8EA4;
+  --tab-hover-a:          #A8BACC;
+  --tab-hover-b:          #96A8BC;
+  --tab-active-a:         #5A6A80;
+  --tab-active-b:         #4A5A70;
+
+  --startbtn-a:           #8CA0B4;
+  --startbtn-b:           #A8BCD0;
+  --startbtn-border:      #546878;
+  --startbtn-hover-a:     #9CB0C4;
+  --startbtn-hover-b:     #B8CCE0;
+
+  --startmenu-border:     #5E7CA0;
+  --startmenu-header-a:   #9AB4D0;
+  --startmenu-header-b:   #5E7CA0;
+  --startmenu-item-hover: #7C8EA4;
+  --startmenu-rightcol:   #DDE0E8;
+  --startmenu-divider:    #B8BCC8;
+  --startmenu-footer-bdr: #5A6A80;
+  --startmenu-pinned:     #2C3848;
+
+  --menu-hover:           #7C8EA4;
+  --app-bg:               #EBE9ED;
+  --toolbar-bg:           #E8E6EA;
+  --toolbar-border:       #9A98A0;
+  --link-color:           #2C3848;
+  --link-color-light:     #5E7CA0;
+  --btn-border:           #9CA2AC;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #EBE9ED;
+  --input-border:         #9CA2AC;
+  --sidebar-bg:           #E8E6EA;
+}
+
+/* Thema: Royale (donkerblauw) */
+[data-theme="royale"] {
+  --win-bg:               #EAE8E1;
+  --win-frame-border:     #1C3E7A;
+  --win-frame-shadow:     #0F2750;
+  --win-titlebar-a:       #1C3E7A;
+  --win-titlebar-b:       #4682B4;
+  --win-titlebar-c:       #1C3E7A;
+  --win-titlebar-d:       #0F2750;
+  --win-content-border:   #6685A4;
+  --win-btn-bg:           #4682B4;
+
+  --taskbar-a:            #13306A;
+  --taskbar-b:            #1C4B8E;
+  --taskbar-c:            #13306A;
+  --taskbar-d:            #0B1F46;
+  --tab-a:                #1E4F94;
+  --tab-b:                #163C74;
+  --tab-hover-a:          #2A5FAA;
+  --tab-hover-b:          #1E4F94;
+  --tab-active-a:         #0E2A58;
+  --tab-active-b:         #0B1F46;
+
+  --startbtn-a:           #2B7A2B;
+  --startbtn-b:           #45A845;
+  --startbtn-border:      #145514;
+  --startbtn-hover-a:     #38923B;
+  --startbtn-hover-b:     #52BC52;
+
+  --startmenu-border:     #1C3E7A;
+  --startmenu-header-a:   #4682B4;
+  --startmenu-header-b:   #1C3E7A;
+  --startmenu-item-hover: #1C4B8E;
+  --startmenu-rightcol:   #CEDAE8;
+  --startmenu-divider:    #A8BCCF;
+  --startmenu-footer-bdr: #13306A;
+  --startmenu-pinned:     #071A3C;
+
+  --menu-hover:           #1C4B8E;
+  --app-bg:               #EAE8E1;
+  --toolbar-bg:           #E4E2DC;
+  --toolbar-border:       #8A8A80;
+  --link-color:           #0F2750;
+  --link-color-light:     #1C3E7A;
+  --btn-border:           #6685A4;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #EAE8E1;
+  --input-border:         #6685A4;
+  --sidebar-bg:           #E4E2DC;
+}
+
+/* Thema: Zune (oranje/donker) */
+[data-theme="zune"] {
+  --win-bg:               #E8E4E0;
+  --win-frame-border:     #3A3A3A;
+  --win-frame-shadow:     #1A1A1A;
+  --win-titlebar-a:       #3A3A3A;
+  --win-titlebar-b:       #5A5A5A;
+  --win-titlebar-c:       #3A3A3A;
+  --win-titlebar-d:       #1A1A1A;
+  --win-content-border:   #808080;
+  --win-btn-bg:           #5A5A5A;
+
+  --taskbar-a:            #2C2C2C;
+  --taskbar-b:            #3E3E3E;
+  --taskbar-c:            #2C2C2C;
+  --taskbar-d:            #1A1A1A;
+  --tab-a:                #4A4A4A;
+  --tab-b:                #3A3A3A;
+  --tab-hover-a:          #5A5A5A;
+  --tab-hover-b:          #4A4A4A;
+  --tab-active-a:         #2A2A2A;
+  --tab-active-b:         #1A1A1A;
+
+  --startbtn-a:           #D45500;
+  --startbtn-b:           #F47B20;
+  --startbtn-border:      #8B3800;
+  --startbtn-hover-a:     #E86510;
+  --startbtn-hover-b:     #FF8C30;
+
+  --startmenu-border:     #3A3A3A;
+  --startmenu-header-a:   #5A5A5A;
+  --startmenu-header-b:   #2C2C2C;
+  --startmenu-item-hover: #D45500;
+  --startmenu-rightcol:   #E0DCDA;
+  --startmenu-divider:    #B0AAAA;
+  --startmenu-footer-bdr: #2C2C2C;
+  --startmenu-pinned:     #1A1A1A;
+
+  --menu-hover:           #D45500;
+  --app-bg:               #E8E4E0;
+  --toolbar-bg:           #E0DCDA;
+  --toolbar-border:       #908880;
+  --link-color:           #1A1A1A;
+  --link-color-light:     #D45500;
+  --btn-border:           #808080;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #E8E4E0;
+  --input-border:         #808080;
+  --sidebar-bg:           #E0DCDA;
+}
+
+/* Thema: Royale Noir (donker met blauwe gloed) */
+[data-theme="royale-noir"] {
+  --win-bg:               #E2E0DA;
+  --win-frame-border:     #1A1A2E;
+  --win-frame-shadow:     #0A0A1A;
+  --win-titlebar-a:       #1A1A2E;
+  --win-titlebar-b:       #2E3E6E;
+  --win-titlebar-c:       #1A1A2E;
+  --win-titlebar-d:       #0A0A1A;
+  --win-content-border:   #5A5A6E;
+  --win-btn-bg:           #2E3E6E;
+
+  --taskbar-a:            #141422;
+  --taskbar-b:            #1E2040;
+  --taskbar-c:            #141422;
+  --taskbar-d:            #0A0A14;
+  --tab-a:                #242848;
+  --tab-b:                #1A1E38;
+  --tab-hover-a:          #2E3258;
+  --tab-hover-b:          #242848;
+  --tab-active-a:         #101428;
+  --tab-active-b:         #0A0C1A;
+
+  --startbtn-a:           #2B7A2B;
+  --startbtn-b:           #45A845;
+  --startbtn-border:      #145514;
+  --startbtn-hover-a:     #38923B;
+  --startbtn-hover-b:     #52BC52;
+
+  --startmenu-border:     #1A1A2E;
+  --startmenu-header-a:   #2E3E6E;
+  --startmenu-header-b:   #1A1A2E;
+  --startmenu-item-hover: #2E3E6E;
+  --startmenu-rightcol:   #D0D0DA;
+  --startmenu-divider:    #9A9AAA;
+  --startmenu-footer-bdr: #141422;
+  --startmenu-pinned:     #0A0A14;
+
+  --menu-hover:           #2E3E6E;
+  --app-bg:               #E2E0DA;
+  --toolbar-bg:           #DAD8D2;
+  --toolbar-border:       #8A8880;
+  --link-color:           #0A0A1A;
+  --link-color-light:     #1A1A2E;
+  --btn-border:           #5A5A6E;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #E2E0DA;
+  --input-border:         #5A5A6E;
+  --sidebar-bg:           #DAD8D2;
+}
+
+/* Thema: Energy Blue (helder aquablauw) */
+[data-theme="energy-blue"] {
+  --win-bg:               #ECE9D8;
+  --win-frame-border:     #0068D2;
+  --win-frame-shadow:     #004AA0;
+  --win-titlebar-a:       #0068D2;
+  --win-titlebar-b:       #38A8F0;
+  --win-titlebar-c:       #0068D2;
+  --win-titlebar-d:       #004AA0;
+  --win-content-border:   #6CAED8;
+  --win-btn-bg:           #38A8F0;
+
+  --taskbar-a:            #0060C8;
+  --taskbar-b:            #28A0F0;
+  --taskbar-c:            #0060C8;
+  --taskbar-d:            #004090;
+  --tab-a:                #1E90E8;
+  --tab-b:                #0870CC;
+  --tab-hover-a:          #38A8F0;
+  --tab-hover-b:          #1E90E8;
+  --tab-active-a:         #004EA8;
+  --tab-active-b:         #003C88;
+
+  --startbtn-a:           #3FA142;
+  --startbtn-b:           #61BB46;
+  --startbtn-border:      #165C1F;
+  --startbtn-hover-a:     #4FB64F;
+  --startbtn-hover-b:     #6FD14F;
+
+  --startmenu-border:     #0068D2;
+  --startmenu-header-a:   #38A8F0;
+  --startmenu-header-b:   #0068D2;
+  --startmenu-item-hover: #0870CC;
+  --startmenu-rightcol:   #D0E8FA;
+  --startmenu-divider:    #A8D0F0;
+  --startmenu-footer-bdr: #004AA0;
+  --startmenu-pinned:     #002860;
+
+  --menu-hover:           #0870CC;
+  --app-bg:               #ECE9D8;
+  --toolbar-bg:           #E8F0F8;
+  --toolbar-border:       #88AAC8;
+  --link-color:           #002860;
+  --link-color-light:     #0068D2;
+  --btn-border:           #6CAED8;
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       #ECE9D8;
+  --input-border:         #6CAED8;
+  --sidebar-bg:           #E8F0F8;
+}
+
+/* Thema: Klassiek (Windows 98) */
+[data-theme="klassiek"] {
+  --win-bg:               #C0C0C0;
+  --win-frame-border:     #000080;
+  --win-frame-shadow:     #000060;
+  --win-titlebar-a:       #000080;
+  --win-titlebar-b:       #1084D0;
+  --win-titlebar-c:       #000080;
+  --win-titlebar-d:       #000060;
+  --win-content-border:   #808080;
+  --win-btn-bg:           #C0C0C0;
+
+  --taskbar-a:            #C0C0C0;
+  --taskbar-b:            #D4D0C8;
+  --taskbar-c:            #C0C0C0;
+  --taskbar-d:            #808080;
+  --tab-a:                #D4D0C8;
+  --tab-b:                #C0C0C0;
+  --tab-hover-a:          #E0DCD4;
+  --tab-hover-b:          #D4D0C8;
+  --tab-active-a:         #A0A0A0;
+  --tab-active-b:         #808080;
+
+  --startbtn-a:           #C0C0C0;
+  --startbtn-b:           #D4D0C8;
+  --startbtn-border:      #808080;
+  --startbtn-hover-a:     #D4D0C8;
+  --startbtn-hover-b:     #E0DCD4;
+
+  --startmenu-border:     #808080;
+  --startmenu-header-a:   #000080;
+  --startmenu-header-b:   #1084D0;
+  --startmenu-item-hover: #000080;
+  --startmenu-rightcol:   #C0C0C0;
+  --startmenu-divider:    #808080;
+  --startmenu-footer-bdr: #808080;
+  --startmenu-pinned:     #000000;
+
+  --menu-hover:           #000080;
+  --app-bg:               #C0C0C0;
+  --toolbar-bg:           #C0C0C0;
+  --toolbar-border:       #808080;
+  --link-color:           #000080;
+  --link-color-light:     #000080;
+  --btn-border:           #808080;
+  --btn-gradient-a:       #D4D0C8;
+  --btn-gradient-b:       #C0C0C0;
+  --input-border:         #808080;
+  --sidebar-bg:           #C0C0C0;
+}
+

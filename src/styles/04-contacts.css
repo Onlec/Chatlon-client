@@ -1,0 +1,783 @@
+/* ================================================
+   15. CHAT MESSENGER CONTACTENLIJST
+   ================================================ */
+
+.contacts-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--app-bg);
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+}
+
+/* ---- Chatlon Sign-in Screen ---- */
+.contacts-signin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 24px 32px;
+  background: linear-gradient(180deg, #e8f0fe 0%, #d4e4fc 100%);
+}
+
+.contacts-signin-logo {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.contacts-signin-brand {
+  font-size: 22px;
+  font-weight: bold;
+  color: #0066cc;
+  letter-spacing: -0.5px;
+}
+
+.contacts-signin-subtitle {
+  font-size: 12px;
+  color: #336699;
+  margin-top: 2px;
+}
+
+.contacts-signin-fields {
+  width: 100%;
+  max-width: 240px;
+  margin-bottom: 12px;
+}
+
+.contacts-signin-field {
+  margin-bottom: 8px;
+}
+
+.contacts-signin-label {
+  display: block;
+  font-size: 11px;
+  color: #333;
+  margin-bottom: 3px;
+}
+
+.contacts-signin-input {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  border: 1px solid #adb5bd;
+  background: #f0f0f0;
+  color: #888;
+  cursor: default;
+  box-sizing: border-box;
+}
+
+.contacts-signin-options {
+  margin-bottom: 16px;
+}
+
+.contacts-signin-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #333;
+  cursor: pointer;
+}
+
+.contacts-signin-btn {
+  padding: 5px 24px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+  border: 1px solid #999;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.contacts-signin-btn:hover {
+  background: linear-gradient(180deg, #fff 0%, #c8d8e8 100%);
+  border-color: #0066cc;
+}
+
+.contacts-signin-btn:active {
+  background: linear-gradient(180deg, #ccc 0%, #eee 100%);
+}
+
+.contacts-signin-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #666;
+}
+
+.contacts-signin-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #4caf50;
+}
+
+/* ---- Chatlon Signing-in Animation ---- */
+.contacts-signing-in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 24px 32px;
+  background: linear-gradient(180deg, #e8f0fe 0%, #d4e4fc 100%);
+}
+
+.contacts-signin-email {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.contacts-signin-message {
+  font-size: 11px;
+  color: #555;
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.contacts-signin-progress {
+  width: 200px;
+  height: 16px;
+  background: #e0e0e0;
+  border: 1px solid #999;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.contacts-signin-progress-bar {
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, #3a7bd5, #5ba3e6, #3a7bd5);
+  background-size: 200% 100%;
+  animation: signin-progress 1.2s ease-in-out infinite;
+  border-radius: 1px;
+}
+
+@keyframes signin-progress {
+  0% { margin-left: -30%; }
+  100% { margin-left: 100%; }
+}
+
+.contacts-signin-cancel {
+  padding: 4px 16px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+  border: 1px solid #999;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.contacts-signin-cancel:hover {
+  border-color: #666;
+}
+
+.contacts-menubar {
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--toolbar-border);
+  display: flex;
+  gap: 0;
+  padding: 2px 0;
+  font-size: var(--ui-font-size);
+  flex-shrink: 0;
+}
+
+.contacts-menu-item {
+  padding: 3px 8px;
+  cursor: default;
+  user-select: none;
+}
+
+.contacts-menu-item:hover,
+.contacts-menu-item.active {
+  background: var(--menu-hover);
+  color: white;
+}
+
+/* ============================
+   Dropdown Menu Component
+   ============================ */
+
+.dropdown-menu-wrapper {
+  position: relative;
+}
+
+.dropdown-panel {
+  background: var(--app-bg);
+  border: 1px solid #808080;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+  z-index: 10000;
+  min-width: 200px;
+  padding: 2px 0;
+  color: #000;
+  text-shadow: none;
+}
+
+.dropdown-panel-portal {
+  position: fixed;
+}
+
+.dropdown-item {
+  padding: 4px 24px 4px 8px;
+  cursor: default;
+  white-space: nowrap;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-item:hover {
+  background: var(--menu-hover);
+  color: white;
+}
+
+.dropdown-item-disabled {
+  color: #808080;
+}
+
+.dropdown-item-disabled:hover {
+  background: transparent;
+  color: #808080;
+}
+
+.dropdown-separator {
+  height: 1px;
+  background: #C0C0C0;
+  margin: 3px 4px;
+}
+
+.dropdown-check {
+  display: inline-block;
+  width: 16px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.dropdown-item-label {
+  flex: 1;
+}
+
+.dropdown-arrow {
+  font-size: 8px;
+  margin-left: 12px;
+}
+
+.dropdown-submenu {
+  position: absolute;
+  left: 100%;
+  top: -2px;
+}
+
+/* ============================
+   Options Dialog (MSN-stijl)
+   ============================ */
+
+.options-dialog {
+  width: 500px;
+  min-width: 400px;
+}
+
+.options-body {
+  display: flex;
+  min-height: 280px;
+}
+
+.options-sidebar {
+  width: 140px;
+  background: #F5F5F5;
+  border-right: 1px solid #C0C0C0;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+.options-sidebar-item {
+  padding: 8px 12px;
+  cursor: default;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.options-sidebar-item:hover {
+  background: #E8E8E8;
+}
+
+.options-sidebar-item.active {
+  background: var(--menu-hover);
+  color: white;
+}
+
+.options-sidebar-icon {
+  font-size: 14px;
+}
+
+.options-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.options-footer {
+  border-top: 1px solid #C0C0C0;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  background: var(--app-bg);
+}
+
+.options-field {
+  margin-bottom: 12px;
+}
+
+.options-field label {
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.contacts-user-section {
+  background: linear-gradient(to bottom, #FFFFFF 0%, #CCE5FF 55%, #AAD4FF 100%);
+  border-bottom: 2px solid #7AB8F5;
+  padding: 12px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+}
+
+.contacts-user-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+
+.contacts-user-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.contacts-user-avatar {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--btn-border);
+  border-radius: 2px;
+}
+
+.contacts-user-details {
+  flex: 1;
+}
+
+.contacts-user-name {
+  font-weight: bold;
+  font-size: 13px;
+  color: var(--link-color);
+  margin-bottom: 0px;
+  cursor: default;
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contacts-displayname-input {
+  font-weight: bold;
+  font-size: 13px;
+  color: var(--link-color);
+  border: 1px solid var(--link-color);
+  padding: 0 2px;
+  width: 100%;
+  font-family: 'Tahoma', sans-serif;
+  box-sizing: border-box;
+}
+
+.contacts-user-subname {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.contacts-personal-message {
+  font-size: var(--ui-font-size);
+  color: #666;
+  font-style: italic;
+  cursor: text;
+  padding: 2px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.contacts-personal-message:hover {
+  border: 1px solid var(--btn-border);
+  background: white;
+}
+
+.contacts-personal-message-input {
+  width: 100%;
+  font-size: var(--ui-font-size);
+  font-style: italic;
+  padding: 2px;
+  border: 1px solid var(--btn-border);
+  outline: none;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.contacts-status-selector {
+  margin-top: 8px;
+}
+
+.contacts-status-current {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-left: 3px solid #7AC142;
+  padding-left: 8px;
+}
+
+.contacts-user-name-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.contacts-user-name-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.contacts-status-arrow {
+  font-size: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  user-select: none;
+  color: #444;
+  margin-top: 3px;
+  transition: opacity 0.1s;
+}
+
+.contacts-status-arrow:hover {
+  opacity: 0.6;
+}
+
+.contacts-status-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: white;
+  border: 1px solid #808080;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.25);
+  z-index: 10000;
+  min-width: 160px;
+  padding: 2px 0;
+}
+
+.contacts-status-popup-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  cursor: default;
+  position: relative;
+}
+
+.contacts-status-popup-item:hover {
+  background: var(--menu-hover);
+  color: white;
+}
+
+.contacts-status-popup-item.active .contacts-status-popup-check {
+  visibility: visible;
+}
+
+.contacts-status-popup-check {
+  visibility: hidden;
+  font-size: 10px;
+  margin-right: -4px;
+}
+
+.contacts-status-popup-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.2);
+  flex-shrink: 0;
+}
+
+.contacts-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.contacts-status-dropdown {
+  border: 1px solid var(--btn-border);
+  padding: 2px;
+  font-size: var(--ui-font-size);
+  font-family: 'Tahoma', sans-serif;
+  background: white;
+  cursor: pointer;
+}
+
+.contacts-list-section {
+  flex: 1;
+  overflow-y: auto;
+  background: white;
+}
+
+
+.contacts-list {
+  padding: 4px 0;
+}
+
+.contacts-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: var(--ui-font-size);
+  color: #666;
+  font-style: italic;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #F0F4FA;
+  min-height: 20px;
+}
+
+.contact-item:hover {
+  background: linear-gradient(to bottom, rgba(255,255,255,0.85) 0%, rgba(180,220,255,0.7) 100%);
+  border-left: 2px solid #7AB8F5;
+  padding-left: 8px;
+}
+
+.contact-item-blocked {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.contact-item-blocked:hover {
+  background: transparent;
+}
+
+.contacts-group-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #0A2B66;
+  padding: 4px 8px;
+  background: linear-gradient(to bottom, #C4DEFF 0%, #A0C8FF 100%);
+  border-top: 1px solid #7AB8F5;
+  border-bottom: 1px solid #7AB8F5;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+  cursor: pointer;
+  user-select: none;
+  text-transform: none;
+  letter-spacing: normal;
+  margin-top: 0;
+}
+
+.contacts-group-header:hover {
+  background: linear-gradient(to bottom, #B0D4FF 0%, #88BAFF 100%);
+}
+
+.contacts-group-arrow {
+  font-size: 8px;
+  color: #336;
+  width: 10px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.contact-avatar-thumb {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #C0C8D8;
+  border-radius: 2px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.contact-item-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.contact-name {
+  font-size: 11px;
+  font-weight: bold;
+  color: #000;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.contact-status-label {
+  font-size: var(--ui-font-size-sm);
+  color: #555;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.contact-personal-msg {
+  font-size: 10px;
+  color: #888;
+  font-style: italic;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contact-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.2);
+  flex-shrink: 0;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.contact-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+}
+
+.contact-avatar-status {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid white;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+}
+
+.contacts-task-panel {
+  background: #EEF4FF;
+  border-top: 1px solid #B0C8E8;
+  flex-shrink: 0;
+}
+
+.contacts-task-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #1F3A66;
+  cursor: pointer;
+  user-select: none;
+  background: linear-gradient(to bottom, #D8E8FA 0%, #C8D8F0 100%);
+  border-bottom: 1px solid #B0C8E8;
+}
+
+.contacts-task-header:hover {
+  background: linear-gradient(to bottom, #C8D8F0 0%, #B8C8E0 100%);
+}
+
+.contacts-task-arrow {
+  font-size: 8px;
+  width: 10px;
+  text-align: center;
+}
+
+.contacts-task-list {
+  padding: 4px 0;
+}
+
+.contacts-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 20px;
+  font-size: 11px;
+  font-family: 'Tahoma', sans-serif;
+  color: #003399;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.contacts-task-item:hover {
+  color: #FF6600;
+}
+
+.contacts-task-icon {
+  font-size: 13px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.contacts-task-item-disabled {
+  color: #888;
+  text-decoration: none;
+  cursor: default;
+}
+
+.contacts-task-item-disabled:hover {
+  color: #888;
+}
+
+.contacts-bottom-banner {
+  background: linear-gradient(to bottom, #FFFFFF 0%, #E8F2FD 100%);
+  border-top: 1px solid var(--btn-border);
+  padding: 8px;
+  text-align: center;
+  font-size: var(--ui-font-size-sm);
+  color: var(--link-color);
+  flex-shrink: 0;
+}
+
+.contacts-ad-space {
+  cursor: pointer;
+}
+
+.contacts-ad-space:hover {
+  text-decoration: underline;
+}

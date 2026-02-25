@@ -35,6 +35,29 @@ If something is not described here, it is either:
 
 ---
 
+## CSS Ownership (Split Baseline)
+
+Current baseline:
+- `src/App.css` is the runtime stylesheet entrypoint and now acts as an import aggregator.
+- Domain styles live in `src/styles/` (`00-tokens.css` through `08-utilities-overrides.css`).
+- CSS split remains behavior-preserving.
+
+Non-negotiable migration rules:
+- No selector renames during extraction.
+- No specificity changes during extraction.
+- No visual/UX changes during extraction.
+- Import order becomes a contract once split files are introduced.
+
+Visual regression baseline checklist (run after each CSS split step):
+- Desktop shell: start menu, systray, taskbar tabs (`active`, `unread`, `minimized`)
+- Messenger panes: Contacts and Conversation open/close/minimize visuals
+- Conversation details: typing indicator, history divider, load older button
+- Toasts/modals: visibility, z-index, clickability, close behavior
+- Boot/login/logoff/shutdown screens and transitions
+- App panes: notepad, calculator, paint, browser, media, teamtalk, pinball, tictactoe
+
+---
+
 ## 🪟 Window Manager (Panes dX)
 
 ### Core Principles
@@ -299,7 +322,8 @@ src/
   utils/          ← debug, chatUtils, encryption, emoticons,
                      gunListenerManager, presenceUtils, …
   App.js          ← global orchestrator (see Window Manager)
-  App.css         ← single stylesheet
+  App.css         <- stylesheet entrypoint (imports src/styles/*)
+  styles/         <- domain CSS files (tokens, shell, login, contacts, conversation, apps, overrides)
   gun.js          ← singleton Gun instance
   paneConfig.js   ← pane registry (imports from components/panes/)
   index.js
@@ -318,7 +342,7 @@ src/
 ## 🎨 UI & Styling
 
 ### Styling Rules
-- Single CSS file (`App.css`)
+- `App.css` is the CSS entrypoint; selectors are maintained in `src/styles/*`
 - XP-style look is mandatory; Frutiger Aero accents (blue gradients, gloss overlays) are allowed
 - No UI frameworks
 - No CSS-in-JS
@@ -438,3 +462,4 @@ The shell command bus supports these command types:
 - Current product behavior enforces one active/pending flow per contact+gameType.
 - Stale pending invite guard is 5 minutes.
 - Messenger sign-out/close must close conversation and game panes.
+

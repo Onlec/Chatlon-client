@@ -319,6 +319,53 @@ Automated:
 - `src/components/panes/ConversationPane.listeners.test.js`
   - listener lifecycle stability across session changes
 
+## CSS Split Regression Appendix (UI-only)
+
+Use this checklist after edits in:
+- `src/App.css`
+- `src/styles/00-tokens.css` through `src/styles/08-utilities-overrides.css`
+
+### UI Scenarios
+
+### U1) Desktop shell
+1. Open/close start menu.
+2. Open systray menu and click outside.
+3. Open/minimize/restore panes via taskbar.
+
+Expected:
+- No z-index or hitbox regressions.
+- Active/minimized/unread taskbar states remain correct.
+
+### U2) Messenger pane visuals
+1. Open Contacts pane and Conversation pane.
+2. Minimize and restore both.
+3. Trigger typing indicator and legacy divider view.
+
+Expected:
+- Pane chrome and content layout remain unchanged.
+- Typing indicator, legacy divider, load-older button render as before.
+
+### U3) Toasts and modals
+1. Trigger message, nudge and presence toasts.
+2. Open a modal and interact with close controls.
+
+Expected:
+- Toasts stay clickable and correctly layered.
+- Modal stays above panes/toasts as intended.
+
+### U4) Boot/login/logoff/shutdown
+1. Run boot -> login.
+2. Trigger logoff and shutdown paths.
+
+Expected:
+- Existing transitions and overlays stay visually identical.
+
+### U5) App pane smoke test
+1. Open: notepad, calculator, paint, browser, media, teamtalk, tictactoe.
+
+Expected:
+- Baseline rendering unchanged across all panes.
+
 Manual:
 - C1, C2, C3, C4, C5, C6 in real browser contexts with real relay timing.
 

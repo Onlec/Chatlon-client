@@ -1,0 +1,111 @@
+/* ============================================
+   GLOBAL SCANLINES OVERLAY
+   ============================================ */
+
+/* Root overlay - altijd bovenop hele app */
+.scanlines-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 999999;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  animation: crt-flicker 0.15s infinite;
+}
+
+.scanlines-overlay.disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Horizontale scanlines */
+.scanlines-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.05) 0px,
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  animation: scanline-move 8s linear infinite;
+}
+
+@keyframes scanline-move {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
+}
+
+/* CRT Vignette effect */
+.scanlines-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    ellipse at center, 
+    transparent 60%, 
+    rgba(0, 0, 0, 0.12) 100%
+  );
+  pointer-events: none;
+}
+
+/* Subtle screen flicker */
+@keyframes crt-flicker {
+  0%, 100% { 
+    filter: brightness(1);
+  }
+  50% { 
+    filter: brightness(0.985);
+  }
+}
+
+/* ================================================
+   1. DESKTOP BASIS
+   ================================================ */
+
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: 'Tahoma', 'MS Sans Serif', 'Microsoft Sans Serif', sans-serif;
+}
+
+.desktop {
+  width: 100vw;
+  height: 100vh;
+  background: #3A6EA5;
+  position: relative;
+}
+
+#portal-root {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+#portal-root > * {
+  pointer-events: auto;
+}
+
+.pane-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 30px);
+  pointer-events: none;
+}

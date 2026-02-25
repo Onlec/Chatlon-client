@@ -24,7 +24,7 @@ Keep it concise, factual, and current.
 - Pane/window state is managed centrally (App + pane manager hook).
 - Functional React components only.
 - Gun callbacks should use refs for reactive values (avoid stale closures).
-- Styling is centralized in `gun-client/src/App.css`.
+- Styling entrypoint is `gun-client/src/App.css`; selectors are split by domain under `gun-client/src/styles/`.
 
 ## 3. Important Documentation
 - Source of truth architecture: `gun-client/docs/ARCHITECTURE.md`
