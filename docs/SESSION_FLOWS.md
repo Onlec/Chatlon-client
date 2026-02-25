@@ -158,6 +158,37 @@ Expected:
 - A and B never kick each other across accounts.
 - No repeated `Detected other session` loop for B after step 3.
 
+### 13) Games Invite Flow (Request-Scoped)
+1. Open conversation A<->B.
+2. A sends Tic Tac Toe invite.
+3. B accepts.
+4. A or B closes game pane.
+
+Expected:
+- Invite records are request-scoped (no overwrite race on a single pair node).
+- Accept targets the same requestId.
+- Closing game pane can end the game state, but should not auto-reopen abandoned game on conversation reopen.
+
+### 14) Games Button Lock Rules
+1. Start a game between A and B.
+2. Verify "Spelletjes" button while game pane is open.
+3. Close game pane.
+4. Send/cancel/decline invite flow and re-check button.
+
+Expected:
+- Button disabled while local game pane is open.
+- Button disabled while incoming/outgoing pending invite exists.
+- Button re-enabled after close/cancel/decline resolves.
+
+### 15) Messenger Sign-Out Closes Games
+1. Open active game pane.
+2. Sign out messenger or close messenger pane.
+
+Expected:
+- All conversation panes close.
+- All game panes close.
+- No playable game pane remains after messenger sign-out/close.
+
 ## Quick Log Signals
 
 Good:

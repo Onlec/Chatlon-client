@@ -90,8 +90,16 @@ export function usePaneManager() {
     clearNotificationTime,
     closeConversation,
     closeAllConversations: window.closeAllConversations,
+    closeAllGames: window.closeAllGames,
     minimizeConversation: window.minimizeConversation,
     toggleMaximizeConversation: window.toggleMaximizeConversation,
+
+    // Game actions
+    games: window.games,
+    openGamePane: window.openGamePane,
+    closeGamePane: window.closeGamePane,
+    minimizeGamePane: window.minimizeGamePane,
+    toggleMaximizeGamePane: window.toggleMaximizeGamePane,
 
     // Helpers
     getZIndex: window.getZIndex,

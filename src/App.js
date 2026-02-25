@@ -147,6 +147,7 @@ function App() {
     openConversation,
     closeConversation,
     closeAllConversations,
+    closeAllGames,
     minimizeConversation,
     toggleMaximizeConversation,
     getZIndex,
@@ -159,7 +160,12 @@ function App() {
     resetAll,
     setNotificationTime,
     unreadMetadata,
-    clearNotificationTime
+    clearNotificationTime,
+    games,
+    openGamePane,
+    closeGamePane,
+    minimizeGamePane,
+    toggleMaximizeGamePane
   } = usePaneManager();
 
   const desktopCommandBus = useDesktopCommandBus({
@@ -189,10 +195,13 @@ const onTaskbarClick = React.useCallback((paneId) => {
         next.delete(paneId);
         return next;
       });
+    } else if (paneId.startsWith('game_')) {
+      const game = games[paneId];
+      if (game) openGamePane(game.contactName, game.gameSessionId, game.gameType);
     } else {
       handleTaskbarClick(paneId);
     }
-  }, [desktopCommandBus, handleTaskbarClick]);
+  }, [desktopCommandBus, handleTaskbarClick, games, openGamePane]);
 
   const messengerCoordinator = useMessengerCoordinator({
     currentUser,
@@ -494,12 +503,13 @@ const onTaskbarClick = React.useCallback((paneId) => {
   useEffect(() => {
     if (messengerSignedIn) return;
     closeAllConversations();
+    closeAllGames();
     setUnreadChats((prev) => {
       if (!prev || prev.size === 0) return prev;
       const next = new Set([...prev].filter((id) => !String(id).startsWith('conv_')));
       return next.size === prev.size ? prev : next;
     });
-  }, [messengerSignedIn, closeAllConversations]);
+  }, [messengerSignedIn, closeAllConversations, closeAllGames]);
 
   const systrayManager = useSystrayManager({
     userStatus,
@@ -509,10 +519,12 @@ const onTaskbarClick = React.useCallback((paneId) => {
     },
     onSignOut: () => {
       closeAllConversations();
+      closeAllGames();
       setMessengerSignedIn(false);
     },
     onCloseMessenger: () => {
       closeAllConversations();
+      closeAllGames();
       setMessengerSignedIn(false);
       desktopCommandBus.closePane('contacts');
     }
@@ -623,10 +635,16 @@ const onTaskbarClick = React.useCallback((paneId) => {
         getInitialPosition,
         handlePositionChange,
         openConversation,
+        games,
+        openGamePane,
+        closeGamePane,
+        minimizeGamePane,
+        toggleMaximizeGamePane,
         userStatus,
         handleStatusChange,
         handleLogoff,
         closeAllConversations,
+        closeAllGames,
         setMessengerSignedIn,
         nowPlaying,
         currentUser,
@@ -658,6 +676,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
         paneOrder,
         unreadChats,
         conversations,
+        games,
         activePane,
         onTaskbarClick,
         panes,

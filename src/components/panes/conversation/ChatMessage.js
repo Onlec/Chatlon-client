@@ -20,6 +20,38 @@ function ChatMessage({ msg, prevMsg, currentUser }) {
     );
   }
 
+  // Game systeemberichten
+  if (msg.type === 'gameinvite' || msg.type === 'gameaccept' || msg.type === 'gamedecline') {
+    const isSelf = msg.sender === currentUser;
+    const name = getDisplayName(msg.sender);
+    const gameLabel = msg.gameType === 'tictactoe' ? 'Tic Tac Toe' : (msg.gameType || 'een spel');
+    let icon, text;
+    if (msg.type === 'gameinvite') {
+      icon = '\uD83C\uDFB2';
+      text = isSelf
+        ? `Je hebt een ${gameLabel}-uitnodiging gestuurd.`
+        : <><strong>{name}</strong> heeft een {gameLabel}-uitnodiging gestuurd.</>;
+    } else if (msg.type === 'gameaccept') {
+      icon = '\u2705';
+      text = isSelf
+        ? `Je hebt de ${gameLabel}-uitnodiging geaccepteerd.`
+        : <><strong>{name}</strong> heeft de {gameLabel}-uitnodiging geaccepteerd.</>;
+    } else {
+      icon = '\u274C';
+      text = isSelf
+        ? `Je hebt de ${gameLabel}-uitnodiging geweigerd.`
+        : <><strong>{name}</strong> heeft de {gameLabel}-uitnodiging geweigerd.</>;
+    }
+    return (
+      <>
+        {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
+        <div className="chat-message-system">
+          {icon} {text}
+        </div>
+      </>
+    );
+  }
+
   const selfClass = msg.sender === currentUser ? 'self' : 'contact';
   return (
     <>

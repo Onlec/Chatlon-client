@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { getContactPairId } from '../../utils/chatUtils';
 
 const mockPlaySound = jest.fn();
 
@@ -476,5 +477,110 @@ describe('ConversationPane behavior guards', () => {
       // Expected window: 5 legacy + 10 unread non-legacy = 15 (not 25).
       expect(document.querySelectorAll('.chat-message').length).toBe(15);
     });
+  });
+
+  test('incoming game invite remains visible within 5-minute stale window', async () => {
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={1000}
+        clearNotificationTime={jest.fn()}
+        contactPresenceData={null}
+      />
+    );
+
+    const pairId = getContactPairId('alice@example.com', 'bob@example.com');
+    const invitesNode = mockGetNode(`GAME_INVITES_${pairId}`);
+    const recent = Date.now() - (4 * 60 * 1000);
+
+    act(() => {
+      invitesNode.__emitMap({
+        inviter: 'bob@example.com',
+        invitee: 'alice@example.com',
+        gameType: 'tictactoe',
+        gameSessionId: 'GAME_TEST_RECENT',
+        status: 'pending',
+        createdAt: recent,
+        updatedAt: recent
+      }, 'req_recent');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/wil Tic Tac Toe spelen/)).toBeInTheDocument();
+    });
+  });
+
+  test('ignores incoming game invite older than 5 minutes', async () => {
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={1000}
+        clearNotificationTime={jest.fn()}
+        contactPresenceData={null}
+      />
+    );
+
+    const pairId = getContactPairId('alice@example.com', 'bob@example.com');
+    const invitesNode = mockGetNode(`GAME_INVITES_${pairId}`);
+    const stale = Date.now() - (6 * 60 * 1000);
+
+    act(() => {
+      invitesNode.__emitMap({
+        inviter: 'bob@example.com',
+        invitee: 'alice@example.com',
+        gameType: 'tictactoe',
+        gameSessionId: 'GAME_TEST_STALE',
+        status: 'pending',
+        createdAt: stale,
+        updatedAt: stale
+      }, 'req_stale');
+    });
+
+    expect(screen.queryByText(/wil Tic Tac Toe spelen/)).toBeNull();
+  });
+
+  test('cancels outgoing invite on the same requestId node', async () => {
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(1710000000000);
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={1000}
+        clearNotificationTime={jest.fn()}
+        contactPresenceData={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Spelletjes/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Tic Tac Toe/i }));
+
+    const pairId = getContactPairId('alice@example.com', 'bob@example.com');
+    const requestId = 'alice@example.com_tictactoe_1710000000000';
+    const requestNode = mockGetNode(`GAME_INVITES_${pairId}/${requestId}`);
+
+    await waitFor(() => {
+      expect(requestNode.put).toHaveBeenCalledWith(expect.objectContaining({ status: 'pending' }));
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Annuleren/i }));
+
+    await waitFor(() => {
+      expect(requestNode.put).toHaveBeenCalledWith(expect.objectContaining({ status: 'cancelled' }));
+    });
+
+    nowSpy.mockRestore();
+  });
+
+  test('disables games button when local game pane is open', () => {
+    render(
+      <ConversationPane
+        contactName="bob@example.com"
+        lastNotificationTime={1000}
+        clearNotificationTime={jest.fn()}
+        contactPresenceData={null}
+        hasOpenGamePane
+      />
+    );
+
+    expect(screen.getByRole('button', { name: /Spelletjes/i })).toBeDisabled();
   });
 });

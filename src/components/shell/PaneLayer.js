@@ -1,11 +1,13 @@
 import React from 'react';
 import Pane from '../Pane';
 import ConversationPane from '../panes/ConversationPane';
+import GamePane from '../panes/GamePane';
 
 function PaneLayer({
   paneConfig,
   panes,
   conversations,
+  games,
   focusPane,
   getZIndex,
   toggleMaximizePane,
@@ -17,10 +19,15 @@ function PaneLayer({
   getInitialPosition,
   handlePositionChange,
   openConversation,
+  openGamePane,
+  closeGamePane,
+  minimizeGamePane,
+  toggleMaximizeGamePane,
   userStatus,
   handleStatusChange,
   handleLogoff,
   closeAllConversations,
+  closeAllGames,
   setMessengerSignedIn,
   nowPlaying,
   currentUser,
@@ -66,8 +73,8 @@ function PaneLayer({
                   userStatus={userStatus}
                   onStatusChange={handleStatusChange}
                   onLogoff={handleLogoff}
-                  onSignOut={() => { closeAllConversations(); }}
-                  onClosePane={() => { closeAllConversations(); setMessengerSignedIn(false); closePane('contacts'); }}
+                  onSignOut={() => { closeAllConversations(); closeAllGames(); }}
+                  onClosePane={() => { closeAllConversations(); closeAllGames(); setMessengerSignedIn(false); closePane('contacts'); }}
                   nowPlaying={nowPlaying}
                   currentUserEmail={currentUser}
                   messengerSignedIn={messengerSignedIn}
@@ -113,6 +120,46 @@ function PaneLayer({
                 lastNotificationTime={unreadMetadata[conv.contactName]}
                 clearNotificationTime={clearNotificationTime}
                 contactPresenceData={sharedContactPresence[conv.contactName]}
+                onOpenGamePane={openGamePane}
+                hasOpenGamePane={Object.values(games || {}).some((game) => (
+                  game
+                  && game.isOpen
+                  && game.contactName === conv.contactName
+                ))}
+              />
+            </Pane>
+          </div>
+        );
+      })}
+      {Object.entries(games || {}).map(([gameId, game]) => {
+        if (!game || !game.isOpen) return null;
+
+        return (
+          <div
+            key={gameId}
+            onMouseDown={() => focusPane(gameId)}
+            style={{ display: game.isMinimized ? 'none' : 'block', zIndex: getZIndex(gameId), position: 'absolute' }}
+          >
+            <Pane
+              title={`Spelletje \u2013 ${getDisplayName(game.contactName)}`}
+              type="game"
+              isMaximized={game.isMaximized}
+              onMaximize={() => toggleMaximizeGamePane(gameId)}
+              onClose={() => closeGamePane(gameId)}
+              onMinimize={() => minimizeGamePane(gameId)}
+              zIndex={getZIndex(gameId)}
+              onFocus={() => focusPane(gameId)}
+              isActive={activePane === gameId}
+              savedSize={savedSizes[gameId]}
+              onSizeChange={(newSize) => handleSizeChange(gameId, newSize)}
+              initialPosition={getInitialPosition(gameId)}
+              onPositionChange={(newPosition) => handlePositionChange(gameId, newPosition)}
+            >
+              <GamePane
+                contactName={game.contactName}
+                gameSessionId={game.gameSessionId}
+                gameType={game.gameType}
+                currentUser={currentUser}
               />
             </Pane>
           </div>

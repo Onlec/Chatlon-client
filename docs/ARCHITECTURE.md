@@ -408,3 +408,33 @@ The shell command bus supports these command types:
 - `CLOSE_PANE`
 - `TOGGLE_START`
 - `OPEN_CONTACTS`
+
+## Games Architecture
+
+### Invite Protocol
+- Invites are request-scoped:
+  - `GAME_INVITES_{pairId}/{requestId}`
+- Invite record fields:
+  - `requestId`, `inviter`, `invitee`, `gameType`, `gameSessionId`, `status`, `createdAt`, `updatedAt`
+- Status flow:
+  - `pending -> accepted|declined|cancelled`
+
+### Game Session State
+- Session node:
+  - `GAME_STATE_{gameSessionId}`
+- Current TicTacToe fields:
+  - `board`, `currentTurn`, `winner`, `player1`, `player2`, `status`, `abandonedBy`
+
+### Ownership
+- `ConversationPane`:
+  - invite send/accept/decline/cancel behavior
+  - conversation-level game invite lock state for the toolbar
+- `useWindowManager`:
+  - game pane lifecycle (`openGamePane`, `closeGamePane`, `minimizeGamePane`, `toggleMaximizeGamePane`, `closeAllGames`)
+- `PaneLayer` and `Taskbar`:
+  - rendering and routing for `game_` windows
+
+### Rules
+- Current product behavior enforces one active/pending flow per contact+gameType.
+- Stale pending invite guard is 5 minutes.
+- Messenger sign-out/close must close conversation and game panes.

@@ -46,6 +46,16 @@ export function startConversationStreams({
       return;
     }
 
+    // Game system messages — not encrypted, pass through directly
+    if (['gameinvite', 'gameaccept', 'gamedecline'].includes(normalizedBaseMessage.type)) {
+      if (streamGenerationRef.current !== streamGeneration) return;
+      onMessage({
+        ...normalizedBaseMessage,
+        isLegacy: normalizedBaseMessage.timeRef < boundary
+      });
+      return;
+    }
+
     if (!normalizedBaseMessage.content || normalizedBaseMessage.content === '__nudge__') return;
     if (streamGenerationRef.current !== streamGeneration) return;
 

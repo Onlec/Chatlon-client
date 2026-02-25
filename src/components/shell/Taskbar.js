@@ -7,6 +7,7 @@ function Taskbar({
   paneOrder,
   unreadChats,
   conversations,
+  games,
   activePane,
   onTaskbarClick,
   panes,
@@ -41,6 +42,23 @@ function Taskbar({
               >
                 <span className="taskbar-icon">{'\u{1F4AC}'}</span>
                 <span>{getDisplayName(contactName)}</span>
+              </div>
+            );
+          }
+
+          if (paneId.startsWith('game_')) {
+            const game = games?.[paneId];
+            if (!game?.isOpen) return null;
+            const gameLabel = game.gameType === 'tictactoe' ? 'Tic Tac Toe' : game.gameType;
+            return (
+              <div
+                key={paneId}
+                className={`taskbar-tab ${activePane === paneId ? 'active' : ''}`}
+                onClick={() => onTaskbarClick(paneId)}
+                title={`Spelletje met ${getDisplayName(game.contactName)}`}
+              >
+                <span className="taskbar-icon">{'\u{1F3B2}'}</span>
+                <span>{gameLabel}</span>
               </div>
             );
           }

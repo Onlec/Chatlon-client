@@ -44,6 +44,11 @@ Keep it concise, factual, and current.
 - Conversations and encrypted chat:
   - `gun-client/src/components/panes/ConversationPane.js`
   - `gun-client/src/utils/encryption.js`
+- Games invites and game panes:
+  - `gun-client/src/components/panes/GamePane.js`
+  - `gun-client/src/components/panes/games/TicTacToe.js`
+  - `gun-client/src/components/panes/conversation/ChatToolbar.js`
+  - `gun-client/src/hooks/useWindowManager.js`
 - Message and friend request listeners:
   - `gun-client/src/hooks/useMessageListeners.js`
 - Messenger coordinator (toast/unread/taskbar policy):
@@ -76,6 +81,12 @@ Keep it concise, factual, and current.
 - Portal usage alignment with architecture portal-root rules.
 - Superpeer qualification timing and related comments/docs consistency.
 - Gun signaling cleanup staying aligned with active schemas.
+- Games invite robustness:
+  - request-scoped invite records (`GAME_INVITES_{pairId}/{requestId}`) are used consistently
+  - only one active/pending game invite per contact+gameType in UI flow
+  - stale invite window is 5 minutes
+  - closing/signing out messenger closes conversation and game panes
+  - abandoned games must not auto-reopen when conversation reopens
 
 ## 7. Update Policy For This File
 Update this file whenever you:
@@ -141,3 +152,15 @@ Copy/paste in a new chat:
   - messenger hard gate (`messengerSignedIn=false` => no message/friend-request attach)
   - sign-in/sign-out transition attach-detach
   - no retro replay toasts after re-sign-in
+
+## 14. Games Data Contract
+- Invite records:
+  - `GAME_INVITES_{pairId}/{requestId}`
+  - fields: `requestId`, `inviter`, `invitee`, `gameType`, `gameSessionId`, `status`, `createdAt`, `updatedAt`
+- Game session state:
+  - `GAME_STATE_{gameSessionId}`
+  - fields: `board`, `currentTurn`, `winner`, `player1`, `player2`, `status`, `abandonedBy`
+- Current policy:
+  - one active/pending game invite flow per contact+gameType
+  - stale incoming invites ignored after 5 minutes
+  - messenger close/sign-out closes all game panes

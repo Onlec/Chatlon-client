@@ -10,8 +10,10 @@ export function useWindowManager() {
   const [savedPositions, setSavedPositions] = useState({});
   const [cascadeOffset, setCascadeOffset] = useState(0);
   const [conversations, setConversations] = useState({});
+  const [games, setGames] = useState({});
 
   const conversationsRef = useRef({});
+  const gamesRef = useRef({});
   const activePaneRef = useRef(null);
   const paneOrderRef = useRef([]);
   const panesRef = useRef({});
@@ -19,6 +21,10 @@ export function useWindowManager() {
   useEffect(() => {
     conversationsRef.current = conversations;
   }, [conversations]);
+
+  useEffect(() => {
+    gamesRef.current = games;
+  }, [games]);
 
   useEffect(() => {
     activePaneRef.current = activePane;
@@ -95,6 +101,10 @@ export function useWindowManager() {
           const conv = conversationsRef.current[p];
           return conv && conv.isOpen && !conv.isMinimized;
         }
+        if (p.startsWith('game_')) {
+          const game = gamesRef.current[p];
+          return game && game.isOpen && !game.isMinimized;
+        }
         const pane = panesRef.current[p];
         return pane && pane.isOpen && !pane.isMinimized;
       });
@@ -117,6 +127,10 @@ export function useWindowManager() {
         if (p.startsWith('conv_')) {
           const conv = conversationsRef.current[p];
           return conv && conv.isOpen && !conv.isMinimized;
+        }
+        if (p.startsWith('game_')) {
+          const game = gamesRef.current[p];
+          return game && game.isOpen && !game.isMinimized;
         }
         const pane = panesRef.current[p];
         return pane && pane.isOpen && !pane.isMinimized;
@@ -189,6 +203,10 @@ export function useWindowManager() {
           const conv = conversationsRef.current[p];
           return conv && conv.isOpen && !conv.isMinimized;
         }
+        if (p.startsWith('game_')) {
+          const game = gamesRef.current[p];
+          return game && game.isOpen && !game.isMinimized;
+        }
         const pane = panesRef.current[p];
         return pane && pane.isOpen && !pane.isMinimized;
       });
@@ -226,6 +244,111 @@ export function useWindowManager() {
     }));
   }, []);
 
+  const openGamePane = useCallback((contactName, gameSessionId, gameType) => {
+    const gameId = `game_${contactName}_${gameType}`;
+    log('[usePaneManager] Opening game pane:', gameId);
+
+    // Dedupe: skip if this exact session is already open and visible
+    const existing = gamesRef.current[gameId];
+    if (existing?.isOpen && !existing?.isMinimized && existing?.gameSessionId === gameSessionId) {
+      return;
+    }
+
+    const offset = getNextCascadeOffset();
+
+    setGames((prev) => {
+      if (!prev[gameId]) {
+        return {
+          ...prev,
+          [gameId]: {
+            contactName,
+            gameSessionId,
+            gameType,
+            isOpen: true,
+            isMinimized: false,
+            isMaximized: false,
+            initialPos: { left: 120 + offset, top: 70 + offset }
+          }
+        };
+      }
+      return {
+        ...prev,
+        [gameId]: { ...prev[gameId], gameSessionId, isOpen: true, isMinimized: false }
+      };
+    });
+
+    setPaneOrder((prev) => {
+      const filtered = prev.filter((p) => p !== gameId);
+      return [...filtered, gameId];
+    });
+
+    setActivePane(gameId);
+  }, [getNextCascadeOffset]);
+
+  const closeGamePane = useCallback((gameId) => {
+    log('[usePaneManager] Closing game pane:', gameId);
+
+    setGames((prev) => {
+      const updated = { ...prev };
+      delete updated[gameId];
+      return updated;
+    });
+
+    setPaneOrder((prev) => prev.filter((p) => p !== gameId));
+
+    setActivePane((prev) => {
+      if (prev !== gameId) return prev;
+      const visiblePanes = paneOrderRef.current.filter((p) => {
+        if (p === gameId) return false;
+        if (p.startsWith('conv_')) {
+          const conv = conversationsRef.current[p];
+          return conv && conv.isOpen && !conv.isMinimized;
+        }
+        if (p.startsWith('game_')) {
+          const game = gamesRef.current[p];
+          return game && game.isOpen && !game.isMinimized;
+        }
+        const pane = panesRef.current[p];
+        return pane && pane.isOpen && !pane.isMinimized;
+      });
+      return visiblePanes[visiblePanes.length - 1] || null;
+    });
+  }, []);
+
+  const minimizeGamePane = useCallback((gameId) => {
+    log('[usePaneManager] Minimizing game pane:', gameId);
+
+    setGames((prev) => ({
+      ...prev,
+      [gameId]: { ...prev[gameId], isMinimized: true }
+    }));
+
+    setActivePane((prev) => {
+      if (prev !== gameId) return prev;
+      const visiblePanes = paneOrderRef.current.filter((p) => {
+        if (p === gameId) return false;
+        if (p.startsWith('conv_')) {
+          const conv = conversationsRef.current[p];
+          return conv && conv.isOpen && !conv.isMinimized;
+        }
+        if (p.startsWith('game_')) {
+          const game = gamesRef.current[p];
+          return game && game.isOpen && !game.isMinimized;
+        }
+        const pane = panesRef.current[p];
+        return pane && pane.isOpen && !pane.isMinimized;
+      });
+      return visiblePanes[visiblePanes.length - 1] || null;
+    });
+  }, []);
+
+  const toggleMaximizeGamePane = useCallback((gameId) => {
+    setGames((prev) => ({
+      ...prev,
+      [gameId]: { ...prev[gameId], isMaximized: !prev[gameId]?.isMaximized }
+    }));
+  }, []);
+
   const getZIndex = useCallback((paneName) => {
     const currentOrder = paneOrder;
     const index = currentOrder.indexOf(paneName);
@@ -253,19 +376,50 @@ export function useWindowManager() {
       return savedPositions[paneName];
     }
 
-    const paneState = panes[paneName] || conversations[paneName];
+    const paneState = panes[paneName] || conversations[paneName] || games[paneName];
     if (paneState && paneState.initialPos) {
       return paneState.initialPos;
     }
 
     return { left: 100, top: 50 };
-  }, [savedPositions, panes, conversations]);
+  }, [savedPositions, panes, conversations, games]);
 
   const closeAllConversations = useCallback(() => {
     setConversations({});
     setPaneOrder((prev) => prev.filter((p) => !p.startsWith('conv_')));
-    setActivePane((prev) => (prev && prev.startsWith('conv_')) ? null : prev);
+    setActivePane((prevActive) => {
+      if (!prevActive || !prevActive.startsWith('conv_')) return prevActive;
+      const visiblePanes = paneOrderRef.current.filter((p) => {
+        if (p.startsWith('conv_')) return false;
+        if (p.startsWith('game_')) {
+          const game = gamesRef.current[p];
+          return game && game.isOpen && !game.isMinimized;
+        }
+        const pane = panesRef.current[p];
+        return pane && pane.isOpen && !pane.isMinimized;
+      });
+      return visiblePanes[visiblePanes.length - 1] || null;
+    });
     log('[usePaneManager] All conversations closed');
+  }, []);
+
+  const closeAllGames = useCallback(() => {
+    setGames({});
+    setPaneOrder((prev) => prev.filter((p) => !p.startsWith('game_')));
+    setActivePane((prevActive) => {
+      if (!prevActive || !prevActive.startsWith('game_')) return prevActive;
+      const visiblePanes = paneOrderRef.current.filter((p) => {
+        if (p.startsWith('game_')) return false;
+        if (p.startsWith('conv_')) {
+          const conv = conversationsRef.current[p];
+          return conv && conv.isOpen && !conv.isMinimized;
+        }
+        const pane = panesRef.current[p];
+        return pane && pane.isOpen && !pane.isMinimized;
+      });
+      return visiblePanes[visiblePanes.length - 1] || null;
+    });
+    log('[usePaneManager] All game panes closed');
   }, []);
 
   const resetWindowState = useCallback(() => {
@@ -290,6 +444,8 @@ export function useWindowManager() {
     conversations,
     setConversations,
     conversationsRef,
+    games,
+    gamesRef,
     activePaneRef,
     paneOrderRef,
     panesRef,
@@ -301,8 +457,13 @@ export function useWindowManager() {
     openConversation,
     closeConversation,
     closeAllConversations,
+    closeAllGames,
     minimizeConversation,
     toggleMaximizeConversation,
+    openGamePane,
+    closeGamePane,
+    minimizeGamePane,
+    toggleMaximizeGamePane,
     getZIndex,
     handleSizeChange,
     handlePositionChange,

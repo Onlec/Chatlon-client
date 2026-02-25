@@ -13,9 +13,8 @@ import ModalPane from '../modals/ModalPane';
 
 function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange, onLogoff, onSignOut, onClosePane, nowPlaying, currentUserEmail, messengerSignedIn, setMessengerSignedIn, contactPresenceMap = {} }) {
   const { getAvatar, getDisplayName, setMyDisplayName } = useAvatar();
-  // FIX: Gebruik props als ze beschikbaar zijn, anders lokale state
-  const [localStatus, setLocalStatus] = useState('online');
-  const myStatus = propUserStatus || localStatus;
+  // Canonical self-status komt uit App/usePresence.
+  const myStatus = propUserStatus || 'online';
 
   const [personalMessage, setPersonalMessage] = useState('');
   const [isEditingMessage, setIsEditingMessage] = useState(false);
@@ -88,8 +87,6 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
       // Zet status online via prop handler
       if (propOnStatusChange) {
         propOnStatusChange('online');
-      } else {
-        setLocalStatus('online');
       }
     }, 2000);
   };
@@ -183,11 +180,8 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   }, []);
 
   const handleStatusChange = (newStatus) => {
-    // FIX: Gebruik prop handler als beschikbaar
     if (propOnStatusChange) {
       propOnStatusChange(newStatus);
-    } else {
-      setLocalStatus(newStatus);
     }
   };
 
