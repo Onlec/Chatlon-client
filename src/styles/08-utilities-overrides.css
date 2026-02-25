@@ -15,7 +15,8 @@
 }
 
 /* Inactieve titelbalk: grijs in plaats van blauw */
-[data-theme="klassiek"] .pane-header.inactive {
+[data-theme="klassiek"] .pane-header.inactive,
+[data-theme="klassiek"] .pane-header.pane-header--inactive {
   background: linear-gradient(to right, #808080, #B0B0B0);
 }
 
@@ -32,10 +33,10 @@
   border-color: #808080 #DFDFDF #DFDFDF #808080;
   box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
 }
-[data-theme="klassiek"] .pane-btn.close {
+[data-theme="klassiek"] .pane-btn.pane-btn--close {
   background: var(--win-btn-bg);
 }
-[data-theme="klassiek"] .pane-btn.close:hover {
+[data-theme="klassiek"] .pane-btn.pane-btn--close:hover {
   background: var(--win-btn-bg);
 }
 
@@ -59,7 +60,7 @@
 [data-theme="klassiek"] .start-btn:hover {
   background: #C0C0C0;
 }
-[data-theme="klassiek"] .start-btn.pressed {
+[data-theme="klassiek"] .start-btn.start-btn--pressed {
   background: #C0C0C0;
   filter: none;
   border-color: #808080 #DFDFDF #DFDFDF #808080;
@@ -82,7 +83,7 @@
 [data-theme="klassiek"] .taskbar-tab:hover {
   background: #D4D0C8;
 }
-[data-theme="klassiek"] .taskbar-tab.active {
+[data-theme="klassiek"] .taskbar-tab.taskbar-tab--active {
   background: #C0C0C0;
   border-color: #808080 #DFDFDF #DFDFDF #808080;
   box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
@@ -237,7 +238,7 @@
   border-color: #F9B14D;
 }
 
-.dx-button:active:not(.disabled) {
+.dx-button:active:not(.disabled):not(.dx-button--disabled) {
   background: linear-gradient(to bottom, #D8D0C8 0%, #E8E4DC 50%, #D8D0C8 100%);
   box-shadow: 
     inset 1px 1px 2px #808080,
@@ -258,7 +259,8 @@
    9. DE SHAKE ANIMATIE
    ================================================ */
 
-.nudge-active {
+.nudge-active,
+.chat-input-tool--nudge-active {
   animation: chat-shake 0.1s linear 6 !important;
   position: relative;
   z-index: 999;
@@ -348,7 +350,8 @@
   margin-top: 10px;
 }
 
-.dx-button.secondary {
+.dx-button.secondary,
+.dx-button.dx-button--secondary {
   background: linear-gradient(to bottom, var(--toolbar-bg) 0%, #FAFAFA 50%, var(--toolbar-bg) 100%);
 }
 

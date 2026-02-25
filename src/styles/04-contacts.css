@@ -197,7 +197,7 @@
 }
 
 .contacts-menu-item:hover,
-.contacts-menu-item.active {
+.contacts-menu-item.contacts-menu-item--active {
   background: var(--menu-hover);
   color: white;
 }
@@ -241,11 +241,13 @@
   color: white;
 }
 
-.dropdown-item-disabled {
+.dropdown-item-disabled,
+.dropdown-item--disabled {
   color: #808080;
 }
 
-.dropdown-item-disabled:hover {
+.dropdown-item-disabled:hover,
+.dropdown-item--disabled:hover {
   background: transparent;
   color: #808080;
 }
@@ -314,7 +316,7 @@
   background: #E8E8E8;
 }
 
-.options-sidebar-item.active {
+.options-sidebar-item.options-sidebar-item--active {
   background: var(--menu-hover);
   color: white;
 }
@@ -511,7 +513,7 @@
   color: white;
 }
 
-.contacts-status-popup-item.active .contacts-status-popup-check {
+.contacts-status-popup-item.contacts-status-popup-item--active .contacts-status-popup-check {
   visibility: visible;
 }
 
@@ -564,7 +566,7 @@
   font-style: italic;
 }
 
-.contact-item {
+.contacts-item {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -574,18 +576,18 @@
   min-height: 20px;
 }
 
-.contact-item:hover {
+.contacts-item:hover {
   background: linear-gradient(to bottom, rgba(255,255,255,0.85) 0%, rgba(180,220,255,0.7) 100%);
   border-left: 2px solid #7AB8F5;
   padding-left: 8px;
 }
 
-.contact-item-blocked {
+.contacts-item.contacts-item--blocked {
   opacity: 0.5;
   cursor: default;
 }
 
-.contact-item-blocked:hover {
+.contacts-item.contacts-item--blocked:hover {
   background: transparent;
 }
 
@@ -620,7 +622,7 @@
   flex-shrink: 0;
 }
 
-.contact-avatar-thumb {
+.contacts-item-avatar-thumb {
   width: 22px;
   height: 22px;
   border: 1px solid #C0C8D8;
@@ -629,14 +631,14 @@
   flex-shrink: 0;
 }
 
-.contact-item-details {
+.contacts-item-details {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.contact-inline {
+.contacts-item-inline {
   display: flex;
   align-items: baseline;
   gap: 3px;
@@ -644,7 +646,7 @@
   min-width: 0;
 }
 
-.contact-name {
+.contacts-item-name {
   font-size: 11px;
   font-weight: bold;
   color: #000;
@@ -652,14 +654,14 @@
   flex-shrink: 0;
 }
 
-.contact-status-label {
+.contacts-item-status-label {
   font-size: var(--ui-font-size-sm);
   color: #555;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.contact-personal-msg {
+.contacts-item-personal-msg {
   font-size: 10px;
   color: #888;
   font-style: italic;
@@ -670,7 +672,7 @@
   white-space: nowrap;
 }
 
-.contact-status-dot {
+.contacts-item-status-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -680,7 +682,7 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.6);
 }
 
-.contact-avatar-wrapper {
+.contacts-item-avatar-wrapper {
   position: relative;
   flex-shrink: 0;
   width: 22px;

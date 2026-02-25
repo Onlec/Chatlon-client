@@ -253,8 +253,10 @@
 .chat-send-btn:hover { background: var(--btn-highlight); }
 .chat-send-btn:active { background: var(--btn-shadow); }
 
-.chat-message.self .message-header strong { color: #00008B; }
-.chat-message.contact .message-header strong { color: #8B0000; }
+.chat-message.chat-message--self .message-header strong,
+.chat-message.chat-message--self .chat-message-header strong { color: #00008B; }
+.chat-message.chat-message--contact .message-header strong,
+.chat-message.chat-message--contact .chat-message-header strong { color: #8B0000; }
 
 .chat-right-column {
   width: 120px;
@@ -583,7 +585,7 @@
 }
 
 /* De container voor een oud bericht */
-.chat-message.legacy {
+.chat-message.chat-message--legacy {
   opacity: 0.6;
   filter: grayscale(40%); /* Subtieler dan 100% voor betere leesbaarheid */
 
@@ -591,17 +593,21 @@
   
 }
 
-.legacy .message-header {
+.legacy .message-header,
+.chat-message--legacy .message-header,
+.chat-message--legacy .chat-message-header {
   color: #808080 !important;
 }
 
-.legacy .message-content {
+.legacy .message-content,
+.chat-message--legacy .message-content,
+.chat-message--legacy .chat-message-content {
   color: #555 !important;
   font-style: italic;
 }
 
 /* De visuele scheidingslijn tussen 'Sessie' en 'Geschiedenis' */
-.history-divider {
+.chat-history-divider {
   position: relative;
   text-align: center;
   margin: 20px 0; /* Genoeg ruimte om hem te zien */
@@ -609,7 +615,7 @@
   clear: both;
 }
 
-.history-divider::before {
+.chat-history-divider::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -619,7 +625,7 @@
   z-index: 1;
 }
 
-.history-divider span {
+.chat-history-divider span {
   position: relative;
   z-index: 2;
   background: white; 
@@ -729,33 +735,36 @@
   background: linear-gradient(to bottom, #FFF9E6 0%, #FFEBB3 100%);
 }
 
-.call-accept {
+.call-btn--accept {
   border-color: #5B9F5E;
   color: #2D6B30;
   font-weight: bold;
 }
 
-.call-reject {
+.call-btn--reject {
   border-color: #C55050;
   color: #993333;
 }
 
-.call-hangup {
+.call-btn--hangup {
   border-color: #C55050;
   color: #993333;
   font-weight: bold;
 }
 
-.call-mute {
+.call-mute,
+.call-btn--mute {
   border-color: var(--btn-border);
 }
 
-.call-mute.muted {
+.call-mute.muted,
+.call-btn--mute.call-btn--muted {
   background: #FFE0E0;
   border-color: #C55050;
 }
 
-.chat-toolbar-btn.disabled {
+.chat-toolbar-btn.disabled,
+.chat-toolbar-btn.chat-toolbar-btn--disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

@@ -12,7 +12,7 @@ function ChatMessage({ msg, prevMsg, currentUser }) {
     const name = getDisplayName(msg.sender);
     return (
       <>
-        {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
+        {isFirstNew && <div className="chat-history-divider"><span>Laatst verzonden berichten</span></div>}
         <div className="chat-message-system">
           {'\u26A1'} {isSelf ? 'Je hebt een nudge gestuurd.' : <><strong>{name}</strong> heeft een nudge gestuurd.</>}
         </div>
@@ -44,7 +44,7 @@ function ChatMessage({ msg, prevMsg, currentUser }) {
     }
     return (
       <>
-        {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
+        {isFirstNew && <div className="chat-history-divider"><span>Laatst verzonden berichten</span></div>}
         <div className="chat-message-system">
           {icon} {text}
         </div>
@@ -52,13 +52,13 @@ function ChatMessage({ msg, prevMsg, currentUser }) {
     );
   }
 
-  const selfClass = msg.sender === currentUser ? 'self' : 'contact';
+  const selfClass = msg.sender === currentUser ? 'chat-message--self' : 'chat-message--contact';
   return (
     <>
-      {isFirstNew && <div className="history-divider"><span>Laatst verzonden berichten</span></div>}
-      <div className={`chat-message ${msg.isLegacy ? 'legacy' : ''} ${selfClass}`}>
-        <div className="message-header"><strong>{getDisplayName(msg.sender)}</strong> zegt ({msg.timestamp}):</div>
-        <div className="message-content">{convertEmoticons(msg.content)}</div>
+      {isFirstNew && <div className="chat-history-divider"><span>Laatst verzonden berichten</span></div>}
+      <div className={`chat-message ${msg.isLegacy ? 'chat-message--legacy' : ''} ${selfClass}`}>
+        <div className="chat-message-header"><strong>{getDisplayName(msg.sender)}</strong> zegt ({msg.timestamp}):</div>
+        <div className="chat-message-content">{convertEmoticons(msg.content)}</div>
       </div>
     </>
   );

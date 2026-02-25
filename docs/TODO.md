@@ -38,7 +38,7 @@ AI systems must NOT treat this section as architecture or rules.
 - [ ] Remove remaining production `console.log`/debug leftovers (e.g. `App.js` `handleContactOnline`)
 - [ ] Add dev utility to reset relationship state for test accounts (contacts/invites/requests/privacy nodes)
 - [ ] CSS post-split dead selector audit (`src/styles/*`)
-- [ ] CSS naming harmonization pass (no behavior changes; separate scope)
+- [x] CSS naming harmonization pass (no behavior changes; separate scope)
 - [ ] Optional CSS architecture follow-up: evaluate per-domain subfolders in `src/styles/`
 ### Toekomstige Features
 - [ ] Groepsgesprekken in Chatlon Messenger (hergebruik Gun mesh code)

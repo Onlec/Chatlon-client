@@ -139,19 +139,19 @@ function WallpaperPickerModal({ onClose }) {
 
           <div className="avatar-picker-tabs">
             <button
-              className={`avatar-tab-btn ${activeTab === 'preset' ? 'active' : ''}`}
+              className={`avatar-tab-btn ${activeTab === 'preset' ? 'avatar-tab-btn--active' : ''}`}
               onClick={() => setActiveTab('preset')}
             >
               Achtergronden
             </button>
             <button
-              className={`avatar-tab-btn ${activeTab === 'color' ? 'active' : ''}`}
+              className={`avatar-tab-btn ${activeTab === 'color' ? 'avatar-tab-btn--active' : ''}`}
               onClick={() => setActiveTab('color')}
             >
               Effen kleur
             </button>
             <button
-              className={`avatar-tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
+              className={`avatar-tab-btn ${activeTab === 'upload' ? 'avatar-tab-btn--active' : ''}`}
               onClick={() => setActiveTab('upload')}
             >
               Eigen foto
@@ -165,7 +165,7 @@ function WallpaperPickerModal({ onClose }) {
               {PRESET_WALLPAPERS.map((key) => (
                 <div
                   key={key}
-                  className={`wallpaper-preset-item ${selectedPreset === key ? 'selected' : ''}`}
+                  className={`wallpaper-preset-item ${selectedPreset === key ? 'wallpaper-preset-item--selected' : ''}`}
                   onClick={() => setSelectedPreset(key)}
                 >
                   <img src={`/bg/${key}`} alt={key} />
@@ -180,7 +180,7 @@ function WallpaperPickerModal({ onClose }) {
               {SOLID_COLORS.map((c) => (
                 <div
                   key={c.value}
-                  className={`wallpaper-color-item ${selectedColor === c.value ? 'selected' : ''}`}
+                  className={`wallpaper-color-item ${selectedColor === c.value ? 'wallpaper-color-item--selected' : ''}`}
                   onClick={() => setSelectedColor(c.value)}
                 >
                   <div className="wallpaper-color-swatch" style={{ background: c.value }} />
@@ -220,7 +220,7 @@ function WallpaperPickerModal({ onClose }) {
           {success && <div className="success-message">✓ Achtergrond opgeslagen!</div>}
 
           <div className="form-actions">
-            <button className="dx-button primary" onClick={handleSave}>Toepassen</button>
+            <button className="dx-button dx-button--primary" onClick={handleSave}>Toepassen</button>
             <button className="dx-button" onClick={handleReset}>Standaard herstellen</button>
             <button className="dx-button" onClick={onClose}>Annuleren</button>
           </div>

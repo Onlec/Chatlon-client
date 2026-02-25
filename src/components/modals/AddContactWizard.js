@@ -121,7 +121,7 @@ function AddContactWizard({ onClose, onSendRequest, currentUser, contacts }) {
           {step === 1 && (
             <>
               <div className="wizard-actions-spacer"></div>
-              <button className="dx-button primary" onClick={handleNext}>
+              <button className="dx-button dx-button--primary" onClick={handleNext}>
                 Volgende &gt;
               </button>
               <button className="dx-button" onClick={onClose}>
@@ -135,7 +135,7 @@ function AddContactWizard({ onClose, onSendRequest, currentUser, contacts }) {
                 &lt; Vorige
               </button>
               <div className="wizard-actions-spacer"></div>
-              <button className="dx-button primary" onClick={handleNext}>
+              <button className="dx-button dx-button--primary" onClick={handleNext}>
                 Volgende &gt;
               </button>
               <button className="dx-button" onClick={onClose}>
@@ -146,7 +146,7 @@ function AddContactWizard({ onClose, onSendRequest, currentUser, contacts }) {
           {step === 3 && (
             <>
               <div className="wizard-actions-spacer"></div>
-              <button className="dx-button primary" onClick={onClose}>
+              <button className="dx-button dx-button--primary" onClick={onClose}>
                 Voltooien
               </button>
             </>

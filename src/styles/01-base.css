@@ -16,7 +16,8 @@
   animation: crt-flicker 0.15s infinite;
 }
 
-.scanlines-overlay.disabled {
+.scanlines-overlay.disabled,
+.scanlines-overlay.scanlines-overlay--disabled {
   opacity: 0;
   pointer-events: none;
 }

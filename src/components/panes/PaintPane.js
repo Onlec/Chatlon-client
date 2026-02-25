@@ -228,28 +228,28 @@ function PaintPane() {
       <div className="paint-toolbar">
         <div className="paint-tool-section">
           <button 
-            className={`paint-tool-btn ${currentTool === 'pencil' ? 'active' : ''}`}
+            className={`paint-tool-btn ${currentTool === 'pencil' ? 'paint-tool-btn--active' : ''}`}
             onClick={() => setCurrentTool('pencil')}
             title="Potlood"
           >
             ✏️
           </button>
           <button 
-            className={`paint-tool-btn ${currentTool === 'brush' ? 'active' : ''}`}
+            className={`paint-tool-btn ${currentTool === 'brush' ? 'paint-tool-btn--active' : ''}`}
             onClick={() => setCurrentTool('brush')}
             title="Kwast"
           >
             🖌️
           </button>
           <button 
-            className={`paint-tool-btn ${currentTool === 'fill' ? 'active' : ''}`}
+            className={`paint-tool-btn ${currentTool === 'fill' ? 'paint-tool-btn--active' : ''}`}
             onClick={() => setCurrentTool('fill')}
             title="Vullen"
           >
             🪣
           </button>
           <button 
-            className={`paint-tool-btn ${currentTool === 'eraser' ? 'active' : ''}`}
+            className={`paint-tool-btn ${currentTool === 'eraser' ? 'paint-tool-btn--active' : ''}`}
             onClick={() => setCurrentTool('eraser')}
             title="Gum"
           >
@@ -261,21 +261,21 @@ function PaintPane() {
         
         <div className="paint-tool-section">
           <button 
-            className={`paint-tool-btn ${currentTool === 'line' ? 'active' : ''}`}
+            className={`paint-tool-btn ${currentTool === 'line' ? 'paint-tool-btn--active' : ''}`}
             onClick={() => setCurrentTool('line')}
             title="Lijn"
           >
             📏
           </button>
           <button 
-            className={`paint-tool-btn ${currentTool === 'rectangle' ? 'active' : ''}`}
+            className={`paint-tool-btn ${currentTool === 'rectangle' ? 'paint-tool-btn--active' : ''}`}
             onClick={() => setCurrentTool('rectangle')}
             title="Rechthoek"
           >
             ▭
           </button>
           <button 
-            className={`paint-tool-btn ${currentTool === 'circle' ? 'active' : ''}`}
+            className={`paint-tool-btn ${currentTool === 'circle' ? 'paint-tool-btn--active' : ''}`}
             onClick={() => setCurrentTool('circle')}
             title="Cirkel"
           >
@@ -302,49 +302,49 @@ function PaintPane() {
             <div className="paint-toolbox-title">Gereedschap</div>
             <div className="paint-tools-grid">
               <button 
-                className={`paint-grid-tool ${currentTool === 'pencil' ? 'selected' : ''}`}
+                className={`paint-grid-tool ${currentTool === 'pencil' ? 'paint-grid-tool--selected' : ''}`}
                 onClick={() => setCurrentTool('pencil')}
                 title="Potlood"
               >
                 ✏️
               </button>
               <button 
-                className={`paint-grid-tool ${currentTool === 'brush' ? 'selected' : ''}`}
+                className={`paint-grid-tool ${currentTool === 'brush' ? 'paint-grid-tool--selected' : ''}`}
                 onClick={() => setCurrentTool('brush')}
                 title="Kwast"
               >
                 🖌️
               </button>
               <button 
-                className={`paint-grid-tool ${currentTool === 'fill' ? 'selected' : ''}`}
+                className={`paint-grid-tool ${currentTool === 'fill' ? 'paint-grid-tool--selected' : ''}`}
                 onClick={() => setCurrentTool('fill')}
                 title="Vullen"
               >
                 🪣
               </button>
               <button 
-                className={`paint-grid-tool ${currentTool === 'eraser' ? 'selected' : ''}`}
+                className={`paint-grid-tool ${currentTool === 'eraser' ? 'paint-grid-tool--selected' : ''}`}
                 onClick={() => setCurrentTool('eraser')}
                 title="Gum"
               >
                 🧹
               </button>
               <button 
-                className={`paint-grid-tool ${currentTool === 'line' ? 'selected' : ''}`}
+                className={`paint-grid-tool ${currentTool === 'line' ? 'paint-grid-tool--selected' : ''}`}
                 onClick={() => setCurrentTool('line')}
                 title="Lijn"
               >
                 ─
               </button>
               <button 
-                className={`paint-grid-tool ${currentTool === 'rectangle' ? 'selected' : ''}`}
+                className={`paint-grid-tool ${currentTool === 'rectangle' ? 'paint-grid-tool--selected' : ''}`}
                 onClick={() => setCurrentTool('rectangle')}
                 title="Rechthoek"
               >
                 ▭
               </button>
               <button 
-                className={`paint-grid-tool ${currentTool === 'circle' ? 'selected' : ''}`}
+                className={`paint-grid-tool ${currentTool === 'circle' ? 'paint-grid-tool--selected' : ''}`}
                 onClick={() => setCurrentTool('circle')}
                 title="Cirkel"
               >
@@ -358,25 +358,25 @@ function PaintPane() {
             <div className="paint-toolbox-title">Lijndikte</div>
             <div className="paint-width-options">
               <div 
-                className={`paint-width-option ${lineWidth === 1 ? 'selected' : ''}`}
+                className={`paint-width-option ${lineWidth === 1 ? 'paint-width-option--selected' : ''}`}
                 onClick={() => setLineWidth(1)}
               >
                 <div style={{ height: '1px', backgroundColor: '#000', width: '100%' }}></div>
               </div>
               <div 
-                className={`paint-width-option ${lineWidth === 2 ? 'selected' : ''}`}
+                className={`paint-width-option ${lineWidth === 2 ? 'paint-width-option--selected' : ''}`}
                 onClick={() => setLineWidth(2)}
               >
                 <div style={{ height: '2px', backgroundColor: '#000', width: '100%' }}></div>
               </div>
               <div 
-                className={`paint-width-option ${lineWidth === 4 ? 'selected' : ''}`}
+                className={`paint-width-option ${lineWidth === 4 ? 'paint-width-option--selected' : ''}`}
                 onClick={() => setLineWidth(4)}
               >
                 <div style={{ height: '4px', backgroundColor: '#000', width: '100%' }}></div>
               </div>
               <div 
-                className={`paint-width-option ${lineWidth === 6 ? 'selected' : ''}`}
+                className={`paint-width-option ${lineWidth === 6 ? 'paint-width-option--selected' : ''}`}
                 onClick={() => setLineWidth(6)}
               >
                 <div style={{ height: '6px', backgroundColor: '#000', width: '100%' }}></div>
@@ -412,7 +412,7 @@ function PaintPane() {
           {colors.map((color, index) => (
             <div
               key={index}
-              className={`paint-color-swatch ${currentColor === color ? 'selected' : ''}`}
+              className={`paint-color-swatch ${currentColor === color ? 'paint-color-swatch--selected' : ''}`}
               style={{ backgroundColor: color }}
               onClick={() => setCurrentColor(color)}
               title={color}

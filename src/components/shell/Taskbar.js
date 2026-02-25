@@ -18,7 +18,7 @@ function Taskbar({
   return (
     <div className="taskbar">
       <button
-        className={`start-btn ${isStartOpen ? 'pressed' : ''}`}
+        className={`start-btn ${isStartOpen ? 'start-btn--pressed' : ''}`}
         onClick={(e) => { e.stopPropagation(); onToggleStartMenu(); }}
       >
         <span className="start-icon">{'\u{1FA9F}'}</span> Start
@@ -36,7 +36,7 @@ function Taskbar({
             return (
               <div
                 key={paneId}
-                className={`taskbar-tab ${activePane === paneId ? 'active' : ''} ${isUnread ? 'unread' : ''}`}
+                className={`taskbar-tab ${activePane === paneId ? 'taskbar-tab--active' : ''} ${isUnread ? 'taskbar-tab--unread' : ''}`}
                 onClick={() => onTaskbarClick(paneId)}
                 title={`${getDisplayName(contactName)} - Gesprek`}
               >
@@ -53,7 +53,7 @@ function Taskbar({
             return (
               <div
                 key={paneId}
-                className={`taskbar-tab ${activePane === paneId ? 'active' : ''}`}
+                className={`taskbar-tab ${activePane === paneId ? 'taskbar-tab--active' : ''}`}
                 onClick={() => onTaskbarClick(paneId)}
                 title={`Spelletje met ${getDisplayName(game.contactName)}`}
               >
@@ -69,7 +69,7 @@ function Taskbar({
           return (
             <div
               key={paneId}
-              className={`taskbar-tab ${activePane === paneId ? 'active' : ''}`}
+              className={`taskbar-tab ${activePane === paneId ? 'taskbar-tab--active' : ''}`}
               onClick={() => onTaskbarClick(paneId)}
               title={config.title || config.label}
             >

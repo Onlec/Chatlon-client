@@ -318,16 +318,16 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
     return (
       <div
         key={contact.username}
-        className={`contact-item${isBlocked ? ' contact-item-blocked' : ''}`}
+        className={`contacts-item${isBlocked ? ' contacts-item--blocked' : ''}`}
         style={isOffline ? { opacity: 0.6 } : {}}
         onDoubleClick={!isBlocked ? () => onOpenConversation && onOpenConversation(contact.username) : undefined}
       >
-        <span className="contact-status-dot" style={{ backgroundColor: statusColor }} />
-        <div className="contact-item-details">
-          <div className="contact-inline">
-            <span className="contact-name">{getDisplayName(contact.username)}</span>
-            <span className="contact-status-label"> ({presence.label})</span>
-            {personalMsg && <span className="contact-personal-msg"> – {personalMsg}</span>}
+        <span className="contacts-item-status-dot" style={{ backgroundColor: statusColor }} />
+        <div className="contacts-item-details">
+          <div className="contacts-item-inline">
+            <span className="contacts-item-name">{getDisplayName(contact.username)}</span>
+            <span className="contacts-item-status-label"> ({presence.label})</span>
+            {personalMsg && <span className="contacts-item-personal-msg"> – {personalMsg}</span>}
           </div>
         </div>
       </div>
@@ -584,7 +584,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
                     {STATUS_OPTIONS.map(opt => (
                       <div
                         key={opt.value}
-                        className={`contacts-status-popup-item${myStatus === opt.value ? ' active' : ''}`}
+                        className={`contacts-status-popup-item${myStatus === opt.value ? ' contacts-status-popup-item--active' : ''}`}
                         onClick={() => { handleStatusChange(opt.value); setShowStatusMenu(false); }}
                       >
                         <span className="contacts-status-popup-check">✓</span>

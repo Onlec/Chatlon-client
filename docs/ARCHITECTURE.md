@@ -56,6 +56,12 @@ Visual regression baseline checklist (run after each CSS split step):
 - Boot/login/logoff/shutdown screens and transitions
 - App panes: notepad, calculator, paint, browser, media, teamtalk, pinball, tictactoe
 
+Naming harmonization contract:
+- CSS naming standard is defined in `docs/CSS_NAMING.md`.
+- During harmonization, visual/behavior parity is mandatory.
+- UI regression validation must follow `docs/SESSION_FLOWS.md` -> `CSS Split Regression Appendix (UI-only)`.
+- Merge gate: no unprefixed generic state classes in JSX/className usage.
+
 ---
 
 ## 🪟 Window Manager (Panes dX)
@@ -346,6 +352,7 @@ src/
 - XP-style look is mandatory; Frutiger Aero accents (blue gradients, gloss overlays) are allowed
 - No UI frameworks
 - No CSS-in-JS
+- CSS class naming follows `docs/CSS_NAMING.md` (prefix-kebab + `--modifier`).
 
 ### Frutiger Aero Conventions
 - Gloss effect via `::before` pseudo-element: `height: 40–50%; background: linear-gradient(to bottom, rgba(255,255,255,0.75), rgba(255,255,255,0))`

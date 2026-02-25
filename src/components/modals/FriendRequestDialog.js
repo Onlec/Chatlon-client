@@ -70,7 +70,7 @@ function FriendRequestDialog({ request, onAccept, onDecline, onDismiss }) {
       </div>
 
       <div className="friend-request-actions">
-        <button className="dx-button primary" onClick={handleOK}>OK</button>
+        <button className="dx-button dx-button--primary" onClick={handleOK}>OK</button>
         <button className="dx-button" onClick={() => onDismiss(request)}>Annuleren</button>
       </div>
     </div>

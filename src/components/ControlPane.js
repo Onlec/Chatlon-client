@@ -263,7 +263,7 @@ function ControlPane() {
                         key={av}
                         src={`/avatars/${av}`}
                         alt={av}
-                        className={`cp-avatar-option ${localAvatar === av ? 'cp-avatar-selected' : ''}`}
+                        className={`cp-avatar-option ${localAvatar === av ? 'cp-avatar-option--selected' : ''}`}
                         onClick={() => setLocalAvatar(av)}
                       />
                     ))}

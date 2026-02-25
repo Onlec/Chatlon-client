@@ -61,7 +61,7 @@ function Systray({
           {STATUS_OPTIONS.map(opt => (
             <div
               key={opt.value}
-              className={`dropdown-item ${userStatus === opt.value ? 'dropdown-item-checked' : ''}`}
+              className={`dropdown-item ${userStatus === opt.value ? 'dropdown-item--checked' : ''}`}
               onClick={() => onStatusChange(opt.value)}
             >
               <span className="systray-status-indicator" style={{ backgroundColor: opt.color }}></span>

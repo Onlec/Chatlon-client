@@ -129,22 +129,22 @@
   background: linear-gradient(to bottom, #D8D0C8 0%, var(--app-bg) 100%);
 }
 
-.calc-btn.memory {
+.calc-btn.calc-btn--memory {
   background: linear-gradient(to bottom, #D4D0C8 0%, #C8C0B8 100%);
   color: #8B0000;
 }
 
-.calc-btn.function {
+.calc-btn.calc-btn--function {
   background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
   color: #000080;
 }
 
-.calc-btn.operator {
+.calc-btn.calc-btn--operator {
   background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
   color: #CC0000;
 }
 
-.calc-btn.equals {
+.calc-btn.calc-btn--equals {
   background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
   color: #CC0000;
 }
@@ -224,7 +224,8 @@
   border-color: #F9B14D;
 }
 
-.paint-tool-btn.active {
+.paint-tool-btn.active,
+.paint-tool-btn.paint-tool-btn--active {
   background: linear-gradient(to bottom, #D8D0C8 0%, #E8E4DC 100%);
   border: 2px solid var(--menu-hover);
   box-shadow: inset 1px 1px 2px #808080;
@@ -286,7 +287,7 @@
   background: #E0E0E0;
 }
 
-.paint-grid-tool.selected {
+.paint-grid-tool.paint-grid-tool--selected {
   background: #C0C0C0;
   border: 2px inset #808080;
 }
@@ -318,7 +319,7 @@
   background: #E0E0E0;
 }
 
-.paint-width-option.selected {
+.paint-width-option.paint-width-option--selected {
   background: #C0C0C0;
   border: 2px inset #808080;
 }
@@ -395,7 +396,7 @@
   transform: scale(1.1);
 }
 
-.paint-color-swatch.selected {
+.paint-color-swatch.paint-color-swatch--selected {
   border: 3px solid #000;
   box-shadow: 0 0 0 1px #FFF, 0 0 0 2px #000;
 }
@@ -972,7 +973,7 @@
   color: #fff;
 }
 
-.media-viz-btn.active {
+.media-viz-btn.media-viz-btn--active {
   background: linear-gradient(to bottom, var(--link-color-light) 0%, #0052A3 100%);
   border-color: var(--link-color-light);
   color: white;
@@ -1178,7 +1179,7 @@
   border-color: #00ff88;
 }
 
-.media-playlist-item.active {
+.media-playlist-item.media-playlist-item--active {
   background: rgba(0, 255, 136, 0.2);
   border-color: #00ff88;
   box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
@@ -1189,7 +1190,7 @@
   opacity: 0.5;
 }
 
-.media-playlist-item.active .media-playlist-item-icon {
+.media-playlist-item.media-playlist-item--active .media-playlist-item-icon {
   opacity: 1;
 }
 
@@ -1303,7 +1304,8 @@
 /* ============================================
    TASKBAR UNREAD HIGHLIGHT
    ============================================ */
-.taskbar-tab.unread {
+.taskbar-tab.unread,
+.taskbar-tab.taskbar-tab--unread {
   background: #f0ad4e !important; /* XP Oranje kleur */
   background: linear-gradient(to bottom, #feb85b 0%, #f0ad4e 100%) !important;
   border-left: 1px solid #ffcc7a !important;
@@ -1357,7 +1359,8 @@
   background: #333344;
 }
 
-.tt-tab-active {
+.tt-tab-active,
+.tt-tab.tt-tab--active {
   color: #FFFFFF;
   border-bottom-color: #6666AA;
   background: #2E2E44;
@@ -1516,7 +1519,8 @@
   flex: 1;
 }
 
-.tt-user-node.tt-speaking .tt-user-icon {
+.tt-user-node.tt-speaking .tt-user-icon,
+.tt-user-node.tt-user-node--speaking .tt-user-icon {
   animation: tt-pulse 0.6s ease-in-out infinite;
 }
 
@@ -1577,7 +1581,8 @@
   color: #FFFFFF;
 }
 
-.tt-mute-btn.tt-muted {
+.tt-mute-btn.tt-muted,
+.tt-mute-btn.tt-mute-btn--muted {
   background: #4E2E2E;
   border-color: #8E4444;
   color: #FF8888;
@@ -2128,7 +2133,8 @@
   border-color: #0055e5;
 }
 
-.cp-avatar-selected {
+.cp-avatar-selected,
+.cp-avatar-option.cp-avatar-option--selected {
   opacity: 1;
   border-color: #0055e5;
   box-shadow: 0 0 0 2px rgba(0, 85, 229, 0.3);

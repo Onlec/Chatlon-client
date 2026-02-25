@@ -137,7 +137,7 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, o
   return (
     <div 
       ref={paneRef}
-      className={`pane-frame type-${type} ${isMaximized ? 'maximized' : ''}`}
+      className={`pane-frame type-${type} ${isMaximized ? 'pane-frame--maximized' : ''}`}
       style={{ 
         left: isMaximized ? 0 : position.left,
         top: isMaximized ? 0 : position.top,
@@ -150,15 +150,15 @@ function Pane({ title, children, isMaximized, onMaximize, onClose, onMinimize, o
       onMouseDown={() => onFocus && onFocus()}
     >
       <div className="pane-inner-container">
-        <div className={`pane-header ${isActive === false ? 'inactive' : ''}`} onMouseDown={handleMouseDown}>
+        <div className={`pane-header ${isActive === false ? 'pane-header--inactive' : ''}`} onMouseDown={handleMouseDown}>
           <div className="pane-title-section">
             <span className="pane-icon">💤</span>
             <span className="pane-title">{title}</span>
           </div>
           <div className="pane-controls">
-            <button className="pane-btn minimize" onClick={onMinimize}>_</button>
-            <button className="pane-btn maximize" onClick={onMaximize}>{isMaximized ? '❐' : '▢'}</button>
-            <button className="pane-btn close" onClick={onClose}>X</button>
+            <button className="pane-btn pane-btn--minimize" onClick={onMinimize}>_</button>
+            <button className="pane-btn pane-btn--maximize" onClick={onMaximize}>{isMaximized ? '❐' : '▢'}</button>
+            <button className="pane-btn pane-btn--close" onClick={onClose}>X</button>
           </div>
         </div>
         <div className="pane-content">

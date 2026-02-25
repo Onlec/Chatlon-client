@@ -88,7 +88,8 @@
   min-height: 320px;
 }
 
-div.pane-frame.maximized {
+div.pane-frame.maximized,
+div.pane-frame.pane-frame--maximized {
   width: 100vw !important;
   height: calc(100vh - 30px) !important;
   top: 0 !important;
@@ -139,9 +140,12 @@ div.pane-frame.maximized {
   justify-content: center;
 }
 
-.minimize { background: var(--win-btn-bg); }
-.maximize { background: var(--win-btn-bg); font-size: 14px; }
-.close { background: #e81123; }
+.minimize,
+.pane-btn--minimize { background: var(--win-btn-bg); }
+.maximize,
+.pane-btn--maximize { background: var(--win-btn-bg); font-size: 14px; }
+.close,
+.pane-btn--close { background: #e81123; }
 
 .pane-content {
   flex-grow: 1;
@@ -261,7 +265,7 @@ div.pane-frame.maximized {
   );
 }
 
-.start-btn.pressed {
+.start-btn.start-btn--pressed {
   filter: brightness(0.85);
   box-shadow: inset 2px 2px 3px rgba(0,0,0,0.3);
 }
@@ -304,7 +308,7 @@ div.pane-frame.maximized {
   background: linear-gradient(to bottom, var(--tab-hover-a) 0%, var(--tab-hover-b) 100%);
 }
 
-.taskbar-tab.active {
+.taskbar-tab.taskbar-tab--active {
   background: linear-gradient(to bottom, var(--tab-active-a) 0%, var(--tab-active-b) 100%);
   box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);
 }

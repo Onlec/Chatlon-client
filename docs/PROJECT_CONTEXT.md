@@ -25,9 +25,12 @@ Keep it concise, factual, and current.
 - Functional React components only.
 - Gun callbacks should use refs for reactive values (avoid stale closures).
 - Styling entrypoint is `gun-client/src/App.css`; selectors are split by domain under `gun-client/src/styles/`.
+- CSS naming contract is defined in `gun-client/docs/CSS_NAMING.md`.
+- Review gate for CSS naming: no unprefixed generic state classes in JSX (`active`, `selected`, `disabled`, `primary`, ...).
 
 ## 3. Important Documentation
 - Source of truth architecture: `gun-client/docs/ARCHITECTURE.md`
+- CSS naming standard: `gun-client/docs/CSS_NAMING.md`
 - Usage and workflow: `gun-client/docs/USAGE.md`
 - Working TODO list: `gun-client/docs/TODO.md`
 - Bug notes: `gun-client/docs/bugs.md`

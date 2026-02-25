@@ -116,13 +116,13 @@ function AvatarPickerModal({ onClose }) {
 
           <div className="avatar-picker-tabs">
             <button
-              className={`avatar-tab-btn ${activeTab === 'preset' ? 'active' : ''}`}
+              className={`avatar-tab-btn ${activeTab === 'preset' ? 'avatar-tab-btn--active' : ''}`}
               onClick={() => setActiveTab('preset')}
             >
               Standaard avatars
             </button>
             <button
-              className={`avatar-tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
+              className={`avatar-tab-btn ${activeTab === 'upload' ? 'avatar-tab-btn--active' : ''}`}
               onClick={() => setActiveTab('upload')}
             >
               Eigen foto
@@ -138,7 +138,7 @@ function AvatarPickerModal({ onClose }) {
                   key={key}
                   src={`/avatars/${key}`}
                   alt={key}
-                  className={`avatar-preset-item ${selectedPreset === key ? 'selected' : ''}`}
+                  className={`avatar-preset-item ${selectedPreset === key ? 'avatar-preset-item--selected' : ''}`}
                   onClick={() => setSelectedPreset(key)}
                 />
               ))}
@@ -176,7 +176,7 @@ function AvatarPickerModal({ onClose }) {
           {success && <div className="success-message">✓ Profielfoto opgeslagen!</div>}
 
           <div className="form-actions">
-            <button className="dx-button primary" onClick={handleSave}>Opslaan</button>
+            <button className="dx-button dx-button--primary" onClick={handleSave}>Opslaan</button>
             <button className="dx-button" onClick={handleReset}>Standaard herstellen</button>
             <button className="dx-button" onClick={onClose}>Annuleren</button>
           </div>

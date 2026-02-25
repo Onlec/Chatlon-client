@@ -30,7 +30,7 @@ function ChatToolbar({ onNudge, canNudge, onStartCall, callState, onOpenGames, h
       {tools.map((t) => (
         <button
           key={t.label}
-          className={`chat-toolbar-btn ${t.disabled ? 'disabled' : ''}`}
+          className={`chat-toolbar-btn ${t.disabled ? 'chat-toolbar-btn--disabled' : ''}`}
           onClick={t.onClick || undefined}
           disabled={t.disabled}
         >
@@ -41,7 +41,7 @@ function ChatToolbar({ onNudge, canNudge, onStartCall, callState, onOpenGames, h
 
       <div className="chat-toolbar-game-wrap" ref={gameMenuRef}>
         <button
-          className={`chat-toolbar-btn ${hasPendingGameInvite ? 'disabled' : ''}`}
+          className={`chat-toolbar-btn ${hasPendingGameInvite ? 'chat-toolbar-btn--disabled' : ''}`}
           disabled={hasPendingGameInvite}
           onClick={() => setShowGameMenu((v) => !v)}
         >

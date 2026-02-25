@@ -97,7 +97,7 @@ function DropdownMenu({ label, items, isOpen, onToggle, onClose, onHover }) {
           return (
             <div
               key={idx}
-              className={`dropdown-item ${item.disabled ? 'dropdown-item-disabled' : ''} ${item.checked ? 'dropdown-item-checked' : ''}`}
+              className={`dropdown-item ${item.disabled ? 'dropdown-item--disabled' : ''} ${item.checked ? 'dropdown-item--checked' : ''}`}
               onClick={() => {
                 if (item.disabled) return;
                 if (hasSubmenu) return;
@@ -118,7 +118,7 @@ function DropdownMenu({ label, items, isOpen, onToggle, onClose, onHover }) {
                   {item.submenu.map((sub, subIdx) => (
                     <div
                       key={subIdx}
-                      className={`dropdown-item ${sub.disabled ? 'dropdown-item-disabled' : ''}`}
+                      className={`dropdown-item ${sub.disabled ? 'dropdown-item--disabled' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (sub.disabled) return;
@@ -145,7 +145,7 @@ function DropdownMenu({ label, items, isOpen, onToggle, onClose, onHover }) {
     <div className="dropdown-menu-wrapper">
       <span
         ref={labelRef}
-        className={`contacts-menu-item ${isOpen ? 'active' : ''}`}
+        className={`contacts-menu-item ${isOpen ? 'contacts-menu-item--active' : ''}`}
         onMouseEnter={handleLabelEnter}
         onMouseLeave={handleLabelLeave}
         onClick={onToggle}

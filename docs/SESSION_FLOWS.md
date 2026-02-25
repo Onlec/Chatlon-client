@@ -366,6 +366,14 @@ Expected:
 Expected:
 - Baseline rendering unchanged across all panes.
 
+### U6) CSS naming review gate (documentary)
+1. Run JSX grep for unprefixed generic state classes.
+2. Run styles grep for deprecated alias selectors.
+
+Expected:
+- No unprefixed generic state classes remain in `className` usage.
+- No deprecated alias selectors remain after cleanup step.
+
 Manual:
 - C1, C2, C3, C4, C5, C6 in real browser contexts with real relay timing.
 

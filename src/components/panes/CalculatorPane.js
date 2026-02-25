@@ -107,42 +107,42 @@ function CalculatorPane() {
 
       <div className="calculator-buttons">
         <div className="calculator-row">
-          <button className="calc-btn memory">MC</button>
-          <button className="calc-btn memory">MR</button>
-          <button className="calc-btn memory">MS</button>
-          <button className="calc-btn memory">M+</button>
+          <button className="calc-btn calc-btn--memory">MC</button>
+          <button className="calc-btn calc-btn--memory">MR</button>
+          <button className="calc-btn calc-btn--memory">MS</button>
+          <button className="calc-btn calc-btn--memory">M+</button>
         </div>
 
         <div className="calculator-row">
-          <button className="calc-btn function" onClick={() => inputDigit(7)}>7</button>
-          <button className="calc-btn function" onClick={() => inputDigit(8)}>8</button>
-          <button className="calc-btn function" onClick={() => inputDigit(9)}>9</button>
-          <button className="calc-btn operator" onClick={() => performOperation('/')}>/</button>
-          <button className="calc-btn operator" onClick={handleSqrt}>√</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(7)}>7</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(8)}>8</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(9)}>9</button>
+          <button className="calc-btn calc-btn--operator" onClick={() => performOperation('/')}>/</button>
+          <button className="calc-btn calc-btn--operator" onClick={handleSqrt}>√</button>
         </div>
 
         <div className="calculator-row">
-          <button className="calc-btn function" onClick={() => inputDigit(4)}>4</button>
-          <button className="calc-btn function" onClick={() => inputDigit(5)}>5</button>
-          <button className="calc-btn function" onClick={() => inputDigit(6)}>6</button>
-          <button className="calc-btn operator" onClick={() => performOperation('*')}>*</button>
-          <button className="calc-btn operator" onClick={inputPercent}>%</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(4)}>4</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(5)}>5</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(6)}>6</button>
+          <button className="calc-btn calc-btn--operator" onClick={() => performOperation('*')}>*</button>
+          <button className="calc-btn calc-btn--operator" onClick={inputPercent}>%</button>
         </div>
 
         <div className="calculator-row">
-          <button className="calc-btn function" onClick={() => inputDigit(1)}>1</button>
-          <button className="calc-btn function" onClick={() => inputDigit(2)}>2</button>
-          <button className="calc-btn function" onClick={() => inputDigit(3)}>3</button>
-          <button className="calc-btn operator" onClick={() => performOperation('-')}>-</button>
-          <button className="calc-btn operator" onClick={toggleSign}>1/x</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(1)}>1</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(2)}>2</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(3)}>3</button>
+          <button className="calc-btn calc-btn--operator" onClick={() => performOperation('-')}>-</button>
+          <button className="calc-btn calc-btn--operator" onClick={toggleSign}>1/x</button>
         </div>
 
         <div className="calculator-row">
-          <button className="calc-btn function" onClick={() => inputDigit(0)}>0</button>
-          <button className="calc-btn operator" onClick={inputDecimal}>,</button>
-          <button className="calc-btn operator" onClick={clear}>C</button>
-          <button className="calc-btn operator" onClick={() => performOperation('+')}>+</button>
-          <button className="calc-btn equals" onClick={handleEquals}>=</button>
+          <button className="calc-btn calc-btn--function" onClick={() => inputDigit(0)}>0</button>
+          <button className="calc-btn calc-btn--operator" onClick={inputDecimal}>,</button>
+          <button className="calc-btn calc-btn--operator" onClick={clear}>C</button>
+          <button className="calc-btn calc-btn--operator" onClick={() => performOperation('+')}>+</button>
+          <button className="calc-btn calc-btn--equals" onClick={handleEquals}>=</button>
         </div>
       </div>
     </div>

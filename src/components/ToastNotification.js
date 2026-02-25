@@ -29,7 +29,7 @@ function ToastNotification({ toast, onClose, onClick }) {
 
   return (
     <div 
-      className={`toast-notification ${isClosing ? 'toast-closing' : ''}`}
+      className={`toast-notification ${isClosing ? 'toast-notification--closing' : ''}`}
       onClick={handleClick}
     >
       <button 

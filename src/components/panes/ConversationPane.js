@@ -451,7 +451,7 @@ function ConversationPane({
   }, [state.messages]);
 
   return (
-    <div className={`chat-conversation ${isShaking ? 'nudge-active' : ''}`}>
+    <div className={`chat-conversation ${isShaking ? 'chat-input-tool--nudge-active' : ''}`}>
       <ChatTopMenu />
       <ChatToolbar
         onNudge={sendNudge}

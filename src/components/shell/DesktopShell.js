@@ -32,7 +32,7 @@ function DesktopShell({
       data-fontsize={dataFontsize}
     >
       <div id="portal-root"></div>
-      <div className={`scanlines-overlay ${scanlinesEnabled ? '' : 'disabled'}`}></div>
+      <div className={`scanlines-overlay ${scanlinesEnabled ? '' : 'scanlines-overlay--disabled'}`}></div>
 
       <DesktopShortcuts shortcuts={desktopShortcuts} onOpenShortcut={onOpenShortcut} />
 

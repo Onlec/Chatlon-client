@@ -74,7 +74,7 @@ function ChatPane() {
   };
 
   return (
-    <div className={`chat-main-wrapper ${isShaking ? 'nudge-active' : ''}`}>
+    <div className={`chat-main-wrapper ${isShaking ? 'chat-input-tool--nudge-active' : ''}`}>
       <div className="chat-info-bar">
         <span>Aangemeld als: <strong>{username || user.is?.alias || 'Gebruiker'}</strong></span>
       </div>

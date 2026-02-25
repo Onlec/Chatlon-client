@@ -334,19 +334,19 @@ function MediaPane({ onNowPlayingChange }) {
         {/* Visualization selector */}
         <div className="media-viz-selector">
           <button 
-            className={`media-viz-btn ${visualization === 'bars' ? 'active' : ''}`}
+            className={`media-viz-btn ${visualization === 'bars' ? 'media-viz-btn--active' : ''}`}
             onClick={() => setVisualization('bars')}
           >
             Balken
           </button>
           <button 
-            className={`media-viz-btn ${visualization === 'wave' ? 'active' : ''}`}
+            className={`media-viz-btn ${visualization === 'wave' ? 'media-viz-btn--active' : ''}`}
             onClick={() => setVisualization('wave')}
           >
             Golf
           </button>
           <button 
-            className={`media-viz-btn ${visualization === 'circle' ? 'active' : ''}`}
+            className={`media-viz-btn ${visualization === 'circle' ? 'media-viz-btn--active' : ''}`}
             onClick={() => setVisualization('circle')}
           >
             Cirkel
@@ -423,7 +423,7 @@ function MediaPane({ onNowPlayingChange }) {
             {sampleTracks.map((track, index) => (
               <div 
                 key={index}
-                className={`media-playlist-item ${currentTrack.url === track.url ? 'active' : ''}`}
+                className={`media-playlist-item ${currentTrack.url === track.url ? 'media-playlist-item--active' : ''}`}
                 onClick={() => loadTrack(track)}
               >
                 <div className="media-playlist-item-icon">🎵</div>

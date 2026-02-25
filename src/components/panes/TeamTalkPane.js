@@ -119,7 +119,7 @@ function TeamTalkPane() {
         {/* Gebruikerslijst */}
         <div className="tt-tree">
           {/* Eigen user */}
-          <div className={`tt-user-node tt-self ${speakingUsers.has(currentUser) ? 'tt-speaking' : ''}`}>
+          <div className={`tt-user-node tt-self ${speakingUsers.has(currentUser) ? 'tt-user-node--speaking' : ''}`}>
             <span className="tt-user-icon">{isMuted ? '🔇' : (speakingUsers.has(currentUser) ? '🔊' : '🎤')}</span>
             <span className="tt-user-name">{currentUser} (jij)</span>
           </div>
@@ -128,7 +128,7 @@ function TeamTalkPane() {
           {Object.entries(peers).map(([peerId, peerData]) => (
             <div 
               key={peerId} 
-              className={`tt-user-node ${speakingUsers.has(peerData.nickname) ? 'tt-speaking' : ''}`}
+              className={`tt-user-node ${speakingUsers.has(peerData.nickname) ? 'tt-user-node--speaking' : ''}`}
             >
               <span className="tt-user-icon">{getPeerIcon(peerId, peerData)}</span>
               <span className="tt-user-name">{peerData.nickname}</span>
@@ -155,7 +155,7 @@ function TeamTalkPane() {
         {/* Controls */}
         <div className="tt-controls">
           <button
-            className={`tt-mute-btn ${isMuted ? 'tt-muted' : ''}`}
+            className={`tt-mute-btn ${isMuted ? 'tt-mute-btn--muted' : ''}`}
             onClick={toggleMute}
           >
             {isMuted ? '🔇 Gedempt' : '🎤 Mic aan'}
@@ -180,19 +180,19 @@ function TeamTalkPane() {
       {/* Tab navigatie */}
       <div className="tt-tab-bar">
         <button
-          className={`tt-tab ${activeTab === 'join' ? 'tt-tab-active' : ''}`}
+          className={`tt-tab ${activeTab === 'join' ? 'tt-tab--active' : ''}`}
           onClick={() => { if (micTesting) { stopMicTest(); setMicTesting(false); } setActiveTab('join'); }}
         >
           Verbinden
         </button>
         <button
-          className={`tt-tab ${activeTab === 'create' ? 'tt-tab-active' : ''}`}
+          className={`tt-tab ${activeTab === 'create' ? 'tt-tab--active' : ''}`}
           onClick={() => { if (micTesting) { stopMicTest(); setMicTesting(false); } setActiveTab('create'); }}
         >
           Server aanmaken
         </button>
         <button
-          className={`tt-tab ${activeTab === 'audio' ? 'tt-tab-active' : ''}`}
+          className={`tt-tab ${activeTab === 'audio' ? 'tt-tab--active' : ''}`}
           onClick={() => setActiveTab('audio')}
         >
           Audio

@@ -28,8 +28,8 @@ function CallPanel({ callState, contactName, isMuted, callDuration, onAccept, on
             <strong>{contactName}</strong> wil een spraakgesprek starten.
           </div>
           <div className="call-invite-actions">
-            <button className="call-btn call-accept" onClick={onAccept}>Accepteren</button>
-            <button className="call-btn call-reject" onClick={onReject}>Weigeren</button>
+            <button className="call-btn call-btn--accept" onClick={onAccept}>Accepteren</button>
+            <button className="call-btn call-btn--reject" onClick={onReject}>Weigeren</button>
           </div>
         </div>
       )}
@@ -42,7 +42,7 @@ function CallPanel({ callState, contactName, isMuted, callDuration, onAccept, on
             <span className="call-status-text">Bellen met {contactName}...</span>
           </div>
           <div className="call-controls">
-            <button className="call-btn call-hangup" onClick={onHangUp}>Ophangen</button>
+            <button className="call-btn call-btn--hangup" onClick={onHangUp}>Ophangen</button>
           </div>
         </div>
       )}
@@ -57,12 +57,12 @@ function CallPanel({ callState, contactName, isMuted, callDuration, onAccept, on
           </div>
           <div className="call-controls">
             <button 
-              className={`call-btn call-mute ${isMuted ? 'muted' : ''}`} 
+              className={`call-btn call-btn--mute ${isMuted ? 'call-btn--muted' : ''}`} 
               onClick={onToggleMute}
             >
               {isMuted ? '🔇 Gedempt' : '🔊 Mute'}
             </button>
-            <button className="call-btn call-hangup" onClick={onHangUp}>📞 Ophangen</button>
+            <button className="call-btn call-btn--hangup" onClick={onHangUp}>📞 Ophangen</button>
           </div>
         </div>
       )}

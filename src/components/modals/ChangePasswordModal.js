@@ -103,7 +103,7 @@ function ChangePasswordModal({ onClose }) {
               )}
 
               <div className="form-actions">
-                <button type="submit" className="dx-button primary">
+                <button type="submit" className="dx-button dx-button--primary">
                   Wijzigen
                 </button>
                 <button type="button" className="dx-button" onClick={onClose}>

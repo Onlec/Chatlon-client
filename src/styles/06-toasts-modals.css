@@ -29,7 +29,8 @@
   background: linear-gradient(to bottom, #FFF9E6 0%, #FFEBB3 100%);
 }
 
-.toast-closing {
+.toast-closing,
+.toast-notification--closing {
   animation: toast-slide-down 0.3s ease-in;
 }
 
@@ -179,7 +180,7 @@
   100% { filter: brightness(1); }
 }
 
-.modal-pane-titlebar.flashing {
+.modal-pane-titlebar.modal-pane-titlebar--flashing {
   animation: modal-titlebar-flash 0.5s ease-in-out;
 }
 
@@ -353,7 +354,7 @@
   justify-content: flex-end;
 }
 
-.dx-button.primary {
+.dx-button.dx-button--primary {
   background: linear-gradient(to bottom, #EAF3FF 0%, #D9E9FC 50%, #C1DBFC 100%);
   border: 1px solid #003C74;
   font-weight: bold;
@@ -425,7 +426,7 @@
   bottom: -2px;
 }
 
-.avatar-tab-btn.active {
+.avatar-tab-btn.avatar-tab-btn--active {
   background: var(--app-bg);
   border-bottom: 2px solid var(--app-bg);
   font-weight: bold;
@@ -459,7 +460,7 @@
   border-color: var(--link-color-light);
 }
 
-.avatar-preset-item.selected {
+.avatar-preset-item.avatar-preset-item--selected {
   border-color: var(--link-color);
   outline: 2px solid var(--link-color);
 }
@@ -534,7 +535,8 @@
   border-color: var(--link-color-light);
 }
 
-.wallpaper-preset-item.selected {
+.wallpaper-preset-item.selected,
+.wallpaper-preset-item.wallpaper-preset-item--selected {
   border-color: var(--link-color);
   outline: 2px solid var(--link-color);
 }
@@ -573,7 +575,8 @@
   border-color: var(--link-color-light);
 }
 
-.wallpaper-color-item.selected {
+.wallpaper-color-item.selected,
+.wallpaper-color-item.wallpaper-color-item--selected {
   border-color: var(--link-color);
   outline: 2px solid var(--link-color);
 }

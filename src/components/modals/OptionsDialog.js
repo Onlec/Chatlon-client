@@ -23,7 +23,7 @@ function OptionsDialog({ onClose }) {
             {TABS.map(tab => (
               <div
                 key={tab.id}
-                className={`options-sidebar-item ${activeTab === tab.id ? 'active' : ''}`}
+                className={`options-sidebar-item ${activeTab === tab.id ? 'options-sidebar-item--active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
               >
                 <span className="options-sidebar-icon">{tab.icon}</span> {tab.label}
