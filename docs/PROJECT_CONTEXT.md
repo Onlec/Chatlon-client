@@ -31,6 +31,7 @@ Keep it concise, factual, and current.
 ## 3. Important Documentation
 - Source of truth architecture: `gun-client/docs/ARCHITECTURE.md`
 - CSS naming standard: `gun-client/docs/CSS_NAMING.md`
+- Token alignment map: `gun-client/docs/TOKEN_ALIGNMENT_MAP.md`
 - Usage and workflow: `gun-client/docs/USAGE.md`
 - Working TODO list: `gun-client/docs/TODO.md`
 - Bug notes: `gun-client/docs/bugs.md`

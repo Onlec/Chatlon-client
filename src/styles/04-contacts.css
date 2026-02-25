@@ -106,7 +106,7 @@
   align-items: center;
   gap: 6px;
   font-size: 10px;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .contacts-signin-status-dot {
@@ -243,13 +243,13 @@
 
 .dropdown-item-disabled,
 .dropdown-item--disabled {
-  color: #808080;
+  color: var(--text-disabled);
 }
 
 .dropdown-item-disabled:hover,
 .dropdown-item--disabled:hover {
   background: transparent;
-  color: #808080;
+  color: var(--text-disabled);
 }
 
 .dropdown-separator {
@@ -782,4 +782,32 @@
 
 .contacts-ad-space:hover {
   text-decoration: underline;
+}
+
+.contacts-about {
+  text-align: center;
+  padding: 24px 16px;
+  font-family: 'Tahoma', sans-serif;
+}
+
+.contacts-about-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.contacts-about-version {
+  font-size: var(--ui-font-size);
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.contacts-about-text {
+  font-size: var(--ui-font-size);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.contacts-about-actions {
+  margin-top: 16px;
 }

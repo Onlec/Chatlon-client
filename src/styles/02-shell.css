@@ -34,6 +34,10 @@
   filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
 }
 
+.shortcut-icon-emoji {
+  font-size: 32px;
+}
+
 .shortcut-label {
   color: white;
   font-size: var(--ui-font-size);
@@ -499,6 +503,15 @@ div.pane-frame.pane-frame--maximized {
 .start-item img { 
   width: 24px; 
   height: 24px; 
+}
+
+.start-item-icon-image {
+  width: 24px;
+  height: 24px;
+}
+
+.start-item-icon-emoji {
+  font-size: 24px;
 }
 
 .start-item:hover {

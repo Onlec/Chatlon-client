@@ -37,9 +37,9 @@ function StartMenu({
               }}
             >
               {config.desktopIcon.endsWith('.ico') || config.desktopIcon.endsWith('.png') ? (
-                <img src={config.desktopIcon} alt="icon" style={{ width: '24px', height: '24px' }} />
+                <img src={config.desktopIcon} alt="icon" className="start-item-icon-image" />
               ) : (
-                <span style={{ fontSize: '24px' }}>{config.desktopIcon}</span>
+                <span className="start-item-icon-emoji">{config.desktopIcon}</span>
               )}
               <span>{config.desktopLabel}</span>
             </div>

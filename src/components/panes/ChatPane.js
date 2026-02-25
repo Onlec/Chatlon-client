@@ -81,15 +81,15 @@ function ChatPane() {
       <div className="chat-layout">
         <div className="chat-messages-area" ref={messagesAreaRef}>
           {state.messages.map((msg) => (
-            <div key={msg.id} style={{ marginBottom: '4px' }}>
+            <div key={msg.id} className="chat-legacy-msg-item">
               <strong>{msg.sender}:</strong> {msg.content}
-              <span style={{fontSize: '9px', color: '#999', marginLeft: '5px'}}>{msg.timestamp}</span>
+              <span className="chat-legacy-msg-time">{msg.timestamp}</span>
             </div>
           ))}
         </div>
         <aside className="chat-sidebar">
           <img src={getAvatar(username || user.is?.alias || 'User')} alt="avatar" className="chat-avatar-img" />
-          <button className={`dx-button nudge-btn ${!canNudge ? 'disabled' : ''}`} onClick={() => { if(canNudge){ setCanNudge(false); gun.get('CHAT_NUDGES').put({time: Date.now()}); setTimeout(()=>setCanNudge(true), 5000); } }} disabled={!canNudge} style={{ marginTop: '10px', width: '90%' }}>Nudge!</button>
+          <button className={`dx-button nudge-btn chat-legacy-nudge-btn ${!canNudge ? 'disabled' : ''}`} onClick={() => { if(canNudge){ setCanNudge(false); gun.get('CHAT_NUDGES').put({time: Date.now()}); setTimeout(()=>setCanNudge(true), 5000); } }} disabled={!canNudge}>Nudge!</button>
         </aside>
       </div>
       <div className="chat-input-section">

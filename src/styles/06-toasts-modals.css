@@ -379,6 +379,73 @@
   margin-top: 8px;
 }
 
+.options-title {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+}
+
+.options-row {
+  display: flex;
+  gap: 4px;
+}
+
+.options-row--avatar {
+  align-items: center;
+  gap: 8px;
+}
+
+.options-input-grow {
+  flex: 1;
+}
+
+.options-save-hint {
+  margin-top: 4px;
+}
+
+.options-avatar-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.options-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.options-checkbox-row--muted {
+  color: var(--text-disabled);
+}
+
+.options-field--spaced {
+  margin-top: 16px;
+}
+
+.options-help-text {
+  font-size: var(--ui-font-size-sm);
+  color: var(--text-disabled);
+  margin-top: 6px;
+}
+
+.avatar-picker-canvas--hidden {
+  display: none;
+}
+
+.avatar-picker-file-input--hidden {
+  display: none;
+}
+
+.wallpaper-picker-canvas--hidden {
+  display: none;
+}
+
+.wallpaper-picker-file-input--hidden {
+  display: none;
+}
+
 /* - - - AVATAR PICKER MODAL - - - - - - - - - */
 
 .avatar-picker-dialog {

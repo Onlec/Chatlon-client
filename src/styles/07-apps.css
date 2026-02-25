@@ -2050,6 +2050,16 @@
   margin-bottom: 6px;
 }
 
+.cp-avatar-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.cp-save-indicator {
+  margin-left: 10px;
+  color: var(--text-success);
+}
+
 .cp-checkbox-label {
   display: flex;
   align-items: center;

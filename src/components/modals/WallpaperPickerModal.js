@@ -158,7 +158,7 @@ function WallpaperPickerModal({ onClose }) {
             </button>
           </div>
 
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
+          <canvas ref={canvasRef} className="wallpaper-picker-canvas--hidden" />
 
           {activeTab === 'preset' && (
             <div className="wallpaper-preset-grid">
@@ -205,7 +205,7 @@ function WallpaperPickerModal({ onClose }) {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                style={{ display: 'none' }}
+                className="wallpaper-picker-file-input--hidden"
                 onChange={handleFileChange}
               />
               {uploadPreview && (

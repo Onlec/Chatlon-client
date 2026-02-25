@@ -40,13 +40,34 @@ Purpose: keep CSS naming consistent across `src/styles/*` and JSX `className` us
 4. Review checklist gate (required before merge):
    - no unprefixed generic state classes in JSX (`active`, `selected`, `disabled`, `primary`, `legacy`, `muted`, `self`, `contact`)
    - no legacy alias selectors left in `src/styles/*` after migration cleanup.
+5. Inline-style policy gate:
+   - static inline styles must be moved to domain stylesheets
+   - dynamic runtime styles may remain inline when they depend on live data (color/width/position/time).
 
 ## Recommended Review Commands
 - JSX generic-state sanity:
   - `rg -n "className=.*\\b(active|selected|disabled|primary|legacy|muted|self|contact)\\b" gun-client/src/components -g "*.js"`
 - Style alias sanity:
   - `rg -n "\\.(contact-item|history-divider|chat-message\\.self|chat-message\\.contact|chat-message\\.legacy|start-btn\\.pressed|taskbar-tab\\.active|dx-button\\.primary)" gun-client/src/styles`
+- Inline style inventory:
+  - `rg -n "style=\\{\\{" gun-client/src/components -g "*.js"`
 
 ## Notes
 - Existing short domain prefixes are valid when already established (`tt-*`, `cp-*`).
 - New classes must follow the same domain prefixes used by their owning feature.
+
+## Token Alignment Gate (No Behavior Change)
+Purpose: align static styling with `src/styles/00-tokens.css` where safe, while preserving XP parity.
+
+Rules:
+1. Only static values are eligible in this scope.
+2. No selector renames in token-alignment steps.
+3. No geometry/layout rewrites (spacing, sizing, borders, gradients) unless explicitly mapped.
+4. If a value defines XP "shape" (window chrome, bevel, button gradients), keep literal values unless a domain token already exists.
+5. For text scaling, prefer `--ui-font-size*` tokens where class already behaves as generic UI text.
+
+Validation:
+1. `npm -C gun-client run build` succeeds.
+2. Conversation, Contacts, StartMenu, Taskbar, and Login visuals remain unchanged.
+3. Theme switch (`data-theme`) still updates token-driven colors correctly.
+4. Font-size switch (`data-fontsize`) still updates token-driven text correctly.

@@ -92,6 +92,11 @@
   --btn-gradient-b:       #ECE9D8;
   --input-border:         #7F9DB9;
   --sidebar-bg:           #F0F0F0;
+  --text-muted:           #666666;
+  --text-secondary:       #444444;
+  --text-faint:           #999999;
+  --text-disabled:        #808080;
+  --text-success:         #2A7D2A;
 }
 
 /* Thema: Olijfgroen (Luna Olive Green - authentiek) */

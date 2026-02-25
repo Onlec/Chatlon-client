@@ -189,6 +189,19 @@ Expected:
 - All game panes close.
 - No playable game pane remains after messenger sign-out/close.
 
+### 16) Token Alignment Visual Guard
+1. Switch between themes (`blauw`, `olijfgroen`, `zilver`, `royale`, `zune`).
+2. Switch font size (`klein`, `normaal`, `groot`).
+3. Open and inspect:
+   - start menu + taskbar
+   - contacts pane + conversation pane
+   - login/boot screens
+
+Expected:
+- No XP-style visual drift in gradients, borders, spacing, or button shapes.
+- Theme-dependent colors still update correctly.
+- Font-size dependent UI text still scales correctly.
+
 ## Quick Log Signals
 
 Good:
@@ -373,6 +386,14 @@ Expected:
 Expected:
 - No unprefixed generic state classes remain in `className` usage.
 - No deprecated alias selectors remain after cleanup step.
+
+### U7) Inline static-style cleanup gate (documentary)
+1. Run inline-style inventory grep.
+2. Verify only dynamic runtime inline styles remain (status colors, runtime widths, runtime position).
+
+Expected:
+- Static presentation inline styles are moved to `src/styles/*`.
+- Dynamic inline styles remain only where data-driven rendering needs them.
 
 Manual:
 - C1, C2, C3, C4, C5, C6 in real browser contexts with real relay timing.

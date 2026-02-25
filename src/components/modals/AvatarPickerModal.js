@@ -129,7 +129,7 @@ function AvatarPickerModal({ onClose }) {
             </button>
           </div>
 
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
+          <canvas ref={canvasRef} className="avatar-picker-canvas--hidden" />
 
           {activeTab === 'preset' && (
             <div className="avatar-preset-grid">
@@ -160,7 +160,7 @@ function AvatarPickerModal({ onClose }) {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                style={{ display: 'none' }}
+                className="avatar-picker-file-input--hidden"
                 onChange={handleFileChange}
               />
               {uploadPreview && (

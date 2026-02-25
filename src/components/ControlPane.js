@@ -256,7 +256,7 @@ function ControlPane() {
 
               <div className="cp-setting-item">
                 <div className="cp-setting-main">
-                  <label style={{ display: 'block', marginBottom: '8px' }}>Lokale avatar</label>
+                  <label className="cp-avatar-label">Lokale avatar</label>
                   <div className="cp-avatar-grid">
                     {PRESET_AVATARS.map(av => (
                       <img
@@ -279,7 +279,7 @@ function ControlPane() {
                   <button className="dx-button cp-action-button" onClick={saveAccountSettings}>
                     Opslaan
                   </button>
-                  {accountSaved && <span style={{ marginLeft: '10px', color: '#2a7d2a' }}>✓ Opgeslagen</span>}
+                  {accountSaved && <span className="cp-save-indicator">✓ Opgeslagen</span>}
                 </div>
               </div>
 

@@ -79,31 +79,30 @@ function AccountTab() {
 
   return (
     <div>
-      <h3 style={{ margin: '0 0 12px 0', fontSize: '13px' }}>Account</h3>
+      <h3 className="options-title">Account</h3>
 
       <div className="options-field">
         <label>Weergavenaam:</label>
-        <div style={{ display: 'flex', gap: '4px' }}>
+        <div className="options-row">
           <input
-            className="dx-input"
+            className="dx-input options-input-grow"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSaveDisplayName()}
             placeholder={username}
-            style={{ flex: 1 }}
           />
           <button className="dx-button" onClick={handleSaveDisplayName}>Opslaan</button>
         </div>
-        {saved && <div className="success-message" style={{ marginTop: '4px' }}>Opgeslagen!</div>}
+        {saved && <div className="success-message options-save-hint">Opgeslagen!</div>}
       </div>
 
       <div className="options-field">
         <label>Profielfoto:</label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="options-row options-row--avatar">
           <img
             src={getAvatar(username)}
             alt="avatar"
-            style={{ width: 48, height: 48, borderRadius: '4px', border: '1px solid #ccc' }}
+            className="options-avatar-preview"
           />
           <button className="dx-button" onClick={() => setShowAvatarModal(true)}>Wijzigen...</button>
         </div>
@@ -114,7 +113,7 @@ function AccountTab() {
       </div>
 
       <div className="options-field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+        <label className="options-checkbox-row">
           <input
             type="checkbox"
             checked={rememberMe}
@@ -135,10 +134,10 @@ function BerichtenTab() {
 
   return (
     <div>
-      <h3 style={{ margin: '0 0 12px 0', fontSize: '13px' }}>Berichten</h3>
+      <h3 className="options-title">Berichten</h3>
 
       <div className="options-field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+        <label className="options-checkbox-row">
           <input
             type="checkbox"
             checked={settings.saveHistory}
@@ -149,7 +148,7 @@ function BerichtenTab() {
       </div>
 
       <div className="options-field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+        <label className="options-checkbox-row">
           <input
             type="checkbox"
             checked={settings.showTyping}
@@ -160,7 +159,7 @@ function BerichtenTab() {
       </div>
 
       <div className="options-field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+        <label className="options-checkbox-row">
           <input
             type="checkbox"
             checked={settings.emoticons}
@@ -178,10 +177,10 @@ function GeluidenTab() {
 
   return (
     <div>
-      <h3 style={{ margin: '0 0 12px 0', fontSize: '13px' }}>Geluiden</h3>
+      <h3 className="options-title">Geluiden</h3>
 
       <div className="options-field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+        <label className="options-checkbox-row">
           <input
             type="checkbox"
             checked={settings.systemSounds}
@@ -192,7 +191,7 @@ function GeluidenTab() {
       </div>
 
       <div className="options-field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+        <label className="options-checkbox-row">
           <input
             type="checkbox"
             checked={settings.toastNotifications}
@@ -203,7 +202,7 @@ function GeluidenTab() {
       </div>
 
       <div className="options-field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+        <label className="options-checkbox-row">
           <input
             type="checkbox"
             checked={settings.nudgeSound}
@@ -214,7 +213,7 @@ function GeluidenTab() {
       </div>
 
       <div className="options-field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+        <label className="options-checkbox-row">
           <input
             type="checkbox"
             checked={settings.typingSound}
@@ -230,18 +229,18 @@ function GeluidenTab() {
 function MuziekTab() {
   return (
     <div>
-      <h3 style={{ margin: '0 0 12px 0', fontSize: '13px' }}>Muziek</h3>
+      <h3 className="options-title">Muziek</h3>
 
       <div className="options-field">
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#808080' }}>
+        <label className="options-checkbox-row options-checkbox-row--muted">
           <input type="checkbox" disabled />
           Nu afspelend als persoonlijk bericht tonen
         </label>
       </div>
 
-      <div className="options-field" style={{ marginTop: '16px' }}>
+      <div className="options-field options-field--spaced">
         <button className="dx-button" disabled>Verbind met Spotify</button>
-        <div style={{ fontSize: '10px', color: '#808080', marginTop: '6px' }}>
+        <div className="options-help-text">
           Spotify-integratie komt binnenkort beschikbaar.
         </div>
       </div>

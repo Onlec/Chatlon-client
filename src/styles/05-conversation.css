@@ -113,7 +113,7 @@
 
 .chat-contact-header-from {
   font-size: var(--ui-font-size);
-  color: #666;
+  color: var(--text-muted);
   flex-shrink: 0;
   padding-top: 1px;
 }
@@ -157,7 +157,7 @@
 
 .chat-contact-header-msg {
   font-size: var(--ui-font-size-sm);
-  color: #666;
+  color: var(--text-muted);
   font-style: italic;
   white-space: nowrap;
   overflow: hidden;
@@ -504,6 +504,25 @@
   font-weight: bold;
   color: #663300;
   border-bottom: 1px solid #CC9933;
+}
+
+.pending-requests-header--interactive {
+  cursor: pointer;
+  user-select: none;
+}
+
+.pending-request-row-header-layout {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: var(--ui-font-size);
+}
+
+.pending-request-row-chevron {
+  font-size: var(--ui-font-size-xs);
 }
 
 .friend-request-dialog {
@@ -969,4 +988,19 @@
 .game-select-menu-item:hover {
   background: linear-gradient(to bottom, #0A246A 0%, #A6CAF0 100%);
   color: #FFFFFF;
+}
+
+.chat-legacy-msg-item {
+  margin-bottom: 4px;
+}
+
+.chat-legacy-msg-time {
+  font-size: var(--ui-font-size-xs);
+  color: var(--text-faint);
+  margin-left: 5px;
+}
+
+.chat-legacy-nudge-btn {
+  margin-top: 10px;
+  width: 90%;
 }

@@ -604,9 +604,8 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
       {pendingRequests.length > 0 && (
         <div className="pending-requests-section">
           <div
-            className="pending-requests-header"
+            className="pending-requests-header pending-requests-header--interactive"
             onClick={() => setPendingPanelCollapsed(prev => !prev)}
-            style={{ cursor: 'pointer', userSelect: 'none' }}
           >
             <span className="contacts-group-arrow">{pendingPanelCollapsed ? '▶' : '▼'}</span>
             Vriendenverzoeken ({pendingRequests.length})
@@ -622,11 +621,10 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
             return (
               <div key={request.id} className="pending-request-wrapper">
                 <div
-                  className="pending-request-row-header"
+                  className="pending-request-row-header pending-request-row-header-layout"
                   onClick={toggleRequest}
-                  style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', fontSize: 11 }}
                 >
-                  <span style={{ fontSize: 9 }}>{isCollapsed ? '▶' : '▼'}</span>
+                  <span className="pending-request-row-chevron">{isCollapsed ? '▶' : '▼'}</span>
                   <span>{request.from}</span>
                 </div>
                 {!isCollapsed && (
@@ -736,15 +734,15 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
       {/* Over Chatlon dialoog */}
       {showAboutDialog && (
         <ModalPane title="Over Chatlon Messenger" icon="ℹ️" onClose={() => setShowAboutDialog(false)} width="320px">
-          <div style={{ textAlign: 'center', padding: '24px 16px', fontFamily: 'Tahoma, sans-serif' }}>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>Chatlon Messenger</div>
-            <div style={{ fontSize: '11px', color: '#666', marginBottom: '16px' }}>Versie 0.1 Alpha</div>
-            <div style={{ fontSize: '11px', color: '#444', lineHeight: '1.6' }}>
+          <div className="contacts-about">
+            <div className="contacts-about-title">Chatlon Messenger</div>
+            <div className="contacts-about-version">Versie 0.1 Alpha</div>
+            <div className="contacts-about-text">
               Een Macrohard Panes dX ervaring.<br />
               Peer-to-peer chat met Gun.js & Trystero.<br /><br />
               Nonprofit parodieproject.
             </div>
-            <div style={{ marginTop: '16px' }}>
+            <div className="contacts-about-actions">
               <button className="dx-button" onClick={() => setShowAboutDialog(false)}>OK</button>
             </div>
           </div>
