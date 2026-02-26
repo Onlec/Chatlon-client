@@ -1306,11 +1306,13 @@
    ============================================ */
 .taskbar-tab.unread,
 .taskbar-tab.taskbar-tab--unread {
-  background: #f0ad4e !important; /* XP Oranje kleur */
-  background: linear-gradient(to bottom, #feb85b 0%, #f0ad4e 100%) !important;
-  border-left: 1px solid #ffcc7a !important;
-  border-top: 1px solid #ffcc7a !important;
-  box-shadow: inset -1px -1px #8a6d3b !important;
+  background: linear-gradient(
+    to bottom,
+    var(--tab-notify-a) 0%,
+    var(--tab-notify-b) 100%
+  ) !important;
+  border: 1px solid rgba(0,0,0,0.2);
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2);
   color: white !important;
   animation: xp_blink 2s infinite;
 }

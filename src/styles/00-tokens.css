@@ -65,6 +65,8 @@
   --tab-hover-b:          #3E82F7;
   --tab-active-a:         #1E52B7;
   --tab-active-b:         #1941A5;
+  --tab-notify-a:         #FFA030;
+  --tab-notify-b:         #FF8D00;
 
   /* Start-knop */
   --startbtn-a:           #3FA142;
@@ -125,6 +127,8 @@
   --tab-hover-b:          #83863C;
   --tab-active-a:         #4E5220;
   --tab-active-b:         #3A3D14;
+  --tab-notify-a:         #FFA030;
+  --tab-notify-b:         #FF8D00;
 
   --startbtn-a:           #3FA142;
   --startbtn-b:           #61BB46;
@@ -178,6 +182,8 @@
   --tab-hover-b:          #96A8BC;
   --tab-active-a:         #5A6A80;
   --tab-active-b:         #4A5A70;
+  --tab-notify-a:         #FFA030;
+  --tab-notify-b:         #FF8D00;
 
   --startbtn-a:           #8CA0B4;
   --startbtn-b:           #A8BCD0;
@@ -231,6 +237,8 @@
   --tab-hover-b:          #1E4F94;
   --tab-active-a:         #0E2A58;
   --tab-active-b:         #0B1F46;
+  --tab-notify-a:         #FFB030;
+  --tab-notify-b:         #FF9E00;
 
   --startbtn-a:           #2B7A2B;
   --startbtn-b:           #45A845;
@@ -284,6 +292,8 @@
   --tab-hover-b:          #4A4A4A;
   --tab-active-a:         #2A2A2A;
   --tab-active-b:         #1A1A1A;
+  --tab-notify-a:         #FF9520;
+  --tab-notify-b:         #FF8000;
 
   --startbtn-a:           #D45500;
   --startbtn-b:           #F47B20;
@@ -337,6 +347,8 @@
   --tab-hover-b:          #242848;
   --tab-active-a:         #101428;
   --tab-active-b:         #0A0C1A;
+  --tab-notify-a:         #FF8820;
+  --tab-notify-b:         #F27200;
 
   --startbtn-a:           #2B7A2B;
   --startbtn-b:           #45A845;
@@ -390,6 +402,8 @@
   --tab-hover-b:          #1E90E8;
   --tab-active-a:         #004EA8;
   --tab-active-b:         #003C88;
+  --tab-notify-a:         #FFB030;
+  --tab-notify-b:         #FF9E00;
 
   --startbtn-a:           #3FA142;
   --startbtn-b:           #61BB46;
@@ -441,6 +455,8 @@
   --tab-hover-b:          #D4D0C8;
   --tab-active-a:         #A0A0A0;
   --tab-active-b:         #808080;
+  --tab-notify-a:         #C8C4BC;
+  --tab-notify-b:         #909090;
 
   --startbtn-a:           #C0C0C0;
   --startbtn-b:           #D4D0C8;

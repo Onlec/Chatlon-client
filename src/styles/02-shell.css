@@ -245,8 +245,6 @@ div.pane-frame.pane-frame--maximized {
   background: linear-gradient(
     to bottom,
     var(--startbtn-b) 0%,
-    var(--startbtn-a) 49%,
-    color-mix(in srgb, var(--startbtn-a) 70%, black) 50%,
     var(--startbtn-a) 100%
   );
   color: white;
@@ -288,8 +286,6 @@ div.pane-frame.pane-frame--maximized {
   background: linear-gradient(
     to bottom,
     var(--startbtn-hover-b) 0%,
-    var(--startbtn-hover-a) 49%,
-    color-mix(in srgb, var(--startbtn-hover-a) 70%, black) 50%,
     var(--startbtn-hover-a) 100%
   );
   box-shadow:
