@@ -184,12 +184,6 @@ function ControlPane() {
   const handleSettingChange = (categoryId, settingId, value) => {
     log('[ControlPane] Setting change:', settingId, value);
     updateSetting(settingId, value);
-    
-    // Check settings after update
-    setTimeout(() => {
-      const updated = localStorage.getItem('chatlon_settings');
-      log('[ControlPane] Settings after update:', JSON.parse(updated));
-    }, 100);
   };
 
   return (

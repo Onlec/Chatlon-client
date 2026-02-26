@@ -26,6 +26,8 @@ function DesktopShell({
   onOpenShortcut,
   onShortcutContextMenu,
   onRenameShortcut,
+  onMoveShortcut,
+  gridConfig,
   paneLayerProps,
   startMenuProps,
   taskbarProps,
@@ -70,6 +72,8 @@ function DesktopShell({
         onOpenShortcut={onOpenShortcut}
         onShortcutContextMenu={onShortcutContextMenu}
         onRenameShortcut={onRenameShortcut}
+        onMoveShortcut={onMoveShortcut}
+        gridConfig={gridConfig}
       />
 
       <PaneLayer {...paneLayerProps} />

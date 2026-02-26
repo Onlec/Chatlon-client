@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { readUserPrefOnce, writeUserPref, PREF_KEYS } from '../utils/userPrefsGun';
 
 const ScanlinesContext = createContext();
 
@@ -11,16 +12,44 @@ export function useScanlinesPreference() {
 }
 
 export function ScanlinesProvider({ children }) {
-  const [scanlinesEnabled, setScanlinesEnabled] = useState(() => {
-    // Load from localStorage
-    const saved = localStorage.getItem('chatlon_scanlines');
-    return saved !== null ? saved === 'true' : true; // Default: true
-  });
+  const [storageUserKey, setStorageUserKey] = useState('guest');
+  const hydratingRef = useRef(false);
+  const loadedKeyRef = useRef('guest');
+
+  const [scanlinesEnabled, setScanlinesEnabled] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    hydratingRef.current = true;
+    loadedKeyRef.current = storageUserKey || 'guest';
+    (async () => {
+      try {
+        const value = await readUserPrefOnce(storageUserKey, PREF_KEYS.SCANLINES, true);
+        if (!cancelled) {
+          setScanlinesEnabled(Boolean(value));
+        }
+      } catch {
+        if (!cancelled) {
+          setScanlinesEnabled(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [storageUserKey]);
 
   // Save to localStorage when changed
   useEffect(() => {
-    localStorage.setItem('chatlon_scanlines', scanlinesEnabled.toString());
-  }, [scanlinesEnabled]);
+    const resolvedKey = storageUserKey || 'guest';
+    if (hydratingRef.current) {
+      if (loadedKeyRef.current === resolvedKey) {
+        hydratingRef.current = false;
+      }
+      return;
+    }
+    void writeUserPref(resolvedKey, PREF_KEYS.SCANLINES, Boolean(scanlinesEnabled));
+  }, [scanlinesEnabled, storageUserKey]);
 
   // Global keyboard listener for 'S' toggle
   useEffect(() => {
@@ -39,7 +68,7 @@ export function ScanlinesProvider({ children }) {
   };
 
   return (
-    <ScanlinesContext.Provider value={{ scanlinesEnabled, toggleScanlines }}>
+    <ScanlinesContext.Provider value={{ scanlinesEnabled, toggleScanlines, setStorageUserKey }}>
       {children}
     </ScanlinesContext.Provider>
   );

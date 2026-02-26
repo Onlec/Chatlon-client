@@ -9,6 +9,8 @@ import AddContactWizard from '../modals/AddContactWizard';
 import FriendRequestDialog from '../modals/FriendRequestDialog';
 import AvatarPickerModal from '../modals/AvatarPickerModal';
 import ModalPane from '../modals/ModalPane';
+import { readScopedJSON, resolveUserKey } from '../../utils/storageScope';
+import { readUserPrefOnce, writeUserPref, PREF_KEYS } from '../../utils/userPrefsGun';
 
 
 function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatusChange: propOnStatusChange, onLogoff, onSignOut, onClosePane, nowPlaying, currentUserEmail, messengerSignedIn, setMessengerSignedIn, contactPresenceMap = {} }) {
@@ -40,15 +42,14 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   const isSignedIn = messengerSignedIn;
   const setIsSignedIn = setMessengerSignedIn;
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [autoSignIn, setAutoSignIn] = useState(() => {
-    return localStorage.getItem('chatlon_auto_signin') === 'true';
-  });
+  const scopedUserKey = resolveUserKey(currentUserEmail || currentUser);
+  const [autoSignIn, setAutoSignIn] = useState(false);
   const signingInTimerRef = useRef(null);
 
   // Haal opgeslagen wachtwoord op voor het aanmeldscherm (alleen weergave)
   const savedPassword = (() => {
     try {
-      const creds = JSON.parse(localStorage.getItem('chatlon_credentials') || '{}');
+      const creds = readScopedJSON('credentials', scopedUserKey, 'chatlon_credentials', {});
       return creds.password || '';
     } catch { return ''; }
   })();
@@ -102,12 +103,23 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
 
   const handleAutoSignInChange = (checked) => {
     setAutoSignIn(checked);
-    if (checked) {
-      localStorage.setItem('chatlon_auto_signin', 'true');
-    } else {
-      localStorage.removeItem('chatlon_auto_signin');
-    }
+    void writeUserPref(scopedUserKey, PREF_KEYS.AUTO_SIGNIN, Boolean(checked));
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const enabled = await readUserPrefOnce(scopedUserKey, PREF_KEYS.AUTO_SIGNIN, false);
+        if (!cancelled) setAutoSignIn(Boolean(enabled));
+      } catch {
+        if (!cancelled) setAutoSignIn(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [scopedUserKey]);
 
   useEffect(() => {
     if (user.is) {

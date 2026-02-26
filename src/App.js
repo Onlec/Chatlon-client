@@ -52,6 +52,8 @@ import { useSettings } from './contexts/SettingsContext';
 import { useAvatar } from './contexts/AvatarContext';
 import { useWallpaper } from './contexts/WallpaperContext';
 import { FEATURE_FLAGS } from './config/featureFlags';
+import { removeScoped } from './utils/storageScope';
+import { readUserPrefOnce, PREF_KEYS } from './utils/userPrefsGun';
 
 
 // Helper: lees lokale naam uit chatlon_users localStorage
@@ -73,15 +75,11 @@ function getOrCreateTabClientId() {
   return id;
 }
 
-function isRememberMeEnabled() {
-  return localStorage.getItem('chatlon_remember_me') === 'true';
-}
-
 function App() {
   // ============================================
   // AUTH STATE
   // ============================================
-  const { scanlinesEnabled } = useScanlinesPreference();
+  const { scanlinesEnabled, setStorageUserKey: setScanlinesStorageUserKey } = useScanlinesPreference();
   const [hasBooted, setHasBooted] = useState(() => {
     // Boot alleen bij eerste bezoek of na expliciete restart
     const skipBoot = sessionStorage.getItem('chatlon_boot_complete');
@@ -103,6 +101,7 @@ function App() {
   const cleanupTimeoutRef = useRef(null);
   const conflictHandlerRef = useRef(null);
   const sessionGenerationRef = useRef(0);
+  const rememberMeEnabledRef = useRef(false);
   const authStateRef = useRef({ isLoggedIn: false, currentUser: '' });
   authStateRef.current = { isLoggedIn, currentUser };
 
@@ -112,7 +111,7 @@ function App() {
   // ============================================
   // HOOKS
   // ============================================
-  const { settings } = useSettings();
+  const { settings, setStorageUserKey: setSettingsStorageUserKey } = useSettings();
   const { getAvatar, getDisplayName } = useAvatar();
   // Refs zodat Gun-callbacks altijd de meest actuele versie hebben
   const getDisplayNameRef = useRef(getDisplayName);
@@ -363,7 +362,8 @@ const onTaskbarClick = React.useCallback((paneId) => {
     resetPresenceState();
     clearPendingCleanupTimeout();
 
-    if (!isRememberMeEnabled()) {
+    if (!rememberMeEnabledRef.current) {
+      removeScoped('credentials', currentUser);
       localStorage.removeItem('chatlon_credentials');
     }
 
@@ -499,6 +499,37 @@ const onTaskbarClick = React.useCallback((paneId) => {
     };
   }, []);
 
+  useEffect(() => {
+    const scopedUserKey = isLoggedIn && currentUser ? currentUser : 'guest';
+    setSettingsStorageUserKey(scopedUserKey);
+    setScanlinesStorageUserKey(scopedUserKey);
+  }, [isLoggedIn, currentUser, setSettingsStorageUserKey, setScanlinesStorageUserKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!isLoggedIn || !currentUser) {
+      rememberMeEnabledRef.current = false;
+      return () => {
+        cancelled = true;
+      };
+    }
+    (async () => {
+      try {
+        const enabled = await readUserPrefOnce(currentUser, PREF_KEYS.REMEMBER_ME, false);
+        if (!cancelled) {
+          rememberMeEnabledRef.current = Boolean(enabled);
+        }
+      } catch {
+        if (!cancelled) {
+          rememberMeEnabledRef.current = false;
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, currentUser]);
+
   // Hard guarantee: when messenger signs out/closes, all open conversations close.
   useEffect(() => {
     if (messengerSignedIn) return;
@@ -532,7 +563,8 @@ const onTaskbarClick = React.useCallback((paneId) => {
 
   const desktopManager = useDesktopManager({
     paneConfig,
-    onOpenPane: desktopCommandBus.openPane
+    onOpenPane: desktopCommandBus.openPane,
+    currentUser
   });
 
   const contextMenuManager = useContextMenuManager({
@@ -545,13 +577,18 @@ const onTaskbarClick = React.useCallback((paneId) => {
       label: 'Vernieuwen',
       onClick: () => {}
     },
+    {
+      id: 'align-grid',
+      label: 'Pictogrammen uitlijnen op raster',
+      onClick: () => desktopManager.alignShortcutsToGrid()
+    },
     { type: 'separator' },
     {
       id: 'properties',
       label: 'Eigenschappen',
       onClick: () => desktopCommandBus.openPane('control')
     }
-  ]), [desktopCommandBus]);
+  ]), [desktopCommandBus, desktopManager]);
 
   const buildShortcutActions = React.useCallback((shortcutId, beginRename) => ([
     {
@@ -875,6 +912,8 @@ const onTaskbarClick = React.useCallback((paneId) => {
       onOpenShortcut={desktopManager.openShortcut}
       onShortcutContextMenu={handleShortcutContextMenu}
       onRenameShortcut={desktopManager.renameShortcut}
+      onMoveShortcut={desktopManager.moveShortcut}
+      gridConfig={desktopManager.desktopGridConfig}
       paneLayerProps={{
         paneConfig,
         panes,

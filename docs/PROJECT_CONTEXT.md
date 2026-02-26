@@ -27,6 +27,12 @@ Keep it concise, factual, and current.
 - Styling entrypoint is `gun-client/src/App.css`; selectors are split by domain under `gun-client/src/styles/`.
 - CSS naming contract is defined in `gun-client/docs/CSS_NAMING.md`.
 - Review gate for CSS naming: no unprefixed generic state classes in JSX (`active`, `selected`, `disabled`, `primary`, ...).
+- User preferences are canonical in Gun `USER_PREFS/{email}` for:
+  - settings
+  - scanlines
+  - desktop shortcut overrides
+  - messenger auto-signin
+  - remember-me policy
 
 ## 3. Important Documentation
 - Source of truth architecture: `gun-client/docs/ARCHITECTURE.md`
@@ -132,9 +138,10 @@ Copy/paste in a new chat:
   - open/close state
   - outside click + Escape close
   - viewport clamping based on rendered menu size
-- `useDesktopManager` owns desktop shortcut persistence:
-  - storage key `chatlon_desktop_shortcuts`
-  - rename (`label`) and hide (`hidden`) overrides
+- `useDesktopManager` owns desktop shortcut persistence in Gun:
+  - `USER_PREFS/{email}.desktopShortcuts`
+  - rename (`label`), hide (`hidden`) and move (`position`) overrides
+- Desktop shortcuts are grid-snapped and can be aligned via desktop context menu action.
 - Desktop menu must only open on wallpaper area, never from pane content (`.pane-frame` guard).
 
 ## 11. Shell Test Coverage
@@ -144,8 +151,8 @@ Copy/paste in a new chat:
 - `src/hooks/useDesktopManager.test.js`
 
 ## 12. Last Updated
-- Date: 2026-02-24
-- Reason: App shell modularization completed through manager split + command bus + context menu foundation.
+- Date: 2026-02-26
+- Reason: Preferences ownership updated to Gun USER_PREFS for cross-browser consistency.
 
 ## 13. Presence Regression Coverage
 - `src/hooks/usePresenceCoordinator.test.js`

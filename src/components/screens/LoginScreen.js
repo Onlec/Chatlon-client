@@ -5,6 +5,13 @@ import { useAvatar } from '../../contexts/AvatarContext';
 import { useDialog } from '../../contexts/DialogContext';
 import { ACTIVE_TAB_FRESH_MS } from '../../utils/sessionConstants';
 import { isForeignActiveSession } from '../../utils/sessionOwnership';
+import {
+  readScopedJSON,
+  writeScopedJSON,
+  removeScoped,
+  resolveUserKey
+} from '../../utils/storageScope';
+import { readUserPrefOnce, writeUserPref, PREF_KEYS } from '../../utils/userPrefsGun';
 
 const COLDMAIL_DOMAINS = ['@coldmail.com', '@coldmail.nl', '@coldmail.net'];
 const TAB_CLIENT_ID_KEY = 'chatlon_tab_client_id';
@@ -41,17 +48,27 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
     return `/avatars/${PRESETS[Math.abs(hash) % PRESETS.length]}`;
   };
 
-  // LOAD SAVED CREDENTIALS (niet auto-selecteren — gebruiker kiest zelf)
-  useEffect(() => {
-    const savedCredentials = localStorage.getItem('chatlon_credentials');
-    if (savedCredentials) {
-      try {
-        JSON.parse(savedCredentials); // validatie
-        setRememberMe(true);
-      } catch (e) {
-        localStorage.removeItem('chatlon_credentials');
-      }
+  const readCredentials = (email) =>
+    readScopedJSON('credentials', resolveUserKey(email), 'chatlon_credentials', {});
+
+  const writeCredentials = (email, creds) =>
+    writeScopedJSON('credentials', resolveUserKey(email), creds);
+
+  const clearCredentials = (email) =>
+    removeScoped('credentials', resolveUserKey(email));
+
+  const isRememberEnabled = async (email) => {
+    try {
+      const enabled = await readUserPrefOnce(resolveUserKey(email), PREF_KEYS.REMEMBER_ME, false);
+      return Boolean(enabled);
+    } catch {
+      return false;
     }
+  };
+
+  // LOAD SAVED CREDENTIALS (niet auto-selecteren - gebruiker kiest zelf)
+  useEffect(() => {
+    setRememberMe(false);
   }, []);
 
   // Load available users (nu objecten met email + localName)
@@ -100,11 +117,11 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
           setError('');
 
           if (rememberMe) {
-            localStorage.setItem('chatlon_credentials', JSON.stringify({ email, password }));
-            localStorage.setItem('chatlon_remember_me', 'true');
+            writeCredentials(email, { email, password });
+            void writeUserPref(resolveUserKey(email), PREF_KEYS.REMEMBER_ME, true);
           } else {
-            localStorage.removeItem('chatlon_credentials');
-            localStorage.removeItem('chatlon_remember_me');
+            clearCredentials(email);
+            void writeUserPref(resolveUserKey(email), PREF_KEYS.REMEMBER_ME, false);
           }
 
           // Voeg toe aan gebruikerslijst als nog niet aanwezig
@@ -149,8 +166,8 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
             setMyDisplayName(email);
 
             // Sla credentials op (altijd bij registratie)
-            localStorage.setItem('chatlon_credentials', JSON.stringify({ email, password }));
-            localStorage.setItem('chatlon_remember_me', 'true');
+            writeCredentials(email, { email, password });
+            void writeUserPref(resolveUserKey(email), PREF_KEYS.REMEMBER_ME, true);
 
             // Voeg toe aan gebruikerslijst met lokale naam + lokale avatar
             if (availableUsers.length < 5) {
@@ -175,10 +192,10 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
     }
   };
 
-  const handleUserClick = (userObj) => {
+  const handleUserClick = async (userObj) => {
     // Check of er opgeslagen credentials zijn voor deze gebruiker
     try {
-      const saved = JSON.parse(localStorage.getItem('chatlon_credentials') || '{}');
+      const saved = readCredentials(userObj.email);
       if (saved.email === userObj.email && saved.password) {
         // Auto-login: toon laadscherm, skip wachtwoord invoer
         setIsAutoLogging(true);
@@ -203,7 +220,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
               setSelectedUser(userObj.email);
               setEmailLocal(userObj.email);
               setPassword('');
-              setRememberMe(true);
+              void isRememberEnabled(userObj.email).then((enabled) => setRememberMe(enabled));
               setError('Opgeslagen wachtwoord is niet meer geldig.');
             } else {
               onLoginSuccess(userObj.email);
@@ -218,6 +235,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
     setSelectedUser(userObj.email);
     setEmailLocal(userObj.email);
     setPassword('');
+    setRememberMe(await isRememberEnabled(userObj.email));
     setError('');
     setIsRegistering(false);
   };
@@ -563,3 +581,6 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
 }
 
 export default LoginScreen;
+
+
+

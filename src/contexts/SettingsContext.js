@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { log } from '../utils/debug';
+import { readUserPrefOnce, writeUserPref, PREF_KEYS } from '../utils/userPrefsGun';
 
 const SettingsContext = createContext();
 
@@ -37,30 +38,49 @@ const DEFAULT_SETTINGS = {
 };
 
 export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState(() => {
-    // Load from localStorage
-    try {
-      const saved = localStorage.getItem('chatlon_settings');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Merge met defaults (voor nieuwe settings die later toegevoegd worden)
-        return { ...DEFAULT_SETTINGS, ...parsed };
-      }
-    } catch (e) {
-      log('[Settings] Error loading settings:', e);
-    }
-    return DEFAULT_SETTINGS;
-  });
+  const [storageUserKey, setStorageUserKey] = useState('guest');
+  const hydratingRef = useRef(false);
+  const loadedKeyRef = useRef('guest');
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
-  // Save to localStorage whenever settings change
   useEffect(() => {
-    try {
-      localStorage.setItem('chatlon_settings', JSON.stringify(settings));
-      log('[Settings] Saved settings:', settings);
-    } catch (e) {
-      log('[Settings] Error saving settings:', e);
+    let cancelled = false;
+    hydratingRef.current = true;
+    loadedKeyRef.current = storageUserKey || 'guest';
+    (async () => {
+      try {
+        const loaded = await readUserPrefOnce(storageUserKey, PREF_KEYS.SETTINGS, DEFAULT_SETTINGS);
+        if (cancelled) return;
+        setSettings({ ...DEFAULT_SETTINGS, ...(loaded || {}) });
+      } catch (e) {
+        log('[Settings] Error loading user prefs settings:', e);
+        if (!cancelled) {
+          setSettings(DEFAULT_SETTINGS);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [storageUserKey]);
+
+  // Save to Gun USER_PREFS whenever settings change
+  useEffect(() => {
+    const resolvedKey = storageUserKey || 'guest';
+    if (hydratingRef.current) {
+      if (loadedKeyRef.current === resolvedKey) {
+        hydratingRef.current = false;
+      }
+      return;
     }
-  }, [settings]);
+    void writeUserPref(storageUserKey, PREF_KEYS.SETTINGS, settings)
+      .then(() => {
+        log('[Settings] Saved settings:', settings);
+      })
+      .catch((e) => {
+        log('[Settings] Error saving settings:', e);
+      });
+  }, [settings, storageUserKey]);
 
   // Update single setting
     const updateSetting = (key, value) => {
@@ -98,7 +118,8 @@ export function SettingsProvider({ children }) {
         updateSetting, 
         updateSettings,
         resetSettings,
-        getSetting 
+        getSetting,
+        setStorageUserKey
       }}
     >
       {children}

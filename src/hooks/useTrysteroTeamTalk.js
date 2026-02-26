@@ -16,6 +16,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { joinRoom } from 'trystero/torrent';
 import { gun, user } from '../gun';
 import { log } from '../utils/debug';
+import { readScopedJSON, writeScopedJSON, resolveUserKey } from '../utils/storageScope';
 
 const APP_ID = 'chatlon-tt-v1';
 
@@ -35,6 +36,7 @@ const APP_ID = 'chatlon-tt-v1';
  * @returns {Object} Server state en functies
  */
 export function useTrysteroTeamTalk(currentUser) {
+  const scopedUserKey = resolveUserKey(currentUser);
   // ============================================
   // STATE
   // ============================================
@@ -48,21 +50,27 @@ export function useTrysteroTeamTalk(currentUser) {
 
   // Audio settings state
   const [audioSettings, setAudioSettings] = useState(() => {
-    try {
-      const saved = localStorage.getItem('chatlon-tt-audio');
-      return saved ? JSON.parse(saved) : {
-        deviceId: '',
-        micGain: 100,
-        noiseSuppression: true,
-        echoCancellation: true,
-        autoGainControl: true
-      };
-    } catch {
-      return { deviceId: '', micGain: 100, noiseSuppression: true, echoCancellation: true, autoGainControl: true };
-    }
+    return readScopedJSON('tt_audio', scopedUserKey, 'chatlon-tt-audio', {
+      deviceId: '',
+      micGain: 100,
+      noiseSuppression: true,
+      echoCancellation: true,
+      autoGainControl: true
+    });
   });
   const [audioDevices, setAudioDevices] = useState([]);
   const [micLevel, setMicLevel] = useState(0);
+
+  useEffect(() => {
+    const loaded = readScopedJSON('tt_audio', scopedUserKey, 'chatlon-tt-audio', {
+      deviceId: '',
+      micGain: 100,
+      noiseSuppression: true,
+      echoCancellation: true,
+      autoGainControl: true
+    });
+    setAudioSettings(loaded);
+  }, [scopedUserKey]);
 
   // ============================================
   // REFS
@@ -98,9 +106,9 @@ export function useTrysteroTeamTalk(currentUser) {
   useEffect(() => {
     audioSettingsRef.current = audioSettings;
     try {
-      localStorage.setItem('chatlon-tt-audio', JSON.stringify(audioSettings));
+      writeScopedJSON('tt_audio', scopedUserKey, audioSettings);
     } catch { /* ignore */ }
-  }, [audioSettings]);
+  }, [audioSettings, scopedUserKey]);
 
   // Enumerate audio input devices
   const enumerateDevices = useCallback(async () => {
@@ -148,35 +156,33 @@ export function useTrysteroTeamTalk(currentUser) {
   // ============================================
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('chatlon-tt-recent');
-      if (saved) {
-        setRecentServers(JSON.parse(saved));
-      }
+      const saved = readScopedJSON('tt_recent', scopedUserKey, 'chatlon-tt-recent', []);
+      setRecentServers(Array.isArray(saved) ? saved : []);
     } catch (e) {
       log('[TrysteroTT] Failed to load recent servers');
     }
-  }, []);
+  }, [scopedUserKey]);
 
   const saveRecentServer = useCallback((server) => {
     setRecentServers(prev => {
       const filtered = prev.filter(s => s.id !== server.id);
       const updated = [server, ...filtered].slice(0, 10);
       try {
-        localStorage.setItem('chatlon-tt-recent', JSON.stringify(updated));
+        writeScopedJSON('tt_recent', scopedUserKey, updated);
       } catch (e) { /* ignore */ }
       return updated;
     });
-  }, []);
+  }, [scopedUserKey]);
 
   const removeRecentServer = useCallback((serverId) => {
     setRecentServers(prev => {
       const updated = prev.filter(s => s.id !== serverId);
       try {
-        localStorage.setItem('chatlon-tt-recent', JSON.stringify(updated));
+        writeScopedJSON('tt_recent', scopedUserKey, updated);
       } catch (e) { /* ignore */ }
       return updated;
     });
-  }, []);
+  }, [scopedUserKey]);
   /**
    * Zoek een server op ID of naam via Gun registry.
    * Returns Promise<ServerInfo|null>

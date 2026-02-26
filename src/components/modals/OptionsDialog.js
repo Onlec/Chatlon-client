@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { user } from '../../gun';
 import { useAvatar } from '../../contexts/AvatarContext';
 import { useSettings } from '../../contexts/SettingsContext';
+import { readUserPrefOnce, writeUserPref, PREF_KEYS } from '../../utils/userPrefsGun';
 import AvatarPickerModal from './AvatarPickerModal';
 import ChangePasswordModal from './ChangePasswordModal';
 import ModalPane from './ModalPane';
@@ -52,15 +53,29 @@ function AccountTab() {
   const [saved, setSaved] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [rememberMe, setRememberMe] = useState(
-    localStorage.getItem('chatlon_remember_me') === 'true'
-  );
+  const scopedUserKey = username || 'guest';
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     const current = getDisplayName(username);
     // Als displayName gelijk is aan username, toon leeg veld
     setDisplayName(current === username ? '' : current);
   }, [username, getDisplayName]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const enabled = await readUserPrefOnce(scopedUserKey, PREF_KEYS.REMEMBER_ME, false);
+        if (!cancelled) setRememberMe(Boolean(enabled));
+      } catch {
+        if (!cancelled) setRememberMe(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [scopedUserKey]);
 
   const handleSaveDisplayName = () => {
     setMyDisplayName(displayName.trim());
@@ -70,11 +85,7 @@ function AccountTab() {
 
   const handleRememberMe = (checked) => {
     setRememberMe(checked);
-    if (checked) {
-      localStorage.setItem('chatlon_remember_me', 'true');
-    } else {
-      localStorage.removeItem('chatlon_remember_me');
-    }
+    void writeUserPref(scopedUserKey, PREF_KEYS.REMEMBER_ME, Boolean(checked));
   };
 
   return (

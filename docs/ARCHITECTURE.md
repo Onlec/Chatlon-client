@@ -217,15 +217,18 @@ All `{email}` keys use the full email address (e.g. `bob@coldmail.com`).
 - TeamTalk servers: Gun registry (persistent)
 - Recente TeamTalk servers: localStorage (per client)
 
-### localStorage Schema
-Lokale per-device data (niet gesynchroniseerd):
+### Local vs Synced Preference Schema
+Gesynct via Gun (`USER_PREFS/{email}`):
+- `settings` — app-instellingen (`systemSounds`, `fontSize`, `colorScheme`, ...)
+- `scanlines` — CRT scanlines voorkeur
+- `desktopShortcuts` — desktop shortcut overrides (`label`, `hidden`, `position`)
+- `autoSignin` — messenger auto-signin voorkeur
+- `rememberMe` — remember-policy voorkeur
 
+Lokaal (device/browser-specifiek):
 - `chatlon_users` — `[{ email, localName, localAvatar }]` — lokale gebruikerslijst (login tiles)
-- `chatlon_credentials` — `{ email, password }` — opgeslagen login (auto sign-in)
-- `chatlon_remember_me` — `'true'` — of credentials opgeslagen zijn
-- `chatlon_settings` — `{ systemSounds, fontSize, colorScheme, ... }` — app-instellingen (via SettingsContext)
+- `chatlon_credentials` + scoped credentials key(s) — credential cache
 - `chatlon_wallpaper` — achtergrond configuratie
-- `chatlon_scanlines` — CRT scanlines voorkeur
 
 ### Data Compaction
 - Client-side cleanup bij login (5s delay)
@@ -438,8 +441,9 @@ Minor refactors do **not** belong here.
 - `ContextMenuHost` is generic and consumes action arrays with:
   - normal actions: `{ id, label, onClick, disabled?, bold? }`
   - separators: `{ type: 'separator' }`
-- Desktop shortcuts persistence key:
-  - `chatlon_desktop_shortcuts` (`label` override + `hidden` state)
+- Desktop shortcuts persistence:
+  - canonical via Gun `USER_PREFS/{email}.desktopShortcuts`
+- Desktop shortcuts support XP-style grid-snapped positioning.
 - Desktop scope rule:
   - desktop menu opens only on wallpaper/desktop surface
   - right-click inside `.pane-frame` must not open desktop menu
