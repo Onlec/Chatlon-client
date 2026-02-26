@@ -12,6 +12,7 @@
 [data-theme="klassiek"] .pane-header {
   background: linear-gradient(to right, var(--win-titlebar-a), var(--win-titlebar-b));
   border-radius: 0;
+  text-shadow: none;
 }
 
 /* Inactieve titelbalk: grijs in plaats van blauw */
@@ -49,6 +50,7 @@
 
 /* Start-knop: vierkant, vlak, raised bevel, zwarte tekst */
 [data-theme="klassiek"] .start-btn {
+  height: 100%;
   border-radius: 0;
   background: #C0C0C0;
   border: 2px solid;
@@ -56,6 +58,7 @@
   box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
   border-right: 2px solid #808080;
   color: #000000;
+  text-shadow: none;
 }
 [data-theme="klassiek"] .start-btn:hover {
   background: #C0C0C0;
