@@ -24,15 +24,13 @@
 /* Titelbalk-knoppen: vierkant, raised bevel, geen rode close, zwarte iconen */
 [data-theme="klassiek"] .pane-btn {
   border-radius: 0;
-  border: 2px solid;
-  border-color: #DFDFDF #808080 #808080 #DFDFDF;
-  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+  border: none;
+  box-shadow: inset -2px -2px 0 #808080, inset 2px 2px 0 #DFDFDF, inset -3px -3px 0 #404040, inset 3px 3px 0 #FFFFFF;
   background: var(--win-btn-bg);
   color: #000000;
 }
 [data-theme="klassiek"] .pane-btn:active {
-  border-color: #808080 #DFDFDF #DFDFDF #808080;
-  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+  box-shadow: inset 2px 2px 0 #808080, inset -2px -2px 0 #DFDFDF, inset 3px 3px 0 #404040, inset -3px -3px 0 #FFFFFF;
 }
 [data-theme="klassiek"] .pane-btn.pane-btn--close {
   background: var(--win-btn-bg);
@@ -44,17 +42,18 @@
 /* Taakbalk: vlak, opgehoogde rand bovenaan */
 [data-theme="klassiek"] .taskbar {
   background: var(--taskbar-a);
-  border-top: 2px solid var(--taskbar-a);
+
 }
 
 /* Start-knop: vierkant, vlak, raised bevel, zwarte tekst */
 [data-theme="klassiek"] .start-btn {
-  height: 100%;
+  height: auto;
+  align-self: stretch;
+  margin: 2px 2px 2px 2px;
   border-radius: 0;
   background: #C0C0C0;
-  border: 2px solid;
-  border-color: #C0C0C0 #404040 #404040 #C0C0C0;
-  box-shadow: inset 2px 2px 0 #FFFFFF, inset -2px -2px 0 #888888;
+  border: none;
+  box-shadow: inset -2px -2px 0 #404040, inset 2px 2px 0 #FFFFFF, inset -4px -4px 0 #888888;
   color: #000000;
   text-shadow: none;
 }
@@ -64,8 +63,8 @@
 [data-theme="klassiek"] .start-btn.start-btn--pressed {
   background: #C0C0C0;
   filter: none;
-  border-color: #404040 #DFDFDF #DFDFDF #404040;
-  box-shadow: inset 2px 2px 0 #888888, inset -2px -2px 0 #FFFFFF;
+  box-shadow: inset 2px 2px 0 #404040, inset -2px -2px 0 #FFFFFF, inset 4px 4px 0 #888888;
+  transform: translate(2px, 1px);
 }
 
 [data-theme="klassiek"] .start-btn::before {
@@ -76,9 +75,8 @@
 [data-theme="klassiek"] .taskbar-tab {
   border-radius: 0;
   background: #C0C0C0;
-  border: 2px solid;
-  border-color: #DFDFDF #404040 #404040 #DFDFDF;
-  box-shadow: inset 2px 2px 0 #FFFFFF, inset -2px -2px 0 #888888;
+  border: none;
+  box-shadow: inset -2px -2px 0 #404040, inset 2px 2px 0 #FFFFFF, inset -4px -4px 0 #888888;
   color: #000000;
 }
 [data-theme="klassiek"] .taskbar-tab:hover {
@@ -86,23 +84,23 @@
 }
 [data-theme="klassiek"] .taskbar-tab.taskbar-tab--active {
   background: #C0C0C0;
-  border-color: #404040 #DFDFDF #DFDFDF #404040;
-  box-shadow: inset 2px 2px 0 #888888, inset -2px -2px 0 #FFFFFF;
+  box-shadow: inset 2px 2px 0 #404040, inset -2px -2px 0 #FFFFFF, inset 4px 4px 0 #888888;
+  transform: translate(2px, 1px);
 }
 @keyframes klassiek_blink {
   0%, 49% {
-    border-color: #DFDFDF #404040 #404040 #DFDFDF;
-    box-shadow: inset 2px 2px 0 #FFFFFF, inset -2px -2px 0 #888888;
+    box-shadow: inset -2px -2px 0 #404040, inset 2px 2px 0 #FFFFFF, inset -4px -4px 0 #888888;
+    transform: none;
   }
   50%, 100% {
-    border-color: #404040 #DFDFDF #DFDFDF #404040;
-    box-shadow: inset 2px 2px 0 #888888, inset -2px -2px 0 #FFFFFF;
+    box-shadow: inset 2px 2px 0 #404040, inset -2px -2px 0 #FFFFFF, inset 4px 4px 0 #888888;
+    transform: translate(2px, 1px);
   }
 }
 [data-theme="klassiek"] .taskbar-tab.taskbar-tab--unread {
   background: #C0C0C0 !important;
   border-radius: 0 !important;
-  border: 2px solid;
+  border: none;
   color: #000000 !important;
   animation: klassiek_blink 1s steps(1) infinite;
 }
@@ -129,18 +127,15 @@
 [data-theme="klassiek"] .dx-button {
   border-radius: 0;
   background: var(--app-bg);
-  border: 2px solid;
-  border-color: #DFDFDF #808080 #808080 #DFDFDF;
-  box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040;
+  border: none;
+  box-shadow: inset -2px -2px 0 #808080, inset 2px 2px 0 #DFDFDF, inset -3px -3px 0 #404040, inset 3px 3px 0 #FFFFFF;
 }
 [data-theme="klassiek"] .dx-button:hover {
   background: var(--app-bg);
-  border-color: #DFDFDF #808080 #808080 #DFDFDF;
 }
 [data-theme="klassiek"] .dx-button:active {
   background: var(--app-bg);
-  border-color: #808080 #DFDFDF #DFDFDF #808080;
-  box-shadow: inset 1px 1px 0 #404040, inset -1px -1px 0 #FFFFFF;
+  box-shadow: inset 2px 2px 0 #808080, inset -2px -2px 0 #DFDFDF, inset 3px 3px 0 #404040, inset -3px -3px 0 #FFFFFF;
 }
 
 /* Systray: zwarte tekst, geen text-shadow */

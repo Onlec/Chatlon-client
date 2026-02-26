@@ -6,9 +6,12 @@
 /* Lettergrootte variabelen — standaard (normaal) */
 :root {
   --ui-font-size:    11px;  /* Basis UI tekst */
+  --ui-font-size-lg: 13px;  /* Groot: startknop */
   --ui-font-size-md: 12px;  /* Licht groter: namen, labels */
   --ui-font-size-sm: 10px;  /* Klein secundair */
   --ui-font-size-xs:  9px;  /* Heel klein */
+  --taskbar-height:  36px;
+  --titlebar-height: 26px;
 }
 
 /*
@@ -23,9 +26,12 @@
 [data-fontsize="klein"] .start-menu,
 [data-fontsize="klein"] .shortcuts-area {
   --ui-font-size:    10px;
+  --ui-font-size-lg: 12px;
   --ui-font-size-md: 11px;
   --ui-font-size-sm:  9px;
   --ui-font-size-xs:  8px;
+  --taskbar-height:  30px;
+  --titlebar-height: 22px;
 }
 
 /* Groot */
@@ -34,9 +40,12 @@
 [data-fontsize="groot"] .start-menu,
 [data-fontsize="groot"] .shortcuts-area {
   --ui-font-size:    13px;
+  --ui-font-size-lg: 15px;
   --ui-font-size-md: 14px;
   --ui-font-size-sm: 12px;
   --ui-font-size-xs: 10px;
+  --taskbar-height:  40px;
+  --titlebar-height: 30px;
 }
 
 /* Standaard: Windows XP Blauw (Luna) */
