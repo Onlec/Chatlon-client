@@ -102,6 +102,11 @@ body, html {
   pointer-events: auto;
 }
 
+/* Winks are visual-only overlays: never block desktop/pane interaction. */
+#portal-root > .wink-overlay {
+  pointer-events: none;
+}
+
 .pane-layer {
   position: absolute;
   top: 0;

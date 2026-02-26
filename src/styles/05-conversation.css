@@ -945,6 +945,10 @@
   position: relative;
 }
 
+.chat-toolbar-wink-wrap {
+  position: relative;
+}
+
 .game-select-menu {
   position: absolute;
   top: calc(100% + 2px);
@@ -988,6 +992,102 @@
 .game-select-menu-item:hover {
   background: linear-gradient(to bottom, #0A246A 0%, #A6CAF0 100%);
   color: #FFFFFF;
+}
+
+/* ===== WINK PICKER MENU ===== */
+.wink-select-menu {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  z-index: 200;
+  background: linear-gradient(to bottom, #FFFFFF 0%, #F0F0F0 100%);
+  border: 2px solid;
+  border-color: #FFFFFF #808080 #808080 #FFFFFF;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  min-width: 140px;
+  padding: 2px;
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+}
+
+.wink-select-menu-title {
+  font-size: var(--ui-font-size-sm);
+  font-weight: bold;
+  color: #003399;
+  padding: 4px 8px 2px 8px;
+  border-bottom: 1px solid #C0C0C0;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.wink-select-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: var(--ui-font-size);
+  font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+  color: #000;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.wink-select-menu-item:hover {
+  background: linear-gradient(to bottom, #0A246A 0%, #A6CAF0 100%);
+  color: #FFFFFF;
+}
+
+/* ===== WINK OVERLAY ===== */
+.wink-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  pointer-events: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 96px;
+  background: transparent;
+  animation: wink-fade 3s forwards;
+}
+
+.wink-overlay--hearts { background: transparent; }
+.wink-overlay--stars  { background: transparent; }
+.wink-overlay--lol    { background: transparent; }
+.wink-overlay--kiss   { background: transparent; }
+.wink-overlay--cool   { background: transparent; }
+
+.wink-overlay--hearts::before { content: '\2764\FE0F'; animation: wink-bounce 0.5s ease-in-out 4; }
+.wink-overlay--stars::before  { content: '\2B50';      animation: wink-spin 1s linear infinite; }
+.wink-overlay--lol::before    { content: '\uD83D\uDE02'; animation: wink-bounce 0.4s ease-in-out 5; }
+.wink-overlay--kiss::before   { content: '\uD83D\uDC8B'; animation: wink-pop 0.8s ease-out forwards; }
+.wink-overlay--cool::before   { content: '\uD83D\uDE0E'; animation: wink-bounce 0.6s ease-in-out 3; }
+
+@keyframes wink-fade {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes wink-bounce {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wink-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes wink-pop {
+  0%   { transform: scale(0); }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 
 .chat-legacy-msg-item {

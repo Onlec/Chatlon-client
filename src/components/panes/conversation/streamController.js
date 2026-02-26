@@ -1,6 +1,8 @@
 import { normalizeIncomingMessage } from './conversationState';
 
 export const NUDGE_SHAKE_DURATION_MS = 600;
+export const WINK_DURATION_MS = 3000;
+export const WINK_GRACE_MS = 5 * 60 * 1000; // winks ontvangen in de laatste 5 min spelen bij pane-open
 export const TYPING_STALE_MS = 4000;
 export const TYPING_CLEAR_MS = 3000;
 
@@ -12,10 +14,14 @@ export function startConversationStreams({
   streamGenerationRef,
   lastProcessedNudgeRef,
   shakeTimeoutRef,
+  lastProcessedWinkRef,
+  winkTimeoutRef,
   typingTimeoutRef,
   playSoundRef,
   onMessage,
   onShakeChange,
+  onWinkChange,
+  onWinkProcessed,
   onTypingChange,
   decryptMessage,
   currentUserAliasRef
@@ -27,6 +33,7 @@ export function startConversationStreams({
 
   const chatNode = gun.get(currentSessionId);
   const nudgeNode = gun.get(`NUDGE_${currentSessionId}`);
+  const winkNode = gun.get(`WINK_${currentSessionId}`);
   const typingNode = gun.get(`TYPING_${currentSessionId}`);
 
   const chatSubscription = chatNode.map().on(async (data, id) => {
@@ -46,6 +53,16 @@ export function startConversationStreams({
       return;
     }
 
+    if (normalizedBaseMessage.type === 'wink') {
+      if (streamGenerationRef.current !== streamGeneration) return;
+      onMessage({
+        ...normalizedBaseMessage,
+        content: '',
+        isLegacy: normalizedBaseMessage.timeRef < boundary
+      });
+      return;
+    }
+
     // Game system messages — not encrypted, pass through directly
     if (['gameinvite', 'gameaccept', 'gamedecline'].includes(normalizedBaseMessage.type)) {
       if (streamGenerationRef.current !== streamGeneration) return;
@@ -56,7 +73,7 @@ export function startConversationStreams({
       return;
     }
 
-    if (!normalizedBaseMessage.content || normalizedBaseMessage.content === '__nudge__') return;
+    if (!normalizedBaseMessage.content || normalizedBaseMessage.content === '__nudge__' || normalizedBaseMessage.content === '__wink__') return;
     if (streamGenerationRef.current !== streamGeneration) return;
 
     const currentUserAlias = typeof currentUserAliasRef?.current === 'string'
@@ -92,6 +109,23 @@ export function startConversationStreams({
     }
   });
 
+  const winkSubscription = winkNode.on((data) => {
+    if (streamGenerationRef.current !== streamGeneration) return;
+    if (data?.time > lastProcessedWinkRef.current && data.from === contactName) {
+      lastProcessedWinkRef.current = data.time;
+      if (typeof onWinkProcessed === 'function') {
+        onWinkProcessed(data.time);
+      }
+      if (winkTimeoutRef.current) clearTimeout(winkTimeoutRef.current);
+      onWinkChange({ id: data.winkId, sender: data.from });
+      winkTimeoutRef.current = setTimeout(() => {
+        if (streamGenerationRef.current !== streamGeneration) return;
+        onWinkChange(null);
+        winkTimeoutRef.current = null;
+      }, WINK_DURATION_MS);
+    }
+  });
+
   const typingSubscription = typingNode.on((data) => {
     if (streamGenerationRef.current !== streamGeneration) return;
     if (data && data.isTyping && data.user === contactName) {
@@ -122,6 +156,9 @@ export function startConversationStreams({
     if (nudgeSubscription && typeof nudgeSubscription.off === 'function') {
       nudgeSubscription.off();
     }
+    if (winkSubscription && typeof winkSubscription.off === 'function') {
+      winkSubscription.off();
+    }
     if (typingSubscription && typeof typingSubscription.off === 'function') {
       typingSubscription.off();
     }
@@ -132,6 +169,10 @@ export function startConversationStreams({
     if (shakeTimeoutRef.current) {
       clearTimeout(shakeTimeoutRef.current);
       shakeTimeoutRef.current = null;
+    }
+    if (winkTimeoutRef.current) {
+      clearTimeout(winkTimeoutRef.current);
+      winkTimeoutRef.current = null;
     }
   };
 }

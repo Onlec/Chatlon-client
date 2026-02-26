@@ -126,6 +126,7 @@ function PaneLayer({
                   && game.isOpen
                   && game.contactName === conv.contactName
                 ))}
+                isActive={activePane === convId && !conv.isMinimized}
               />
             </Pane>
           </div>

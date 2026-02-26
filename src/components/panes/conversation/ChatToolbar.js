@@ -4,9 +4,19 @@ const GAME_OPTIONS = [
   { id: 'tictactoe', label: 'Tic Tac Toe', icon: '\u2B55' },
 ];
 
-function ChatToolbar({ onNudge, canNudge, onStartCall, callState, onOpenGames, hasPendingGameInvite }) {
+const WINK_OPTIONS = [
+  { id: 'hearts', label: 'Hartjes', icon: '\u2764\uFE0F' },
+  { id: 'stars',  label: 'Sterren', icon: '\u2B50' },
+  { id: 'lol',    label: 'LOL',     icon: '\uD83D\uDE02' },
+  { id: 'kiss',   label: 'Kusje',   icon: '\uD83D\uDC8B' },
+  { id: 'cool',   label: 'Cool',    icon: '\uD83D\uDE0E' },
+];
+
+function ChatToolbar({ onNudge, canNudge, onStartCall, callState, onOpenGames, hasPendingGameInvite, onSendWink, canWink }) {
   const [showGameMenu, setShowGameMenu] = useState(false);
+  const [showWinkMenu, setShowWinkMenu] = useState(false);
   const gameMenuRef = useRef(null);
+  const winkMenuRef = useRef(null);
 
   useEffect(() => {
     if (!showGameMenu) return;
@@ -16,6 +26,15 @@ function ChatToolbar({ onNudge, canNudge, onStartCall, callState, onOpenGames, h
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [showGameMenu]);
+
+  useEffect(() => {
+    if (!showWinkMenu) return;
+    const close = (e) => {
+      if (!winkMenuRef.current?.contains(e.target)) setShowWinkMenu(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showWinkMenu]);
 
   const tools = [
     { icon: '\u{1F465}', label: 'Uitnodigen' },
@@ -63,6 +82,36 @@ function ChatToolbar({ onNudge, canNudge, onStartCall, callState, onOpenGames, h
               >
                 <span>{g.icon}</span>
                 <span>{g.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="chat-toolbar-wink-wrap" ref={winkMenuRef}>
+        <button
+          className={`chat-toolbar-btn ${!canWink ? 'chat-toolbar-btn--disabled' : ''}`}
+          disabled={!canWink}
+          onClick={() => setShowWinkMenu((v) => !v)}
+        >
+          <span className="chat-toolbar-icon">{'\u2728'}</span>
+          <span className="chat-toolbar-label">Winks</span>
+        </button>
+
+        {showWinkMenu && (
+          <div className="wink-select-menu">
+            <div className="wink-select-menu-title">Kies een wink</div>
+            {WINK_OPTIONS.map((w) => (
+              <button
+                key={w.id}
+                className="wink-select-menu-item"
+                onClick={() => {
+                  setShowWinkMenu(false);
+                  if (typeof onSendWink === 'function') onSendWink(w.id);
+                }}
+              >
+                <span>{w.icon}</span>
+                <span>{w.label}</span>
               </button>
             ))}
           </div>

@@ -20,6 +20,21 @@ function ChatMessage({ msg, prevMsg, currentUser }) {
     );
   }
 
+  if (msg.type === 'wink') {
+    const isSelf = msg.sender === currentUser;
+    const name = getDisplayName(msg.sender);
+    const WINK_LABELS = { hearts: 'hartjes', stars: 'sterren', lol: 'LOL', kiss: 'kusje', cool: 'cool' };
+    const label = WINK_LABELS[msg.winkId] || 'wink';
+    return (
+      <>
+        {isFirstNew && <div className="chat-history-divider"><span>Laatst verzonden berichten</span></div>}
+        <div className="chat-message-system">
+          {'\u2728'} {isSelf ? `Je hebt een ${label}-wink gestuurd.` : <><strong>{name}</strong> heeft een {label}-wink gestuurd.</>}
+        </div>
+      </>
+    );
+  }
+
   // Game systeemberichten
   if (msg.type === 'gameinvite' || msg.type === 'gameaccept' || msg.type === 'gamedecline') {
     const isSelf = msg.sender === currentUser;

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useReducer, useRef, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { gun, user } from '../../gun';
 import { getContactPairId } from '../../utils/chatUtils';
 import { useWebRTC } from '../../hooks/useWebRTC';
@@ -12,7 +13,7 @@ import {
   createInitialConversationState
 } from './conversation/conversationState';
 import { startSessionBootstrap } from './conversation/sessionController';
-import { startConversationStreams } from './conversation/streamController';
+import { startConversationStreams, WINK_DURATION_MS, WINK_GRACE_MS } from './conversation/streamController';
 import {
   countNonLegacyMessages,
   computeVisibleTarget,
@@ -39,7 +40,8 @@ function ConversationPane({
   clearNotificationTime,
   contactPresenceData,
   onOpenGamePane,
-  hasOpenGamePane = false
+  hasOpenGamePane = false,
+  isActive = true
 }) {
   const { playSound } = useSounds();
   const [state, dispatch] = useReducer(conversationReducer, createInitialConversationState());
@@ -48,6 +50,8 @@ function ConversationPane({
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [isShaking, setIsShaking] = useState(false);
   const [canNudge, setCanNudge] = useState(true);
+  const [activeWink, setActiveWink] = useState(null);
+  const [canWink, setCanWink] = useState(true);
   const [showEmoticonPicker, setShowEmoticonPicker] = useState(false);
   const [isContactTyping, setIsContactTyping] = useState(false);
   const [incomingInvite, setIncomingInvite] = useState(null);
@@ -63,6 +67,7 @@ function ConversationPane({
   const emoticonPickerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const lastProcessedNudge = useRef(Date.now());
+  const lastProcessedWink = useRef(Date.now() - WINK_GRACE_MS);
   const lastTypingSignal = useRef(0);
   const windowOpenTimeRef = useRef(Date.now());
   const prevMsgCountRef = useRef(0);
@@ -73,11 +78,20 @@ function ConversationPane({
   const boundaryRef = useRef(lastNotificationTime ? (lastNotificationTime - 2000) : (windowOpenTimeRef.current - 1000));
   const streamGenerationRef = useRef(0);
   const shakeTimeoutRef = useRef(null);
+  const winkTimeoutRef = useRef(null);
+  const winkCooldownTimeoutRef = useRef(null);
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
+  const pendingWinkRef = useRef(null);
   const currentUser = user.is?.alias;
   const lastTypingSoundRef = useRef(0);
   const playSoundRef = useRef(playSound);
   const hasLoadedOlderRef = useRef(false);
   const currentUserAliasRef = useRef(currentUser);
+  const getWinkConsumedKey = useCallback(() => {
+    if (!currentUser || !contactName) return null;
+    return `chatlon_wink_consumed_${getContactPairId(currentUser, contactName)}`;
+  }, [currentUser, contactName]);
 
   const {
     callState,
@@ -132,6 +146,62 @@ function ConversationPane({
     gun.get(`NUDGE_${currentSessionId}`).put({ time: nudgeTime, from: sender });
     setTimeout(() => setCanNudge(true), 5000);
   }, [canNudge, currentSessionId, playSound]);
+
+  const sendWink = useCallback((winkId) => {
+    if (!canWink || !currentSessionId) return;
+    const sender = user.is?.alias;
+    setCanWink(false);
+    const winkTime = Date.now();
+    const winkKey = `${sender}_wink_${winkTime}`;
+    gun.get(currentSessionId).get(winkKey).put({
+      sender,
+      content: '__wink__',
+      type: 'wink',
+      winkId,
+      timestamp: new Date(winkTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timeRef: winkTime,
+    });
+    gun.get(`WINK_${currentSessionId}`).put({ time: winkTime, from: sender, winkId });
+    // Zender ziet de wink ook direct
+    if (winkTimeoutRef.current) clearTimeout(winkTimeoutRef.current);
+    setActiveWink({ id: winkId, sender });
+    winkTimeoutRef.current = setTimeout(() => {
+      setActiveWink(null);
+      winkTimeoutRef.current = null;
+    }, WINK_DURATION_MS);
+    if (winkCooldownTimeoutRef.current) clearTimeout(winkCooldownTimeoutRef.current);
+    winkCooldownTimeoutRef.current = setTimeout(() => {
+      setCanWink(true);
+      winkCooldownTimeoutRef.current = null;
+    }, 8000);
+  }, [canWink, currentSessionId]);
+
+  // Wink ontvangen: direct afspelen als actief, anders in queue
+  const handleIncomingWink = useCallback((winkData) => {
+    if (winkData === null) {
+      setActiveWink(null);
+      return;
+    }
+    if (isActiveRef.current) {
+      setActiveWink(winkData);
+    } else {
+      pendingWinkRef.current = winkData;
+    }
+  }, []);
+
+  // Flush pending wink zodra pane actief wordt
+  useEffect(() => {
+    if (isActive && pendingWinkRef.current) {
+      const wink = pendingWinkRef.current;
+      pendingWinkRef.current = null;
+      if (winkTimeoutRef.current) clearTimeout(winkTimeoutRef.current);
+      setActiveWink(wink);
+      winkTimeoutRef.current = setTimeout(() => {
+        setActiveWink(null);
+        winkTimeoutRef.current = null;
+      }, WINK_DURATION_MS);
+    }
+  }, [isActive]);
 
   const sendGameInvite = useCallback((gameType = 'tictactoe') => {
     if (!currentUser || !contactName) return;
@@ -269,6 +339,24 @@ function ConversationPane({
   }, [currentUser]);
 
   useEffect(() => {
+    const key = getWinkConsumedKey();
+    if (!key) {
+      lastProcessedWink.current = Date.now() - WINK_GRACE_MS;
+      return;
+    }
+    try {
+      const persistedValue = Number(sessionStorage.getItem(key));
+      if (Number.isFinite(persistedValue) && persistedValue > 0) {
+        lastProcessedWink.current = persistedValue;
+        return;
+      }
+    } catch {
+      // Storage can be unavailable in privacy-restricted contexts.
+    }
+    lastProcessedWink.current = Date.now() - WINK_GRACE_MS;
+  }, [getWinkConsumedKey]);
+
+  useEffect(() => {
     currentSessionIdRef.current = currentSessionId;
   }, [currentSessionId]);
 
@@ -315,6 +403,16 @@ function ConversationPane({
       warmupEncryption(contactName);
     }
   }, [contactName]);
+
+  // Cleanup transient timers that are not owned by streamController.
+  useEffect(() => {
+    return () => {
+      if (winkCooldownTimeoutRef.current) {
+        clearTimeout(winkCooldownTimeoutRef.current);
+        winkCooldownTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Game invite listener
   useEffect(() => {
@@ -409,17 +507,29 @@ function ConversationPane({
       streamGenerationRef,
       lastProcessedNudgeRef: lastProcessedNudge,
       shakeTimeoutRef,
+      lastProcessedWinkRef: lastProcessedWink,
+      winkTimeoutRef,
       typingTimeoutRef,
       playSoundRef,
       onMessage: (message) => {
         dispatch({ type: 'UPSERT_MESSAGE', payload: message });
       },
       onShakeChange: setIsShaking,
+      onWinkChange: handleIncomingWink,
+      onWinkProcessed: (winkTime) => {
+        const key = getWinkConsumedKey();
+        if (!key) return;
+        try {
+          sessionStorage.setItem(key, String(winkTime));
+        } catch {
+          // Non-blocking: wink playback should continue even if persistence fails.
+        }
+      },
       onTypingChange: setIsContactTyping,
       decryptMessage,
       currentUserAliasRef
     });
-  }, [currentSessionId, contactName]);
+  }, [currentSessionId, contactName, handleIncomingWink, getWinkConsumedKey]);
 
   // Scroll effect
   useEffect(() => {
@@ -460,6 +570,8 @@ function ConversationPane({
         callState={callState}
         onOpenGames={sendGameInvite}
         hasPendingGameInvite={Boolean(hasOpenGamePane || pendingOutgoingInvite || incomingInvite || hasGameInviteLock)}
+        onSendWink={sendWink}
+        canWink={canWink}
       />
       <CallPanel
         callState={callState}
@@ -518,6 +630,10 @@ function ConversationPane({
               <ChatMessage key={msg.id} msg={msg} prevMsg={arr[i - 1]} currentUser={user.is?.alias} />
             ))}
           </div>
+          {activeWink && ReactDOM.createPortal(
+            <div className={`wink-overlay wink-overlay--${activeWink.id}`} />,
+            document.getElementById('portal-root') || document.body
+          )}
           <div className="typing-indicator-bar">
             {isContactTyping && <em>{getDisplayName(contactName)} is aan het typen...</em>}
           </div>
@@ -562,4 +678,3 @@ function ConversationPane({
 }
 
 export default ConversationPane;
-
