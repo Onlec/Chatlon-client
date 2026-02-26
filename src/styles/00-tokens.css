@@ -51,6 +51,8 @@
   --win-titlebar-d:       #0046ad;
   --win-content-border:   #7F9DB9;
   --win-btn-bg:           #3f8cf3;
+  --win-titlebar-inactive-a: #82A2D4;
+  --win-titlebar-inactive-b: #A5C4E0;
 
   /* Taakbalk */
   --taskbar-a:            #245edb;
@@ -110,6 +112,8 @@
   --win-titlebar-d:       #3E5118;
   --win-content-border:   #8E9E6C;
   --win-btn-bg:           #92A45C;
+  --win-titlebar-inactive-a: #8FA278;
+  --win-titlebar-inactive-b: #B5BEA0;
 
   --taskbar-a:            #6D7128;
   --taskbar-b:            #8C8D43;
@@ -161,6 +165,8 @@
   --win-titlebar-d:       #3C546E;
   --win-content-border:   #9CA2AC;
   --win-btn-bg:           #9AB4D0;
+  --win-titlebar-inactive-a: #9DAEC1;
+  --win-titlebar-inactive-b: #C4D1DE;
 
   --taskbar-a:            #7C8EA4;
   --taskbar-b:            #A4B4C8;
@@ -212,6 +218,8 @@
   --win-titlebar-d:       #0F2750;
   --win-content-border:   #6685A4;
   --win-btn-bg:           #4682B4;
+  --win-titlebar-inactive-a: #7D96BE;
+  --win-titlebar-inactive-b: #A6BAD0;
 
   --taskbar-a:            #13306A;
   --taskbar-b:            #1C4B8E;
@@ -263,6 +271,8 @@
   --win-titlebar-d:       #1A1A1A;
   --win-content-border:   #808080;
   --win-btn-bg:           #5A5A5A;
+  --win-titlebar-inactive-a: #686868;
+  --win-titlebar-inactive-b: #909090;
 
   --taskbar-a:            #2C2C2C;
   --taskbar-b:            #3E3E3E;
@@ -314,6 +324,8 @@
   --win-titlebar-d:       #0A0A1A;
   --win-content-border:   #5A5A6E;
   --win-btn-bg:           #2E3E6E;
+  --win-titlebar-inactive-a: #2C2C44;
+  --win-titlebar-inactive-b: #485070;
 
   --taskbar-a:            #141422;
   --taskbar-b:            #1E2040;
@@ -365,6 +377,8 @@
   --win-titlebar-d:       #004AA0;
   --win-content-border:   #6CAED8;
   --win-btn-bg:           #38A8F0;
+  --win-titlebar-inactive-a: #7AAAD8;
+  --win-titlebar-inactive-b: #A5CCEC;
 
   --taskbar-a:            #0060C8;
   --taskbar-b:            #28A0F0;

@@ -66,6 +66,14 @@
   left: 0;
 }
 
+/* Inactieve vensterrand — border en schaduw dimmen samen met de titelbalk */
+.pane-frame:has(.pane-header--inactive) {
+  border-color: var(--win-titlebar-inactive-a, var(--win-frame-border));
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--win-titlebar-inactive-a, var(--win-frame-shadow)) 80%, black),
+    3px 3px 10px rgba(0,0,0,0.25);
+}
+
 /* Specifieke minimum groottes per type */
 .pane-frame.type-contacts {
   min-width: 200px;
@@ -124,6 +132,22 @@ div.pane-frame.pane-frame--maximized {
   text-shadow: 1px 1px 1px #000;
   flex-shrink: 0;
   user-select: none;
+}
+
+/* Inactieve titelbalk — alle thema's behalve klassiek (die heeft eigen override) */
+.pane-header--inactive {
+  background: linear-gradient(
+    to bottom,
+    var(--win-titlebar-inactive-a) 0%,
+    var(--win-titlebar-inactive-b) 9%,
+    var(--win-titlebar-inactive-a) 18%,
+    var(--win-titlebar-inactive-a) 92%,
+    color-mix(in srgb, var(--win-titlebar-inactive-a) 80%, black) 100%
+  );
+}
+
+.pane-header--inactive .pane-btn {
+  opacity: 0.65;
 }
 
 .pane-controls {
