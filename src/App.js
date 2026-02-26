@@ -473,7 +473,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
   };
 
   
-  const handleLogoff = async () => {
+  async function handleLogoff() {
     log('[App] Logging off...');
     await closeSession({
       reason: SESSION_CLOSE_REASON_MANUAL_LOGOFF,
@@ -481,9 +481,9 @@ const onTaskbarClick = React.useCallback((paneId) => {
       playLogoffSound: true,
       postClose: SESSION_POST_CLOSE_STAY_ON_LOGIN
     });
-  };
+  }
   // Trigger shutdown vanuit ingelogde sessie via dezelfde teardown pipeline.
-  const handleShutdown = async () => {
+  async function handleShutdown() {
     log('[App] Shutting down...');
     await closeSession({
       reason: SESSION_CLOSE_REASON_MANUAL_SHUTDOWN,
@@ -491,7 +491,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
       playLogoffSound: true,
       postClose: SESSION_POST_CLOSE_SHUTDOWN_BOOT_RELOAD
     });
-  };
+  }
 
   useEffect(() => {
     return () => {
@@ -538,6 +538,259 @@ const onTaskbarClick = React.useCallback((paneId) => {
   const contextMenuManager = useContextMenuManager({
     enabled: FEATURE_FLAGS.contextMenus
   });
+
+  const buildDesktopActions = React.useCallback(() => ([
+    {
+      id: 'refresh',
+      label: 'Vernieuwen',
+      onClick: () => {}
+    },
+    { type: 'separator' },
+    {
+      id: 'properties',
+      label: 'Eigenschappen',
+      onClick: () => desktopCommandBus.openPane('control')
+    }
+  ]), [desktopCommandBus]);
+
+  const buildShortcutActions = React.useCallback((shortcutId, beginRename) => ([
+    {
+      id: 'open',
+      label: 'Openen',
+      bold: true,
+      onClick: () => desktopManager.openShortcut(shortcutId)
+    },
+    { type: 'separator' },
+    {
+      id: 'rename',
+      label: 'Naam wijzigen',
+      onClick: () => {
+        if (typeof beginRename === 'function') beginRename();
+      }
+    },
+    {
+      id: 'delete',
+      label: 'Verwijderen',
+      onClick: () => desktopManager.removeShortcut(shortcutId)
+    },
+    { type: 'separator' },
+    {
+      id: 'properties',
+      label: 'Eigenschappen',
+      onClick: () => {}
+    }
+  ]), [desktopManager]);
+
+  const buildTabActions = React.useCallback((paneId) => {
+    const pane = panes[paneId];
+    const conv = conversations[paneId];
+    const game = games?.[paneId];
+    const isConversation = paneId.startsWith('conv_');
+    const isGame = paneId.startsWith('game_');
+    const isMinimized = isConversation
+      ? Boolean(conv?.isMinimized)
+      : isGame
+        ? Boolean(game?.isMinimized)
+        : Boolean(pane?.isMinimized);
+    const isMaximized = isConversation
+      ? Boolean(conv?.isMaximized)
+      : isGame
+        ? Boolean(game?.isMaximized)
+        : Boolean(pane?.isMaximized);
+
+    return [
+      {
+        id: 'restore',
+        label: 'Herstellen',
+        disabled: !isMinimized,
+        onClick: () => onTaskbarClick(paneId)
+      },
+      {
+        id: 'minimize',
+        label: 'Minimaliseren',
+        disabled: isMinimized,
+        onClick: () => {
+          if (isConversation) {
+            minimizeConversation(paneId);
+            return;
+          }
+          if (isGame) {
+            minimizeGamePane(paneId);
+            return;
+          }
+          minimizePane(paneId);
+        }
+      },
+      {
+        id: 'maximize',
+        label: 'Maximaliseren',
+        disabled: false,
+        onClick: () => {
+          if (isConversation) {
+            if (isMinimized) onTaskbarClick(paneId);
+            toggleMaximizeConversation(paneId);
+            return;
+          }
+          if (isGame) {
+            if (isMinimized) onTaskbarClick(paneId);
+            toggleMaximizeGamePane(paneId);
+            return;
+          }
+          if (isMinimized) onTaskbarClick(paneId);
+          if (!isMaximized || isMinimized) {
+            toggleMaximizePane(paneId);
+          }
+        }
+      },
+      { type: 'separator' },
+      {
+        id: 'close',
+        label: 'Sluiten',
+        onClick: () => {
+          if (isConversation) {
+            closeConversation(paneId);
+            return;
+          }
+          if (isGame) {
+            closeGamePane(paneId);
+            return;
+          }
+          closePane(paneId);
+        }
+      }
+    ];
+  }, [
+    panes,
+    conversations,
+    games,
+    onTaskbarClick,
+    minimizeConversation,
+    minimizeGamePane,
+    minimizePane,
+    toggleMaximizeConversation,
+    toggleMaximizeGamePane,
+    toggleMaximizePane,
+    closeConversation,
+    closeGamePane,
+    closePane
+  ]);
+
+  const handleShortcutContextMenu = React.useCallback((event, shortcutId, beginRename) => {
+    contextMenuManager.openMenu({
+      x: event.clientX,
+      y: event.clientY,
+      type: 'shortcut',
+      target: shortcutId,
+      actions: buildShortcutActions(shortcutId, beginRename)
+    });
+  }, [contextMenuManager, buildShortcutActions]);
+
+  const handleTabContextMenu = React.useCallback((event, paneId) => {
+    contextMenuManager.openMenu({
+      x: event.clientX,
+      y: event.clientY,
+      type: 'taskbar-tab',
+      target: paneId,
+      actions: buildTabActions(paneId)
+    });
+  }, [contextMenuManager, buildTabActions]);
+
+  const minimizeAllWindows = React.useCallback(() => {
+    Object.entries(panes || {}).forEach(([paneId, pane]) => {
+      if (pane?.isOpen && !pane?.isMinimized) {
+        minimizePane(paneId);
+      }
+    });
+    Object.entries(conversations || {}).forEach(([convId, conv]) => {
+      if (conv?.isOpen && !conv?.isMinimized) {
+        minimizeConversation(convId);
+      }
+    });
+    Object.entries(games || {}).forEach(([gameId, game]) => {
+      if (game?.isOpen && !game?.isMinimized) {
+        minimizeGamePane(gameId);
+      }
+    });
+  }, [panes, conversations, games, minimizePane, minimizeConversation, minimizeGamePane]);
+
+  const buildStartButtonActions = React.useCallback(() => ([
+    {
+      id: 'open-start',
+      label: 'Open Startmenu',
+      disabled: isStartOpen,
+      onClick: () => {
+        if (!isStartOpen) {
+          desktopCommandBus.toggleStart();
+        }
+      }
+    },
+    {
+      id: 'open-control',
+      label: 'Configuratiescherm',
+      onClick: () => desktopCommandBus.openPane('control')
+    },
+    {
+      id: 'show-desktop',
+      label: 'Bureaublad tonen',
+      onClick: () => minimizeAllWindows()
+    },
+    {
+      id: 'minimize-all',
+      label: 'Alle vensters minimaliseren',
+      onClick: () => minimizeAllWindows()
+    },
+    { type: 'separator' },
+    {
+      id: 'logoff',
+      label: 'Afmelden',
+      onClick: () => {
+        void handleLogoff();
+      }
+    },
+    {
+      id: 'shutdown',
+      label: 'Afsluiten',
+      onClick: () => {
+        void handleShutdown();
+      }
+    }
+  ]), [isStartOpen, desktopCommandBus, minimizeAllWindows, handleLogoff, handleShutdown]);
+
+  const buildTaskbarActions = React.useCallback(() => ([
+    { id: 'cascade', label: 'Cascaderen', disabled: true },
+    { id: 'tile', label: 'Vensters naast elkaar', disabled: true },
+    {
+      id: 'show-desktop',
+      label: 'Bureaublad tonen',
+      onClick: () => minimizeAllWindows()
+    },
+    { type: 'separator' },
+    {
+      id: 'properties',
+      label: 'Eigenschappen',
+      onClick: () => desktopCommandBus.openPane('control')
+    }
+  ]), [desktopCommandBus, minimizeAllWindows]);
+
+  const handleTaskbarContextMenu = React.useCallback((event) => {
+    contextMenuManager.openMenu({
+      x: event.clientX,
+      y: event.clientY,
+      type: 'taskbar',
+      target: null,
+      actions: buildTaskbarActions()
+    });
+  }, [contextMenuManager, buildTaskbarActions]);
+
+  const handleStartButtonContextMenu = React.useCallback((event) => {
+    contextMenuManager.openMenu({
+      x: event.clientX,
+      y: event.clientY,
+      type: 'start-button',
+      target: null,
+      actions: buildStartButtonActions()
+    });
+  }, [contextMenuManager, buildStartButtonActions]);
 
   // Presence owner: usePresenceCoordinator.
   // ContactsPane consumeert alleen sharedContactPresence en subscribe't niet zelf.
@@ -620,6 +873,8 @@ const onTaskbarClick = React.useCallback((paneId) => {
       scanlinesEnabled={scanlinesEnabled}
       desktopShortcuts={desktopManager.shortcuts}
       onOpenShortcut={desktopManager.openShortcut}
+      onShortcutContextMenu={handleShortcutContextMenu}
+      onRenameShortcut={desktopManager.renameShortcut}
       paneLayerProps={{
         paneConfig,
         panes,
@@ -673,12 +928,15 @@ const onTaskbarClick = React.useCallback((paneId) => {
       taskbarProps={{
         isStartOpen,
         onToggleStartMenu: desktopCommandBus.toggleStart,
+        onStartButtonContextMenu: handleStartButtonContextMenu,
+        onTaskbarContextMenu: handleTaskbarContextMenu,
         paneOrder,
         unreadChats,
         conversations,
         games,
         activePane,
         onTaskbarClick,
+        onTabContextMenu: handleTabContextMenu,
         panes,
         paneConfig,
         getDisplayName,
@@ -707,7 +965,10 @@ const onTaskbarClick = React.useCallback((paneId) => {
       toasts={toasts}
       removeToast={removeToast}
       onToastClick={messengerCoordinator.handleToastClick}
-      contextMenu={contextMenuManager}
+      contextMenu={{
+        ...contextMenuManager,
+        buildDesktopActions
+      }}
     />
   );
 }

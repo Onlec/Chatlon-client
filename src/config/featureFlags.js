@@ -1,5 +1,5 @@
 export const FEATURE_FLAGS = {
-  contextMenus: false
+  contextMenus: true
 };
 
 export default FEATURE_FLAGS;

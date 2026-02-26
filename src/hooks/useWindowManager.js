@@ -2,6 +2,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getInitialPaneState } from '../paneConfig';
 import { log } from '../utils/debug';
 
+function blurEditableIfInside(selector) {
+  if (typeof document === 'undefined') return;
+  const active = document.activeElement;
+  if (!active || typeof active.matches !== 'function' || typeof active.closest !== 'function') return;
+  const isEditable = active.matches('input, textarea, [contenteditable="true"]');
+  if (!isEditable) return;
+  if (!active.closest(selector)) return;
+  if (typeof active.blur === 'function') {
+    active.blur();
+  }
+}
+
 export function useWindowManager() {
   const [panes, setPanes] = useState(getInitialPaneState());
   const [paneOrder, setPaneOrder] = useState([]);
@@ -85,6 +97,7 @@ export function useWindowManager() {
 
   const closePane = useCallback((paneName) => {
     log('[usePaneManager] Closing pane:', paneName);
+    blurEditableIfInside('.pane-frame');
 
     setPanes((prev) => ({
       ...prev,
@@ -114,6 +127,7 @@ export function useWindowManager() {
 
   const minimizePane = useCallback((paneName) => {
     log('[usePaneManager] Minimizing pane:', paneName);
+    blurEditableIfInside('.pane-frame');
 
     setPanes((prev) => ({
       ...prev,
@@ -182,6 +196,7 @@ export function useWindowManager() {
 
   const closeConversation = useCallback((convId, onBeforeClose) => {
     log('[usePaneManager] Closing conversation:', convId);
+    blurEditableIfInside('.pane-frame');
     const contactName = convId.replace('conv_', '');
     if (typeof onBeforeClose === 'function') {
       onBeforeClose(contactName);
@@ -216,6 +231,7 @@ export function useWindowManager() {
 
   const minimizeConversation = useCallback((convId) => {
     log('[usePaneManager] Minimizing conversation:', convId);
+    blurEditableIfInside('.pane-frame');
 
     setConversations((prev) => ({
       ...prev,
@@ -287,6 +303,7 @@ export function useWindowManager() {
 
   const closeGamePane = useCallback((gameId) => {
     log('[usePaneManager] Closing game pane:', gameId);
+    blurEditableIfInside('.pane-frame');
 
     setGames((prev) => {
       const updated = { ...prev };
@@ -317,6 +334,7 @@ export function useWindowManager() {
 
   const minimizeGamePane = useCallback((gameId) => {
     log('[usePaneManager] Minimizing game pane:', gameId);
+    blurEditableIfInside('.pane-frame');
 
     setGames((prev) => ({
       ...prev,
@@ -385,6 +403,7 @@ export function useWindowManager() {
   }, [savedPositions, panes, conversations, games]);
 
   const closeAllConversations = useCallback(() => {
+    blurEditableIfInside('.pane-frame');
     setConversations({});
     setPaneOrder((prev) => prev.filter((p) => !p.startsWith('conv_')));
     setActivePane((prevActive) => {
@@ -404,6 +423,7 @@ export function useWindowManager() {
   }, []);
 
   const closeAllGames = useCallback(() => {
+    blurEditableIfInside('.pane-frame');
     setGames({});
     setPaneOrder((prev) => prev.filter((p) => !p.startsWith('game_')));
     setActivePane((prevActive) => {
@@ -423,6 +443,7 @@ export function useWindowManager() {
   }, []);
 
   const resetWindowState = useCallback(() => {
+    blurEditableIfInside('.pane-frame');
     setPanes(getInitialPaneState());
     setPaneOrder([]);
     setActivePane(null);

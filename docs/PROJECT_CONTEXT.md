@@ -121,7 +121,21 @@ Copy/paste in a new chat:
 - Shell managers: `src/hooks/useWindowManager.js`, `useTaskbarManager.js`, `useStartMenuManager.js`, `useSystrayManager.js`, `useDesktopManager.js`.
 - Compatibility facade: `src/hooks/usePaneManager.js`.
 - Command bus: `src/hooks/useDesktopCommandBus.js` + `src/types/desktopCommands.js`.
-- Feature flags: `src/config/featureFlags.js` (`contextMenus` is off by default).
+- Feature flags: `src/config/featureFlags.js` (`contextMenus` is enabled for desktop/shortcut/taskbar-tab).
+
+## 15. Desktop Contextmenu Scope
+- Active context types:
+  - `desktop`: Vernieuwen, Eigenschappen
+  - `shortcut`: Openen, Naam wijzigen, Verwijderen, Eigenschappen
+  - `taskbar-tab`: Herstellen, Minimaliseren, Maximaliseren, Sluiten
+- `useContextMenuManager` owns:
+  - open/close state
+  - outside click + Escape close
+  - viewport clamping based on rendered menu size
+- `useDesktopManager` owns desktop shortcut persistence:
+  - storage key `chatlon_desktop_shortcuts`
+  - rename (`label`) and hide (`hidden`) overrides
+- Desktop menu must only open on wallpaper area, never from pane content (`.pane-frame` guard).
 
 ## 11. Shell Test Coverage
 - `src/hooks/useTaskbarManager.test.js`

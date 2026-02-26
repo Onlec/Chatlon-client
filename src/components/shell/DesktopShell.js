@@ -6,6 +6,16 @@ import StartMenu from './StartMenu';
 import Taskbar from './Taskbar';
 import ContextMenuHost from './ContextMenuHost';
 
+function blurEditableActiveElement() {
+  if (typeof document === 'undefined') return;
+  const active = document.activeElement;
+  if (!active || typeof active.matches !== 'function') return;
+  if (!active.matches('input, textarea, [contenteditable="true"]')) return;
+  if (typeof active.blur === 'function') {
+    active.blur();
+  }
+}
+
 function DesktopShell({
   onDesktopClick,
   wallpaperStyle,
@@ -14,6 +24,8 @@ function DesktopShell({
   scanlinesEnabled,
   desktopShortcuts,
   onOpenShortcut,
+  onShortcutContextMenu,
+  onRenameShortcut,
   paneLayerProps,
   startMenuProps,
   taskbarProps,
@@ -25,8 +37,27 @@ function DesktopShell({
   return (
     <div
       className="desktop"
+      onMouseDown={(event) => {
+        if (event.target.closest('.pane-frame')) return;
+        if (event.target.closest('input, textarea, [contenteditable="true"]')) return;
+        blurEditableActiveElement();
+      }}
       onClick={onDesktopClick}
-      onContextMenu={contextMenu?.handleContextMenu}
+      onContextMenu={(event) => {
+        if (!contextMenu?.enabled) return;
+        if (event.target.closest('.pane-frame')) return;
+        event.preventDefault();
+        event.stopPropagation();
+        contextMenu.openMenu({
+          x: event.clientX,
+          y: event.clientY,
+          type: 'desktop',
+          target: null,
+          actions: typeof contextMenu.buildDesktopActions === 'function'
+            ? contextMenu.buildDesktopActions()
+            : []
+        });
+      }}
       style={wallpaperStyle}
       data-theme={dataTheme}
       data-fontsize={dataFontsize}
@@ -34,7 +65,12 @@ function DesktopShell({
       <div id="portal-root"></div>
       <div className={`scanlines-overlay ${scanlinesEnabled ? '' : 'scanlines-overlay--disabled'}`}></div>
 
-      <DesktopShortcuts shortcuts={desktopShortcuts} onOpenShortcut={onOpenShortcut} />
+      <DesktopShortcuts
+        shortcuts={desktopShortcuts}
+        onOpenShortcut={onOpenShortcut}
+        onShortcutContextMenu={onShortcutContextMenu}
+        onRenameShortcut={onRenameShortcut}
+      />
 
       <PaneLayer {...paneLayerProps} />
 
@@ -57,6 +93,7 @@ function DesktopShell({
         enabled={Boolean(contextMenu?.enabled)}
         menuState={contextMenu?.menuState}
         onClose={contextMenu?.closeMenu}
+        hostRef={contextMenu?.hostRef}
       />
     </div>
   );

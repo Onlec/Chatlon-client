@@ -81,6 +81,7 @@ body, html {
   padding: 0;
   overflow: hidden;
   font-family: 'Tahoma', 'MS Sans Serif', 'Microsoft Sans Serif', sans-serif;
+  caret-color: transparent;
 }
 
 .desktop {
@@ -88,6 +89,8 @@ body, html {
   height: 100vh;
   background: #3A6EA5;
   position: relative;
+  cursor: default;
+  caret-color: transparent;
 }
 
 #portal-root {
@@ -114,4 +117,14 @@ body, html {
   width: 100%;
   height: calc(100vh - 30px);
   pointer-events: none;
+  cursor: default;
+  caret-color: transparent;
+}
+
+input,
+textarea,
+[contenteditable='plaintext-only'],
+[contenteditable='true'] {
+  cursor: text;
+  caret-color: auto;
 }

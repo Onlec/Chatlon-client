@@ -427,7 +427,22 @@ Minor refactors do **not** belong here.
 - `hooks/useSystrayManager.js`: systray menu state and action dispatch wrappers.
 - `hooks/useDesktopManager.js`: desktop shortcut model and launch wiring.
 - `hooks/useDesktopCommandBus.js`: internal command routing contract between shell managers.
-- `hooks/useContextMenuManager.js`: context-menu foundation (feature-flagged, disabled by default).
+- `hooks/useContextMenuManager.js`: active generic context-menu manager (desktop/shortcut/taskbar-tab), inclusief outside/Escape-close en viewport clamp.
+
+## Desktop Contextmenu Contract
+- Context menus are enabled through `src/config/featureFlags.js`.
+- Supported context types in current scope:
+  - `desktop`
+  - `shortcut`
+  - `taskbar-tab`
+- `ContextMenuHost` is generic and consumes action arrays with:
+  - normal actions: `{ id, label, onClick, disabled?, bold? }`
+  - separators: `{ type: 'separator' }`
+- Desktop shortcuts persistence key:
+  - `chatlon_desktop_shortcuts` (`label` override + `hidden` state)
+- Desktop scope rule:
+  - desktop menu opens only on wallpaper/desktop surface
+  - right-click inside `.pane-frame` must not open desktop menu
 - `components/shell/*`: shell presentation components (desktop/taskbar/startmenu/systray/panel layer).
 
 ## Internal Shell Commands
