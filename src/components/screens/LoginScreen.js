@@ -23,6 +23,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
   const [emailDomain, setEmailDomain] = useState(COLDMAIL_DOMAINS[0]);
   const [localName, setLocalName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -89,7 +90,9 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
   }, []);
 
   const handleLogin = () => {
-    const email = selectedUser === 'manual' ? emailLocal : selectedUser;
+    const email = selectedUser === 'manual'
+      ? emailLocal
+      : selectedUser;
     if (!email || !password) {
       setError('Typ een wachtwoord.');
       return;
@@ -139,6 +142,14 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
   const handleRegister = () => {
     if (!emailLocal || !password || !localName.trim()) {
       setError('Vul alle velden in');
+      return;
+    }
+    if (!confirmPassword) {
+      setError('Bevestig uw wachtwoord');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Wachtwoorden komen niet overeen');
       return;
     }
 
@@ -376,37 +387,52 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
                 <>
                   <div className="xp-input-row">
                     <label className="xp-label">E-mailadres:</label>
-                    <div className="xp-email-input-group">
-                      <input
-                        type="text"
-                        className="xp-text-input xp-email-local"
-                        value={emailLocal}
-                        onChange={(e) => setEmailLocal(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
-                        onKeyPress={handleKeyPress}
-                        autoFocus
-                        placeholder="gebruikersnaam"
-                      />
-                      <select
-                        className="xp-email-domain"
-                        value={emailDomain}
-                        onChange={(e) => setEmailDomain(e.target.value)}
-                      >
-                        {COLDMAIL_DOMAINS.map(d => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                      </select>
+                    <div className="xp-password-input-group">
+                      <div className="xp-email-input-group">
+                        <input
+                          type="text"
+                          className="xp-text-input xp-email-local"
+                          value={emailLocal}
+                          onChange={(e) => setEmailLocal(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
+                          onKeyPress={handleKeyPress}
+                          autoFocus
+                          placeholder="gebruikersnaam"
+                          maxLength={40}
+                          autoComplete="off"
+                          name="register-email-local"
+                          data-lpignore="true"
+                        />
+                        <select
+                          className="xp-email-domain"
+                          value={emailDomain}
+                          onChange={(e) => setEmailDomain(e.target.value)}
+                        >
+                          {COLDMAIL_DOMAINS.map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <span className="xp-arrow-spacer" aria-hidden="true" />
+                    </div>
+                    <div className={`xp-full-email-preview${!emailLocal ? ' xp-full-email-preview--empty' : ''}`}>
+                      {emailLocal ? fullEmail : emailDomain}
                     </div>
                   </div>
                   <div className="xp-input-row">
                     <label className="xp-label">Naam:</label>
-                    <input
-                      type="text"
-                      className="xp-text-input"
-                      value={localName}
-                      onChange={(e) => setLocalName(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="Weergavenaam (bijv. Bobby)"
-                    />
+                    <div className="xp-password-input-group">
+                      <input
+                        type="text"
+                        className="xp-text-input"
+                        value={localName}
+                        onChange={(e) => setLocalName(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Weergavenaam (bijv. Bobby)"
+                        maxLength={30}
+                        autoComplete="given-name"
+                      />
+                      <span className="xp-arrow-spacer" aria-hidden="true" />
+                    </div>
                   </div>
                 </>
               )}
@@ -415,15 +441,18 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
               {selectedUser === 'manual' && (
                 <div className="xp-input-row">
                   <label className="xp-label">E-mailadres:</label>
-                  <input
-                    type="text"
-                    className="xp-text-input"
-                    value={emailLocal}
-                    onChange={(e) => setEmailLocal(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    autoFocus
-                    placeholder="naam@coldmail.com"
-                  />
+                  <div className="xp-password-input-group">
+                    <input
+                      type="text"
+                      className="xp-text-input"
+                      value={emailLocal}
+                      onChange={(e) => setEmailLocal(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      autoFocus
+                      autoComplete="username"
+                    />
+                    <span className="xp-arrow-spacer" aria-hidden="true" />
+                  </div>
                 </div>
               )}
 
@@ -437,15 +466,42 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyPress={handleKeyPress}
                     autoFocus={!isRegistering && selectedUser !== 'manual'}
+                    autoComplete={isRegistering ? 'new-password' : 'current-password'}
                   />
-                  <button
-                    className="xp-arrow-button"
-                    onClick={isRegistering ? handleRegister : handleLogin}
-                  >
-                    <span className="xp-arrow">&rarr;</span>
-                  </button>
+                  {!isRegistering ? (
+                    <button
+                      className="xp-arrow-button"
+                      onClick={handleLogin}
+                    >
+                      <span className="xp-arrow">&rarr;</span>
+                    </button>
+                  ) : (
+                    <span className="xp-arrow-spacer" aria-hidden="true" />
+                  )}
                 </div>
               </div>
+
+              {isRegistering && (
+                <div className="xp-input-row">
+                  <label className="xp-label">Bevestig wachtwoord:</label>
+                  <div className="xp-password-input-group">
+                    <input
+                      type="password"
+                      className="xp-text-input"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      className="xp-arrow-button"
+                      onClick={handleRegister}
+                    >
+                      <span className="xp-arrow">&rarr;</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {!isRegistering && (
                 <div className="xp-checkbox-row">
@@ -518,6 +574,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
                   setSelectedUser('manual');
                   setEmailLocal('');
                   setPassword('');
+                  setConfirmPassword('');
                   setIsRegistering(false);
                 }}
               >
@@ -536,6 +593,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
                   setEmailLocal('');
                   setLocalName('');
                   setPassword('');
+                  setConfirmPassword('');
                   setRememberMe(true);
                 }}
               >
@@ -562,6 +620,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
                 setEmailLocal('');
                 setLocalName('');
                 setPassword('');
+                setConfirmPassword('');
                 setError('');
               }}
             >
@@ -581,6 +640,3 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
 }
 
 export default LoginScreen;
-
-
-
