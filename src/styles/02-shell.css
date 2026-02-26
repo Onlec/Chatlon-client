@@ -172,8 +172,8 @@ div.pane-frame.pane-frame--maximized {
 }
 
 .pane-btn {
-  width: 21px;
-  height: 21px;
+  width: calc(var(--titlebar-height) - 6px);
+  height: calc(var(--titlebar-height) - 6px);
   border: 1px solid #fff;
   border-radius: 3px;
   color: white;

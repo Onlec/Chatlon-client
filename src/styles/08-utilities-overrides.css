@@ -410,6 +410,82 @@
   );
 }
 
+/* ── Hard-line titelbalk: zelfde harde lijn als taskbar ── */
+[data-theme="royale"] .pane-header,
+[data-theme="royale-noir"] .pane-header,
+[data-theme="zune"] .pane-header,
+[data-theme="energy-blue"] .pane-header {
+  background: linear-gradient(
+    to bottom,
+    var(--win-titlebar-b) 0%,
+    var(--win-titlebar-a) 49%,
+    color-mix(in srgb, var(--win-titlebar-a) 70%, black) 50%,
+    var(--win-titlebar-d) 100%
+  );
+}
+
+[data-theme="royale"] .pane-header--inactive,
+[data-theme="royale-noir"] .pane-header--inactive,
+[data-theme="zune"] .pane-header--inactive,
+[data-theme="energy-blue"] .pane-header--inactive {
+  background: linear-gradient(
+    to bottom,
+    var(--win-titlebar-inactive-b) 0%,
+    var(--win-titlebar-inactive-a) 49%,
+    color-mix(in srgb, var(--win-titlebar-inactive-a) 70%, black) 50%,
+    var(--win-titlebar-inactive-a) 100%
+  );
+}
+
+/* ── Hard-line startmenu header/footer ── */
+[data-theme="royale"] .start-menu-header,
+[data-theme="royale-noir"] .start-menu-header,
+[data-theme="zune"] .start-menu-header,
+[data-theme="energy-blue"] .start-menu-header,
+[data-theme="royale"] .start-menu-footer,
+[data-theme="royale-noir"] .start-menu-footer,
+[data-theme="zune"] .start-menu-footer,
+[data-theme="energy-blue"] .start-menu-footer {
+  background: linear-gradient(
+    to bottom,
+    var(--startmenu-header-a) 0%,
+    var(--startmenu-header-b) 49%,
+    color-mix(in srgb, var(--startmenu-header-b) 70%, black) 50%,
+    var(--startmenu-header-b) 100%
+  );
+}
+
+/* ── Hard-line titelbalk-knoppen ── */
+[data-theme="royale"] .pane-btn--minimize,
+[data-theme="royale-noir"] .pane-btn--minimize,
+[data-theme="zune"] .pane-btn--minimize,
+[data-theme="energy-blue"] .pane-btn--minimize,
+[data-theme="royale"] .pane-btn--maximize,
+[data-theme="royale-noir"] .pane-btn--maximize,
+[data-theme="zune"] .pane-btn--maximize,
+[data-theme="energy-blue"] .pane-btn--maximize {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--win-btn-bg) 60%, white) 0%,
+    var(--win-btn-bg) 49%,
+    color-mix(in srgb, var(--win-btn-bg) 70%, black) 50%,
+    color-mix(in srgb, var(--win-btn-bg) 85%, black) 100%
+  );
+}
+
+[data-theme="royale"] .pane-btn--close,
+[data-theme="royale-noir"] .pane-btn--close,
+[data-theme="zune"] .pane-btn--close,
+[data-theme="energy-blue"] .pane-btn--close {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, #e81123 60%, white) 0%,
+    #e81123 49%,
+    color-mix(in srgb, #e81123 70%, black) 50%,
+    color-mix(in srgb, #e81123 85%, black) 100%
+  );
+}
+
 /* ── Hard-line taskbar: zelfde harde lijn op 50% als de startknop ── */
 [data-theme="royale"] .taskbar,
 [data-theme="royale-noir"] .taskbar,
