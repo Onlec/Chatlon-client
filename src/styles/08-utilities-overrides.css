@@ -250,7 +250,7 @@
 
 .dx-button:hover {
   background: linear-gradient(to bottom, #FFF6D9 0%, #FFEFB8 50%, #FFF6D9 100%);
-  border-color: #F9B14D;
+  border-color: var(--startmenu-accent-line);
 }
 
 .dx-button:active:not(.disabled):not(.dx-button--disabled) {
@@ -481,10 +481,10 @@
 [data-theme="energy-blue"] .pane-btn--close {
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, #e81123 60%, white) 0%,
-    #e81123 49%,
-    color-mix(in srgb, #e81123 70%, black) 50%,
-    color-mix(in srgb, #e81123 85%, black) 100%
+    color-mix(in srgb, var(--pane-btn-close-bg, #e81123) 60%, white) 0%,
+    var(--pane-btn-close-bg, #e81123) 49%,
+    color-mix(in srgb, var(--pane-btn-close-bg, #e81123) 70%, black) 50%,
+    color-mix(in srgb, var(--pane-btn-close-bg, #e81123) 85%, black) 100%
   );
 }
 

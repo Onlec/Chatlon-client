@@ -362,14 +362,70 @@ Statusregel:
 
 #### 10B.2 Nieuwe tokens voor aankomende verbeteringen
 
-- Titlebar uitbreiding: `--win-titlebar-e`, `--win-titlebar-f`
-- Taskbar uitbreiding: `--taskbar-e`, `--taskbar-highlight`
-- Systrayzone: `--systray-bg`, `--systray-border-left`, `--systray-text`, `--systray-icon-hover`
-- Pane buttons: `--pane-btn-hover-bg`, `--pane-btn-close-bg`, `--pane-btn-close-hover`
-- Context menu: `--ctx-menu-hover-bg`, `--ctx-menu-hover-fg`, `--ctx-menu-border-light`, `--ctx-menu-border-dark`, `--ctx-menu-sep-dark`, `--ctx-menu-sep-light`
-- Modal/power: `--modal-header-bg-a/b`, `--modal-content-a/b`, `--modal-border`, `--startmenu-accent-line`
+> Tokens gemarkeerd met ✅ zijn al toegevoegd aan `00-tokens.css`. Tokens zonder markering zijn nog niet geïmplementeerd.
 
-Alle bovenstaande entries: `status = proposed`; brede CSS-consumptie volgt in volgende polish-steps.
+**Systray** ✅ (al in 00-tokens.css als aliases op taskbar/menu-hover)
+- `--systray-bg`, `--systray-border-left`, `--systray-text`, `--systray-icon-hover`
+
+**Context menu** ✅ (al in 00-tokens.css)
+- `--ctx-menu-hover-bg`, `--ctx-menu-hover-fg`, `--ctx-menu-border-light`, `--ctx-menu-border-dark`, `--ctx-menu-sep-dark`, `--ctx-menu-sep-light`
+
+**Startmenu accent** ✅ (al in 00-tokens.css)
+- `--startmenu-accent-line`
+
+---
+
+**Titelbalk-gradiënt uitbreiding** — 2 extra stops (huidige 4-stop → 6-stop)
+
+Gradient-structuur na uitbreiding:
+```css
+background: linear-gradient(to bottom,
+  var(--win-titlebar-a)  0%,
+  var(--win-titlebar-b)  9%,
+  var(--win-titlebar-c) 18%,
+  var(--win-titlebar-e) 55%,   /* NIEUW */
+  var(--win-titlebar-f) 85%,   /* NIEUW */
+  var(--win-titlebar-d) 100%
+);
+```
+
+| Token | Luna blauw | Zilver | Olijfgroen | Royale | Zune | Royale Noir | Energy Blue | Klassiek |
+|---|---|---|---|---|---|---|---|---|
+| `--win-titlebar-e` (55%) | `#0058e6` | `#5E7CA0` | `#5B7526` | `#1C3E7A` | `#3A3A3A` | `#1A1A2E` | `#0068D2` | — |
+| `--win-titlebar-f` (85%) | `#0046d0` | `#4E6A90` | `#4A6318` | `#162E6A` | `#2A2A2A` | `#111128` | `#0058C0` | — |
+
+---
+
+**Taakbalk-gradiënt uitbreiding** — extra midstop + topshine
+
+| Token | Luna blauw | Zilver | Olijfgroen | Royale | Zune | Royale Noir | Energy Blue |
+|---|---|---|---|---|---|---|---|
+| `--taskbar-e` (55%) | `#245edb` | `#7C8EA4` | `#6D7128` | `#13306A` | `#2C2C2C` | `#141422` | `#0060C8` |
+| `--taskbar-highlight` | `rgba(255,255,255,0.35)` | `rgba(255,255,255,0.30)` | `rgba(255,255,255,0.25)` | `rgba(255,255,255,0.20)` | `rgba(255,255,255,0.15)` | `rgba(255,255,255,0.12)` | `rgba(255,255,255,0.30)` |
+
+---
+
+**Titelbalk-knoppen (pane-btn)**
+
+| Token | Luna blauw | Zilver | Olijfgroen | Royale | Zune | Royale Noir | Energy Blue | Klassiek |
+|---|---|---|---|---|---|---|---|---|
+| `--pane-btn-close-bg` | `#E81123` | `#E81123` | `#E81123` | `#CC1020` | `#C81020` | `#B81020` | `#E81123` | `#C0C0C0` |
+| `--pane-btn-hover-bg` | `#6BAEFC` | `#B8CCD8` | `#A4BC70` | `#5898C8` | `#6A6A6A` | `#3E4E7E` | `#52C0F8` | — (bevel) |
+| `--pane-btn-close-hover` | `#FF3344` | `#FF3344` | `#FF3344` | `#EE2030` | `#E02030` | `#D02030` | `#FF3344` | — (bevel) |
+
+---
+
+**Modal/power tokens**
+
+| Token | Luna blauw | Zilver | Olijfgroen | Royale | Zune | Royale Noir | Energy Blue | Klassiek |
+|---|---|---|---|---|---|---|---|---|
+| `--modal-header-bg-a` | `#3A6FCF` | `#7090B8` | `#6E8838` | `#2858A8` | `#5A5A5A` | `#243060` | `#2888E8` | `#000080` |
+| `--modal-header-bg-b` | `#092178` | `#3C5480` | `#3A4E10` | `#0C2060` | `#1A1A1A` | `#0A0A20` | `#003888` | `#1084D0` |
+| `--modal-content-a` | `#F4F2EA` | `#EEEDF0` | `#F0EDE0` | `#EEEAE0` | `#ECE8E4` | `#E4E2DA` | `#F0ECDC` | `#D4D0C8` |
+| `--modal-content-b` | `#FFFFFF` | `#FAFAFE` | `#FAFAF4` | `#FAFAF8` | `#F8F4F0` | `#F2F0E8` | `#F8F8F0` | `#FFFFFF` |
+| `--modal-border` | `#245EDC` | `#5E7CA0` | `#6E7B38` | `#1C3E7A` | `#3A3A3A` | `#1A1A2E` | `#0068D2` | `#808080` |
+
+Alle bovenstaande entries zonder ✅: `status = not implemented`.
 
 #### 10B.3 Implementatievolgorde (aanbevolen)
 1. Hardcoded waarden uit 10A.1 tokeniseren.
