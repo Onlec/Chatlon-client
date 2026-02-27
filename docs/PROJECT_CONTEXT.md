@@ -38,6 +38,7 @@ Keep it concise, factual, and current.
 - Source of truth architecture: `gun-client/docs/ARCHITECTURE.md`
 - CSS naming standard: `gun-client/docs/CSS_NAMING.md`
 - Token alignment map: `gun-client/docs/TOKEN_ALIGNMENT_MAP.md`
+- UI shell/power audit baseline: `gun-client/docs/UI_SHELL_AUDIT.md`
 - Usage and workflow: `gun-client/docs/USAGE.md`
 - Working TODO list: `gun-client/docs/TODO.md`
 - Bug notes: `gun-client/docs/bugs.md`
@@ -121,6 +122,21 @@ Copy/paste in a new chat:
 ## 9. Last Updated
 - Date: 2026-02-24
 - Reason: Added messenger coordinator ownership and updated core flow references.
+
+## 9A. UI Guideline Rollout Status
+- Completed scope: Shell + Power baseline/token/state pass.
+- Completed scope: Contacts UI parity wave (baseline + token compliance + state fidelity + regression lock).
+- Completed scope: Conversation UI parity wave (baseline + token/readability + state fidelity + regression lock).
+- Completed scope: Apps UI parity wave (inventory + token compliance + state fidelity + regression lock).
+- Locked references:
+  - `gun-client/docs/UI-guideline.md`
+  - `gun-client/docs/UI_SHELL_AUDIT.md`
+- Next intended scopes:
+  - UI follow-up only for new feature surfaces and optional token cleanup.
+
+Apps wave lock:
+- Inventory + state matrix + baseline checkpoints: `gun-client/docs/UI_SHELL_AUDIT.md` secties `15`, `16`, `17`.
+- Apps regression lock + closure: `gun-client/docs/UI_SHELL_AUDIT.md` secties `18`, `19`.
 
 ## 10. Shell Modularization Map
 - Shell UI components: `src/components/shell/DesktopShell.js`, `DesktopShortcuts.js`, `PaneLayer.js`, `Taskbar.js`, `StartMenu.js`, `Systray.js`, `ContextMenuHost.js`.

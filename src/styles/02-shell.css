@@ -55,7 +55,7 @@
   max-width: 76px;
   font-size: var(--ui-font-size);
   text-align: center;
-  border: 1px solid #0a246a;
+  border: 1px solid var(--menu-hover);
   padding: 1px 2px;
   box-sizing: border-box;
 }
@@ -83,7 +83,7 @@
   padding: 4px 20px;
   cursor: default;
   white-space: nowrap;
-  color: #000;
+  color: var(--text-secondary);
   border: none;
   background: transparent;
   text-align: left;
@@ -91,12 +91,18 @@
 }
 
 .ctx-menu-item:hover {
-  background: #0a246a;
+  background: var(--menu-hover);
   color: #fff;
 }
 
+.ctx-menu-item:active {
+  background: color-mix(in srgb, var(--menu-hover) 82%, black);
+  color: #fff;
+  transform: translate(1px, 1px);
+}
+
 .ctx-menu-item--disabled {
-  color: #808080;
+  color: var(--text-disabled);
   pointer-events: none;
 }
 
@@ -106,7 +112,7 @@
 
 .ctx-menu-separator {
   border: none;
-  border-top: 1px solid #808080;
+  border-top: 1px solid var(--text-disabled);
   border-bottom: 1px solid #ffffff;
   margin: 2px 0;
 }
@@ -247,6 +253,16 @@ div.pane-frame.pane-frame--maximized {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: filter 0.08s linear, box-shadow 0.08s linear, transform 0.08s linear;
+}
+
+.pane-btn:hover {
+  filter: brightness(1.08);
+}
+
+.pane-btn:active {
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.4);
+  transform: translate(1px, 1px);
 }
 
 .minimize,
@@ -255,6 +271,10 @@ div.pane-frame.pane-frame--maximized {
 .pane-btn--maximize { background: var(--win-btn-bg); font-size: 14px; }
 .close,
 .pane-btn--close { background: #e81123; }
+
+.pane-btn--close:hover {
+  background: color-mix(in srgb, #e81123 82%, white);
+}
 
 .pane-content {
   flex-grow: 1;
@@ -298,7 +318,7 @@ div.pane-frame.pane-frame--maximized {
   bottom: 0; 
   cursor: se-resize; 
   z-index: 10006;
-  background: linear-gradient(135deg, transparent 50%, #808080 50%, #808080 60%, transparent 60%, transparent 70%, #808080 70%, #808080 80%, transparent 80%);
+  background: linear-gradient(135deg, transparent 50%, var(--text-disabled) 50%, var(--text-disabled) 60%, transparent 60%, transparent 70%, var(--text-disabled) 70%, var(--text-disabled) 80%, transparent 80%);
 }
 
 /* ================================================
@@ -424,6 +444,11 @@ div.pane-frame.pane-frame--maximized {
   background: linear-gradient(to bottom, var(--tab-hover-a) 0%, var(--tab-hover-b) 100%);
 }
 
+.taskbar-tab:active {
+  box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);
+  transform: translate(1px, 1px);
+}
+
 .taskbar-tab.taskbar-tab--active {
   background: linear-gradient(to bottom, var(--tab-active-a) 0%, var(--tab-active-b) 100%);
   box-shadow: inset 1px 1px 3px rgba(0,0,0,0.4);
@@ -489,14 +514,37 @@ div.pane-frame.pane-frame--maximized {
   bottom: 100%;
   right: 0;
   background: var(--app-bg);
-  border: 1px solid #808080;
+  border: 1px solid var(--text-disabled);
   box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
   z-index: 100000;
   min-width: 220px;
   padding: 2px 0;
   margin-bottom: 2px;
-  color: #000;
+  color: var(--text-secondary);
   text-shadow: none;
+}
+
+.systray-menu .dropdown-item {
+  padding: 4px 20px;
+}
+
+.systray-menu .dropdown-item:hover {
+  background: var(--menu-hover);
+  color: #fff;
+}
+
+.systray-menu .dropdown-item:active {
+  background: color-mix(in srgb, var(--menu-hover) 82%, black);
+  color: #fff;
+  transform: translate(1px, 1px);
+}
+
+.systray-menu .dropdown-separator {
+  height: 0;
+  border-top: 1px solid var(--text-disabled);
+  border-bottom: 1px solid #fff;
+  margin: 2px 0;
+  background: transparent;
 }
 
 .systray-menu-header {
@@ -510,7 +558,7 @@ div.pane-frame.pane-frame--maximized {
   width: 32px;
   height: 32px;
   border-radius: 2px;
-  border: 1px solid #808080;
+  border: 1px solid var(--text-disabled);
 }
 
 .systray-menu-user {
@@ -521,7 +569,7 @@ div.pane-frame.pane-frame--maximized {
 .systray-menu-name {
   font-size: 11px;
   font-weight: bold;
-  color: #000;
+  color: var(--text-secondary);
   text-shadow: none;
 }
 
@@ -608,7 +656,7 @@ div.pane-frame.pane-frame--maximized {
   padding: 6px 10px;
   font-size: var(--ui-font-size);
   cursor: pointer;
-  color: #333;
+  color: var(--text-secondary);
   border-radius: 2px;
 }
 
@@ -631,6 +679,12 @@ div.pane-frame.pane-frame--maximized {
   color: white;
 }
 
+.start-item:active {
+  background-color: color-mix(in srgb, var(--startmenu-item-hover) 85%, black);
+  color: white;
+  transform: translate(1px, 1px);
+}
+
 .start-item-gray {
   font-weight: bold;
   color: var(--startmenu-pinned);
@@ -639,6 +693,12 @@ div.pane-frame.pane-frame--maximized {
 .start-item-gray:hover {
   background-color: var(--startmenu-item-hover);
   color: white;
+}
+
+.start-item-gray:active {
+  background-color: color-mix(in srgb, var(--startmenu-item-hover) 85%, black);
+  color: white;
+  transform: translate(1px, 1px);
 }
 
 .start-menu-footer {

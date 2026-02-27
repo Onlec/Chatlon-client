@@ -1,6 +1,8 @@
 /* ================================================
    13. PANES dX LOGIN SCREEN
    ================================================ */
+/* Step 2 note: hardcoded XP palette values remain intentionally where no current runtime token exists yet.
+   Future token candidates are tracked in docs/UI-guideline.md (10A.1 + 10B). */
 
 /* ============================================
    WINDOWS XP AUTHENTIC LOGIN SCREEN
@@ -257,11 +259,24 @@
   z-index: 12000;
 }
 
+.xp-shutdown-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+}
+
 .xp-logoff-main {
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 10px;
+}
+
+.xp-shutdown-main {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
 }
 
 .xp-logoff-brand-layout {
@@ -275,6 +290,22 @@
   font-family: 'Tahoma', 'Verdana', 'Segoe UI', Arial, sans-serif;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.55);
   letter-spacing: 0.2px;
+}
+
+.xp-shutdown-message-line {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 18px;
+  font-weight: normal;
+  font-family: 'Tahoma', 'Verdana', 'Segoe UI', Arial, sans-serif;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.2px;
+}
+
+.xp-shutdown-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 @keyframes xp-post-login-fade-out {
@@ -683,6 +714,22 @@
   padding: 0 30px;
   border-top: 1px solid rgba(0, 0, 0, 0.3);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Welcome screen: geen extra horizontale scheidingslijn in de footer */
+.xp-post-login-welcome .xp-bottom-bar {
+  border-top: none;
+}
+
+.xp-bottom-strip {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.32) 50%,
+    transparent 100%
+  );
 }
 
 .xp-bottom-left {
@@ -1238,8 +1285,8 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1248,28 +1295,28 @@
 }
 
 .power-on-button:hover {
-  border-color: rgba(100, 200, 255, 0.5);
-  background: rgba(100, 200, 255, 0.08);
-  box-shadow: 0 0 20px rgba(100, 200, 255, 0.15);
+  border-color: rgba(120, 210, 255, 0.6);
+  background: rgba(120, 210, 255, 0.14);
+  box-shadow: 0 0 20px rgba(120, 210, 255, 0.22);
 }
 
 .power-on-button:active {
   transform: scale(0.95);
-  background: rgba(100, 200, 255, 0.15);
+  background: rgba(120, 210, 255, 0.2);
 }
 
 .power-on-icon {
   font-size: 32px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.55);
   transition: color 0.3s ease;
 }
 
 .power-on-button:hover .power-on-icon {
-  color: rgba(100, 200, 255, 0.7);
+  color: rgba(170, 230, 255, 0.95);
 }
 
 .power-on-hint {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.65);
   font-size: 11px;
   font-family: 'Segoe UI', Tahoma, sans-serif;
 }

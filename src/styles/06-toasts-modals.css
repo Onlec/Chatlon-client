@@ -16,7 +16,7 @@
 .toast-notification {
   width: 280px;
   background: linear-gradient(to bottom, var(--btn-gradient-a) 0%, var(--toolbar-bg) 100%);
-  border: 2px solid #0054E3;
+  border: 2px solid var(--win-frame-border);
   border-radius: 6px;
   box-shadow: 3px 3px 12px rgba(0,0,0,0.4);
   cursor: pointer;
@@ -63,7 +63,7 @@
   background: transparent;
   border: none;
   font-size: 16px;
-  color: #666;
+  color: var(--text-muted);
   cursor: pointer;
   width: 20px;
   height: 20px;
@@ -75,8 +75,8 @@
 }
 
 .toast-close:hover {
-  background: #E0E0E0;
-  color: #000;
+  background: var(--btn-gradient-b);
+  color: var(--text-secondary);
 }
 
 .toast-content {
@@ -112,7 +112,7 @@
 
 .toast-message {
   font-size: var(--ui-font-size);
-  color: #000;
+  color: var(--text-secondary);
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -121,7 +121,7 @@
 
 .toast-hint {
   font-size: var(--ui-font-size-xs);
-  color: #666;
+  color: var(--text-muted);
   font-style: italic;
 }
 /* ============================================

@@ -9,9 +9,7 @@ function PostLoginWelcomeScreen({ fadingOut = false }) {
         <div className="xp-post-login-welcome-title">Welkom</div>
       </div>
 
-      <div className="xp-bottom-bar">
-        <div className="xp-bottom-strip" />
-      </div>
+      <div className="xp-bottom-bar" />
     </div>
   );
 }

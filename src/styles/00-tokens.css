@@ -94,6 +94,20 @@
   --startmenu-footer-bdr: #1659C5;
   --startmenu-pinned:     #00156E;
 
+  --ctx-menu-hover-bg:   var(--menu-hover);
+  --ctx-menu-hover-fg:   #FFFFFF;
+  --ctx-menu-border-light:#FFFFFF;
+  --ctx-menu-border-dark: #808080;
+  --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
+  --ctx-menu-sep-light:   var(--ctx-menu-border-light);
+
+  --systray-bg:           var(--taskbar-c);
+  --systray-border-left:  var(--win-frame-shadow);
+  --systray-text:         #FFFFFF;
+  --systray-icon-hover:   var(--menu-hover);
+
+  --startmenu-accent-line:#F9B14D;
+
   --menu-hover:           #316AC5;
   --app-bg:               #ECE9D8;
   --toolbar-bg:           #F0F0F0;
@@ -154,6 +168,20 @@
   --startmenu-footer-bdr: #4E5725;
   --startmenu-pinned:     #2A3010;
 
+  --ctx-menu-hover-bg:   var(--menu-hover);
+  --ctx-menu-hover-fg:   #FFFFFF;
+  --ctx-menu-border-light:#FFFFFF;
+  --ctx-menu-border-dark: #808080;
+  --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
+  --ctx-menu-sep-light:   var(--ctx-menu-border-light);
+
+  --systray-bg:           var(--taskbar-c);
+  --systray-border-left:  var(--win-frame-shadow);
+  --systray-text:         #FFFFFF;
+  --systray-icon-hover:   var(--menu-hover);
+
+  --startmenu-accent-line:#F9B14D;
+
   --menu-hover:           #6D7128;
   --app-bg:               #ECE9D8;
   --toolbar-bg:           #EDE9D4;
@@ -208,6 +236,20 @@
   --startmenu-divider:    #B8BCC8;
   --startmenu-footer-bdr: #5A6A80;
   --startmenu-pinned:     #2C3848;
+
+  --ctx-menu-hover-bg:   var(--menu-hover);
+  --ctx-menu-hover-fg:   #FFFFFF;
+  --ctx-menu-border-light:#FFFFFF;
+  --ctx-menu-border-dark: #808080;
+  --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
+  --ctx-menu-sep-light:   var(--ctx-menu-border-light);
+
+  --systray-bg:           var(--taskbar-c);
+  --systray-border-left:  var(--win-frame-shadow);
+  --systray-text:         #FFFFFF;
+  --systray-icon-hover:   var(--menu-hover);
+
+  --startmenu-accent-line:#F9B14D;
 
   --menu-hover:           #7C8EA4;
   --app-bg:               #EBE9ED;
@@ -264,6 +306,20 @@
   --startmenu-footer-bdr: #13306A;
   --startmenu-pinned:     #071A3C;
 
+  --ctx-menu-hover-bg:   var(--menu-hover);
+  --ctx-menu-hover-fg:   #FFFFFF;
+  --ctx-menu-border-light:#FFFFFF;
+  --ctx-menu-border-dark: #808080;
+  --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
+  --ctx-menu-sep-light:   var(--ctx-menu-border-light);
+
+  --systray-bg:           var(--taskbar-c);
+  --systray-border-left:  var(--win-frame-shadow);
+  --systray-text:         #FFFFFF;
+  --systray-icon-hover:   var(--menu-hover);
+
+  --startmenu-accent-line:#F9B14D;
+
   --menu-hover:           #1C4B8E;
   --app-bg:               #EAE8E1;
   --toolbar-bg:           #E4E2DC;
@@ -318,6 +374,20 @@
   --startmenu-divider:    #B0AAAA;
   --startmenu-footer-bdr: #2C2C2C;
   --startmenu-pinned:     #1A1A1A;
+
+  --ctx-menu-hover-bg:   var(--menu-hover);
+  --ctx-menu-hover-fg:   #FFFFFF;
+  --ctx-menu-border-light:#FFFFFF;
+  --ctx-menu-border-dark: #808080;
+  --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
+  --ctx-menu-sep-light:   var(--ctx-menu-border-light);
+
+  --systray-bg:           var(--taskbar-c);
+  --systray-border-left:  var(--win-frame-shadow);
+  --systray-text:         #FFFFFF;
+  --systray-icon-hover:   var(--menu-hover);
+
+  --startmenu-accent-line:#F9B14D;
 
   --menu-hover:           #D45500;
   --app-bg:               #E8E4E0;
@@ -374,6 +444,20 @@
   --startmenu-footer-bdr: #141422;
   --startmenu-pinned:     #0A0A14;
 
+  --ctx-menu-hover-bg:   var(--menu-hover);
+  --ctx-menu-hover-fg:   #FFFFFF;
+  --ctx-menu-border-light:#FFFFFF;
+  --ctx-menu-border-dark: #808080;
+  --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
+  --ctx-menu-sep-light:   var(--ctx-menu-border-light);
+
+  --systray-bg:           var(--taskbar-c);
+  --systray-border-left:  var(--win-frame-shadow);
+  --systray-text:         #FFFFFF;
+  --systray-icon-hover:   var(--menu-hover);
+
+  --startmenu-accent-line:#F9B14D;
+
   --menu-hover:           #2E3E6E;
   --app-bg:               #E2E0DA;
   --toolbar-bg:           #DAD8D2;
@@ -429,6 +513,20 @@
   --startmenu-footer-bdr: #004AA0;
   --startmenu-pinned:     #002860;
 
+  --ctx-menu-hover-bg:   var(--menu-hover);
+  --ctx-menu-hover-fg:   #FFFFFF;
+  --ctx-menu-border-light:#FFFFFF;
+  --ctx-menu-border-dark: #808080;
+  --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
+  --ctx-menu-sep-light:   var(--ctx-menu-border-light);
+
+  --systray-bg:           var(--taskbar-c);
+  --systray-border-left:  var(--win-frame-shadow);
+  --systray-text:         #FFFFFF;
+  --systray-icon-hover:   var(--menu-hover);
+
+  --startmenu-accent-line:#F9B14D;
+
   --menu-hover:           #0870CC;
   --app-bg:               #ECE9D8;
   --toolbar-bg:           #E8F0F8;
@@ -482,6 +580,20 @@
   --startmenu-footer-bdr: #808080;
   --startmenu-pinned:     #000000;
 
+  --ctx-menu-hover-bg:   var(--menu-hover);
+  --ctx-menu-hover-fg:   #FFFFFF;
+  --ctx-menu-border-light:#FFFFFF;
+  --ctx-menu-border-dark: #808080;
+  --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
+  --ctx-menu-sep-light:   var(--ctx-menu-border-light);
+
+  --systray-bg:           var(--taskbar-c);
+  --systray-border-left:  var(--win-frame-shadow);
+  --systray-text:         #FFFFFF;
+  --systray-icon-hover:   var(--menu-hover);
+
+  --startmenu-accent-line:#F9B14D;
+
   --menu-hover:           #000080;
   --app-bg:               #C0C0C0;
   --toolbar-bg:           #C0C0C0;
@@ -494,4 +606,6 @@
   --input-border:         #808080;
   --sidebar-bg:           #C0C0C0;
 }
+
+
 

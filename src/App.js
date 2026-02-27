@@ -902,9 +902,24 @@ const onTaskbarClick = React.useCallback((paneId) => {
   // ============================================
   if (isShutdown) {
     return (
-      <div className="shutdown-screen">
-        <div className="shutdown-content">
-          <div className="shutdown-message">De computer is uitgeschakeld.</div>
+      <div className="xp-login xp-shutdown-screen">
+        <div className="xp-top-bar" />
+        <div className="xp-main xp-shutdown-main">
+          <div className="xp-brand-layout xp-login-brand-layout xp-logoff-brand-layout">
+            <div className="xp-brand-left">
+              <span className="xp-brand-microsoft">Macrohard</span>
+              <span className="xp-brand-windows">Panes<span className="xp-brand-xp">dX</span></span>
+            </div>
+            <div className="xp-brand-right">
+              <div className="xp-boot-logo">
+                <div className="xp-logo-stripe xp-stripe-green"></div>
+                <div className="xp-logo-stripe xp-stripe-blue"></div>
+                <div className="xp-logo-stripe xp-stripe-red"></div>
+              </div>
+            </div>
+          </div>
+          <div className="xp-shutdown-message-line">De computer is uitgeschakeld.</div>
+          <div className="xp-shutdown-actions">
           <button
             className="power-on-button"
             onClick={() => {
@@ -916,6 +931,10 @@ const onTaskbarClick = React.useCallback((paneId) => {
             <span className="power-on-icon">{'\u23FB'}</span>
           </button>
           <div className="power-on-hint">Druk op de aan/uit-knop om de computer te starten</div>
+          </div>
+        </div>
+        <div className="xp-bottom-bar">
+          <div className="xp-bottom-strip" />
         </div>
       </div>
     );

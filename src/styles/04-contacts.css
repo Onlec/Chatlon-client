@@ -29,13 +29,13 @@
 .contacts-signin-brand {
   font-size: 22px;
   font-weight: bold;
-  color: #0066cc;
+  color: var(--link-color-light);
   letter-spacing: -0.5px;
 }
 
 .contacts-signin-subtitle {
   font-size: 12px;
-  color: #336699;
+  color: var(--link-color);
   margin-top: 2px;
 }
 
@@ -52,7 +52,7 @@
 .contacts-signin-label {
   display: block;
   font-size: 11px;
-  color: #333;
+  color: var(--text-secondary);
   margin-bottom: 3px;
 }
 
@@ -61,11 +61,18 @@
   padding: 4px 6px;
   font-size: 11px;
   font-family: 'Tahoma', sans-serif;
-  border: 1px solid #adb5bd;
-  background: #f0f0f0;
-  color: #888;
+  border: 1px solid var(--input-border);
+  background: var(--toolbar-bg);
+  color: var(--text-disabled);
   cursor: default;
   box-sizing: border-box;
+}
+
+.contacts-signin-input:focus,
+.contacts-signin-input:focus-visible {
+  outline: none;
+  border-color: var(--link-color-light);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--link-color-light) 35%, transparent);
 }
 
 .contacts-signin-options {
@@ -77,7 +84,7 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: #333;
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
@@ -85,8 +92,8 @@
   padding: 5px 24px;
   font-size: 11px;
   font-family: 'Tahoma', sans-serif;
-  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
-  border: 1px solid #999;
+  background: linear-gradient(180deg, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
+  border: 1px solid var(--btn-border);
   border-radius: 3px;
   cursor: pointer;
   margin-bottom: 16px;
@@ -94,11 +101,17 @@
 
 .contacts-signin-btn:hover {
   background: linear-gradient(180deg, #fff 0%, #c8d8e8 100%);
-  border-color: #0066cc;
+  border-color: var(--link-color-light);
 }
 
 .contacts-signin-btn:active {
   background: linear-gradient(180deg, #ccc 0%, #eee 100%);
+  transform: translateY(1px);
+}
+
+.contacts-signin-btn:focus-visible {
+  outline: 1px dotted var(--link-color);
+  outline-offset: 1px;
 }
 
 .contacts-signin-status {
@@ -130,13 +143,13 @@
 .contacts-signin-email {
   font-size: 12px;
   font-weight: bold;
-  color: #333;
+  color: var(--text-secondary);
   margin-bottom: 16px;
 }
 
 .contacts-signin-message {
   font-size: 11px;
-  color: #555;
+  color: var(--text-muted);
   text-align: center;
   margin-bottom: 16px;
   line-height: 1.5;
@@ -145,8 +158,8 @@
 .contacts-signin-progress {
   width: 200px;
   height: 16px;
-  background: #e0e0e0;
-  border: 1px solid #999;
+  background: var(--toolbar-bg);
+  border: 1px solid var(--btn-border);
   border-radius: 2px;
   overflow: hidden;
   margin-bottom: 16px;
@@ -170,14 +183,23 @@
   padding: 4px 16px;
   font-size: 11px;
   font-family: 'Tahoma', sans-serif;
-  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
-  border: 1px solid #999;
+  background: linear-gradient(180deg, var(--btn-gradient-a) 0%, var(--btn-gradient-b) 100%);
+  border: 1px solid var(--btn-border);
   border-radius: 3px;
   cursor: pointer;
 }
 
 .contacts-signin-cancel:hover {
-  border-color: #666;
+  border-color: var(--text-muted);
+}
+
+.contacts-signin-cancel:active {
+  transform: translateY(1px);
+}
+
+.contacts-signin-cancel:focus-visible {
+  outline: 1px dotted var(--link-color);
+  outline-offset: 1px;
 }
 
 .contacts-menubar {
@@ -212,12 +234,12 @@
 
 .dropdown-panel {
   background: var(--app-bg);
-  border: 1px solid #808080;
+  border: 1px solid var(--text-disabled);
   box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
   z-index: 10000;
   min-width: 200px;
   padding: 2px 0;
-  color: #000;
+  color: var(--text-secondary);
   text-shadow: none;
 }
 
@@ -254,7 +276,7 @@
 
 .dropdown-separator {
   height: 1px;
-  background: #C0C0C0;
+  background: var(--btn-border);
   margin: 3px 4px;
 }
 
@@ -296,8 +318,8 @@
 
 .options-sidebar {
   width: 140px;
-  background: #F5F5F5;
-  border-right: 1px solid #C0C0C0;
+  background: var(--toolbar-bg);
+  border-right: 1px solid var(--btn-border);
   padding: 8px 0;
   flex-shrink: 0;
 }
@@ -313,7 +335,7 @@
 }
 
 .options-sidebar-item:hover {
-  background: #E8E8E8;
+  background: var(--btn-gradient-b);
 }
 
 .options-sidebar-item.options-sidebar-item--active {
@@ -334,7 +356,7 @@
 }
 
 .options-footer {
-  border-top: 1px solid #C0C0C0;
+  border-top: 1px solid var(--btn-border);
   padding: 8px 12px;
   display: flex;
   justify-content: flex-end;
@@ -352,6 +374,7 @@
 }
 
 .contacts-user-section {
+  /* Design exception: MSN user-card gradient blijft hardcoded voor XP-authenticiteit. */
   background: linear-gradient(to bottom, #FFFFFF 0%, #CCE5FF 55%, #AAD4FF 100%);
   border-bottom: 2px solid #7AB8F5;
   padding: 12px;
@@ -410,15 +433,22 @@
   box-sizing: border-box;
 }
 
+.contacts-displayname-input:focus,
+.contacts-displayname-input:focus-visible {
+  outline: none;
+  border-color: var(--link-color-light);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--link-color-light) 35%, transparent);
+}
+
 .contacts-user-subname {
   font-size: 10px;
-  color: #888;
+  color: var(--text-disabled);
   margin-bottom: 2px;
 }
 
 .contacts-personal-message {
   font-size: var(--ui-font-size);
-  color: #666;
+  color: var(--text-muted);
   font-style: italic;
   cursor: text;
   padding: 2px;
@@ -476,7 +506,7 @@
   flex-shrink: 0;
   line-height: 1;
   user-select: none;
-  color: #444;
+  color: var(--text-secondary);
   margin-top: 3px;
   transition: opacity 0.1s;
 }
@@ -485,12 +515,17 @@
   opacity: 0.6;
 }
 
+.contacts-status-arrow:active {
+  opacity: 0.85;
+  transform: translateY(1px);
+}
+
 .contacts-status-popup {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
   background: white;
-  border: 1px solid #808080;
+  border: 1px solid var(--text-disabled);
   box-shadow: 2px 2px 5px rgba(0,0,0,0.25);
   z-index: 10000;
   min-width: 160px;
@@ -510,6 +545,11 @@
 
 .contacts-status-popup-item:hover {
   background: var(--menu-hover);
+  color: white;
+}
+
+.contacts-status-popup-item:active {
+  background: color-mix(in srgb, var(--menu-hover) 82%, black);
   color: white;
 }
 
@@ -547,6 +587,13 @@
   cursor: pointer;
 }
 
+.contacts-status-dropdown:focus,
+.contacts-status-dropdown:focus-visible {
+  outline: none;
+  border-color: var(--link-color-light);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--link-color-light) 35%, transparent);
+}
+
 .contacts-list-section {
   flex: 1;
   overflow-y: auto;
@@ -562,7 +609,7 @@
   padding: 20px;
   text-align: center;
   font-size: var(--ui-font-size);
-  color: #666;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -582,6 +629,11 @@
   padding-left: 8px;
 }
 
+.contacts-item:active {
+  background: linear-gradient(to bottom, rgba(255,255,255,0.7) 0%, rgba(150,205,255,0.78) 100%);
+  border-left: 2px solid #5ca6ef;
+}
+
 .contacts-item.contacts-item--blocked {
   opacity: 0.5;
   cursor: default;
@@ -592,6 +644,7 @@
 }
 
 .contacts-group-header {
+  /* Design exception: group-bar gradient blijft hardcoded in deze pass. */
   display: flex;
   align-items: center;
   gap: 5px;
@@ -614,9 +667,13 @@
   background: linear-gradient(to bottom, #B0D4FF 0%, #88BAFF 100%);
 }
 
+.contacts-group-header:active {
+  background: linear-gradient(to bottom, #9cc8fa 0%, #79aff7 100%);
+}
+
 .contacts-group-arrow {
   font-size: 8px;
-  color: #336;
+  color: var(--link-color);
   width: 10px;
   text-align: center;
   flex-shrink: 0;
@@ -649,21 +706,21 @@
 .contacts-item-name {
   font-size: 11px;
   font-weight: bold;
-  color: #000;
+  color: var(--text-secondary);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .contacts-item-status-label {
   font-size: var(--ui-font-size-sm);
-  color: #555;
+  color: var(--text-muted);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .contacts-item-personal-msg {
   font-size: 10px;
-  color: #888;
+  color: var(--text-disabled);
   font-style: italic;
   flex: 1;
   min-width: 0;
@@ -724,6 +781,10 @@
   background: linear-gradient(to bottom, #C8D8F0 0%, #B8C8E0 100%);
 }
 
+.contacts-task-header:active {
+  background: linear-gradient(to bottom, #bccde6 0%, #aebfd8 100%);
+}
+
 .contacts-task-arrow {
   font-size: 8px;
   width: 10px;
@@ -741,13 +802,17 @@
   padding: 4px 12px 4px 20px;
   font-size: 11px;
   font-family: 'Tahoma', sans-serif;
-  color: #003399;
+  color: var(--link-color);
   cursor: pointer;
   text-decoration: underline;
 }
 
 .contacts-task-item:hover {
   color: #FF6600;
+}
+
+.contacts-task-item:active {
+  color: color-mix(in srgb, #FF6600 85%, black);
 }
 
 .contacts-task-icon {
@@ -757,13 +822,17 @@
 }
 
 .contacts-task-item-disabled {
-  color: #888;
+  color: var(--text-disabled);
   text-decoration: none;
   cursor: default;
 }
 
 .contacts-task-item-disabled:hover {
-  color: #888;
+  color: var(--text-disabled);
+}
+
+.contacts-task-item-disabled:active {
+  color: var(--text-disabled);
 }
 
 .contacts-bottom-banner {
@@ -788,6 +857,12 @@
   text-align: center;
   padding: 24px 16px;
   font-family: 'Tahoma', sans-serif;
+}
+
+.contacts-personal-message-input:focus,
+.contacts-personal-message-input:focus-visible {
+  border-color: var(--link-color-light);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--link-color-light) 35%, transparent);
 }
 
 .contacts-about-title {

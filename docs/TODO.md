@@ -26,6 +26,7 @@ AI systems must NOT treat this section as architecture or rules.
 - [ ] Toast overlap in rare multi-notification scenarios
 - [x] Session-conflict melding: vervang blocking alert door non-blocking login-banner (sticky, handmatig wegklikbaar)
 - [ ] Mojibake/encoding cleanup in UI text and icons (e.g. `App.js`, `ToastNotification.js`, `emoticons.js`)
+- [x] UI-guideline vervolgscope: Apps parity pass (na afgeronde Shell + Power + Contacts + Conversation pass)
 ### Tech / Cleanup
 - [ ] Remove leftover debug logs
 - [ ] Normalize Gun listeners cleanup

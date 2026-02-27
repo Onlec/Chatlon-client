@@ -1,4 +1,6 @@
 /* - - - KLASSIEK (Win98) structurele overrides - - - */
+/* Step 2 note: this file intentionally keeps hardcoded classic/bevel values where token parity is not yet available.
+   Proposed tokenization targets are documented in docs/UI-guideline.md (10A.1 + 10B). */
 
 /* Vensterframe: vierkant, 3D bevel, geen soft shadow */
 [data-theme="klassiek"] .pane-frame {

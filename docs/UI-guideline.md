@@ -189,10 +189,99 @@ Gebruik dit na elke grotere stylewijziging:
 6. Geen z-index regressie tussen taskbar/menu/modal.
 7. Geen onbedoelde hardcoded kleuren buiten tokenlaag.
 
+### 7.0 Shell + Power State Auditmatrix (Baseline)
+
+| Surface | normal | hover | pressed | active | inactive | disabled |
+|---|---|---|---|---|---|---|
+| `pane-header` + frame | required | n/a | n/a | required | required | n/a |
+| `pane-btn` (min/max/close) | required | required | required | n/a | n/a | optional |
+| `taskbar-tab` | required | required | required | required | n/a | optional |
+| `start-menu` item | required | required | optional | optional | n/a | optional |
+| `ctx-menu` item | required | required | optional | optional | n/a | required |
+| `systray` menu item | required | required | optional | optional | n/a | optional |
+| `welcome/logoff/shutdown` shells | required | n/a | n/a | required | optional | n/a |
+
+Legend:
+- `required`: moet expliciet visueel onderscheiden zijn.
+- `optional`: alleen waar componentgedrag dit ondersteunt.
+- `n/a`: niet van toepassing op deze surface.
+
+### 7.2 Visuele Baseline Checkpoints (Shell + Power)
+1. Pane chrome:
+   - `pane-header` active/inactive contrasteert correct.
+   - framekleur en titlebar dimmen samen bij inactive.
+2. Taskbar tabs:
+   - `normal`, `hover`, `pressed`, `active`, `unread` zijn visueel onderscheidbaar.
+3. Start/context menus:
+   - hover fill, separators en linker accent consistent.
+   - itemhoogte/padding coherent in startmenu en contextmenu.
+4. Systray:
+   - menu leesbaarheid en statusweergave duidelijk in minimaal `blauw`, `klassiek`, `zune`.
+5. Power flow:
+   - `welcome`, `logoff`, `shutdown` volgen dezelfde visuele taal.
+   - fade/transitie oogt vloeiend zonder harde sprongen.
+
+### 7.3 Contacts State Auditmatrix (Wave A Baseline)
+
+Bron voor operationele checklist:
+- `gun-client/docs/UI_SHELL_AUDIT.md` secties `7` en `8`.
+
+Contacts surfaces en states die verplicht auditbaar zijn:
+1. `contacts-item`:
+- `normal`, `hover`, `selected`, `blocked`.
+2. `contacts-status-popup-item`:
+- `normal`, `hover`, `active`, `disabled`.
+3. `contacts-signin-input`:
+- `normal`, `focus`, `error`.
+4. `contacts-signin-btn`:
+- `normal`, `hover`, `pressed`, `disabled`, `busy`.
+
+Thema-check voor deze wave:
+1. `blauw`
+2. `klassiek`
+3. `zune`
+
+Constraint:
+- Geen sign-in/presence/message logic change in deze auditpass; alleen visual/state fidelity.
+
+### 7.4 Conversation State Auditmatrix (Wave B Baseline)
+
+Bron voor operationele checklist:
+- `gun-client/docs/UI_SHELL_AUDIT.md` secties `11` en `12`.
+
+Conversation surfaces en states die verplicht auditbaar zijn:
+1. `chat-toolbar-btn`:
+- `normal`, `hover`, `pressed`, `disabled`.
+2. `chat-input-text`:
+- `normal`, `focus`.
+3. `chat-send-btn`:
+- `normal`, `hover`, `pressed`, `disabled`.
+4. `chat-message`:
+- `self`, `contact`, `system`, `legacy` (duidelijke visuele hiërarchie).
+5. `typing-indicator`:
+- `hidden`, `visible`.
+6. `game-invite-bar` en wink surface:
+- `normal`, `pending`, `disabled`.
+7. Conversation pane shell:
+- `active`, `unfocused`, `minimized` scenario check.
+
+Thema-check voor deze wave:
+1. `blauw`
+2. `klassiek`
+3. `zune`
+
+Constraint:
+- Geen message/invite/wink/session/presence logic change in deze auditpass; alleen visual/state fidelity.
+
 ### 7.1 Reviewer contractchecks
 1. Nieuwe CSS gebruikt current tokens uit `00-tokens.css`.
 2. Geen nieuwe hardcoded kleuren tenzij expliciet design-exception.
 3. Nieuwe tokenvoorstellen eerst in `10B Proposed Tokens` met mapping + status.
+4. State-audits blijven verplicht per wave:
+- Shell + Power: `UI_SHELL_AUDIT.md` secties `1` t/m `6`
+- Contacts: `UI_SHELL_AUDIT.md` secties `7` t/m `10`
+- Conversation: `UI_SHELL_AUDIT.md` secties `11` t/m `14`
+- Apps: `UI_SHELL_AUDIT.md` secties `15` t/m `19`
 
 ---
 
@@ -244,18 +333,21 @@ Deze guideline bewaakt twee zaken tegelijk:
 
 | Locatie (bestand:klasse) | Hardcoded waarde | Voorgestelde current->proposed |
 |---|---|---|
-| `02-shell.css` `.ctx-menu-item:hover` | `background: #0a246a` | `--ctx-menu-hover-bg` |
-| `02-shell.css` `.ctx-menu-item:hover` | `color: #fff` | `--ctx-menu-hover-fg` |
-| `02-shell.css` `.ctx-menu` | `border-color: #ffffff #808080 #808080 #ffffff` | `--ctx-menu-border-light` / `--ctx-menu-border-dark` |
-| `02-shell.css` `.ctx-menu-separator` | `border-top: 1px solid #808080` | `--ctx-menu-sep-dark` |
-| `02-shell.css` `.ctx-menu-separator` | `border-bottom: 1px solid #ffffff` | `--ctx-menu-sep-light` |
-| `02-shell.css` `.systray-menu` | `border: 1px solid #808080` | `--ctx-menu-border-dark` |
+| `02-shell.css` `.ctx-menu-item:hover` | `background: #0a246a` | `--ctx-menu-hover-bg` (additief beschikbaar) |
+| `02-shell.css` `.ctx-menu-item:hover` | `color: #fff` | `--ctx-menu-hover-fg` (additief beschikbaar) |
+| `02-shell.css` `.ctx-menu` | `border-color: #ffffff #808080 #808080 #ffffff` | `--ctx-menu-border-light` / `--ctx-menu-border-dark` (additief beschikbaar) |
+| `02-shell.css` `.ctx-menu-separator` | `border-top: 1px solid #808080` | `--ctx-menu-sep-dark` (additief beschikbaar) |
+| `02-shell.css` `.ctx-menu-separator` | `border-bottom: 1px solid #ffffff` | `--ctx-menu-sep-light` (additief beschikbaar) |
+| `02-shell.css` `.systray-menu` | `border: 1px solid #808080` | `--ctx-menu-border-dark` / `--systray-border-left` (additief beschikbaar) |
 | `08-utilities-overrides.css` `.pane-btn--close` | `background: #e81123` | `--pane-btn-close-bg` |
-| `02-shell.css` `.start-menu-header` | `border-bottom: 2px solid #F9B14D` | `--startmenu-accent-line` |
+| `02-shell.css` `.start-menu-header` | `border-bottom: 2px solid #F9B14D` | `--startmenu-accent-line` (additief beschikbaar) |
 
 ### 10B. Proposed Tokens (future)
 
-Alle tokens in deze sectie hebben status `proposed` en zijn nog niet bindend voor runtime.
+Statusregel:
+- Naamgevingscontract in deze sectie blijft `proposed`.
+- Een subset is al additief beschikbaar in `00-tokens.css` als voorbereidende runtime aliases.
+- Bindend voor implementatie blijft sectie `10A` (current tokens).
 
 #### 10B.1 Mapping current -> proposed canonical
 
@@ -277,7 +369,7 @@ Alle tokens in deze sectie hebben status `proposed` en zijn nog niet bindend voo
 - Context menu: `--ctx-menu-hover-bg`, `--ctx-menu-hover-fg`, `--ctx-menu-border-light`, `--ctx-menu-border-dark`, `--ctx-menu-sep-dark`, `--ctx-menu-sep-light`
 - Modal/power: `--modal-header-bg-a/b`, `--modal-content-a/b`, `--modal-border`, `--startmenu-accent-line`
 
-Alle bovenstaande entries: `status = proposed`, `not implemented`.
+Alle bovenstaande entries: `status = proposed`; brede CSS-consumptie volgt in volgende polish-steps.
 
 #### 10B.3 Implementatievolgorde (aanbevolen)
 1. Hardcoded waarden uit 10A.1 tokeniseren.
