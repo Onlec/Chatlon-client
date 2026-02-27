@@ -29,7 +29,6 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
   const [rememberMe, setRememberMe] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [availableUsers, setAvailableUsers] = useState([]);
-  const [isAutoLogging, setIsAutoLogging] = useState(false);
 
   // Het volledige e-mailadres (voor registratie)
   const fullEmail = emailLocal ? emailLocal + emailDomain : '';
@@ -208,8 +207,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
     try {
       const saved = readCredentials(userObj.email);
       if (saved.email === userObj.email && saved.password) {
-        // Auto-login: toon laadscherm, skip wachtwoord invoer
-        setIsAutoLogging(true);
+        // Auto-login: skip wachtwoord invoer
         setError('');
 
         const localTabClientId = sessionStorage.getItem(TAB_CLIENT_ID_KEY);
@@ -220,14 +218,12 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
               'Al aangemeld'
             );
             if (!forceLogin) {
-              setIsAutoLogging(false);
               return;
             }
           }
           user.auth(userObj.email, saved.password, (ack) => {
             if (ack.err) {
               // Wachtwoord klopt niet meer, toon wachtwoord scherm
-              setIsAutoLogging(false);
               setSelectedUser(userObj.email);
               setEmailLocal(userObj.email);
               setPassword('');
@@ -279,52 +275,11 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
     ? 'Nieuwe gebruiker'
     : (selectedUser === 'manual' ? 'Inloggen' : (selectedUserObj?.localName || selectedUser || ''));
 
-  // Auto-login laadscherm
-  if (isAutoLogging) {
-    return (
-      <div className="xp-login">
-        <div className="xp-top-bar">
-          <div className="xp-top-text">Welkom</div>
-        </div>
-        <div className="xp-main">
-          <div className="xp-left">
-            <div className="xp-brand-layout xp-login-brand-layout">
-              <div className="xp-brand-left">
-                <span className="xp-brand-microsoft">Macrohard</span>
-                <span className="xp-brand-windows">Panes<span className="xp-brand-xp">dX</span></span>
-              </div>
-              <div className="xp-brand-right">
-                <div className="xp-boot-logo">
-                  <div className="xp-logo-stripe xp-stripe-green"></div>
-                  <div className="xp-logo-stripe xp-stripe-blue"></div>
-                  <div className="xp-logo-stripe xp-stripe-red"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="xp-divider"></div>
-          <div className="xp-right">
-            <div className="xp-autologin-message">
-              <div className="xp-autologin-text">Uw instellingen worden geladen...</div>
-            </div>
-          </div>
-        </div>
-        <div className="xp-bottom-bar">
-          <div className="xp-bottom-strip"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="xp-login">
       {fadeIn && <div className="login-fade-overlay" />}
       {/* Top Bar */}
-      <div className="xp-top-bar">
-        <div className="xp-top-text">
-          Voor het openen van dit bestand klikt u op uw naam
-        </div>
-      </div>
+      <div className="xp-top-bar" />
 
       {/* Main Content */}
       <div className="xp-main">
@@ -343,6 +298,7 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
               </div>
             </div>
           </div>
+          <div className="xp-login-instruction">Klik op uw gebruikersnaam om te beginnen...</div>
         </div>
 
         {/* Center Divider */}

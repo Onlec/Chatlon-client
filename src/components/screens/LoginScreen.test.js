@@ -80,7 +80,8 @@ describe('LoginScreen session notice banner', () => {
 
     fireEvent.click(screen.getByText('Andere gebruiker'));
 
-    const emailInput = screen.getByPlaceholderText('naam@coldmail.com');
+    const textInputs = container.querySelectorAll('input[type="text"]');
+    const emailInput = textInputs.length > 0 ? textInputs[0] : null;
     const passwordInput = container.querySelector('input[type="password"]');
 
     expect(emailInput).toBeTruthy();

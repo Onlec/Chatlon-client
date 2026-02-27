@@ -29,7 +29,7 @@
    ============================================ */
 
 .xp-top-bar {
-  height: 50px;
+  height: 100px;
   background: linear-gradient(to bottom, 
     rgba(0, 38, 99, 0.8) 0%,
     rgba(0, 28, 74, 0.9) 100%
@@ -67,9 +67,22 @@
 .xp-left {
   flex: 1;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   justify-content: flex-end;
   padding-right: 60px;
+}
+
+.xp-login-instruction {
+  margin-top: 14px;
+  transform: translateX(20px);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 15px;
+  font-weight: normal;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  text-align: right;
+  width: 100%;
 }
 
 /* Login screen overrides verplaatst naar einde van brand-layout sectie */
@@ -207,6 +220,66 @@
   font-size: 14px;
   font-family: 'Franklin Gothic Medium', 'Tahoma', sans-serif;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.xp-post-login-welcome {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  opacity: 1;
+}
+
+.xp-post-login-welcome--fade-out {
+  animation: xp-post-login-fade-out 0.8s ease forwards;
+}
+
+.xp-post-login-welcome-main {
+  justify-content: center;
+  align-items: center;
+}
+
+.xp-post-login-welcome-title {
+  color: #ffffff;
+  font-size: 56px;
+  font-weight: bold;
+  font-family: 'Franklin Gothic Medium', 'Trebuchet MS', Arial, sans-serif;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.5px;
+}
+
+.xp-top-text--welcome {
+  font-weight: bold;
+}
+
+.xp-logoff-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+}
+
+.xp-logoff-main {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.xp-logoff-brand-layout {
+  margin-bottom: 0;
+}
+
+.xp-logoff-message-line {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 18px;
+  font-weight: normal;
+  font-family: 'Tahoma', 'Verdana', 'Segoe UI', Arial, sans-serif;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.2px;
+}
+
+@keyframes xp-post-login-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 /* USER SELECTION PANEL */
@@ -599,7 +672,7 @@
    ============================================ */
 
 .xp-bottom-bar {
-  height: 60px;
+  height: 120px;
   background: linear-gradient(to bottom, 
     rgba(0, 38, 99, 0.9) 0%,
     rgba(0, 28, 74, 0.95) 100%
@@ -1025,6 +1098,7 @@
 .xp-login-brand-layout {
   animation: none !important;
   opacity: 1 !important;
+  margin-bottom: 0 !important;
 }
 
 .xp-login-brand-layout .xp-boot-logo {

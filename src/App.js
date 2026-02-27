@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import LoginScreen from './components/screens/LoginScreen';
 import BootSequence from './components/screens/BootSequence';
+import PostLoginWelcomeScreen from './components/screens/PostLoginWelcomeScreen';
 import DesktopShell from './components/shell/DesktopShell';
 import { user } from './gun';
 import { paneConfig } from './paneConfig';
@@ -76,6 +77,9 @@ function getOrCreateTabClientId() {
 }
 
 function App() {
+  const WELCOME_HOLD_MS = 1200;
+  const WELCOME_FADE_MS = 800;
+
   // ============================================
   // AUTH STATE
   // ============================================
@@ -90,6 +94,8 @@ function App() {
   const [isLoggingOff, setIsLoggingOff] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
+  const [showPostLoginWelcome, setShowPostLoginWelcome] = useState(false);
+  const [welcomeFadeOut, setWelcomeFadeOut] = useState(false);
   const [sessionNotice, setSessionNotice] = useState(() => loadSessionNotice());
   const [unreadChats, setUnreadChats] = React.useState(new Set());
   const [nowPlaying, setNowPlaying] = useState(null);
@@ -99,6 +105,8 @@ function App() {
 
   const tabClientIdRef = useRef(getOrCreateTabClientId());
   const cleanupTimeoutRef = useRef(null);
+  const welcomeTimerRef = useRef(null);
+  const welcomeFadeTimerRef = useRef(null);
   const conflictHandlerRef = useRef(null);
   const sessionGenerationRef = useRef(0);
   const rememberMeEnabledRef = useRef(false);
@@ -341,12 +349,27 @@ const onTaskbarClick = React.useCallback((paneId) => {
     }
   };
 
+  const clearWelcomeTimers = () => {
+    if (welcomeTimerRef.current) {
+      clearTimeout(welcomeTimerRef.current);
+      welcomeTimerRef.current = null;
+    }
+    if (welcomeFadeTimerRef.current) {
+      clearTimeout(welcomeFadeTimerRef.current);
+      welcomeFadeTimerRef.current = null;
+    }
+  };
+
   const dismissSessionNotice = React.useCallback(() => {
     clearSessionNotice();
     setSessionNotice(null);
   }, []);
 
   const runSessionTeardown = () => {
+    clearWelcomeTimers();
+    setShowPostLoginWelcome(false);
+    setWelcomeFadeOut(false);
+
     try {
       cleanupPresence();
     } catch (err) {
@@ -452,8 +475,20 @@ const onTaskbarClick = React.useCallback((paneId) => {
     dismissSessionNotice();
     setIsLoggedIn(true);
     setCurrentUser(username);
+    setShowPostLoginWelcome(true);
+    setWelcomeFadeOut(false);
 
-    playSound('login');
+    clearWelcomeTimers();
+    welcomeTimerRef.current = setTimeout(() => {
+      playSound('login');
+      setWelcomeFadeOut(true);
+      welcomeFadeTimerRef.current = setTimeout(() => {
+        setShowPostLoginWelcome(false);
+        setWelcomeFadeOut(false);
+        welcomeFadeTimerRef.current = null;
+      }, WELCOME_FADE_MS);
+      welcomeTimerRef.current = null;
+    }, WELCOME_HOLD_MS);
 
     clearPendingCleanupTimeout();
     cleanupTimeoutRef.current = setTimeout(() => {
@@ -496,6 +531,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
   useEffect(() => {
     return () => {
       clearPendingCleanupTimeout();
+      clearWelcomeTimers();
     };
   }, []);
 
@@ -838,14 +874,25 @@ const onTaskbarClick = React.useCallback((paneId) => {
   // ============================================
   if (isLoggingOff) {
     return (
-      <div className="logoff-screen">
-        <div className="logoff-content">
-          <div className="logoff-logo">Chatlon</div>
-          <div className="logoff-message">U wordt afgemeld...</div>
-          <div className="logoff-progress">
-            <div className="logoff-progress-bar" />
+      <div className="xp-login xp-logoff-screen">
+        <div className="xp-top-bar" />
+        <div className="xp-main xp-logoff-main">
+          <div className="xp-brand-layout xp-login-brand-layout xp-logoff-brand-layout">
+            <div className="xp-brand-left">
+              <span className="xp-brand-microsoft">Macrohard</span>
+              <span className="xp-brand-windows">Panes<span className="xp-brand-xp">dX</span></span>
+            </div>
+            <div className="xp-brand-right">
+              <div className="xp-boot-logo">
+                <div className="xp-logo-stripe xp-stripe-green"></div>
+                <div className="xp-logo-stripe xp-stripe-blue"></div>
+                <div className="xp-logo-stripe xp-stripe-red"></div>
+              </div>
+            </div>
           </div>
+          <div className="xp-logoff-message-line">Aan het uitloggen...</div>
         </div>
+        <div className="xp-bottom-bar" />
       </div>
     );
   }
@@ -902,117 +949,117 @@ const onTaskbarClick = React.useCallback((paneId) => {
   // RENDER: DESKTOP
   // ============================================
   return (
-    <DesktopShell
-      onDesktopClick={closeStartMenu}
-      wallpaperStyle={getWallpaperStyle()}
-      dataTheme={settings.colorScheme !== 'blauw' ? settings.colorScheme : undefined}
-      dataFontsize={settings.fontSize !== 'normaal' ? settings.fontSize : undefined}
-      scanlinesEnabled={scanlinesEnabled}
-      desktopShortcuts={desktopManager.shortcuts}
-      onOpenShortcut={desktopManager.openShortcut}
-      onShortcutContextMenu={handleShortcutContextMenu}
-      onRenameShortcut={desktopManager.renameShortcut}
-      onMoveShortcut={desktopManager.moveShortcut}
-      gridConfig={desktopManager.desktopGridConfig}
-      paneLayerProps={{
-        paneConfig,
-        panes,
-        conversations,
-        focusPane,
-        getZIndex,
-        toggleMaximizePane,
-        closePane,
-        minimizePane,
-        activePane,
-        savedSizes,
-        handleSizeChange,
-        getInitialPosition,
-        handlePositionChange,
-        openConversation,
-        games,
-        openGamePane,
-        closeGamePane,
-        minimizeGamePane,
-        toggleMaximizeGamePane,
-        userStatus,
-        handleStatusChange,
-        handleLogoff,
-        closeAllConversations,
-        closeAllGames,
-        setMessengerSignedIn,
-        nowPlaying,
-        currentUser,
-        messengerSignedIn,
-        messengerCoordinator,
-        setNowPlaying,
-        toggleMaximizeConversation,
-        closeConversation,
-        minimizeConversation,
-        unreadMetadata,
-        clearNotificationTime,
-        sharedContactPresence,
-        getDisplayName
-      }}
-      startMenuProps={{
-        isOpen: isStartOpen,
-        paneConfig,
-        currentUser,
-        getAvatar,
-        getLocalUserInfo,
-        onOpenPane: desktopCommandBus.openPane,
-        onCloseStartMenu: closeStartMenu,
-        onLogoff: handleLogoff,
-        onShutdown: handleShutdown
-      }}
-      taskbarProps={{
-        isStartOpen,
-        onToggleStartMenu: desktopCommandBus.toggleStart,
-        onStartButtonContextMenu: handleStartButtonContextMenu,
-        onTaskbarContextMenu: handleTaskbarContextMenu,
-        paneOrder,
-        unreadChats,
-        conversations,
-        games,
-        activePane,
-        onTaskbarClick,
-        onTabContextMenu: handleTabContextMenu,
-        panes,
-        paneConfig,
-        getDisplayName,
-        systrayProps: {
-          isSuperpeer,
-          connectedSuperpeers,
-          isLoggedIn,
-          relayStatus,
-          forceReconnect,
-          messengerSignedIn,
-          systrayIconRef: systrayManager.systrayIconRef,
-          currentStatusOption: systrayManager.currentStatusOption,
-          getDisplayName,
-          currentUser,
-          onToggleMenu: systrayManager.onToggleMenu,
-          showSystrayMenu: systrayManager.showSystrayMenu,
-          systrayMenuRef: systrayManager.systrayMenuRef,
-          getAvatar,
+    <>
+      <DesktopShell
+        onDesktopClick={closeStartMenu}
+        wallpaperStyle={getWallpaperStyle()}
+        dataTheme={settings.colorScheme !== 'blauw' ? settings.colorScheme : undefined}
+        dataFontsize={settings.fontSize !== 'normaal' ? settings.fontSize : undefined}
+        scanlinesEnabled={scanlinesEnabled}
+        desktopShortcuts={desktopManager.shortcuts}
+        onOpenShortcut={desktopManager.openShortcut}
+        onShortcutContextMenu={handleShortcutContextMenu}
+        onRenameShortcut={desktopManager.renameShortcut}
+        onMoveShortcut={desktopManager.moveShortcut}
+        gridConfig={desktopManager.desktopGridConfig}
+        paneLayerProps={{
+          paneConfig,
+          panes,
+          conversations,
+          focusPane,
+          getZIndex,
+          toggleMaximizePane,
+          closePane,
+          minimizePane,
+          activePane,
+          savedSizes,
+          handleSizeChange,
+          getInitialPosition,
+          handlePositionChange,
+          openConversation,
+          games,
+          openGamePane,
+          closeGamePane,
+          minimizeGamePane,
+          toggleMaximizeGamePane,
           userStatus,
-          onStatusChange: systrayManager.onStatusChange,
-          onOpenContacts: systrayManager.onOpenContacts,
-          onSignOut: systrayManager.onSignOut,
-          onCloseMessenger: systrayManager.onCloseMessenger
-        }
-      }}
-      toasts={toasts}
-      removeToast={removeToast}
-      onToastClick={messengerCoordinator.handleToastClick}
-      contextMenu={{
-        ...contextMenuManager,
-        buildDesktopActions
-      }}
-    />
+          handleStatusChange,
+          handleLogoff,
+          closeAllConversations,
+          closeAllGames,
+          setMessengerSignedIn,
+          nowPlaying,
+          currentUser,
+          messengerSignedIn,
+          messengerCoordinator,
+          setNowPlaying,
+          toggleMaximizeConversation,
+          closeConversation,
+          minimizeConversation,
+          unreadMetadata,
+          clearNotificationTime,
+          sharedContactPresence,
+          getDisplayName
+        }}
+        startMenuProps={{
+          isOpen: isStartOpen,
+          paneConfig,
+          currentUser,
+          getAvatar,
+          getLocalUserInfo,
+          onOpenPane: desktopCommandBus.openPane,
+          onCloseStartMenu: closeStartMenu,
+          onLogoff: handleLogoff,
+          onShutdown: handleShutdown
+        }}
+        taskbarProps={{
+          isStartOpen,
+          onToggleStartMenu: desktopCommandBus.toggleStart,
+          onStartButtonContextMenu: handleStartButtonContextMenu,
+          onTaskbarContextMenu: handleTaskbarContextMenu,
+          paneOrder,
+          unreadChats,
+          conversations,
+          games,
+          activePane,
+          onTaskbarClick,
+          onTabContextMenu: handleTabContextMenu,
+          panes,
+          paneConfig,
+          getDisplayName,
+          systrayProps: {
+            isSuperpeer,
+            connectedSuperpeers,
+            isLoggedIn,
+            relayStatus,
+            forceReconnect,
+            messengerSignedIn,
+            systrayIconRef: systrayManager.systrayIconRef,
+            currentStatusOption: systrayManager.currentStatusOption,
+            getDisplayName,
+            currentUser,
+            onToggleMenu: systrayManager.onToggleMenu,
+            showSystrayMenu: systrayManager.showSystrayMenu,
+            systrayMenuRef: systrayManager.systrayMenuRef,
+            getAvatar,
+            userStatus,
+            onStatusChange: systrayManager.onStatusChange,
+            onOpenContacts: systrayManager.onOpenContacts,
+            onSignOut: systrayManager.onSignOut,
+            onCloseMessenger: systrayManager.onCloseMessenger
+          }
+        }}
+        toasts={toasts}
+        removeToast={removeToast}
+        onToastClick={messengerCoordinator.handleToastClick}
+        contextMenu={{
+          ...contextMenuManager,
+          buildDesktopActions
+        }}
+      />
+      {showPostLoginWelcome && <PostLoginWelcomeScreen fadingOut={welcomeFadeOut} />}
+    </>
   );
 }
 
 export default App;
-
-
-
