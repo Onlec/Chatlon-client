@@ -113,7 +113,7 @@ function BrowserPane() {
   return (
     <div className="browser-container">
       {/* Menubar */}
-      <div className="browser-menubar">
+      <div className="browser-menubar" data-decorative-menubar="true">
         <span className="browser-menu-item">Bestand</span>
         <span className="browser-menu-item">Bewerken</span>
         <span className="browser-menu-item">Beeld</span>

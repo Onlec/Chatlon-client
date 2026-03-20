@@ -1,30 +1,33 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useContext, useState, useRef, useCallback } from 'react';
+import SettingsContext from '../../contexts/SettingsContext';
 import { useSounds } from '../../hooks/useSounds';
 
 /**
- * ModalPane — XP-authentieke modale dialoog
+ * ModalPane
  *
- * - Titelbalk gebruikt thema CSS variabelen (--win-titlebar-a/b/c/d)
+ * - Titelbalk gebruikt thema CSS variabelen
  * - Klikken buiten het venster: flikkert titelbalk + speelt error.mp3
- * - Sluiten alleen via de ✕ knop (XP gedrag)
+ * - Sluiten alleen via de knop
  * - Draggable via de titelbalk
  */
-function ModalPane({ title, onClose, children, icon = '🖥️', width }) {
+function ModalPane({ title, onClose, children, icon = '🖥️', width, appearanceVariant: appearanceVariantProp }) {
   const { playSound } = useSounds();
   const [isFlashing, setIsFlashing] = useState(false);
-  const [position, setPosition] = useState(null); // null = center via CSS
+  const [position, setPosition] = useState(null);
   const windowRef = useRef(null);
   const dragRef = useRef(null);
+  const settingsContext = useContext(SettingsContext);
+  const appearanceVariant = appearanceVariantProp || settingsContext?.appearanceVariant || 'dx';
+  const isLigerAppearance = appearanceVariant === 'liger';
 
-  // Dragging via titelbalk
-  const handleTitlebarMouseDown = useCallback((e) => {
-    if (e.target.closest('.modal-pane-close')) return;
-    e.preventDefault();
+  const handleTitlebarMouseDown = useCallback((event) => {
+    if (event.target.closest('.modal-pane-close')) return;
+    event.preventDefault();
 
     const rect = windowRef.current.getBoundingClientRect();
     dragRef.current = {
-      startX: e.clientX - rect.left,
-      startY: e.clientY - rect.top,
+      startX: event.clientX - rect.left,
+      startY: event.clientY - rect.top,
     };
 
     const handleMouseMove = (moveEvent) => {
@@ -45,7 +48,6 @@ function ModalPane({ title, onClose, children, icon = '🖥️', width }) {
     document.addEventListener('mouseup', handleMouseUp);
   }, []);
 
-  // Overlay klik = flikkeren + error geluid (XP gedrag: dialoog sluit NIET)
   const handleOverlayClick = useCallback(() => {
     if (isFlashing) return;
     playSound('error');
@@ -62,35 +64,38 @@ function ModalPane({ title, onClose, children, icon = '🖥️', width }) {
 
   return (
     <div
-      className="modal-pane-overlay"
+      className={`modal-pane-overlay${isLigerAppearance ? ' modal-pane-overlay--liger' : ''}`}
+      data-appearance-variant={appearanceVariant}
       onMouseDown={handleOverlayClick}
     >
       <div
         ref={windowRef}
-        className="modal-pane-window"
+        className={`modal-pane-window${isLigerAppearance ? ' modal-pane-window--liger' : ''}`}
         style={windowStyle}
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
       >
-        {/* Titelbalk — volgt thema, draggable */}
         <div
-          className={`modal-pane-titlebar${isFlashing ? ' flashing' : ''}`}
+          className={`modal-pane-titlebar${isFlashing ? ' modal-pane-titlebar--flashing' : ''}${isLigerAppearance ? ' modal-pane-titlebar--liger' : ''}`}
           onMouseDown={handleTitlebarMouseDown}
         >
-          <div className="modal-pane-title-section">
+          <div className={`modal-pane-title-section${isLigerAppearance ? ' modal-pane-title-section--liger' : ''}`}>
             <span className="modal-pane-icon">{icon}</span>
             <span className="modal-pane-title">{title}</span>
           </div>
           <button
-            className="modal-pane-close"
+            type="button"
+            className={`modal-pane-close${isLigerAppearance ? ' modal-pane-close--liger' : ''}`}
             onClick={onClose}
             title="Sluiten"
+            aria-label="Sluiten"
           >
-            ✕
+            &times;
           </button>
         </div>
 
-        {/* Inhoud */}
-        <div className="modal-pane-body">
+        <div className={`modal-pane-body${isLigerAppearance ? ' modal-pane-body--liger' : ''}`}>
           {children}
         </div>
       </div>

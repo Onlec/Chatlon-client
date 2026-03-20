@@ -32,7 +32,7 @@ function NotepadPane() {
 
   return (
     <div className="notepad-container">
-      <div className="notepad-menubar">
+      <div className="notepad-menubar" data-decorative-menubar="true">
         <span className="notepad-menu-item">Bestand</span>
         <span className="notepad-menu-item">Bewerken</span>
         <span className="notepad-menu-item">Opmaak</span>

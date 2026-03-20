@@ -432,7 +432,7 @@ function ContactsPane({ onOpenConversation, userStatus: propUserStatus, onStatus
   return (
     <div className="contacts-container">
       {/* Menubar */}
-      <div className="contacts-menubar">
+      <div className="contacts-menubar" data-functional-menubar="true">
         <DropdownMenu
           label="Bestand"
           isOpen={openMenu === 'bestand'}

@@ -95,7 +95,7 @@ function CalculatorPane() {
 
   return (
     <div className="calculator-container">
-      <div className="calculator-menubar">
+      <div className="calculator-menubar" data-decorative-menubar="true">
         <span className="calculator-menu-item">Weergave</span>
         <span className="calculator-menu-item">Bewerken</span>
         <span className="calculator-menu-item">Help</span>

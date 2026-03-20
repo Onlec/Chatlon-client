@@ -121,4 +121,26 @@ describe('ControlPane', () => {
 
     expect(screen.queryByLabelText('Luna Custom seedkleur')).not.toBeInTheDocument();
   });
+
+  test('renders the liger system preferences layout while preserving settings access', () => {
+    useSettings.mockReturnValue({
+      settings: buildSettings({
+        colorScheme: 'blauw',
+      }),
+      updateSetting: mockUpdateSetting,
+      resetSettings: mockResetSettings,
+      appearanceVariant: 'liger',
+    });
+
+    const { container } = render(<ControlPane />);
+
+    expect(container.querySelector('.control-panel--liger')).toBeInTheDocument();
+    expect(screen.getByText('Systeemvoorkeuren')).toBeInTheDocument();
+    expect(screen.getByLabelText('Zoek voorkeuren')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Uiterlijk en thema/i }));
+
+    expect(screen.getByText(/Deze thema-instellingen gelden voor Liger OS/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Alle voorkeuren/i })).toBeInTheDocument();
+  });
 });

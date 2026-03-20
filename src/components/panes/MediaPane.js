@@ -290,7 +290,7 @@ function MediaPane({ onNowPlayingChange }) {
   return (
     <div className="media-container">
       {/* Menubar */}
-      <div className="media-menubar">
+      <div className="media-menubar" data-decorative-menubar="true">
         <span className="media-menu-item">Bestand</span>
         <span className="media-menu-item">Weergave</span>
         <span className="media-menu-item">Afspelen</span>

@@ -79,4 +79,15 @@ describe('Pane', () => {
     expect(container.querySelector('.pane-controls--liger')).toBeTruthy();
     expect(container.querySelector('.pane-title-section--liger')).toBeTruthy();
   });
+
+  test('adds inactive state classes for liger panes', () => {
+    const { container } = render(
+      <Pane {...buildProps({ chromeVariant: 'liger', isActive: false })}>
+        <div>Child</div>
+      </Pane>
+    );
+
+    expect(container.querySelector('.pane-frame--liger-inactive')).toBeTruthy();
+    expect(container.querySelector('.pane-header--liger-inactive')).toBeTruthy();
+  });
 });

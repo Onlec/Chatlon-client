@@ -215,7 +215,7 @@ function PaintPane() {
   return (
     <div className="paint-container">
       {/* Menubar */}
-      <div className="paint-menubar">
+      <div className="paint-menubar" data-decorative-menubar="true">
         <span className="paint-menu-item">Bestand</span>
         <span className="paint-menu-item">Bewerken</span>
         <span className="paint-menu-item">Beeld</span>

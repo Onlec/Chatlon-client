@@ -144,11 +144,17 @@ function Pane({
   };
 
   const isLigerChrome = chromeVariant === 'liger';
+  const ligerStateClass = isLigerChrome
+    ? (isActive === false ? 'pane-frame--liger-inactive' : 'pane-frame--liger-active')
+    : '';
+  const ligerHeaderStateClass = isLigerChrome
+    ? (isActive === false ? 'pane-header--liger-inactive' : 'pane-header--liger-active')
+    : '';
 
   return (
     <div
       ref={paneRef}
-      className={`pane-frame type-${type} ${isMaximized ? 'pane-frame--maximized' : ''} ${isDragging ? 'pane-frame--dragging' : ''} ${isLigerChrome ? 'pane-frame--liger' : ''}`}
+      className={`pane-frame type-${type} ${isMaximized ? 'pane-frame--maximized' : ''} ${isDragging ? 'pane-frame--dragging' : ''} ${isLigerChrome ? 'pane-frame--liger' : ''} ${ligerStateClass}`}
       style={{
         left: isMaximized ? 0 : position.left,
         top: isMaximized ? 0 : position.top,
@@ -162,7 +168,7 @@ function Pane({
     >
       <div className="pane-inner-container">
         <div
-          className={`pane-header ${isActive === false ? 'pane-header--inactive' : ''} ${isLigerChrome ? 'pane-header--liger' : ''}`}
+          className={`pane-header ${isActive === false ? 'pane-header--inactive' : ''} ${isLigerChrome ? 'pane-header--liger' : ''} ${ligerHeaderStateClass}`}
           onMouseDown={handleMouseDown}
         >
           {isLigerChrome ? (
