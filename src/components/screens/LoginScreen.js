@@ -1,289 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { gun, user } from '../../gun';
-import { log } from '../../utils/debug';
-import { useAvatar } from '../../contexts/AvatarContext';
-import { useDialog } from '../../contexts/DialogContext';
-import { ACTIVE_TAB_FRESH_MS } from '../../utils/sessionConstants';
-import { isForeignActiveSession } from '../../utils/sessionOwnership';
-import {
-  readScopedJSON,
-  writeScopedJSON,
-  removeScoped,
-  resolveUserKey
-} from '../../utils/storageScope';
-import { readUserPrefOnce, writeUserPref, PREF_KEYS } from '../../utils/userPrefsGun';
-
-const COLDMAIL_DOMAINS = ['@coldmail.com', '@coldmail.nl', '@coldmail.net'];
-const TAB_CLIENT_ID_KEY = 'chatlon_tab_client_id';
+import React from 'react';
+import useLoginScreenController, { COLDMAIL_DOMAINS } from './useLoginScreenController';
 
 function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null, onDismissSessionNotice }) {
-  const { setMyAvatar, setMyDisplayName } = useAvatar();
-  const { confirm } = useDialog();
-  const [emailLocal, setEmailLocal] = useState('');
-  const [emailDomain, setEmailDomain] = useState(COLDMAIL_DOMAINS[0]);
-  const [localName, setLocalName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [error, setError] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [availableUsers, setAvailableUsers] = useState([]);
-
-  // Het volledige e-mailadres (voor registratie)
-  const fullEmail = emailLocal ? emailLocal + emailDomain : '';
-
-  // Lokale avatar helper: leest uit localStorage (login tile), niet uit Gun (Chatlon profiel)
-  const getLocalAvatar = (email) => {
-    if (!email || email === 'guest') return '/avatars/egg.jpg';
-    const userObj = availableUsers.find(u => u.email === email);
-    if (userObj?.localAvatar) return `/avatars/${userObj.localAvatar}`;
-    // Fallback: deterministische preset op basis van email
-    const PRESETS = ['cat.jpg', 'egg.jpg', 'crab.jpg', 'blocks.jpg', 'pug.jpg'];
-    let hash = 0;
-    for (let i = 0; i < email.length; i++) {
-      hash = ((hash << 5) - hash) + email.charCodeAt(i);
-      hash |= 0;
-    }
-    return `/avatars/${PRESETS[Math.abs(hash) % PRESETS.length]}`;
-  };
-
-  const readCredentials = (email) =>
-    readScopedJSON('credentials', resolveUserKey(email), 'chatlon_credentials', {});
-
-  const writeCredentials = (email, creds) =>
-    writeScopedJSON('credentials', resolveUserKey(email), creds);
-
-  const clearCredentials = (email) =>
-    removeScoped('credentials', resolveUserKey(email));
-
-  const isRememberEnabled = async (email) => {
-    try {
-      const enabled = await readUserPrefOnce(resolveUserKey(email), PREF_KEYS.REMEMBER_ME, false);
-      return Boolean(enabled);
-    } catch {
-      return false;
-    }
-  };
-
-  // LOAD SAVED CREDENTIALS (niet auto-selecteren - gebruiker kiest zelf)
-  useEffect(() => {
-    setRememberMe(false);
-  }, []);
-
-  // Load available users (nu objecten met email + localName)
-  useEffect(() => {
-    const savedUsers = localStorage.getItem('chatlon_users');
-    if (savedUsers) {
-      try {
-        const parsed = JSON.parse(savedUsers);
-        // Backwards compatibiliteit: strings → objecten
-        const normalized = parsed.map(u =>
-          typeof u === 'string' ? { email: u, localName: u } : u
-        );
-        setAvailableUsers(normalized);
-      } catch (e) {
-        setAvailableUsers([]);
-      }
-    }
-  }, []);
-
-  const handleLogin = () => {
-    const email = selectedUser === 'manual'
-      ? emailLocal
-      : selectedUser;
-    if (!email || !password) {
-      setError('Typ een wachtwoord.');
-      return;
-    }
-
-    const localTabClientId = sessionStorage.getItem(TAB_CLIENT_ID_KEY);
-    gun.get('ACTIVE_TAB').get(email).once(async (data) => {
-      if (isForeignActiveSession(data, localTabClientId, Date.now(), ACTIVE_TAB_FRESH_MS)) {
-        const forceLogin = await confirm(
-          'Dit account is al aangemeld in een ander venster.\n\nWil je de andere sessie afbreken en hier inloggen?',
-          'Al aangemeld'
-        );
-        if (!forceLogin) {
-          setPassword('');
-          return;
-        }
-        log('[Login] Forcing other session to close');
-      }
-
-      user.auth(email, password, (ack) => {
-        if (ack.err) {
-          setError('Typ het juiste wachtwoord.');
-          setPassword('');
-        } else {
-          setError('');
-
-          if (rememberMe) {
-            writeCredentials(email, { email, password });
-            void writeUserPref(resolveUserKey(email), PREF_KEYS.REMEMBER_ME, true);
-          } else {
-            clearCredentials(email);
-            void writeUserPref(resolveUserKey(email), PREF_KEYS.REMEMBER_ME, false);
-          }
-
-          // Voeg toe aan gebruikerslijst als nog niet aanwezig
-          if (!availableUsers.find(u => u.email === email) && availableUsers.length < 5) {
-            const updated = [...availableUsers, { email, localName: email }];
-            localStorage.setItem('chatlon_users', JSON.stringify(updated));
-          }
-
-          onLoginSuccess(email);
-        }
-      });
-    });
-  };
-
-  const handleRegister = () => {
-    if (!emailLocal || !password || !localName.trim()) {
-      setError('Vul alle velden in');
-      return;
-    }
-    if (!confirmPassword) {
-      setError('Bevestig uw wachtwoord');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Wachtwoorden komen niet overeen');
-      return;
-    }
-
-    if (password.length < 4) {
-      setError('Wachtwoord moet minimaal 4 tekens zijn');
-      return;
-    }
-
-    const email = fullEmail;
-
-    user.create(email, password, (ack) => {
-      if (ack.err) {
-        setError('Dit e-mailadres is al in gebruik');
-      } else {
-        user.auth(email, password, (authAck) => {
-          if (!authAck.err) {
-            setError('');
-
-            // Wijs een willekeurige standaard avatar toe (zowel Gun als lokaal)
-            const presets = ['cat.jpg', 'egg.jpg', 'crab.jpg', 'blocks.jpg', 'pug.jpg'];
-            const randomPreset = presets[Math.floor(Math.random() * presets.length)];
-            setMyAvatar(randomPreset, 'preset');
-
-            // Stel displayName in op het e-mailadres als standaardwaarde
-            setMyDisplayName(email);
-
-            // Sla credentials op (altijd bij registratie)
-            writeCredentials(email, { email, password });
-            void writeUserPref(resolveUserKey(email), PREF_KEYS.REMEMBER_ME, true);
-
-            // Voeg toe aan gebruikerslijst met lokale naam + lokale avatar
-            if (availableUsers.length < 5) {
-              const updated = [...availableUsers, { email, localName: localName.trim(), localAvatar: randomPreset }];
-              localStorage.setItem('chatlon_users', JSON.stringify(updated));
-            }
-
-            onLoginSuccess(email);
-          }
-        });
-      }
-    });
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      if (isRegistering) {
-        handleRegister();
-      } else {
-        handleLogin();
-      }
-    }
-  };
-
-  const handleUserClick = async (userObj) => {
-    // Check of er opgeslagen credentials zijn voor deze gebruiker
-    try {
-      const saved = readCredentials(userObj.email);
-      if (saved.email === userObj.email && saved.password) {
-        // Auto-login: skip wachtwoord invoer
-        setError('');
-
-        const localTabClientId = sessionStorage.getItem(TAB_CLIENT_ID_KEY);
-        gun.get('ACTIVE_TAB').get(userObj.email).once(async (data) => {
-          if (isForeignActiveSession(data, localTabClientId, Date.now(), ACTIVE_TAB_FRESH_MS)) {
-            const forceLogin = await confirm(
-              'Dit account is al aangemeld in een ander venster.\n\nWil je de andere sessie afbreken en hier inloggen?',
-              'Al aangemeld'
-            );
-            if (!forceLogin) {
-              return;
-            }
-          }
-          user.auth(userObj.email, saved.password, (ack) => {
-            if (ack.err) {
-              // Wachtwoord klopt niet meer, toon wachtwoord scherm
-              setSelectedUser(userObj.email);
-              setEmailLocal(userObj.email);
-              setPassword('');
-              void isRememberEnabled(userObj.email).then((enabled) => setRememberMe(enabled));
-              setError('Opgeslagen wachtwoord is niet meer geldig.');
-            } else {
-              onLoginSuccess(userObj.email);
-            }
-          });
-        });
-        return;
-      }
-    } catch (e) { /* geen geldige credentials */ }
-
-    // Geen opgeslagen credentials: toon wachtwoord scherm
-    setSelectedUser(userObj.email);
-    setEmailLocal(userObj.email);
-    setPassword('');
-    setRememberMe(await isRememberEnabled(userObj.email));
-    setError('');
-    setIsRegistering(false);
-  };
-
-  const handleDeleteUser = async (userObj, e) => {
-    e.stopPropagation();
-
-    const confirmed = await confirm(
-      `Wilt u ${userObj.localName} uit de lijst verwijderen?\n\nDit verwijdert alleen de snelkoppeling, niet het account.`,
-      'Gebruiker verwijderen'
-    );
-
-    if (confirmed) {
-      const updatedUsers = availableUsers.filter(u => u.email !== userObj.email);
-      setAvailableUsers(updatedUsers);
-      localStorage.setItem('chatlon_users', JSON.stringify(updatedUsers));
-
-      if (selectedUser === userObj.email) {
-        setSelectedUser(null);
-        setEmailLocal('');
-        setPassword('');
-        setError('');
-      }
-    }
-  };
-
-  // Bepaal weergavenaam voor geselecteerde user
-  const selectedUserObj = availableUsers.find(u => u.email === selectedUser);
-  const displayLabel = isRegistering
-    ? 'Nieuwe gebruiker'
-    : (selectedUser === 'manual' ? 'Inloggen' : (selectedUserObj?.localName || selectedUser || ''));
+  const {
+    availableUsers,
+    confirmPassword,
+    displayLabel,
+    emailDomain,
+    emailLocal,
+    error,
+    fullEmail,
+    getLocalAvatar,
+    handleDeleteUser,
+    handleKeyPress,
+    handleLogin,
+    handleRegister,
+    handleUserClick,
+    isMaxUsersReached,
+    isRegistering,
+    localName,
+    password,
+    rememberMe,
+    resetSelection,
+    selectManualUser,
+    selectRegistration,
+    selectedUser,
+    setConfirmPassword,
+    setEmailDomain,
+    setEmailLocal,
+    setLocalName,
+    setPassword,
+    setRememberMe,
+    showPasswordPanel
+  } = useLoginScreenController({ onLoginSuccess });
 
   return (
     <div className="xp-login">
       {fadeIn && <div className="login-fade-overlay" />}
-      {/* Top Bar */}
       <div className="xp-top-bar" />
 
-      {/* Main Content */}
       <div className="xp-main">
-        {/* Left Side - Logo */}
         <div className="xp-left">
           <div className="xp-brand-layout xp-login-brand-layout">
             <div className="xp-brand-left">
@@ -292,19 +48,17 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
             </div>
             <div className="xp-brand-right">
               <div className="xp-boot-logo">
-                <div className="xp-logo-stripe xp-stripe-green"></div>
-                <div className="xp-logo-stripe xp-stripe-blue"></div>
-                <div className="xp-logo-stripe xp-stripe-red"></div>
+                <div className="xp-logo-stripe xp-stripe-green" />
+                <div className="xp-logo-stripe xp-stripe-blue" />
+                <div className="xp-logo-stripe xp-stripe-red" />
               </div>
             </div>
           </div>
           <div className="xp-login-instruction">Klik op uw gebruikersnaam om te beginnen...</div>
         </div>
 
-        {/* Center Divider */}
-        <div className="xp-divider"></div>
+        <div className="xp-divider" />
 
-        {/* Right Side - Users */}
         <div className="xp-right">
           <div className="xp-right-content">
             {sessionNotice?.type === 'conflict' && (
@@ -326,266 +80,228 @@ function LoginScreen({ onLoginSuccess, fadeIn, onShutdown, sessionNotice = null,
               </div>
             )}
 
-            {selectedUser || isRegistering ? (
-              // PASSWORD VIEW
+            {showPasswordPanel ? (
               <div className="xp-password-panel">
-              <div className="xp-user-selected">
-                <img
-                  src={getLocalAvatar(selectedUser === 'manual' ? 'guest' : selectedUser)}
-                  alt="avatar"
-                  className="xp-avatar-large"
-                />
-                <div className="xp-username-large">{displayLabel}</div>
-              </div>
+                <div className="xp-user-selected">
+                  <img
+                    src={getLocalAvatar(selectedUser === 'manual' ? 'guest' : selectedUser)}
+                    alt="avatar"
+                    className="xp-avatar-large"
+                  />
+                  <div className="xp-username-large">{displayLabel}</div>
+                </div>
 
-              {/* Registratie: e-mailadres met domein-dropdown */}
-              {isRegistering && (
-                <>
-                  <div className="xp-input-row">
-                    <label className="xp-label">E-mailadres:</label>
-                    <div className="xp-password-input-group">
-                      <div className="xp-email-input-group">
+                {isRegistering && (
+                  <>
+                    <div className="xp-input-row">
+                      <label className="xp-label">E-mailadres:</label>
+                      <div className="xp-password-input-group">
+                        <div className="xp-email-input-group">
+                          <input
+                            type="text"
+                            className="xp-text-input xp-email-local"
+                            value={emailLocal}
+                            onChange={(event) => setEmailLocal(event.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
+                            onKeyDown={handleKeyPress}
+                            autoFocus
+                            placeholder="gebruikersnaam"
+                            maxLength={40}
+                            autoComplete="off"
+                            name="register-email-local"
+                            data-lpignore="true"
+                          />
+                          <select
+                            className="xp-email-domain"
+                            value={emailDomain}
+                            onChange={(event) => setEmailDomain(event.target.value)}
+                          >
+                            {COLDMAIL_DOMAINS.map((domain) => (
+                              <option key={domain} value={domain}>{domain}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <span className="xp-arrow-spacer" aria-hidden="true" />
+                      </div>
+                      <div className={`xp-full-email-preview${!emailLocal ? ' xp-full-email-preview--empty' : ''}`}>
+                        {emailLocal ? fullEmail : emailDomain}
+                      </div>
+                    </div>
+
+                    <div className="xp-input-row">
+                      <label className="xp-label">Naam:</label>
+                      <div className="xp-password-input-group">
                         <input
                           type="text"
-                          className="xp-text-input xp-email-local"
-                          value={emailLocal}
-                          onChange={(e) => setEmailLocal(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
-                          onKeyPress={handleKeyPress}
-                          autoFocus
-                          placeholder="gebruikersnaam"
-                          maxLength={40}
-                          autoComplete="off"
-                          name="register-email-local"
-                          data-lpignore="true"
+                          className="xp-text-input"
+                          value={localName}
+                          onChange={(event) => setLocalName(event.target.value)}
+                          onKeyDown={handleKeyPress}
+                          placeholder="Weergavenaam (bijv. Bobby)"
+                          maxLength={30}
+                          autoComplete="given-name"
                         />
-                        <select
-                          className="xp-email-domain"
-                          value={emailDomain}
-                          onChange={(e) => setEmailDomain(e.target.value)}
-                        >
-                          {COLDMAIL_DOMAINS.map(d => (
-                            <option key={d} value={d}>{d}</option>
-                          ))}
-                        </select>
+                        <span className="xp-arrow-spacer" aria-hidden="true" />
                       </div>
-                      <span className="xp-arrow-spacer" aria-hidden="true" />
                     </div>
-                    <div className={`xp-full-email-preview${!emailLocal ? ' xp-full-email-preview--empty' : ''}`}>
-                      {emailLocal ? fullEmail : emailDomain}
-                    </div>
-                  </div>
+                  </>
+                )}
+
+                {selectedUser === 'manual' && (
                   <div className="xp-input-row">
-                    <label className="xp-label">Naam:</label>
+                    <label className="xp-label">E-mailadres:</label>
                     <div className="xp-password-input-group">
                       <input
                         type="text"
                         className="xp-text-input"
-                        value={localName}
-                        onChange={(e) => setLocalName(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        placeholder="Weergavenaam (bijv. Bobby)"
-                        maxLength={30}
-                        autoComplete="given-name"
+                        value={emailLocal}
+                        onChange={(event) => setEmailLocal(event.target.value)}
+                        onKeyDown={handleKeyPress}
+                        autoFocus
+                        autoComplete="username"
                       />
                       <span className="xp-arrow-spacer" aria-hidden="true" />
                     </div>
                   </div>
-                </>
-              )}
+                )}
 
-              {/* Andere gebruiker: volledig e-mailadres */}
-              {selectedUser === 'manual' && (
                 <div className="xp-input-row">
-                  <label className="xp-label">E-mailadres:</label>
-                  <div className="xp-password-input-group">
-                    <input
-                      type="text"
-                      className="xp-text-input"
-                      value={emailLocal}
-                      onChange={(e) => setEmailLocal(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      autoFocus
-                      autoComplete="username"
-                    />
-                    <span className="xp-arrow-spacer" aria-hidden="true" />
-                  </div>
-                </div>
-              )}
-
-              <div className="xp-input-row">
-                <label className="xp-label">Typ uw wachtwoord:</label>
-                <div className="xp-password-input-group">
-                  <input
-                    type="password"
-                    className="xp-text-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    autoFocus={!isRegistering && selectedUser !== 'manual'}
-                    autoComplete={isRegistering ? 'new-password' : 'current-password'}
-                  />
-                  {!isRegistering ? (
-                    <button
-                      className="xp-arrow-button"
-                      onClick={handleLogin}
-                    >
-                      <span className="xp-arrow">&rarr;</span>
-                    </button>
-                  ) : (
-                    <span className="xp-arrow-spacer" aria-hidden="true" />
-                  )}
-                </div>
-              </div>
-
-              {isRegistering && (
-                <div className="xp-input-row">
-                  <label className="xp-label">Bevestig wachtwoord:</label>
+                  <label className="xp-label">Typ uw wachtwoord:</label>
                   <div className="xp-password-input-group">
                     <input
                       type="password"
                       className="xp-text-input"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      autoComplete="new-password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      onKeyDown={handleKeyPress}
+                      autoFocus={!isRegistering && selectedUser !== 'manual'}
+                      autoComplete={isRegistering ? 'new-password' : 'current-password'}
                     />
-                    <button
-                      className="xp-arrow-button"
-                      onClick={handleRegister}
-                    >
-                      <span className="xp-arrow">&rarr;</span>
-                    </button>
+                    {!isRegistering ? (
+                      <button type="button" className="xp-arrow-button" onClick={handleLogin}>
+                        <span className="xp-arrow">&rarr;</span>
+                      </button>
+                    ) : (
+                      <span className="xp-arrow-spacer" aria-hidden="true" />
+                    )}
                   </div>
                 </div>
-              )}
 
-              {!isRegistering && (
-                <div className="xp-checkbox-row">
-                  <label className="xp-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                    />
-                    <span>Mijn wachtwoord onthouden</span>
-                  </label>
+                {isRegistering && (
+                  <div className="xp-input-row">
+                    <label className="xp-label">Bevestig wachtwoord:</label>
+                    <div className="xp-password-input-group">
+                      <input
+                        type="password"
+                        className="xp-text-input"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        onKeyDown={handleKeyPress}
+                        autoComplete="new-password"
+                      />
+                      <button type="button" className="xp-arrow-button" onClick={handleRegister}>
+                        <span className="xp-arrow">&rarr;</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!isRegistering && (
+                  <div className="xp-checkbox-row">
+                    <label className="xp-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(event) => setRememberMe(event.target.checked)}
+                      />
+                      <span>Mijn wachtwoord onthouden</span>
+                    </label>
+                  </div>
+                )}
+
+                {error && <div className="xp-error-message">{error}</div>}
+
+                <div className="xp-hint-text">
+                  Tip: Druk op Enter nadat u uw wachtwoord hebt getypt
                 </div>
-              )}
-
-              {error && (
-                <div className="xp-error-message">{error}</div>
-              )}
-
-              <div className="xp-hint-text">
-                Tip: Druk op Enter nadat u uw wachtwoord hebt getypt
-              </div>
               </div>
             ) : (
-              // USER SELECTION VIEW
               <div className="xp-user-panel">
-              {availableUsers.length === 0 && (
-                <div className="xp-no-users-hint">
-                  <span className="xp-hint-icon">&#8505;&#65039;</span>
-                  <span>Geen gebruikers gevonden. Maak een nieuwe gebruiker aan.</span>
-                </div>
-              )}
+                {availableUsers.length === 0 && (
+                  <div className="xp-no-users-hint">
+                    <span className="xp-hint-icon">&#8505;&#65039;</span>
+                    <span>Geen gebruikers gevonden. Maak een nieuwe gebruiker aan.</span>
+                  </div>
+                )}
 
-              {availableUsers.map((userObj) => (
-                <div
-                  key={userObj.email}
-                  className="xp-user-item"
-                  onClick={() => handleUserClick(userObj)}
-                >
-                  <img
-                    src={getLocalAvatar(userObj.email)}
-                    alt={userObj.localName}
-                    className="xp-avatar"
-                  />
-                  <span className="xp-username">{userObj.localName}</span>
-                  <button
-                    className="xp-delete-user"
-                    onClick={(e) => handleDeleteUser(userObj, e)}
-                    title="Verwijder uit lijst"
+                {availableUsers.map((userObj) => (
+                  <div
+                    key={userObj.email}
+                    className="xp-user-item"
+                    onClick={() => handleUserClick(userObj)}
                   >
-                    &#10005;
-                  </button>
-                </div>
-              ))}
+                    <img
+                      src={getLocalAvatar(userObj.email)}
+                      alt={userObj.localName}
+                      className="xp-avatar"
+                    />
+                    <span className="xp-username">{userObj.localName}</span>
+                    <button
+                      type="button"
+                      className="xp-delete-user"
+                      onClick={(event) => handleDeleteUser(userObj, event)}
+                      title="Verwijder uit lijst"
+                    >
+                      &#10005;
+                    </button>
+                  </div>
+                ))}
 
-              {availableUsers.length >= 5 && (
-                <div className="xp-max-users-hint">
-                  <span className="xp-hint-icon">&#9888;&#65039;</span>
-                  <span>Maximum aantal gebruikers bereikt. Verwijder een gebruiker om een nieuwe toe te voegen.</span>
-                </div>
-              )}
+                {isMaxUsersReached && (
+                  <div className="xp-max-users-hint">
+                    <span className="xp-hint-icon">&#9888;&#65039;</span>
+                    <span>Maximum aantal gebruikers bereikt. Verwijder een gebruiker om een nieuwe toe te voegen.</span>
+                  </div>
+                )}
 
-              <div className="xp-user-item xp-separator-item">
-                <div className="xp-separator-line"></div>
+                <div className="xp-user-item xp-separator-item">
+                  <div className="xp-separator-line" />
+                </div>
+
+                <div
+                  className={`xp-user-item xp-special-item ${isMaxUsersReached ? 'xp-disabled' : ''}`}
+                  onClick={selectManualUser}
+                >
+                  <div className="xp-avatar xp-guest-avatar">
+                    <span className="xp-guest-icon">&#128273;</span>
+                  </div>
+                  <span className="xp-username">Andere gebruiker</span>
+                </div>
+
+                <div
+                  className={`xp-user-item xp-special-item ${isMaxUsersReached ? 'xp-disabled' : ''}`}
+                  onClick={selectRegistration}
+                >
+                  <div className="xp-avatar xp-guest-avatar">
+                    <span className="xp-guest-icon">&#10133;</span>
+                  </div>
+                  <span className="xp-username">Nieuwe gebruiker</span>
+                </div>
               </div>
-
-              <div
-                className={`xp-user-item xp-special-item ${availableUsers.length >= 5 ? 'xp-disabled' : ''}`}
-                onClick={() => {
-                  if (availableUsers.length >= 5) return;
-                  setSelectedUser('manual');
-                  setEmailLocal('');
-                  setPassword('');
-                  setConfirmPassword('');
-                  setIsRegistering(false);
-                }}
-              >
-                <div className="xp-avatar xp-guest-avatar">
-                  <span className="xp-guest-icon">&#128273;</span>
-                </div>
-                <span className="xp-username">Andere gebruiker</span>
-              </div>
-
-              <div
-                className={`xp-user-item xp-special-item ${availableUsers.length >= 5 ? 'xp-disabled' : ''}`}
-                onClick={() => {
-                  if (availableUsers.length >= 5) return;
-                  setIsRegistering(true);
-                  setSelectedUser('register');
-                  setEmailLocal('');
-                  setLocalName('');
-                  setPassword('');
-                  setConfirmPassword('');
-                  setRememberMe(true);
-                }}
-              >
-                <div className="xp-avatar xp-guest-avatar">
-                  <span className="xp-guest-icon">&#10133;</span>
-                </div>
-                <span className="xp-username">Nieuwe gebruiker</span>
-              </div>
-            </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
       <div className="xp-bottom-bar">
         <div className="xp-bottom-left">
-          {(selectedUser || isRegistering) && (
-            <button
-              className="xp-back-link"
-              onClick={() => {
-                setSelectedUser(null);
-                setIsRegistering(false);
-                setEmailLocal('');
-                setLocalName('');
-                setPassword('');
-                setConfirmPassword('');
-                setError('');
-              }}
-            >
+          {showPasswordPanel && (
+            <button type="button" className="xp-back-link" onClick={resetSelection}>
               &larr; Terug naar gebruikersselectie
             </button>
           )}
         </div>
         <div className="xp-bottom-right">
-          <button className="xp-shutdown-button" onClick={onShutdown}>
+          <button type="button" className="xp-shutdown-button" onClick={onShutdown}>
             <span className="xp-shutdown-icon">&#9211;</span>
             Computer uitschakelen
           </button>

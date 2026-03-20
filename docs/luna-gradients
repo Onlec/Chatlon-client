@@ -1,0 +1,134 @@
+
+**Gradient 1 — Titelbalk active**
+
+| Origineel | Alternatief |
+|---|---|
+| `#0058ee` | `color-mix(in oklch, #0057e5 98%, white)` |
+| `#3593ff` | `color-mix(in oklch, #0057e5 70%, white)` |
+| `#288eff` | `color-mix(in oklch, #0057e5 75%, white)` |
+| `#127dff` | `color-mix(in oklch, #0057e5 85%, white)` |
+| `#036ffc` | `color-mix(in oklch, #0057e5 92%, white)` |
+| `#0262ee` | `color-mix(in oklch, #0057e5 96%, white)` |
+| `#0057e5` | `#0057e5` *(seed zelf)* |
+| `#0054e3` | `color-mix(in oklch, #0057e5 99%, black)` |
+| `#0055eb` | `color-mix(in oklch, #0057e5 98%, white)` |
+| `#005bf5` | `color-mix(in oklch, #0057e5 94%, white)` |
+| `#026afe` | `color-mix(in oklch, #0057e5 88%, white)` |
+| `#0062ef` | `color-mix(in oklch, #0057e5 93%, white)` |
+| `#0052d6` | `color-mix(in oklch, #0057e5 97%, black)` |
+| `#0040ab` | `color-mix(in oklch, #0057e5 80%, black)` |
+| `#003092` | `color-mix(in oklch, #0057e5 65%, black)` |
+
+---
+
+**Gradient 2 — Active fade**
+
+| Origineel | Alternatief |
+|---|---|
+| `#1638e6` | `color-mix(in oklch, #0057e5 90%, black)` |
+
+---
+
+**Gradient 3 — Titelbalk inactive**
+
+| Origineel | Alternatief |
+|---|---|
+| `#7697e7` | `color-mix(in oklch, #0057e5 55%, white)` |
+| `#7e9ee3` | `color-mix(in oklch, #0057e5 52%, white)` |
+| `#94afe8` | `color-mix(in oklch, #0057e5 45%, white)` |
+| `#97b4e9` | `color-mix(in oklch, #0057e5 43%, white)` |
+| `#82a5e4` | `color-mix(in oklch, #0057e5 50%, white)` |
+| `#7c9fe2` | `color-mix(in oklch, #0057e5 52%, white)` |
+| `#7996de` | `color-mix(in oklch, #0057e5 54%, white)` |
+| `#7b99e1` | `color-mix(in oklch, #0057e5 53%, white)` |
+| `#82a9e9` | `color-mix(in oklch, #0057e5 48%, white)` |
+| `#80a5e7` | `color-mix(in oklch, #0057e5 49%, white)` |
+| `#7b96e1` | `color-mix(in oklch, #0057e5 54%, white)` |
+| `#7a93df` | `color-mix(in oklch, #0057e5 55%, white)` |
+| `#abbae3` | `color-mix(in oklch, #0057e5 38%, white)` |
+
+---
+
+**Gradient 5 & 6 — Minimize/Maximize buttons**
+
+| Origineel | Alternatief |
+|---|---|
+| `#0054e9` | `color-mix(in oklch, #0057e5 99%, white)` |
+| `#2263d5` | `color-mix(in oklch, #0057e5 88%, black)` |
+| `#4479e4` | `color-mix(in oklch, #0057e5 75%, white)` |
+| `#a3bbec` | `color-mix(in oklch, #0057e5 35%, white)` |
+
+---
+
+**Gradient 8 — Taakbalk**
+
+| Origineel | Alternatief |
+|---|---|
+| `#1f2f86` | `color-mix(in oklch, #0057e5 55%, black)` |
+| `#3165c4` | `color-mix(in oklch, #0057e5 82%, black)` |
+| `#3682e5` | `color-mix(in oklch, #0057e5 95%, white)` |
+| `#4490e6` | `color-mix(in oklch, #0057e5 88%, white)` |
+| `#2b71e0` | `color-mix(in oklch, #0057e5 97%, white)` |
+| `#2663da` | `color-mix(in oklch, #0057e5 93%, black)` |
+| `#235bd6` | `color-mix(in oklch, #0057e5 90%, black)` |
+| `#2258d5` | `color-mix(in oklch, #0057e5 89%, black)` |
+| `#2157d6` | `color-mix(in oklch, #0057e5 89%, black)` |
+| `#245ddb` | `color-mix(in oklch, #0057e5 91%, black)` |
+| `#2562df` | `color-mix(in oklch, #0057e5 92%, black)` |
+| `#245fdc` | `color-mix(in oklch, #0057e5 91%, black)` |
+| `#2158d4` | `color-mix(in oklch, #0057e5 89%, black)` |
+| `#1d4ec0` | `color-mix(in oklch, #0057e5 78%, black)` |
+| `#1941a5` | `color-mix(in oklch, #0057e5 68%, black)` |
+
+---
+
+**Gradient 9 — Systray**
+
+| Origineel | Alternatief |
+|---|---|
+| `#0c59b9` | `color-mix(in oklch, #0057e5 75%, black)` |
+| `#139ee9` | `color-mix(in oklch, #0057e5 80%, white)` |
+| `#18b5f2` | `color-mix(in oklch, #0057e5 70%, white)` |
+| `#139beb` | `color-mix(in oklch, #0057e5 78%, white)` |
+| `#1290e8` | `color-mix(in oklch, #0057e5 82%, white)` |
+| `#0d8dea` | `color-mix(in oklch, #0057e5 85%, white)` |
+| `#0d9ff1` | `color-mix(in oklch, #0057e5 76%, white)` |
+| `#0f9eed` | `color-mix(in oklch, #0057e5 77%, white)` |
+| `#119be9` | `color-mix(in oklch, #0057e5 79%, white)` |
+| `#1392e2` | `color-mix(in oklch, #0057e5 83%, white)` |
+| `#137ed7` | `color-mix(in oklch, #0057e5 88%, black)` |
+| `#095bc9` | `color-mix(in oklch, #0057e5 78%, black)` |
+
+---
+
+**Gradients 10 & 12 — Startmenu header/footer**
+
+| Origineel | Alternatief |
+|---|---|
+| `#1868ce` | `color-mix(in oklch, #0057e5 84%, black)` |
+| `#0e60cb` | `color-mix(in oklch, #0057e5 80%, black)` |
+| `#1164cf` | `color-mix(in oklch, #0057e5 82%, black)` |
+| `#1667cf` | `color-mix(in oklch, #0057e5 83%, black)` |
+| `#1b6cd3` | `color-mix(in oklch, #0057e5 85%, black)` |
+| `#1e70d9` | `color-mix(in oklch, #0057e5 87%, black)` |
+| `#2476dc` | `color-mix(in oklch, #0057e5 90%, black)` |
+| `#297ae0` | `color-mix(in oklch, #0057e5 92%, black)` |
+| `#3482e3` | `color-mix(in oklch, #0057e5 95%, white)` |
+| `#3786e5` | `color-mix(in oklch, #0057e5 96%, white)` |
+| `#428ee9` | `color-mix(in oklch, #0057e5 90%, white)` |
+| `#4791eb` | `color-mix(in oklch, #0057e5 88%, white)` |
+| `#4282d6` | `color-mix(in oklch, #0057e5 86%, white)` |
+| `#3b85e0` | `color-mix(in oklch, #0057e5 94%, white)` |
+| `#418ae3` | `color-mix(in oklch, #0057e5 91%, white)` |
+| `#3c87e2` | `color-mix(in oklch, #0057e5 93%, white)` |
+| `#2e7ee1` | `color-mix(in oklch, #0057e5 97%, white)` |
+| `#2374df` | `color-mix(in oklch, #0057e5 96%, black)` |
+| `#2072db` | `color-mix(in oklch, #0057e5 94%, black)` |
+| `#196edb` | `color-mix(in oklch, #0057e5 91%, black)` |
+| `#176bd8` | `color-mix(in oklch, #0057e5 90%, black)` |
+| `#1468d5` | `color-mix(in oklch, #0057e5 88%, black)` |
+| `#1165d2` | `color-mix(in oklch, #0057e5 86%, black)` |
+| `#0f61cb` | `color-mix(in oklch, #0057e5 82%, black)` |
+
+---
+

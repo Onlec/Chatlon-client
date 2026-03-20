@@ -824,13 +824,16 @@
 }
 
 .browser-popup-header {
-  background: linear-gradient(
-    to bottom,
-    var(--win-titlebar-a) 0%,
-    var(--win-titlebar-b) 9%,
-    var(--win-titlebar-c) 18%,
-    var(--win-titlebar-c) 92%,
-    var(--win-titlebar-d) 100%
+  background: var(
+    --xp-titlebar-gradient,
+    linear-gradient(
+      to bottom,
+      var(--win-titlebar-a) 0%,
+      var(--win-titlebar-b) 9%,
+      var(--win-titlebar-c) 18%,
+      var(--win-titlebar-c) 92%,
+      var(--win-titlebar-d) 100%
+    )
   );
   padding: 4px 8px;
   display: flex;
@@ -852,7 +855,7 @@
 .browser-popup-close {
   width: 18px;
   height: 18px;
-  background: #E81123;
+  background: var(--xp-caption-btn-close-gradient, #E81123);
   border: 1px solid #fff;
   border-radius: 2px;
   color: white;
@@ -866,7 +869,7 @@
 }
 
 .browser-popup-close:hover {
-  background: #FF2233;
+  filter: brightness(1.08);
 }
 
 .browser-popup-content {
@@ -1411,13 +1414,18 @@
    ============================================ */
 .taskbar-tab.unread,
 .taskbar-tab.taskbar-tab--unread {
-  background: linear-gradient(
-    to bottom,
-    var(--tab-notify-a) 0%,
-    var(--tab-notify-b) 100%
+  background: var(
+    --xp-taskbar-tab-unread-gradient,
+    linear-gradient(
+      to bottom,
+      var(--tab-notify-a) 0%,
+      var(--tab-notify-b) 100%
+    )
   ) !important;
-  border: 1px solid rgba(0,0,0,0.2);
-  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2);
+  border: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    1px 1px 0 rgba(120,62,0,0.42);
   color: white !important;
   animation: xp_blink 2s infinite;
 }
@@ -2248,6 +2256,47 @@
 .cp-select:focus-visible {
   outline: 1px dotted var(--link-color);
   outline-offset: 1px;
+}
+
+.cp-theme-custom-row {
+  align-items: flex-start;
+}
+
+.cp-theme-custom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cp-theme-custom-swatch {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--btn-border);
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,0.6);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.cp-theme-color-input {
+  width: 36px;
+  height: 24px;
+  padding: 1px;
+  border: 1px solid var(--btn-border);
+  background: #FFFFFF;
+  cursor: pointer;
+}
+
+.cp-theme-color-input:focus-visible {
+  outline: 1px dotted var(--link-color);
+  outline-offset: 1px;
+}
+
+.cp-theme-hex-input {
+  width: 112px;
+  font-family: Consolas, 'Courier New', monospace;
+  text-transform: lowercase;
 }
 
 .cp-action-button {

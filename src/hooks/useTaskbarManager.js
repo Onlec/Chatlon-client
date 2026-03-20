@@ -2,30 +2,12 @@ import { useCallback } from 'react';
 
 export function useTaskbarManager({
   setConversations,
+  setGames,
   setPanes,
   setActivePane,
-  paneOrderRef,
-  conversationsRef,
-  panesRef,
   activePaneRef
 }) {
   const handleTaskbarClick = useCallback((paneName) => {
-    const clearActivePaneAfterMinimize = (minimizedPane) => {
-      setActivePane((prev) => {
-        if (prev !== minimizedPane) return prev;
-        const visiblePanes = paneOrderRef.current.filter((p) => {
-          if (p === minimizedPane) return false;
-          if (p.startsWith('conv_')) {
-            const conv = conversationsRef.current[p];
-            return conv && conv.isOpen && !conv.isMinimized;
-          }
-          const pane = panesRef.current[p];
-          return pane && pane.isOpen && !pane.isMinimized;
-        });
-        return visiblePanes[visiblePanes.length - 1] || null;
-      });
-    };
-
     if (paneName.startsWith('conv_')) {
       setConversations((prev) => {
         const conv = prev[paneName];
@@ -38,11 +20,30 @@ export function useTaskbarManager({
             [paneName]: { ...prev[paneName], isMinimized: false }
           };
         } else if (activePaneRef.current === paneName) {
-          clearActivePaneAfterMinimize(paneName);
+          setActivePane(null);
+          return prev;
+        } else {
+          setActivePane(paneName);
+          return prev;
+        }
+      });
+      return;
+    }
+
+    if (paneName.startsWith('game_')) {
+      setGames((prev) => {
+        const game = prev[paneName];
+        if (!game) return prev;
+
+        if (game.isMinimized) {
+          setActivePane(paneName);
           return {
             ...prev,
-            [paneName]: { ...prev[paneName], isMinimized: true }
+            [paneName]: { ...prev[paneName], isMinimized: false }
           };
+        } else if (activePaneRef.current === paneName) {
+          setActivePane(null);
+          return prev;
         } else {
           setActivePane(paneName);
           return prev;
@@ -58,15 +59,12 @@ export function useTaskbarManager({
       if (pane.isMinimized) {
         setActivePane(paneName);
         return {
-          ...prev,
-          [paneName]: { ...prev[paneName], isMinimized: false }
-        };
-      } else if (activePaneRef.current === paneName) {
-        clearActivePaneAfterMinimize(paneName);
-        return {
-          ...prev,
-          [paneName]: { ...prev[paneName], isMinimized: true }
-        };
+            ...prev,
+            [paneName]: { ...prev[paneName], isMinimized: false }
+          };
+        } else if (activePaneRef.current === paneName) {
+        setActivePane(null);
+        return prev;
       } else {
         setActivePane(paneName);
         return prev;
@@ -74,11 +72,9 @@ export function useTaskbarManager({
     });
   }, [
     activePaneRef,
-    conversationsRef,
-    paneOrderRef,
-    panesRef,
     setActivePane,
     setConversations,
+    setGames,
     setPanes
   ]);
 

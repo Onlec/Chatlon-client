@@ -16,26 +16,25 @@ function blurEditableActiveElement() {
   }
 }
 
-function DesktopShell({
-  onDesktopClick,
-  wallpaperStyle,
-  dataTheme,
-  dataFontsize,
-  scanlinesEnabled,
-  desktopShortcuts,
-  onOpenShortcut,
-  onShortcutContextMenu,
-  onRenameShortcut,
-  onMoveShortcut,
-  gridConfig,
-  paneLayerProps,
-  startMenuProps,
-  taskbarProps,
-  toasts,
-  removeToast,
-  onToastClick,
-  contextMenu
-}) {
+function DesktopShell({ shellProps }) {
+  const {
+    session,
+    shortcuts,
+    windows,
+    navigation,
+    notifications,
+    status,
+    contextMenu
+  } = shellProps;
+
+  const desktopStyle =
+    session.wallpaperStyle || session.themeStyle
+      ? {
+          ...(session.wallpaperStyle || {}),
+          ...(session.themeStyle || {}),
+        }
+      : undefined;
+
   return (
     <div
       className="desktop"
@@ -44,7 +43,7 @@ function DesktopShell({
         if (event.target.closest('input, textarea, [contenteditable="true"]')) return;
         blurEditableActiveElement();
       }}
-      onClick={onDesktopClick}
+      onClick={session.onDesktopClick}
       onContextMenu={(event) => {
         if (!contextMenu?.enabled) return;
         if (event.target.closest('.pane-frame')) return;
@@ -60,35 +59,36 @@ function DesktopShell({
             : []
         });
       }}
-      style={wallpaperStyle}
-      data-theme={dataTheme}
-      data-fontsize={dataFontsize}
+      style={desktopStyle}
+      data-theme={session.dataTheme}
+      data-fontsize={session.dataFontsize}
     >
       <div id="portal-root"></div>
-      <div className={`scanlines-overlay ${scanlinesEnabled ? '' : 'scanlines-overlay--disabled'}`}></div>
+      <div className={`scanlines-overlay ${status.scanlinesEnabled ? '' : 'scanlines-overlay--disabled'}`}></div>
 
       <DesktopShortcuts
-        shortcuts={desktopShortcuts}
-        onOpenShortcut={onOpenShortcut}
-        onShortcutContextMenu={onShortcutContextMenu}
-        onRenameShortcut={onRenameShortcut}
-        onMoveShortcut={onMoveShortcut}
-        gridConfig={gridConfig}
+        shortcuts={shortcuts.items}
+        onOpenShortcut={shortcuts.onOpen}
+        onShortcutContextMenu={shortcuts.onContextMenu}
+        onRenameShortcut={shortcuts.onRename}
+        onMoveShortcut={shortcuts.onMove}
+        gridConfig={shortcuts.gridConfig}
+        layoutVariant={shortcuts.layoutVariant}
       />
 
-      <PaneLayer {...paneLayerProps} />
+      <PaneLayer {...windows.paneLayerProps} chromeVariant={windows.chromeVariant} />
 
-      <StartMenu {...startMenuProps} />
+      <StartMenu {...navigation.startMenuProps} />
 
-      <Taskbar {...taskbarProps} />
+      <Taskbar {...navigation.taskbarProps} />
 
       <div className="toast-container">
-        {toasts.map((toast) => (
+        {notifications.toasts.map((toast) => (
           <ToastNotification
             key={toast.id}
             toast={toast}
-            onClose={removeToast}
-            onClick={onToastClick}
+            onClose={notifications.removeToast}
+            onClick={notifications.onToastClick}
           />
         ))}
       </div>

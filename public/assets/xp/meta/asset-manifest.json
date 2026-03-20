@@ -1,0 +1,236 @@
+[
+    {
+        "id":  "taskbar-start-button-png",
+        "category":  "taskbar",
+        "publicPath":  "/assets/xp/taskbar/start-button.png",
+        "originalFileName":  "start.png",
+        "size":  6605,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "systray-icon-audio-png",
+        "category":  "systray",
+        "publicPath":  "/assets/xp/systray/icon-audio.png",
+        "originalFileName":  "690(16x16).png",
+        "size":  744,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "systray-icon-usb-png",
+        "category":  "systray",
+        "publicPath":  "/assets/xp/systray/icon-usb.png",
+        "originalFileName":  "394(16x16).png",
+        "size":  742,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "systray-icon-security-png",
+        "category":  "systray",
+        "publicPath":  "/assets/xp/systray/icon-security.png",
+        "originalFileName":  "229(16x16).png",
+        "size":  850,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-user-avatar-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/user-avatar.png",
+        "originalFileName":  "user.png",
+        "size":  6417,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-icon-all-programs-ico",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/icon-all-programs.ico",
+        "originalFileName":  "all-programs.ico",
+        "size":  2550,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-icon-empty-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/icon-empty.png",
+        "originalFileName":  "empty.png",
+        "size":  68,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-internet-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-internet.png",
+        "originalFileName":  "ie.png",
+        "size":  3063,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-email-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-email.png",
+        "originalFileName":  "887(32x32).png",
+        "size":  1882,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-media-player-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-media-player.png",
+        "originalFileName":  "846(32x32).png",
+        "size":  2813,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-messenger-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-messenger.png",
+        "originalFileName":  "msn.png",
+        "size":  2500,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-notepad-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-notepad.png",
+        "originalFileName":  "327(32x32).png",
+        "size":  2584,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-paint-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-paint.png",
+        "originalFileName":  "680(32x32).png",
+        "size":  2650,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-documents-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-documents.png",
+        "originalFileName":  "308(32x32).png",
+        "size":  1957,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-recent-docs-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-recent-docs.png",
+        "originalFileName":  "301(32x32).png",
+        "size":  2155,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-pictures-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-pictures.png",
+        "originalFileName":  "307(32x32).png",
+        "size":  2020,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-music-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-music.png",
+        "originalFileName":  "550(32x32).png",
+        "size":  2017,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-computer-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-computer.png",
+        "originalFileName":  "676(32x32).png",
+        "size":  2512,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-control-panel-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-control-panel.png",
+        "originalFileName":  "300(32x32).png",
+        "size":  2360,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-connect-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-connect.png",
+        "originalFileName":  "309(32x32).png",
+        "size":  2533,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-printers-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-printers.png",
+        "originalFileName":  "549(32x32).png",
+        "size":  2259,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-help-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-help.png",
+        "originalFileName":  "747(32x32).png",
+        "size":  2596,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-search-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-search.png",
+        "originalFileName":  "299(32x32).png",
+        "size":  1589,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-app-run-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/app-run.png",
+        "originalFileName":  "743(32x32).png",
+        "size":  979,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-action-logoff-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/action-logoff.png",
+        "originalFileName":  "546(32x32).png",
+        "size":  2153,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    },
+    {
+        "id":  "startmenu-action-shutdown-png",
+        "category":  "startmenu",
+        "publicPath":  "/assets/xp/startmenu/action-shutdown.png",
+        "originalFileName":  "310(32x32).png",
+        "size":  2130,
+        "notes":  "Curated WinXP-derived asset copied into gun-client for standalone use",
+        "source":  "xp-reference-pack"
+    }
+]

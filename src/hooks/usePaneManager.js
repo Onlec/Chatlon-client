@@ -48,11 +48,9 @@ export function usePaneManager() {
 
   const { handleTaskbarClick } = useTaskbarManager({
     setConversations: window.setConversations,
+    setGames: window.setGames,
     setPanes: window.setPanes,
     setActivePane: window.setActivePane,
-    paneOrderRef: window.paneOrderRef,
-    conversationsRef: window.conversationsRef,
-    panesRef: window.panesRef,
     activePaneRef: window.activePaneRef
   });
 

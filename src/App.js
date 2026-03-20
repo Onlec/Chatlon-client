@@ -8,8 +8,12 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import LoginScreen from './components/screens/LoginScreen';
 import BootSequence from './components/screens/BootSequence';
-import PostLoginWelcomeScreen from './components/screens/PostLoginWelcomeScreen';
+import OSSelector from './components/screens/OSSelector';
+import SystemTransitionScreen from './components/screens/SystemTransitionScreen';
+import LigerBootSequence from './components/screens/liger/LigerBootSequence';
+import LigerLoginScreen from './components/screens/liger/LigerLoginScreen';
 import DesktopShell from './components/shell/DesktopShell';
+import LigerDesktopShell from './components/shell/liger/LigerDesktopShell';
 import { user } from './gun';
 import { paneConfig } from './paneConfig';
 import './App.css';
@@ -55,6 +59,7 @@ import { useWallpaper } from './contexts/WallpaperContext';
 import { FEATURE_FLAGS } from './config/featureFlags';
 import { removeScoped } from './utils/storageScope';
 import { readUserPrefOnce, PREF_KEYS } from './utils/userPrefsGun';
+import { buildLunaCustomThemeStyle } from './utils/lunaCustomTheme';
 
 
 // Helper: lees lokale naam uit chatlon_users localStorage
@@ -76,9 +81,42 @@ function getOrCreateTabClientId() {
   return id;
 }
 
+const OS_STORAGE_KEY = 'chatlon_os';
+const BOOT_COMPLETE_STORAGE_KEY = 'chatlon_boot_complete';
+const OS_DX = 'dx';
+const OS_LIGER = 'liger';
+
+function normalizeSelectedOS(value) {
+  if (value === OS_DX || value === OS_LIGER) return value;
+  return null;
+}
+
+function resolveSelectedOS() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('reset-os')) {
+    localStorage.removeItem(OS_STORAGE_KEY);
+    sessionStorage.removeItem(BOOT_COMPLETE_STORAGE_KEY);
+    params.delete('reset-os');
+    const nextSearch = params.toString();
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash || ''}`;
+    if (typeof window.history?.replaceState === 'function') {
+      window.history.replaceState({}, '', nextUrl);
+    }
+    return null;
+  }
+
+  return normalizeSelectedOS(localStorage.getItem(OS_STORAGE_KEY));
+}
+
 function App() {
   const WELCOME_HOLD_MS = 1200;
   const WELCOME_FADE_MS = 800;
+  const [selectedOS] = useState(() => resolveSelectedOS());
+  const osVariant = selectedOS === OS_LIGER ? OS_LIGER : OS_DX;
 
   // ============================================
   // AUTH STATE
@@ -86,7 +124,7 @@ function App() {
   const { scanlinesEnabled, setStorageUserKey: setScanlinesStorageUserKey } = useScanlinesPreference();
   const [hasBooted, setHasBooted] = useState(() => {
     // Boot alleen bij eerste bezoek of na expliciete restart
-    const skipBoot = sessionStorage.getItem('chatlon_boot_complete');
+    const skipBoot = sessionStorage.getItem(BOOT_COMPLETE_STORAGE_KEY);
     return skipBoot === 'true';
   });
   const justBootedRef = useRef(false);
@@ -119,13 +157,29 @@ function App() {
   // ============================================
   // HOOKS
   // ============================================
-  const { settings, setStorageUserKey: setSettingsStorageUserKey } = useSettings();
+  const {
+    settings,
+    setStorageUserKey: setSettingsStorageUserKey,
+    setAppearanceVariant: setSettingsAppearanceVariant
+  } = useSettings();
   const { getAvatar, getDisplayName } = useAvatar();
   // Refs zodat Gun-callbacks altijd de meest actuele versie hebben
   const getDisplayNameRef = useRef(getDisplayName);
   getDisplayNameRef.current = getDisplayName;
   const { getWallpaperStyle } = useWallpaper();
   const { playSound, playSoundAsync } = useSounds();
+  const desktopThemeStyle = useMemo(
+    () => buildLunaCustomThemeStyle(settings.colorScheme, settings.customLunaTheme),
+    [settings.colorScheme, settings.customLunaTheme]
+  );
+  const shellDataTheme = useMemo(() => {
+    if (osVariant === OS_LIGER) {
+      return settings.colorScheme === 'blauw'
+        ? 'liger-default'
+        : `liger-${settings.colorScheme}`;
+    }
+    return settings.colorScheme !== 'blauw' ? settings.colorScheme : undefined;
+  }, [osVariant, settings.colorScheme]);
   
   // Toast notifications
   const {
@@ -424,7 +478,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
 
     const finishClose = () => {
       if (postClose === SESSION_POST_CLOSE_SHUTDOWN_BOOT_RELOAD) {
-        sessionStorage.removeItem('chatlon_boot_complete');
+        sessionStorage.removeItem(BOOT_COMPLETE_STORAGE_KEY);
         window.location.reload();
         return;
       }
@@ -508,7 +562,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
   };
 
   
-  async function handleLogoff() {
+  const handleLogoff = React.useCallback(async () => {
     log('[App] Logging off...');
     await closeSession({
       reason: SESSION_CLOSE_REASON_MANUAL_LOGOFF,
@@ -516,9 +570,9 @@ const onTaskbarClick = React.useCallback((paneId) => {
       playLogoffSound: true,
       postClose: SESSION_POST_CLOSE_STAY_ON_LOGIN
     });
-  }
+  }, [closeSession]);
   // Trigger shutdown vanuit ingelogde sessie via dezelfde teardown pipeline.
-  async function handleShutdown() {
+  const handleShutdown = React.useCallback(async () => {
     log('[App] Shutting down...');
     await closeSession({
       reason: SESSION_CLOSE_REASON_MANUAL_SHUTDOWN,
@@ -526,7 +580,7 @@ const onTaskbarClick = React.useCallback((paneId) => {
       playLogoffSound: true,
       postClose: SESSION_POST_CLOSE_SHUTDOWN_BOOT_RELOAD
     });
-  }
+  }, [closeSession]);
 
   useEffect(() => {
     return () => {
@@ -540,6 +594,10 @@ const onTaskbarClick = React.useCallback((paneId) => {
     setSettingsStorageUserKey(scopedUserKey);
     setScanlinesStorageUserKey(scopedUserKey);
   }, [isLoggedIn, currentUser, setSettingsStorageUserKey, setScanlinesStorageUserKey]);
+
+  useEffect(() => {
+    setSettingsAppearanceVariant(selectedOS === OS_LIGER ? OS_LIGER : OS_DX);
+  }, [selectedOS, setSettingsAppearanceVariant]);
 
   useEffect(() => {
     let cancelled = false;
@@ -867,216 +925,344 @@ const onTaskbarClick = React.useCallback((paneId) => {
 
   // Presence owner: usePresenceCoordinator.
   // ContactsPane consumeert alleen sharedContactPresence en subscribe't niet zelf.
+  const handleBootComplete = React.useCallback(() => {
+    justBootedRef.current = true;
+    setHasBooted(true);
+  }, []);
 
+  const focusWindowItem = React.useCallback((paneId) => {
+    if (!paneId) return;
 
-  // ============================================
-  // RENDER: LOGOFF SCREEN
-  // ============================================
-  if (isLoggingOff) {
-    return (
-      <div className="xp-login xp-logoff-screen">
-        <div className="xp-top-bar" />
-        <div className="xp-main xp-logoff-main">
-          <div className="xp-brand-layout xp-login-brand-layout xp-logoff-brand-layout">
-            <div className="xp-brand-left">
-              <span className="xp-brand-microsoft">Macrohard</span>
-              <span className="xp-brand-windows">Panes<span className="xp-brand-xp">dX</span></span>
-            </div>
-            <div className="xp-brand-right">
-              <div className="xp-boot-logo">
-                <div className="xp-logo-stripe xp-stripe-green"></div>
-                <div className="xp-logo-stripe xp-stripe-blue"></div>
-                <div className="xp-logo-stripe xp-stripe-red"></div>
-              </div>
-            </div>
-          </div>
-          <div className="xp-logoff-message-line">Aan het uitloggen...</div>
-        </div>
-        <div className="xp-bottom-bar" />
-      </div>
-    );
+    if (paneId.startsWith('conv_')) {
+      const conversation = conversations[paneId];
+      if (!conversation) return;
+      if (conversation.isMinimized) {
+        openConversation(conversation.contactName);
+        return;
+      }
+      focusPane(paneId);
+      return;
+    }
+
+    if (paneId.startsWith('game_')) {
+      const game = games?.[paneId];
+      if (!game) return;
+      if (game.isMinimized) {
+        openGamePane(game.contactName, game.gameSessionId, game.gameType);
+        return;
+      }
+      focusPane(paneId);
+      return;
+    }
+
+    const pane = panes[paneId];
+    if (!pane) return;
+    if (pane.isMinimized) {
+      desktopCommandBus.openPane(paneId);
+      return;
+    }
+    focusPane(paneId);
+  }, [conversations, games, panes, openConversation, openGamePane, focusPane, desktopCommandBus]);
+
+  const activeAppName = useMemo(() => {
+    if (!activePane) {
+      return osVariant === OS_LIGER ? 'Liger' : 'Chatlon';
+    }
+
+    if (activePane.startsWith('conv_')) {
+      const conversation = conversations[activePane];
+      return conversation ? `${getDisplayName(conversation.contactName)} - Gesprek` : 'Gesprek';
+    }
+
+    if (activePane.startsWith('game_')) {
+      const game = games?.[activePane];
+      if (!game) return 'Spelletje';
+      const gameName = game.gameType === 'tictactoe' ? 'Tic Tac Toe' : game.gameType;
+      return `${gameName} - ${getDisplayName(game.contactName)}`;
+    }
+
+    const config = paneConfig[activePane];
+    return config?.title || config?.label || activePane;
+  }, [activePane, conversations, games, getDisplayName, osVariant]);
+
+  const windowItems = useMemo(() => {
+    const seen = new Set();
+    const orderedIds = [];
+    const pushId = (paneId) => {
+      if (!paneId || seen.has(paneId)) return;
+      seen.add(paneId);
+      orderedIds.push(paneId);
+    };
+
+    paneOrder.forEach(pushId);
+    Object.entries(panes || {}).forEach(([paneId, pane]) => {
+      if (pane?.isOpen) pushId(paneId);
+    });
+    Object.entries(conversations || {}).forEach(([paneId, conversation]) => {
+      if (conversation?.isOpen) pushId(paneId);
+    });
+    Object.entries(games || {}).forEach(([paneId, game]) => {
+      if (game?.isOpen) pushId(paneId);
+    });
+
+    return orderedIds.map((paneId) => {
+      if (paneId.startsWith('conv_')) {
+        const conversation = conversations[paneId];
+        if (!conversation?.isOpen) return null;
+        return {
+          id: paneId,
+          icon: '💬',
+          label: `${getDisplayName(conversation.contactName)} - Gesprek`,
+          isActive: activePane === paneId,
+          isMinimized: Boolean(conversation.isMinimized),
+          onSelect: () => focusWindowItem(paneId)
+        };
+      }
+
+      if (paneId.startsWith('game_')) {
+        const game = games?.[paneId];
+        if (!game?.isOpen) return null;
+        const gameName = game.gameType === 'tictactoe' ? 'Tic Tac Toe' : game.gameType;
+        return {
+          id: paneId,
+          icon: '🎲',
+          label: `${gameName} - ${getDisplayName(game.contactName)}`,
+          isActive: activePane === paneId,
+          isMinimized: Boolean(game.isMinimized),
+          onSelect: () => focusWindowItem(paneId)
+        };
+      }
+
+      const pane = panes[paneId];
+      const config = paneConfig[paneId];
+      if (!pane?.isOpen || !config) return null;
+      return {
+        id: paneId,
+        icon: config.icon || config.desktopIcon || '🪟',
+        label: config.title || config.label || paneId,
+        isActive: activePane === paneId,
+        isMinimized: Boolean(pane.isMinimized),
+        onSelect: () => focusWindowItem(paneId)
+      };
+    }).filter(Boolean);
+  }, [activePane, conversations, focusWindowItem, games, getDisplayName, paneOrder, panes]);
+
+  const dockItems = useMemo(() => (
+    Object.entries(paneConfig).map(([paneId, config]) => ({
+      key: paneId,
+      icon: config.desktopIcon || config.icon || '🧩',
+      label: config.desktopLabel || config.label || config.title || paneId,
+      isRunning: Boolean(panes[paneId]?.isOpen && !panes[paneId]?.isMinimized),
+      isActive: activePane === paneId,
+      onClick: () => desktopCommandBus.openPane(paneId)
+    }))
+  ), [activePane, panes, desktopCommandBus]);
+
+  const paneLayerProps = {
+    paneConfig,
+    panes,
+    conversations,
+    focusPane,
+    getZIndex,
+    toggleMaximizePane,
+    closePane,
+    minimizePane,
+    activePane,
+    savedSizes,
+    handleSizeChange,
+    getInitialPosition,
+    handlePositionChange,
+    openConversation,
+    games,
+    openGamePane,
+    closeGamePane,
+    minimizeGamePane,
+    toggleMaximizeGamePane,
+    userStatus,
+    handleStatusChange,
+    handleLogoff,
+    closeAllConversations,
+    closeAllGames,
+    setMessengerSignedIn,
+    nowPlaying,
+    currentUser,
+    messengerSignedIn,
+    messengerCoordinator,
+    setNowPlaying,
+    toggleMaximizeConversation,
+    closeConversation,
+    minimizeConversation,
+    unreadMetadata,
+    clearNotificationTime,
+    sharedContactPresence,
+    getDisplayName
+  };
+
+  const systrayProps = {
+    isSuperpeer,
+    connectedSuperpeers,
+    isLoggedIn,
+    relayStatus,
+    forceReconnect,
+    messengerSignedIn,
+    systrayIconRef: systrayManager.systrayIconRef,
+    currentStatusOption: systrayManager.currentStatusOption,
+    getDisplayName,
+    currentUser,
+    onToggleMenu: systrayManager.onToggleMenu,
+    showSystrayMenu: systrayManager.showSystrayMenu,
+    systrayMenuRef: systrayManager.systrayMenuRef,
+    getAvatar,
+    userStatus,
+    onStatusChange: systrayManager.onStatusChange,
+    onOpenContacts: systrayManager.onOpenContacts,
+    onSignOut: systrayManager.onSignOut,
+    onCloseMessenger: systrayManager.onCloseMessenger
+  };
+
+  const shellProps = {
+      session: {
+        onDesktopClick: closeStartMenu,
+        wallpaperStyle: getWallpaperStyle(),
+        themeStyle: desktopThemeStyle,
+        dataTheme: shellDataTheme,
+        dataFontsize: settings.fontSize !== 'normaal' ? settings.fontSize : undefined,
+        currentUser,
+        onLogoff: handleLogoff,
+        onShutdown: handleShutdown
+    },
+    shortcuts: {
+      items: desktopManager.shortcuts,
+      onOpen: desktopManager.openShortcut,
+      onContextMenu: handleShortcutContextMenu,
+      onRename: desktopManager.renameShortcut,
+      onMove: desktopManager.moveShortcut,
+      gridConfig: desktopManager.desktopGridConfig,
+      layoutVariant: osVariant
+    },
+    windows: {
+      chromeVariant: osVariant,
+      paneLayerProps,
+      activeAppName,
+      windowItems
+    },
+    navigation: {
+      startMenuProps: {
+        isOpen: isStartOpen,
+        paneConfig,
+        currentUser,
+        getAvatar,
+        getLocalUserInfo,
+        onOpenPane: desktopCommandBus.openPane,
+        onCloseStartMenu: closeStartMenu,
+        onLogoff: handleLogoff,
+        onShutdown: handleShutdown
+      },
+      taskbarProps: {
+        isStartOpen,
+        onToggleStartMenu: desktopCommandBus.toggleStart,
+        onStartButtonContextMenu: handleStartButtonContextMenu,
+        onTaskbarContextMenu: handleTaskbarContextMenu,
+        paneOrder,
+        unreadChats,
+        conversations,
+        games,
+        activePane,
+        onTaskbarClick,
+        onTabContextMenu: handleTabContextMenu,
+        panes,
+        paneConfig,
+        getDisplayName,
+        systrayProps
+      },
+      dockItems,
+      onOpenContacts: desktopCommandBus.openContacts
+    },
+    notifications: {
+      toasts,
+      removeToast,
+      onToastClick: messengerCoordinator.handleToastClick
+    },
+    status: {
+      scanlinesEnabled,
+      isSuperpeer,
+      connectedSuperpeers,
+      isLoggedIn,
+      relayStatus,
+      forceReconnect,
+      messengerSignedIn,
+      currentStatusOption: systrayManager.currentStatusOption,
+      userStatus,
+      getDisplayName,
+      getAvatar
+    },
+    contextMenu: {
+      ...contextMenuManager,
+      buildDesktopActions
+    }
+  };
+
+  if (!selectedOS) {
+    return <OSSelector />;
   }
 
-  // ============================================
-  // RENDER: SHUTDOWN SCREEN
-  // ============================================
+  if (isLoggingOff) {
+    return <SystemTransitionScreen variant={osVariant} mode="logoff" />;
+  }
+
   if (isShutdown) {
     return (
-      <div className="xp-login xp-shutdown-screen">
-        <div className="xp-top-bar" />
-        <div className="xp-main xp-shutdown-main">
-          <div className="xp-brand-layout xp-login-brand-layout xp-logoff-brand-layout">
-            <div className="xp-brand-left">
-              <span className="xp-brand-microsoft">Macrohard</span>
-              <span className="xp-brand-windows">Panes<span className="xp-brand-xp">dX</span></span>
-            </div>
-            <div className="xp-brand-right">
-              <div className="xp-boot-logo">
-                <div className="xp-logo-stripe xp-stripe-green"></div>
-                <div className="xp-logo-stripe xp-stripe-blue"></div>
-                <div className="xp-logo-stripe xp-stripe-red"></div>
-              </div>
-            </div>
-          </div>
-          <div className="xp-shutdown-message-line">De computer is uitgeschakeld.</div>
-          <div className="xp-shutdown-actions">
-          <button
-            className="power-on-button"
-            onClick={() => {
-              sessionStorage.removeItem('chatlon_boot_complete');
-              setIsShutdown(false);
-              setHasBooted(false);
-            }}
-          >
-            <span className="power-on-icon">{'\u23FB'}</span>
-          </button>
-          <div className="power-on-hint">Druk op de aan/uit-knop om de computer te starten</div>
-          </div>
-        </div>
-        <div className="xp-bottom-bar">
-          <div className="xp-bottom-strip" />
-        </div>
-      </div>
+      <SystemTransitionScreen
+        variant={osVariant}
+        mode="shutdown"
+        onPowerOn={() => {
+          sessionStorage.removeItem(BOOT_COMPLETE_STORAGE_KEY);
+          setIsShutdown(false);
+          setHasBooted(false);
+        }}
+      />
     );
   }
 
-  // ============================================
-  // RENDER: BOOT SEQUENCE
-  // ============================================
   if (!hasBooted) {
-    return <BootSequence onBootComplete={() => { justBootedRef.current = true; setHasBooted(true); }} />;
+    if (selectedOS === OS_LIGER) {
+      return <LigerBootSequence onBootComplete={handleBootComplete} />;
+    }
+    return <BootSequence onBootComplete={handleBootComplete} />;
   }
 
-  // ============================================
-  // RENDER: LOGIN SCREEN
-  // ============================================
   if (!isLoggedIn) {
     const fromBoot = justBootedRef.current;
     justBootedRef.current = false;
-    return (
-      <LoginScreen
-        onLoginSuccess={handleLoginSuccess}
-        fadeIn={fromBoot}
-        onShutdown={() => setIsShutdown(true)}
-        sessionNotice={sessionNotice}
-        onDismissSessionNotice={dismissSessionNotice}
-      />
-    );
+    const loginScreenProps = {
+      onLoginSuccess: handleLoginSuccess,
+      fadeIn: fromBoot,
+      onShutdown: () => setIsShutdown(true),
+      sessionNotice,
+      onDismissSessionNotice: dismissSessionNotice
+    };
+
+    if (selectedOS === OS_LIGER) {
+      return <LigerLoginScreen {...loginScreenProps} />;
+    }
+
+    return <LoginScreen {...loginScreenProps} />;
   }
 
-  // ============================================
-  // RENDER: DESKTOP
-  // ============================================
   return (
     <>
-      <DesktopShell
-        onDesktopClick={closeStartMenu}
-        wallpaperStyle={getWallpaperStyle()}
-        dataTheme={settings.colorScheme !== 'blauw' ? settings.colorScheme : undefined}
-        dataFontsize={settings.fontSize !== 'normaal' ? settings.fontSize : undefined}
-        scanlinesEnabled={scanlinesEnabled}
-        desktopShortcuts={desktopManager.shortcuts}
-        onOpenShortcut={desktopManager.openShortcut}
-        onShortcutContextMenu={handleShortcutContextMenu}
-        onRenameShortcut={desktopManager.renameShortcut}
-        onMoveShortcut={desktopManager.moveShortcut}
-        gridConfig={desktopManager.desktopGridConfig}
-        paneLayerProps={{
-          paneConfig,
-          panes,
-          conversations,
-          focusPane,
-          getZIndex,
-          toggleMaximizePane,
-          closePane,
-          minimizePane,
-          activePane,
-          savedSizes,
-          handleSizeChange,
-          getInitialPosition,
-          handlePositionChange,
-          openConversation,
-          games,
-          openGamePane,
-          closeGamePane,
-          minimizeGamePane,
-          toggleMaximizeGamePane,
-          userStatus,
-          handleStatusChange,
-          handleLogoff,
-          closeAllConversations,
-          closeAllGames,
-          setMessengerSignedIn,
-          nowPlaying,
-          currentUser,
-          messengerSignedIn,
-          messengerCoordinator,
-          setNowPlaying,
-          toggleMaximizeConversation,
-          closeConversation,
-          minimizeConversation,
-          unreadMetadata,
-          clearNotificationTime,
-          sharedContactPresence,
-          getDisplayName
-        }}
-        startMenuProps={{
-          isOpen: isStartOpen,
-          paneConfig,
-          currentUser,
-          getAvatar,
-          getLocalUserInfo,
-          onOpenPane: desktopCommandBus.openPane,
-          onCloseStartMenu: closeStartMenu,
-          onLogoff: handleLogoff,
-          onShutdown: handleShutdown
-        }}
-        taskbarProps={{
-          isStartOpen,
-          onToggleStartMenu: desktopCommandBus.toggleStart,
-          onStartButtonContextMenu: handleStartButtonContextMenu,
-          onTaskbarContextMenu: handleTaskbarContextMenu,
-          paneOrder,
-          unreadChats,
-          conversations,
-          games,
-          activePane,
-          onTaskbarClick,
-          onTabContextMenu: handleTabContextMenu,
-          panes,
-          paneConfig,
-          getDisplayName,
-          systrayProps: {
-            isSuperpeer,
-            connectedSuperpeers,
-            isLoggedIn,
-            relayStatus,
-            forceReconnect,
-            messengerSignedIn,
-            systrayIconRef: systrayManager.systrayIconRef,
-            currentStatusOption: systrayManager.currentStatusOption,
-            getDisplayName,
-            currentUser,
-            onToggleMenu: systrayManager.onToggleMenu,
-            showSystrayMenu: systrayManager.showSystrayMenu,
-            systrayMenuRef: systrayManager.systrayMenuRef,
-            getAvatar,
-            userStatus,
-            onStatusChange: systrayManager.onStatusChange,
-            onOpenContacts: systrayManager.onOpenContacts,
-            onSignOut: systrayManager.onSignOut,
-            onCloseMessenger: systrayManager.onCloseMessenger
-          }
-        }}
-        toasts={toasts}
-        removeToast={removeToast}
-        onToastClick={messengerCoordinator.handleToastClick}
-        contextMenu={{
-          ...contextMenuManager,
-          buildDesktopActions
-        }}
-      />
-      {showPostLoginWelcome && <PostLoginWelcomeScreen fadingOut={welcomeFadeOut} />}
+      {selectedOS === OS_LIGER ? (
+        <LigerDesktopShell shellProps={shellProps} />
+      ) : (
+        <DesktopShell shellProps={shellProps} />
+      )}
+      {showPostLoginWelcome && (
+        <SystemTransitionScreen
+          variant={osVariant}
+          mode="welcome"
+          fadingOut={welcomeFadeOut}
+        />
+      )}
     </>
   );
 }

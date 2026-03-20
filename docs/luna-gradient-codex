@@ -1,0 +1,207 @@
+Luna Gradient Codex
+
+Dit bestand is alleen voor `luna-custom`.
+Hier mag seed/OKLCH-afleiding staan voor tokenwerk op basis van `--custom-luna-seed`.
+
+Niet gebruiken voor de vaste Luna-varianten (`blauw`, `olijfgroen`, `zilver`).
+Voor die themes moeten captures hardcoded bewaard blijven als ruwe observaties, zonder seed-afleiding.
+
+Raw captures voor de vaste Luna-varianten horen in `LUNA_THEME_GRADIENTS.md`.
+
+## Luna Custom seed model
+
+Seed: #0057e5
+Seed in OKLCH: oklch(43.5% 0.233 264)
+
+Doel
+- Zelfde stopstructuur als WinXP referentie behouden
+- Kleuren afleiden met color-mix(in oklch, ...)
+- Focus op betere inactive titlebar + systray balans
+
+1) Titelbalk active (vertical)
+linear-gradient(to bottom,
+  color-mix(in oklch, #0057e5 80%, black) 0%,
+  color-mix(in oklch, #0057e5 70%, white) 4%,
+  color-mix(in oklch, #0057e5 75%, white) 6%,
+  color-mix(in oklch, #0057e5 84%, white) 8%,
+  color-mix(in oklch, #0057e5 90%, white) 10%,
+  color-mix(in oklch, #0057e5 94%, white) 14%,
+  color-mix(in oklch, #0057e5 98%, white) 20%,
+  color-mix(in oklch, #0057e5 99%, white) 24%,
+  #0057e5 56%,
+  color-mix(in oklch, #0057e5 96%, white) 66%,
+  color-mix(in oklch, #0057e5 90%, white) 76%,
+  color-mix(in oklch, #0057e5 94%, white) 86%,
+  color-mix(in oklch, #0057e5 96%, black) 92%,
+  color-mix(in oklch, #0057e5 80%, black) 94%,
+  color-mix(in oklch, #0057e5 65%, black) 100%
+)
+
+2) Titelbalk active fades (links/rechts)
+links:  linear-gradient(to right, color-mix(in oklch, #0057e5 90%, black) 0%, transparent 100%)
+rechts: linear-gradient(to left,  color-mix(in oklch, #0057e5 90%, black) 0%, transparent 100%)
+opacity active: 1
+
+3) Titelbalk inactive (vertical)
+linear-gradient(to bottom,
+  color-mix(in oklch, #0057e5 56%, white) 0%,
+  color-mix(in oklch, #0057e5 54%, white) 3%,
+  color-mix(in oklch, #0057e5 49%, white) 6%,
+  color-mix(in oklch, #0057e5 47%, white) 8%,
+  color-mix(in oklch, #0057e5 52%, white) 14%,
+  color-mix(in oklch, #0057e5 54%, white) 17%,
+  color-mix(in oklch, #0057e5 56%, white) 25%,
+  color-mix(in oklch, #0057e5 55%, white) 56%,
+  color-mix(in oklch, #0057e5 51%, white) 81%,
+  color-mix(in oklch, #0057e5 52%, white) 89%,
+  color-mix(in oklch, #0057e5 56%, white) 94%,
+  color-mix(in oklch, #0057e5 57%, white) 97%,
+  color-mix(in oklch, #0057e5 40%, white) 100%
+)
+
+4) Titelbalk inactive fades (links/rechts)
+links:  linear-gradient(to right, color-mix(in oklch, #0057e5 90%, black) 0%, transparent 100%)
+rechts: linear-gradient(to left,  color-mix(in oklch, #0057e5 90%, black) 0%, transparent 100%)
+opacity inactive: links 0.30, rechts 0.40
+
+5) Minimize button
+radial-gradient(circle at 90% 90%,
+  color-mix(in oklch, #0057e5 99%, white) 0%,
+  color-mix(in oklch, #0057e5 88%, black) 55%,
+  color-mix(in oklch, #0057e5 75%, white) 70%,
+  color-mix(in oklch, #0057e5 36%, white) 90%,
+  white 100%
+)
+
+6) Maximize button
+radial-gradient(circle at 90% 90%,
+  color-mix(in oklch, #0057e5 99%, white) 0%,
+  color-mix(in oklch, #0057e5 88%, black) 55%,
+  color-mix(in oklch, #0057e5 75%, white) 70%,
+  color-mix(in oklch, #0057e5 36%, white) 90%,
+  white 100%
+)
+
+7) Close button
+radial-gradient(circle at 90% 90%,
+  #cc4600 0%,
+  color-mix(in oklch, #cc4600 82%, white) 55%,
+  color-mix(in oklch, #cc4600 68%, white) 70%,
+  color-mix(in oklch, #cc4600 34%, white) 90%,
+  white 100%
+)
+
+8) Taakbalk (footer main)
+linear-gradient(to bottom,
+  color-mix(in oklch, #0057e5 55%, black) 0%,
+  color-mix(in oklch, #0057e5 82%, black) 3%,
+  color-mix(in oklch, #0057e5 95%, white) 6%,
+  color-mix(in oklch, #0057e5 88%, white) 10%,
+  color-mix(in oklch, #0057e5 90%, white) 12%,
+  color-mix(in oklch, #0057e5 97%, white) 15%,
+  color-mix(in oklch, #0057e5 93%, black) 18%,
+  color-mix(in oklch, #0057e5 90%, black) 20%,
+  color-mix(in oklch, #0057e5 89%, black) 23%,
+  color-mix(in oklch, #0057e5 89%, black) 38%,
+  color-mix(in oklch, #0057e5 91%, black) 54%,
+  color-mix(in oklch, #0057e5 92%, black) 86%,
+  color-mix(in oklch, #0057e5 91%, black) 89%,
+  color-mix(in oklch, #0057e5 89%, black) 92%,
+  color-mix(in oklch, #0057e5 78%, black) 95%,
+  color-mix(in oklch, #0057e5 68%, black) 98%
+)
+
+9) Systray (footer right)
+linear-gradient(to bottom,
+  color-mix(in oklch, #0057e5 76%, black) 1%,
+  color-mix(in oklch, #0057e5 80%, white) 6%,
+  color-mix(in oklch, #0057e5 70%, white) 10%,
+  color-mix(in oklch, #0057e5 78%, white) 14%,
+  color-mix(in oklch, #0057e5 82%, white) 19%,
+  color-mix(in oklch, #0057e5 85%, white) 63%,
+  color-mix(in oklch, #0057e5 76%, white) 81%,
+  color-mix(in oklch, #0057e5 77%, white) 88%,
+  color-mix(in oklch, #0057e5 79%, white) 91%,
+  color-mix(in oklch, #0057e5 83%, white) 94%,
+  color-mix(in oklch, #0057e5 88%, black) 97%,
+  color-mix(in oklch, #0057e5 78%, black) 100%
+)
+
+10) Startmenu header
+linear-gradient(to bottom,
+  color-mix(in oklch, #0057e5 84%, black) 0%,
+  color-mix(in oklch, #0057e5 80%, black) 12%,
+  color-mix(in oklch, #0057e5 80%, black) 20%,
+  color-mix(in oklch, #0057e5 82%, black) 32%,
+  color-mix(in oklch, #0057e5 83%, black) 33%,
+  color-mix(in oklch, #0057e5 85%, black) 47%,
+  color-mix(in oklch, #0057e5 87%, black) 54%,
+  color-mix(in oklch, #0057e5 90%, black) 60%,
+  color-mix(in oklch, #0057e5 92%, black) 65%,
+  color-mix(in oklch, #0057e5 95%, white) 77%,
+  color-mix(in oklch, #0057e5 96%, white) 79%,
+  color-mix(in oklch, #0057e5 90%, white) 90%,
+  color-mix(in oklch, #0057e5 88%, white) 100%
+)
+
+11) Startmenu header top sheen
+linear-gradient(to right,
+  transparent 0%,
+  color-mix(in oklch, white 30%, transparent) 1%,
+  color-mix(in oklch, white 50%, transparent) 2%,
+  color-mix(in oklch, white 50%, transparent) 95%,
+  color-mix(in oklch, white 30%, transparent) 98%,
+  color-mix(in oklch, white 20%, transparent) 99%,
+  transparent 100%
+)
+sheen shadow: inset 0 -1px 1px color-mix(in oklch, #0057e5 80%, black)
+
+12) Startmenu footer
+linear-gradient(to bottom,
+  color-mix(in oklch, #0057e5 86%, white) 0%,
+  color-mix(in oklch, #0057e5 94%, white) 3%,
+  color-mix(in oklch, #0057e5 91%, white) 5%,
+  color-mix(in oklch, #0057e5 91%, white) 17%,
+  color-mix(in oklch, #0057e5 93%, white) 21%,
+  color-mix(in oklch, #0057e5 95%, white) 26%,
+  color-mix(in oklch, #0057e5 95%, white) 29%,
+  color-mix(in oklch, #0057e5 97%, white) 39%,
+  color-mix(in oklch, #0057e5 96%, black) 49%,
+  color-mix(in oklch, #0057e5 94%, black) 57%,
+  color-mix(in oklch, #0057e5 91%, black) 62%,
+  color-mix(in oklch, #0057e5 90%, black) 72%,
+  color-mix(in oklch, #0057e5 88%, black) 75%,
+  color-mix(in oklch, #0057e5 86%, black) 83%,
+  color-mix(in oklch, #0057e5 82%, black) 88%
+)
+
+13) Startmenu oranje separator
+linear-gradient(to right,
+  transparent 0%,
+  #da884a 50%,
+  transparent 100%
+)
+
+## Hardcoded raw captures
+
+Deze sectie bevat alleen letterlijke observaties zoals jij ze ziet.
+Geen `seed`, geen `color-mix`, geen afleiding.
+
+14) Startmenu right col
+#d3e5fa
+
+15) Startmenu item hover
+#316ac5
+
+16) Context menu item hover
+#316ac5
+
+17) Taskbar menu item inactive
+linear-gradient(to bottom,
+  #3170d9 0%,
+  #488ff6 4.1%,
+  #377cf5 87.9%,
+  #387ff3 93.9%,
+  #2c63d6 100%
+)
+

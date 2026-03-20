@@ -150,13 +150,16 @@
 }
 
 .modal-pane-titlebar {
-  background: linear-gradient(
-    to bottom,
-    var(--win-titlebar-a, #0058e6) 0%,
-    var(--win-titlebar-b, #2596f3) 9%,
-    var(--win-titlebar-c, #0058e6) 18%,
-    var(--win-titlebar-c, #0058e6) 92%,
-    var(--win-titlebar-d, #0046ad) 100%
+  background: var(
+    --xp-titlebar-gradient,
+    linear-gradient(
+      to bottom,
+      var(--win-titlebar-a, #0058e6) 0%,
+      var(--win-titlebar-b, #2596f3) 9%,
+      var(--win-titlebar-c, #0058e6) 18%,
+      var(--win-titlebar-c, #0058e6) 92%,
+      var(--win-titlebar-d, #0046ad) 100%
+    )
   );
   padding: 4px 6px;
   display: flex;
@@ -168,6 +171,7 @@
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.6);
   user-select: none;
   cursor: default;
+  position: relative;
 }
 
 /* Flash animatie: wisselt tussen actief (gekleurd) en inactief (grijs) */
@@ -207,7 +211,7 @@
 .modal-pane-close {
   width: 21px;
   height: 21px;
-  background: #c0392b;
+  background: var(--xp-caption-btn-close-gradient, #c0392b);
   border: 1px solid rgba(255,255,255,0.6);
   border-radius: 2px;
   color: white;
@@ -223,11 +227,12 @@
 }
 
 .modal-pane-close:hover {
-  background: #e74c3c;
+  filter: brightness(1.08);
 }
 
 .modal-pane-close:active {
-  background: #a93226;
+  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.35);
+  transform: translate(1px, 1px);
 }
 
 .modal-pane-body {
@@ -292,8 +297,9 @@
 }
 
 .modal-header {
-  background: linear-gradient(to right, #0054E3 0%, #0A73D9 100%);
-  color: white;
+  background: var(--modal-header-gradient);
+  color: var(--modal-header-text);
+  border-bottom: 1px solid var(--modal-header-border);
   padding: 6px 8px;
   display: flex;
   align-items: center;
@@ -355,9 +361,14 @@
 }
 
 .dx-button.dx-button--primary {
-  background: linear-gradient(to bottom, #EAF3FF 0%, #D9E9FC 50%, #C1DBFC 100%);
-  border: 1px solid #003C74;
+  background: var(--button-primary-gradient);
+  border: 1px solid var(--button-primary-border);
+  color: var(--button-primary-text);
   font-weight: bold;
+}
+
+.dx-button.dx-button--primary:hover {
+  background: var(--button-primary-hover-gradient);
 }
 
 .success-message {
@@ -671,4 +682,3 @@
   border-color: #808080 #FFFFFF #FFFFFF #808080;
   object-fit: contain;
 }
-

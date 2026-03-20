@@ -10,8 +10,14 @@
   --ui-font-size-md: 12px;  /* Licht groter: namen, labels */
   --ui-font-size-sm: 10px;  /* Klein secundair */
   --ui-font-size-xs:  9px;  /* Heel klein */
-  --taskbar-height:  36px;
-  --titlebar-height: 26px;
+  --xp-start-btn-font-size: 16px;
+  --xp-title-font-size: 14px;
+  --taskbar-height:  30px;
+  --titlebar-height: 30px;
+  --xp-caption-btn-size: 22px;
+  --xp-start-btn-width: 90px;
+  --xp-start-menu-width: 380px;
+  --xp-start-menu-height: 520px;
 }
 
 /*
@@ -30,8 +36,10 @@
   --ui-font-size-md: 11px;
   --ui-font-size-sm:  9px;
   --ui-font-size-xs:  8px;
+  --xp-start-btn-font-size: 14px;
+  --xp-title-font-size: 12px;
   --taskbar-height:  30px;
-  --titlebar-height: 22px;
+  --titlebar-height: 30px;
 }
 
 /* Groot */
@@ -44,7 +52,9 @@
   --ui-font-size-md: 14px;
   --ui-font-size-sm: 12px;
   --ui-font-size-xs: 10px;
-  --taskbar-height:  40px;
+  --xp-start-btn-font-size: 18px;
+  --xp-title-font-size: 16px;
+  --taskbar-height:  30px;
   --titlebar-height: 30px;
 }
 
@@ -90,8 +100,8 @@
   --startmenu-header-b:   #245EDC;
   --startmenu-item-hover: #316AC5;
   --startmenu-rightcol:   #D3E5FA;
-  --startmenu-divider:    #C1D2EE;
-  --startmenu-footer-bdr: #1659C5;
+  --startmenu-divider:    #A9C9F1;
+  --startmenu-footer-bdr: #3B7CD4;
   --startmenu-pinned:     #00156E;
 
   --ctx-menu-hover-bg:   var(--menu-hover);
@@ -101,12 +111,12 @@
   --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
   --ctx-menu-sep-light:   var(--ctx-menu-border-light);
 
-  --systray-bg:           var(--taskbar-c);
+  --systray-bg:           #095BC9;
   --systray-border-left:  var(--win-frame-shadow);
   --systray-text:         #FFFFFF;
   --systray-icon-hover:   var(--menu-hover);
 
-  --startmenu-accent-line:#F9B14D;
+  --startmenu-accent-line:#F98A24;
 
   --menu-hover:           #316AC5;
   --app-bg:               #ECE9D8;
@@ -124,6 +134,335 @@
   --text-faint:           #999999;
   --text-disabled:        #808080;
   --text-success:         #2A7D2A;
+  --win-border-light:     #FFFFFF;
+  --win-border-dark:      #404040;
+  --pane-chrome-inset-inline: 3px;
+  --pane-chrome-inset-bottom: 3px;
+  --xp-titlebar-edge-active: #0046AD;
+  --xp-titlebar-edge-inactive: #6882AA;
+
+  --xp-titlebar-gradient: linear-gradient(180deg, #0058EE 0.0%, #3E96FF 1.9%, #0371FE 9.2%, #0054E3 23.8%, #005AF4 62.1%, #026AFE 74.9%, #0061FC 91.3%, #0044D2 100.0%);
+  --xp-titlebar-inactive-gradient: linear-gradient(180deg, #688DE0 0.0%, #9CB8EA 5.9%, #7A96E0 42.1%, #82A9E9 78.5%, #7A93DF 100.0%);
+  --xp-titlebar-fade-left: linear-gradient(to right, color-mix(in srgb, var(--win-titlebar-a) 62%, var(--xp-titlebar-edge-active)) 0%, transparent 100%);
+  --xp-titlebar-fade-right: linear-gradient(to left, color-mix(in srgb, var(--win-titlebar-a) 62%, var(--xp-titlebar-edge-active)) 0%, transparent 100%);
+  --xp-titlebar-fade-inactive-left: linear-gradient(to right, color-mix(in srgb, var(--win-titlebar-inactive-a) 72%, var(--xp-titlebar-edge-inactive)) 0%, transparent 100%);
+  --xp-titlebar-fade-inactive-right: linear-gradient(to left, color-mix(in srgb, var(--win-titlebar-inactive-a) 72%, var(--xp-titlebar-edge-inactive)) 0%, transparent 100%);
+  --xp-titlebar-fade-left-opacity: 0.62;
+  --xp-titlebar-fade-right-opacity: 0.62;
+  --xp-titlebar-fade-inactive-left-opacity: 0.22;
+  --xp-titlebar-fade-inactive-right-opacity: 0.22;
+  --xp-titlebar-fade-left-width: 38px;
+  --xp-titlebar-fade-right-width: 38px;
+  --xp-pane-chrome-color: var(--xp-titlebar-edge-active);
+  --xp-pane-chrome-inactive-color: var(--xp-titlebar-edge-inactive);
+  --xp-frame-base: #004CD2;
+  --xp-frame-left: #135EE9;
+  --xp-frame-right: #001DA0;
+  --xp-frame-bottom: #001A9A;
+  --xp-frame-base-inactive: #7A94DA;
+  --xp-frame-left-inactive: #758CDC;
+  --xp-frame-right-inactive: #7383DA;
+  --xp-frame-bottom-inactive: #7383DA;
+  --xp-frame-rail-size: 2px;
+  --xp-frame-feather-size: 6px;
+  --xp-caption-btn-min-gradient: linear-gradient(to bottom, color-mix(in srgb, var(--win-btn-bg) 60%, white) 0%, var(--win-btn-bg) 100%);
+  --xp-caption-btn-max-gradient: linear-gradient(to bottom, color-mix(in srgb, var(--win-btn-bg) 60%, white) 0%, var(--win-btn-bg) 100%);
+  --xp-caption-btn-close-gradient: linear-gradient(to bottom, color-mix(in srgb, var(--pane-btn-close-bg, #e81123) 60%, white) 0%, var(--pane-btn-close-bg, #e81123) 100%);
+  --xp-taskbar-gradient: linear-gradient(180deg, #3F72D6 0.0%, #3786E7 1.9%, #4892E6 5.3%, #2157D7 32.9%, #2663E0 81.4%, #2158D4 91.7%, #1941A5 100.0%);
+  --xp-taskbar-tab-inactive-gradient: linear-gradient(180deg, #488FF6 0.0%, #387FF4 100.0%);
+  --xp-taskbar-tab-inactive-hover-gradient: linear-gradient(180deg, #75AAED 0.0%, #80B9FF 1.8%, #55A3FF 23.5%, #3186FF 94.8%, #256CDD 100.0%);
+  --xp-taskbar-tab-active-gradient: linear-gradient(180deg, #1850B6 0.0%, #2156B7 94.1%, #1A4DB4 100.0%);
+  --xp-taskbar-tab-active-hover-gradient: linear-gradient(180deg, #2F6DE7 0.0%, #306FE5 100.0%);
+  --xp-taskbar-tab-unread-gradient: linear-gradient(180deg, #CD7509 0.0%, #F8A62E 3.4%, #E17806 49.4%, #99540F 100.0%);
+  --xp-systray-gradient: linear-gradient(180deg, #0E7ED9 0.0%, #18B8F2 5.0%, #0E8DEA 43.1%, #0D93ED 67.5%, #10A0EC 86.5%, #095BC9 100.0%);
+  --xp-systray-divider: #174596;
+  --xp-systray-divider-highlight: #1BC4F3;
+  --systray-icon-hover-bg: transparent;
+  --xp-systray-menu-surface: #FFFFFF;
+  --xp-systray-menu-border: #BDBAAE;
+  --xp-systray-menu-header-gradient: var(--xp-systray-gradient);
+  --xp-systray-menu-header-text: #FFFFFF;
+  --xp-systray-menu-separator-dark: #B3AFA2;
+  --xp-systray-menu-separator-light: transparent;
+  --xp-start-menu-header-gradient: linear-gradient(180deg, #225CC5 0.0%, #70A8E7 2.7%, #0C5FCB 16.1%, #4792EC 97.5%, #1D6DD2 100.0%);
+  --xp-start-menu-footer-gradient: linear-gradient(180deg, #1D6ACE 0.0%, #438BE3 3.4%, #1F72DE 57.3%, #1B5DC8 100.0%);
+  --xp-start-btn-gradient: linear-gradient(180deg, #3B883B 0.0%, #4B994B 0.7%, #6DAF6C 5.5%, #3C973B 22.1%, #45AB45 60.0%, #37823A 93.2%, #317445 100.0%);
+  --xp-start-btn-hover-gradient: linear-gradient(180deg, #229124 0.0%, #72C273 6.9%, #3EAC3E 23.3%, #49BF49 60.8%, #338635 100.0%);
+  --xp-start-btn-pressed-gradient: linear-gradient(180deg, #092C09 0.0%, #255125 2.6%, #2F652F 5.0%, #2E802E 9.8%, #229122 49.0%, #278127 93.0%, #1A5F1B 100.0%);
+  --xp-start-btn-border: transparent;
+  --xp-start-menu-left-col: #FFFFFF;
+  --xp-start-menu-right-col: #D3E5FA;
+  --xp-start-menu-item-hover: #316AC5;
+  --xp-start-menu-border: #1854C2;
+  --xp-start-menu-header-border: #1D6BD0;
+  --xp-start-menu-footer-border: #3B7CD4;
+  --xp-start-menu-divider: #A9C9F1;
+  --xp-start-menu-left-divider: #DEDED5;
+  --xp-start-menu-right-divider-top: #89BAFE;
+  --xp-start-menu-right-divider-bottom: #E0E9F3;
+  --xp-start-menu-accent-bar: linear-gradient(to right, transparent 0%, #F98A24 12%, #F98A24 88%, transparent 100%);
+  --xp-start-menu-accent-height: 2px;
+  --xp-ctx-menu-border-width: 1px;
+  --xp-ctx-menu-surface: #FFFFFF;
+  --xp-ctx-menu-border: #BDBAAE;
+  --xp-ctx-menu-separator-dark: #B3AFA2;
+  --xp-ctx-menu-separator-light: transparent;
+  --xp-caption-btn-face: #0165FD;
+  --accent-primary: var(--link-color-light);
+  --accent-primary-border: color-mix(in srgb, var(--accent-primary) 72%, black);
+  --accent-primary-soft: color-mix(in srgb, var(--accent-primary) 22%, white);
+  --accent-primary-mid: color-mix(in srgb, var(--accent-primary) 34%, white);
+  --accent-primary-hover: color-mix(in srgb, var(--accent-primary) 14%, white);
+  --accent-primary-glow: color-mix(in srgb, var(--accent-primary) 38%, transparent);
+  --modal-header-gradient: var(--xp-titlebar-gradient);
+  --modal-header-text: #FFFFFF;
+  --modal-header-border: var(--win-frame-border);
+  --button-primary-gradient: linear-gradient(
+    to bottom,
+    var(--accent-primary-soft) 0%,
+    var(--accent-primary-mid) 50%,
+    color-mix(in srgb, var(--accent-primary) 42%, white) 100%
+  );
+  --button-primary-hover-gradient: linear-gradient(
+    to bottom,
+    var(--accent-primary-hover) 0%,
+    var(--accent-primary-soft) 50%,
+    var(--accent-primary-mid) 100%
+  );
+  --button-primary-border: var(--accent-primary-border);
+  --button-primary-text: #FFFFFF;
+}
+
+[data-theme="luna-custom"] {
+  --luna-seed:            var(--custom-luna-seed, #0057e5);
+  --luna-shell-bg:        #ECE9D8;
+  --luna-tint-strong:     color-mix(in oklch, var(--luna-seed) 64%, white);
+  --luna-tint-mid:        color-mix(in oklch, var(--luna-seed) 78%, white);
+  --luna-tint-soft:       color-mix(in oklch, var(--luna-seed) 38%, white);
+  --luna-shade-mid:       color-mix(in oklch, var(--luna-seed) 82%, black);
+  --luna-shade-strong:    color-mix(in oklch, var(--luna-seed) 68%, black);
+  --luna-shade-deep:      color-mix(in oklch, var(--luna-seed) 52%, black);
+  --luna-rightcol-base:   color-mix(in oklch, var(--luna-seed) 14%, white);
+  --luna-rightcol-edge:   color-mix(in oklch, var(--luna-seed) 20%, white);
+
+  --win-bg:               var(--luna-shell-bg);
+  --win-frame-border:     var(--luna-seed);
+  --win-frame-shadow:     color-mix(in oklch, var(--luna-seed) 90%, black);
+  --win-titlebar-a:       color-mix(in oklch, var(--luna-seed) 98%, white);
+  --win-titlebar-b:       color-mix(in oklch, var(--luna-seed) 70%, white);
+  --win-titlebar-c:       var(--luna-seed);
+  --win-titlebar-d:       color-mix(in oklch, var(--luna-seed) 65%, black);
+  --win-content-border:   color-mix(in oklch, var(--luna-seed) 38%, white);
+  --win-btn-bg:           var(--luna-seed);
+  --win-titlebar-inactive-a: color-mix(in oklch, var(--luna-seed) 56%, white);
+  --win-titlebar-inactive-b: color-mix(in oklch, var(--luna-seed) 40%, white);
+  --win-border-light:     color-mix(in oklch, var(--luna-seed) 8%, white);
+  --win-border-dark:      color-mix(in oklch, var(--luna-seed) 18%, black);
+
+  --taskbar-a:            color-mix(in oklch, var(--luna-seed) 78%, black);
+  --taskbar-b:            color-mix(in oklch, var(--luna-seed) 70%, white);
+  --taskbar-c:            color-mix(in oklch, var(--luna-seed) 82%, black);
+  --taskbar-d:            color-mix(in oklch, var(--luna-seed) 68%, black);
+  --tab-a:                color-mix(in oklch, var(--luna-seed) 65%, white);
+  --tab-b:                color-mix(in oklch, var(--luna-seed) 80%, black);
+  --tab-hover-a:          color-mix(in oklch, var(--luna-seed) 58%, white);
+  --tab-hover-b:          color-mix(in oklch, var(--luna-seed) 72%, white);
+  --tab-active-a:         color-mix(in oklch, var(--luna-seed) 74%, black);
+  --tab-active-b:         color-mix(in oklch, var(--luna-seed) 64%, black);
+  --tab-notify-a:         #FFA030;
+  --tab-notify-b:         #FF8D00;
+
+  --startbtn-a:           #3FA142;
+  --startbtn-b:           #61BB46;
+  --startbtn-border:      #165C1F;
+  --startbtn-hover-a:     #4FB64F;
+  --startbtn-hover-b:     #6FD14F;
+
+  --startmenu-border:     var(--luna-seed);
+  --startmenu-header-a:   color-mix(in oklch, var(--luna-seed) 64%, white);
+  --startmenu-header-b:   color-mix(in oklch, var(--luna-seed) 82%, black);
+  --startmenu-item-hover: color-mix(in oklch, var(--luna-seed) 76%, black);
+  --startmenu-rightcol:   var(--luna-rightcol-base);
+  --startmenu-divider:    color-mix(in oklch, var(--luna-seed) 24%, white);
+  --startmenu-footer-bdr: color-mix(in oklch, var(--luna-seed) 82%, black);
+  --startmenu-pinned:     color-mix(in oklch, var(--luna-seed) 56%, black);
+
+  --ctx-menu-hover-bg:    var(--menu-hover);
+  --ctx-menu-hover-fg:    #FFFFFF;
+  --ctx-menu-border-light:color-mix(in oklch, var(--luna-seed) 10%, white);
+  --ctx-menu-border-dark: color-mix(in oklch, var(--luna-seed) 18%, black);
+  --ctx-menu-sep-dark:    color-mix(in oklch, var(--luna-seed) 22%, black);
+  --ctx-menu-sep-light:   color-mix(in oklch, var(--luna-seed) 6%, white);
+
+  --systray-bg:           color-mix(in oklch, var(--luna-seed) 80%, black);
+  --systray-border-left:  color-mix(in oklch, var(--luna-seed) 72%, black);
+  --systray-text:         #FFFFFF;
+  --systray-icon-hover:   var(--menu-hover);
+
+  --startmenu-accent-line:#F9B14D;
+
+  --menu-hover:           var(--startmenu-item-hover);
+  --app-bg:               var(--luna-shell-bg);
+  --toolbar-bg:           color-mix(in oklch, var(--luna-seed) 6%, #F0F0F0);
+  --toolbar-border:       color-mix(in oklch, var(--luna-seed) 18%, #919B9C);
+  --link-color:           color-mix(in oklch, var(--luna-seed) 50%, black);
+  --link-color-light:     var(--luna-seed);
+  --btn-border:           color-mix(in oklch, var(--luna-seed) 38%, white);
+  --btn-gradient-a:       #FFFFFF;
+  --btn-gradient-b:       var(--luna-shell-bg);
+  --input-border:         color-mix(in oklch, var(--luna-seed) 38%, white);
+  --sidebar-bg:           color-mix(in oklch, var(--luna-seed) 8%, #F0F0F0);
+  --text-muted:           color-mix(in oklch, var(--luna-seed) 24%, black);
+  --text-secondary:       color-mix(in oklch, var(--luna-seed) 32%, black);
+  --text-faint:           color-mix(in oklch, var(--luna-seed) 18%, black);
+  --text-disabled:        color-mix(in oklch, var(--luna-seed) 16%, black);
+  --text-success:         #2A7D2A;
+
+  --xp-titlebar-gradient: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--luna-seed) 98%, white) 0%,
+    color-mix(in oklch, var(--luna-seed) 70%, white) 4%,
+    color-mix(in oklch, var(--luna-seed) 75%, white) 6%,
+    color-mix(in oklch, var(--luna-seed) 84%, white) 8%,
+    color-mix(in oklch, var(--luna-seed) 90%, white) 10%,
+    color-mix(in oklch, var(--luna-seed) 94%, white) 14%,
+    color-mix(in oklch, var(--luna-seed) 98%, white) 20%,
+    color-mix(in oklch, var(--luna-seed) 99%, white) 24%,
+    var(--luna-seed) 56%,
+    color-mix(in oklch, var(--luna-seed) 96%, white) 66%,
+    color-mix(in oklch, var(--luna-seed) 90%, white) 76%,
+    color-mix(in oklch, var(--luna-seed) 94%, white) 86%,
+    color-mix(in oklch, var(--luna-seed) 96%, black) 92%,
+    color-mix(in oklch, var(--luna-seed) 80%, black) 94%,
+    color-mix(in oklch, var(--luna-seed) 65%, black) 100%
+  );
+  --xp-titlebar-inactive-gradient: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--luna-seed) 56%, white) 0%,
+    color-mix(in oklch, var(--luna-seed) 54%, white) 3%,
+    color-mix(in oklch, var(--luna-seed) 49%, white) 6%,
+    color-mix(in oklch, var(--luna-seed) 47%, white) 8%,
+    color-mix(in oklch, var(--luna-seed) 52%, white) 14%,
+    color-mix(in oklch, var(--luna-seed) 54%, white) 17%,
+    color-mix(in oklch, var(--luna-seed) 56%, white) 25%,
+    color-mix(in oklch, var(--luna-seed) 55%, white) 56%,
+    color-mix(in oklch, var(--luna-seed) 51%, white) 81%,
+    color-mix(in oklch, var(--luna-seed) 52%, white) 89%,
+    color-mix(in oklch, var(--luna-seed) 56%, white) 94%,
+    color-mix(in oklch, var(--luna-seed) 57%, white) 97%,
+    color-mix(in oklch, var(--luna-seed) 57%, white) 100%
+  );
+  --xp-titlebar-fade-left: linear-gradient(to right, color-mix(in oklch, var(--luna-seed) 90%, black) 0%, transparent 100%);
+  --xp-titlebar-fade-right: linear-gradient(to left, color-mix(in oklch, var(--luna-seed) 90%, black) 0%, transparent 100%);
+  --xp-titlebar-fade-left-opacity: 1;
+  --xp-titlebar-fade-right-opacity: 1;
+  --xp-titlebar-fade-inactive-left-opacity: 0.30;
+  --xp-titlebar-fade-inactive-right-opacity: 0.30;
+  --xp-titlebar-edge-active: color-mix(in oklch, var(--luna-seed) 65%, black);
+  --xp-titlebar-edge-inactive: color-mix(in oklch, var(--luna-seed) 57%, white);
+  --xp-pane-chrome-color: color-mix(in oklch, var(--luna-seed) 90%, black);
+  --xp-pane-chrome-inactive-color: color-mix(
+    in oklch,
+    color-mix(in oklch, var(--luna-seed) 57%, white) 70%,
+    color-mix(in oklch, var(--luna-seed) 90%, black)
+  );
+
+  --xp-caption-btn-min-gradient: radial-gradient(
+    circle at 90% 90%,
+    color-mix(in oklch, var(--luna-seed) 99%, white) 0%,
+    color-mix(in oklch, var(--luna-seed) 88%, black) 55%,
+    color-mix(in oklch, var(--luna-seed) 75%, white) 70%,
+    color-mix(in oklch, var(--luna-seed) 36%, white) 90%,
+    #FFFFFF 100%
+  );
+  --xp-caption-btn-max-gradient: radial-gradient(
+    circle at 90% 90%,
+    color-mix(in oklch, var(--luna-seed) 99%, white) 0%,
+    color-mix(in oklch, var(--luna-seed) 88%, black) 55%,
+    color-mix(in oklch, var(--luna-seed) 75%, white) 70%,
+    color-mix(in oklch, var(--luna-seed) 36%, white) 90%,
+    #FFFFFF 100%
+  );
+  --xp-caption-btn-close-gradient: radial-gradient(
+    circle at 90% 90%,
+    #cc4600 0%,
+    color-mix(in oklch, #cc4600 82%, white) 55%,
+    color-mix(in oklch, #cc4600 68%, white) 70%,
+    color-mix(in oklch, #cc4600 34%, white) 90%,
+    #FFFFFF 100%
+  );
+
+  --xp-taskbar-gradient: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--luna-seed) 55%, black) 0%,
+    color-mix(in oklch, var(--luna-seed) 82%, black) 3%,
+    color-mix(in oklch, var(--luna-seed) 95%, white) 6%,
+    color-mix(in oklch, var(--luna-seed) 88%, white) 10%,
+    color-mix(in oklch, var(--luna-seed) 90%, white) 12%,
+    color-mix(in oklch, var(--luna-seed) 97%, white) 15%,
+    color-mix(in oklch, var(--luna-seed) 93%, black) 18%,
+    color-mix(in oklch, var(--luna-seed) 90%, black) 20%,
+    color-mix(in oklch, var(--luna-seed) 89%, black) 23%,
+    color-mix(in oklch, var(--luna-seed) 89%, black) 38%,
+    color-mix(in oklch, var(--luna-seed) 91%, black) 54%,
+    color-mix(in oklch, var(--luna-seed) 92%, black) 86%,
+    color-mix(in oklch, var(--luna-seed) 91%, black) 89%,
+    color-mix(in oklch, var(--luna-seed) 89%, black) 92%,
+    color-mix(in oklch, var(--luna-seed) 78%, black) 95%,
+    color-mix(in oklch, var(--luna-seed) 68%, black) 98%
+  );
+  --xp-systray-gradient: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--luna-seed) 76%, black) 1%,
+    color-mix(in oklch, var(--luna-seed) 80%, white) 6%,
+    color-mix(in oklch, var(--luna-seed) 70%, white) 10%,
+    color-mix(in oklch, var(--luna-seed) 78%, white) 14%,
+    color-mix(in oklch, var(--luna-seed) 82%, white) 19%,
+    color-mix(in oklch, var(--luna-seed) 85%, white) 63%,
+    color-mix(in oklch, var(--luna-seed) 76%, white) 81%,
+    color-mix(in oklch, var(--luna-seed) 77%, white) 88%,
+    color-mix(in oklch, var(--luna-seed) 79%, white) 91%,
+    color-mix(in oklch, var(--luna-seed) 83%, white) 94%,
+    color-mix(in oklch, var(--luna-seed) 88%, black) 97%,
+    color-mix(in oklch, var(--luna-seed) 78%, black) 100%
+  );
+  --xp-systray-divider: color-mix(in oklch, var(--luna-seed) 82%, black);
+  --xp-systray-divider-highlight: color-mix(in oklch, var(--luna-seed) 86%, white);
+  --xp-systray-menu-border: color-mix(in oklch, var(--luna-seed) 82%, black);
+  --xp-start-menu-header-gradient: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--luna-seed) 84%, black) 0%,
+    color-mix(in oklch, var(--luna-seed) 80%, black) 12%,
+    color-mix(in oklch, var(--luna-seed) 80%, black) 20%,
+    color-mix(in oklch, var(--luna-seed) 82%, black) 32%,
+    color-mix(in oklch, var(--luna-seed) 83%, black) 33%,
+    color-mix(in oklch, var(--luna-seed) 85%, black) 47%,
+    color-mix(in oklch, var(--luna-seed) 87%, black) 54%,
+    color-mix(in oklch, var(--luna-seed) 90%, black) 60%,
+    color-mix(in oklch, var(--luna-seed) 92%, black) 65%,
+    color-mix(in oklch, var(--luna-seed) 95%, white) 77%,
+    color-mix(in oklch, var(--luna-seed) 96%, white) 79%,
+    color-mix(in oklch, var(--luna-seed) 90%, white) 90%,
+    color-mix(in oklch, var(--luna-seed) 88%, white) 100%
+  );
+  --xp-start-menu-footer-gradient: linear-gradient(
+    to bottom,
+    color-mix(in oklch, var(--luna-seed) 86%, white) 0%,
+    color-mix(in oklch, var(--luna-seed) 94%, white) 3%,
+    color-mix(in oklch, var(--luna-seed) 91%, white) 5%,
+    color-mix(in oklch, var(--luna-seed) 91%, white) 17%,
+    color-mix(in oklch, var(--luna-seed) 93%, white) 21%,
+    color-mix(in oklch, var(--luna-seed) 95%, white) 26%,
+    color-mix(in oklch, var(--luna-seed) 95%, white) 29%,
+    color-mix(in oklch, var(--luna-seed) 97%, white) 39%,
+    color-mix(in oklch, var(--luna-seed) 96%, black) 49%,
+    color-mix(in oklch, var(--luna-seed) 94%, black) 57%,
+    color-mix(in oklch, var(--luna-seed) 91%, black) 62%,
+    color-mix(in oklch, var(--luna-seed) 90%, black) 72%,
+    color-mix(in oklch, var(--luna-seed) 88%, black) 75%,
+    color-mix(in oklch, var(--luna-seed) 86%, black) 83%,
+    color-mix(in oklch, var(--luna-seed) 82%, black) 88%
+  );
 }
 
 /* Thema: Olijfgroen (Luna Olive Green - authentiek) */
@@ -139,6 +478,8 @@
   --win-btn-bg:           #92A45C;
   --win-titlebar-inactive-a: #8FA278;
   --win-titlebar-inactive-b: #B5BEA0;
+  --xp-titlebar-edge-active: #3E5118;
+  --xp-titlebar-edge-inactive: #728260;
 
   --taskbar-a:            #6D7128;
   --taskbar-b:            #8C8D43;
@@ -159,28 +500,28 @@
   --startbtn-hover-a:     #4FB64F;
   --startbtn-hover-b:     #6FD14F;
 
-  --startmenu-border:     #6E7B38;
-  --startmenu-header-a:   #92A45C;
-  --startmenu-header-b:   #5B7526;
-  --startmenu-item-hover: #6D7128;
-  --startmenu-rightcol:   #D6DFC0;
-  --startmenu-divider:    #BCC4A0;
-  --startmenu-footer-bdr: #4E5725;
+  --startmenu-border:     #929877;
+  --startmenu-header-a:   #B6CB9C;
+  --startmenu-header-b:   #848C65;
+  --startmenu-item-hover: #93A070;
+  --startmenu-rightcol:   #F2F1E4;
+  --startmenu-divider:    #D8BC8F;
+  --startmenu-footer-bdr: #909673;
   --startmenu-pinned:     #2A3010;
 
   --ctx-menu-hover-bg:   var(--menu-hover);
   --ctx-menu-hover-fg:   #FFFFFF;
-  --ctx-menu-border-light:#FFFFFF;
-  --ctx-menu-border-dark: #808080;
-  --ctx-menu-sep-dark:    var(--ctx-menu-border-dark);
-  --ctx-menu-sep-light:   var(--ctx-menu-border-light);
+  --ctx-menu-border-light:#B5B1A4;
+  --ctx-menu-border-dark: #B5B1A4;
+  --ctx-menu-sep-dark:    #BAB7AA;
+  --ctx-menu-sep-light:   transparent;
 
-  --systray-bg:           var(--taskbar-c);
+  --systray-bg:           #A6795E;
   --systray-border-left:  var(--win-frame-shadow);
   --systray-text:         #FFFFFF;
   --systray-icon-hover:   var(--menu-hover);
 
-  --startmenu-accent-line:#F9B14D;
+  --startmenu-accent-line:#D46600;
 
   --menu-hover:           #6D7128;
   --app-bg:               #ECE9D8;
@@ -193,6 +534,53 @@
   --btn-gradient-b:       #ECE9D8;
   --input-border:         #8E9E6C;
   --sidebar-bg:           #EDE9D4;
+  --xp-titlebar-gradient: linear-gradient(180deg, #8FA46D 0.0%, #E5EDC0 4.3%, #BBC88F 11.3%, #A7B580 23.1%, #C2CD95 79.8%, #9FAE77 96.3%, #96A867 100.0%);
+  --xp-titlebar-inactive-gradient: linear-gradient(180deg, #D4D7BC 0.0%, #EFEED7 2.8%, #D6DABC 54.2%, #D2D3BD 100.0%);
+  --xp-titlebar-fade-left: linear-gradient(to right, color-mix(in srgb, var(--win-titlebar-a) 62%, var(--xp-titlebar-edge-active)) 0%, transparent 100%);
+  --xp-titlebar-fade-right: linear-gradient(to left, color-mix(in srgb, var(--win-titlebar-a) 62%, var(--xp-titlebar-edge-active)) 0%, transparent 100%);
+  --xp-titlebar-fade-inactive-left: linear-gradient(to right, color-mix(in srgb, var(--win-titlebar-inactive-a) 72%, var(--xp-titlebar-edge-inactive)) 0%, transparent 100%);
+  --xp-titlebar-fade-inactive-right: linear-gradient(to left, color-mix(in srgb, var(--win-titlebar-inactive-a) 72%, var(--xp-titlebar-edge-inactive)) 0%, transparent 100%);
+  --xp-titlebar-fade-left-opacity: 0.62;
+  --xp-titlebar-fade-right-opacity: 0.62;
+  --xp-titlebar-fade-inactive-left-opacity: 0.22;
+  --xp-titlebar-fade-inactive-right-opacity: 0.22;
+  --xp-titlebar-fade-left-width: 38px;
+  --xp-titlebar-fade-right-width: 38px;
+  --xp-pane-chrome-color: var(--xp-titlebar-edge-active);
+  --xp-pane-chrome-inactive-color: var(--xp-titlebar-edge-inactive);
+  --xp-taskbar-gradient: linear-gradient(180deg, #5B703D 0.0%, #9DB17C 1.9%, #E2ECBF 5.4%, #C3CE96 11.1%, #ACB983 26.0%, #B3C189 83.3%, #96A867 100.0%);
+  --xp-taskbar-tab-inactive-gradient: linear-gradient(180deg, #ABB084 0.0%, #F4F6DC 4.2%, #DDE5BF 18.3%, #C2CBA4 69.1%, #C1C994 90.3%, #95A36C 100.0%);
+  --xp-taskbar-tab-active-gradient: linear-gradient(180deg, #7C8762 0.0%, #6F795B 0.3%, #838D74 27.7%, #7B885F 100.0%);
+  --xp-taskbar-tab-unread-gradient: linear-gradient(180deg, #C46C07 0.0%, #E99D33 1.4%, #FBC15F 4.2%, #F3CB7F 9.8%, #F2AC65 80.4%, #FEA144 88.8%, #D57814 91.7%, #B65F00 94.5%, #A35C0A 100.0%);
+  --xp-systray-gradient: linear-gradient(180deg, #C2B881 0.0%, #FAF6DD 2.9%, #EEE4B2 11.0%, #DCCCA1 90.0%, #D3BF8A 95.2%, #A6795E 100.0%);
+  --systray-icon-hover-bg: transparent;
+  --xp-systray-menu-surface: #FFFFFF;
+  --xp-systray-menu-border: #B5B1A4;
+  --xp-systray-menu-separator-dark: #BAB7AA;
+  --xp-systray-menu-separator-light: transparent;
+  --xp-start-menu-header-gradient: linear-gradient(180deg, #B6CB9C 0.0%, #EAF5D4 3.0%, #B5C893 7.3%, #AEBD89 18.0%, #DDEDC0 97.6%, #848C65 100.0%);
+  --xp-start-menu-footer-gradient: linear-gradient(180deg, #929877 0.0%, #AFB78C 0.2%, #C5D09A 51.1%, #768359 97.3%, #5C6849 100.0%);
+  --xp-start-btn-gradient: linear-gradient(180deg, #39581A 0.0%, #4A7137 0.7%, #EDF0BF 17.1%, #90A36D 47.5%, #547D43 75.8%, #64975F 92.2%, #6D9F6A 94.5%, #36522B 100.0%);
+  --xp-start-btn-hover-gradient: linear-gradient(180deg, #335B12 0.0%, #3D7325 1.9%, #F6FAB8 17.9%, #70954D 61.4%, #4A8A3A 82.0%, #65A660 93.4%, #305622 100.0%);
+  --xp-start-btn-pressed-gradient: linear-gradient(180deg, #253A1A 0.0%, #838F64 6.1%, #B4BA8F 12.6%, #839661 39.2%, #597B49 70.7%, #294621 100.0%);
+  --xp-start-menu-left-col: #FFFFFF;
+  --xp-start-menu-right-col: #F2F1E4;
+  --xp-start-menu-item-hover: #93A070;
+  --xp-start-menu-border: #929877;
+  --xp-start-menu-header-border: #848C65;
+  --xp-start-menu-footer-border: #909673;
+  --xp-start-menu-divider: #D8BC8F;
+  --xp-start-menu-left-divider: #DEDED6;
+  --xp-start-menu-right-divider-top: #D5BA62;
+  --xp-start-menu-right-divider-bottom: #F0F0EC;
+  --xp-start-menu-accent-bar: linear-gradient(to right, #D46600 0%, #D46600 100%);
+  --xp-start-menu-accent-height: 2px;
+  --xp-ctx-menu-border-width: 1px;
+  --xp-ctx-menu-surface: #FFFFFF;
+  --xp-ctx-menu-border: #B5B1A4;
+  --xp-ctx-menu-separator-dark: #BAB7AA;
+  --xp-ctx-menu-separator-light: transparent;
+  --xp-caption-btn-face: #97AB63;
 }
 
 /* Thema: Zilver (Luna Silver - authentiek) */
@@ -208,6 +596,8 @@
   --win-btn-bg:           #9AB4D0;
   --win-titlebar-inactive-a: #9DAEC1;
   --win-titlebar-inactive-b: #C4D1DE;
+  --xp-titlebar-edge-active: #3C546E;
+  --xp-titlebar-edge-inactive: #7E8B9A;
 
   --taskbar-a:            #7C8EA4;
   --taskbar-b:            #A4B4C8;
@@ -229,12 +619,12 @@
   --startbtn-hover-b:     #B8CCE0;
 
   --startmenu-border:     #5E7CA0;
-  --startmenu-header-a:   #9AB4D0;
-  --startmenu-header-b:   #5E7CA0;
-  --startmenu-item-hover: #7C8EA4;
-  --startmenu-rightcol:   #DDE0E8;
-  --startmenu-divider:    #B8BCC8;
-  --startmenu-footer-bdr: #5A6A80;
+  --startmenu-header-a:   #66667E;
+  --startmenu-header-b:   #74777B;
+  --startmenu-item-hover: #BBB7C7;
+  --startmenu-rightcol:   #E5E6ED;
+  --startmenu-divider:    #C2CAD2;
+  --startmenu-footer-bdr: #818488;
   --startmenu-pinned:     #2C3848;
 
   --ctx-menu-hover-bg:   var(--menu-hover);
@@ -249,7 +639,7 @@
   --systray-text:         #FFFFFF;
   --systray-icon-hover:   var(--menu-hover);
 
-  --startmenu-accent-line:#F9B14D;
+  --startmenu-accent-line:transparent;
 
   --menu-hover:           #7C8EA4;
   --app-bg:               #EBE9ED;
@@ -262,6 +652,54 @@
   --btn-gradient-b:       #EBE9ED;
   --input-border:         #9CA2AC;
   --sidebar-bg:           #E8E6EA;
+  --xp-titlebar-gradient: linear-gradient(180deg, #707087 0.0%, #C1C0D1 3.0%, #FCFCFD 5.4%, #A4A3BE 19.7%, #FCFDFD 86.4%, #80819A 100.0%);
+  --xp-titlebar-inactive-gradient: linear-gradient(180deg, #B2B6CC 0.0%, #D2D3DC 2.2%, #F0F1F7 8.8%, #DDDDE7 30.8%, #F2F3F5 73.7%, #CDCCD9 100.0%);
+  --xp-titlebar-fade-left: linear-gradient(to right, color-mix(in srgb, var(--win-titlebar-a) 62%, var(--xp-titlebar-edge-active)) 0%, transparent 100%);
+  --xp-titlebar-fade-right: linear-gradient(to left, color-mix(in srgb, var(--win-titlebar-a) 62%, var(--xp-titlebar-edge-active)) 0%, transparent 100%);
+  --xp-titlebar-fade-inactive-left: linear-gradient(to right, color-mix(in srgb, var(--win-titlebar-inactive-a) 72%, var(--xp-titlebar-edge-inactive)) 0%, transparent 100%);
+  --xp-titlebar-fade-inactive-right: linear-gradient(to left, color-mix(in srgb, var(--win-titlebar-inactive-a) 72%, var(--xp-titlebar-edge-inactive)) 0%, transparent 100%);
+  --xp-titlebar-fade-left-opacity: 0.62;
+  --xp-titlebar-fade-right-opacity: 0.62;
+  --xp-titlebar-fade-inactive-left-opacity: 0.22;
+  --xp-titlebar-fade-inactive-right-opacity: 0.22;
+  --xp-titlebar-fade-left-width: 38px;
+  --xp-titlebar-fade-right-width: 38px;
+  --xp-pane-chrome-color: var(--xp-titlebar-edge-active);
+  --xp-pane-chrome-inactive-color: var(--xp-titlebar-edge-inactive);
+  --xp-taskbar-gradient: linear-gradient(180deg, #8F90A8 0.0%, #F5F5F8 5.4%, #9A99B1 14.9%, #B0B5BB 38.7%, #BABCCA 48.2%, #C5C6C7 53.0%, #EBEAEA 86.3%, #E1EBE1 91.0%, #C7CED7 93.4%, #83829D 100.0%);
+  --xp-taskbar-tab-inactive-gradient: linear-gradient(180deg, #A9AAB3 0.0%, #FEFEFE 12.2%, #CDCEDD 49.7%, #8A8B98 95.9%, #8E8F9C 100.0%);
+  --xp-taskbar-tab-active-gradient: linear-gradient(180deg, #6B7882 0.0%, #A5ADB5 90.9%, #8D97A3 100.0%);
+  --xp-taskbar-tab-unread-gradient: linear-gradient(180deg, #C56D0A 0.0%, #E99D33 1.6%, #FEC55F 5.9%, #FF9F42 84.0%, #FDAB59 89.7%, #FEB653 92.5%, #E79A30 95.4%, #C26E10 100.0%);
+  --xp-systray-gradient: linear-gradient(180deg, #FEFEFF 0.0%, #797B93 94.1%, #313849 100.0%);
+  --systray-icon-hover-bg: transparent;
+  --xp-start-menu-header-gradient: linear-gradient(180deg, #66667E 0.0%, #BBBACD 1.7%, #F7F7F9 2.8%, #AAA9C2 10.3%, #FFFFFF 91.7%, #74777B 100.0%);
+  --xp-start-menu-footer-gradient: linear-gradient(180deg, #818488 0.0%, #E6E6ED 2.6%, #ACACC4 91.5%, #555563 100.0%);
+  --xp-start-btn-gradient: linear-gradient(180deg, #2C6913 0.0%, #328F28 0.2%, #B1E88E 9.6%, #EAEBEC 16.6%, #C9EBA9 23.7%, #98D07B 35.4%, #5FA44C 54.3%, #278F27 73.1%, #3FB06E 94.3%, #1D641D 100.0%);
+  --xp-start-btn-hover-gradient: linear-gradient(180deg, #238513 0.0%, #75C255 1.0%, #B4FE75 8.1%, #F4F5F8 15.3%, #D4FF97 22.4%, #A8EC70 32.0%, #599D3E 53.5%, #168312 75.0%, #1F9131 86.9%, #1EC755 94.1%, #165F10 100.0%);
+  --xp-start-btn-pressed-gradient: linear-gradient(180deg, #1E411B 0.0%, #4C6B42 1.9%, #92B97D 8.9%, #D2D2D3 15.9%, #A6C98D 27.6%, #83AD6D 36.9%, #5E8352 51.0%, #2D662D 72.1%, #38794C 88.4%, #3E945F 93.1%, #2A572A 100.0%);
+  --xp-start-menu-left-col: #FFFFFF;
+  --xp-start-menu-right-col: #E5E6ED;
+  --xp-start-menu-item-hover: #BBB7C7;
+  --xp-start-menu-border: var(--startmenu-border);
+  --xp-start-menu-header-border: #74777B;
+  --xp-start-menu-footer-border: #818488;
+  --xp-start-menu-divider: #C2CAD2;
+  --xp-start-menu-left-divider: #DEDED5;
+  --xp-start-menu-right-divider-top: #B9C1D2;
+  --xp-start-menu-right-divider-bottom: #EAEBEC;
+  --xp-start-menu-accent-bar: none;
+  --xp-start-menu-accent-height: 0px;
+  --xp-caption-btn-face: #9B9DBD;
+}
+
+/* Gedeelde afgeleide XP shelltokens voor klassieke Luna-varianten */
+[data-theme="olijfgroen"],
+[data-theme="zilver"] {
+  --xp-caption-btn-min-gradient: linear-gradient(to bottom, color-mix(in srgb, var(--win-btn-bg) 60%, white) 0%, var(--win-btn-bg) 100%);
+  --xp-caption-btn-max-gradient: linear-gradient(to bottom, color-mix(in srgb, var(--win-btn-bg) 60%, white) 0%, var(--win-btn-bg) 100%);
+  --xp-systray-divider: var(--systray-border-left);
+  --xp-systray-divider-highlight: color-mix(in srgb, var(--systray-border-left) 30%, white);
+  --xp-systray-menu-header-gradient: var(--xp-systray-gradient);
 }
 
 /* Thema: Royale (donkerblauw) */
@@ -277,6 +715,8 @@
   --win-btn-bg:           #4682B4;
   --win-titlebar-inactive-a: #7D96BE;
   --win-titlebar-inactive-b: #A6BAD0;
+  --xp-titlebar-edge-active: #0F2750;
+  --xp-titlebar-edge-inactive: #647898;
 
   --taskbar-a:            #13306A;
   --taskbar-b:            #1C4B8E;
@@ -346,6 +786,8 @@
   --win-btn-bg:           #5A5A5A;
   --win-titlebar-inactive-a: #686868;
   --win-titlebar-inactive-b: #909090;
+  --xp-titlebar-edge-active: #1A1A1A;
+  --xp-titlebar-edge-inactive: #535353;
 
   --taskbar-a:            #2C2C2C;
   --taskbar-b:            #3E3E3E;
@@ -415,6 +857,8 @@
   --win-btn-bg:           #2E3E6E;
   --win-titlebar-inactive-a: #2C2C44;
   --win-titlebar-inactive-b: #485070;
+  --xp-titlebar-edge-active: #0A0A1A;
+  --xp-titlebar-edge-inactive: #232336;
 
   --taskbar-a:            #141422;
   --taskbar-b:            #1E2040;
@@ -484,6 +928,8 @@
   --win-btn-bg:           #38A8F0;
   --win-titlebar-inactive-a: #7AAAD8;
   --win-titlebar-inactive-b: #A5CCEC;
+  --xp-titlebar-edge-active: #004AA0;
+  --xp-titlebar-edge-inactive: #6288AD;
 
   --taskbar-a:            #0060C8;
   --taskbar-b:            #28A0F0;
@@ -540,6 +986,31 @@
   --sidebar-bg:           #E8F0F8;
 }
 
+/* Gedeelde afgeleide tokens voor hard-line thema's */
+[data-theme="royale"],
+[data-theme="zune"],
+[data-theme="royale-noir"],
+[data-theme="energy-blue"] {
+  --xp-pane-chrome-color: var(--win-titlebar-d);
+  --xp-pane-chrome-inactive-color: var(--win-titlebar-inactive-a);
+  --xp-systray-gradient: linear-gradient(
+    to bottom,
+    var(--taskbar-b) 0%,
+    var(--taskbar-a) 49%,
+    color-mix(in srgb, var(--taskbar-a) 70%, black) 50%,
+    var(--taskbar-a) 100%
+  );
+  --xp-systray-divider: var(--taskbar-d);
+  --xp-systray-divider-highlight: color-mix(in srgb, var(--taskbar-b) 82%, white);
+  --systray-icon-hover-bg: rgba(255,255,255,0.12);
+  --xp-systray-menu-surface: var(--app-bg);
+  --xp-systray-menu-border: var(--taskbar-d);
+  --xp-systray-menu-header-gradient: var(--xp-systray-gradient);
+  --xp-systray-menu-header-text: #FFFFFF;
+  --xp-systray-menu-separator-dark: var(--text-disabled);
+  --xp-systray-menu-separator-light: #FFFFFF;
+}
+
 /* Thema: Klassiek (Windows 98) */
 [data-theme="klassiek"] {
   --win-bg:               #C0C0C0;
@@ -551,6 +1022,8 @@
   --win-titlebar-d:       #000060;
   --win-content-border:   #808080;
   --win-btn-bg:           #C0C0C0;
+  --xp-titlebar-edge-active: #1084D0;
+  --xp-titlebar-edge-inactive: #B0B0B0;
 
   --taskbar-a:            #C0C0C0;
   --taskbar-b:            #D4D0C8;
@@ -606,6 +1079,3 @@
   --input-border:         #808080;
   --sidebar-bg:           #C0C0C0;
 }
-
-
-

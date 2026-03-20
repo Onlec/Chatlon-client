@@ -40,7 +40,8 @@ function PaneLayer({
   unreadMetadata,
   clearNotificationTime,
   sharedContactPresence,
-  getDisplayName
+  getDisplayName,
+  chromeVariant = 'dx'
 }) {
   return (
     <div className="pane-layer">
@@ -55,6 +56,7 @@ function PaneLayer({
             <Pane
               title={config.title}
               type={paneName}
+              chromeVariant={chromeVariant}
               isMaximized={pane.isMaximized}
               onMaximize={() => toggleMaximizePane(paneName)}
               onClose={() => closePane(paneName)}
@@ -103,6 +105,7 @@ function PaneLayer({
             <Pane
               title={`${getDisplayName(conv.contactName)} - Gesprek`}
               type="conversation"
+              chromeVariant={chromeVariant}
               isMaximized={conv.isMaximized}
               onMaximize={() => toggleMaximizeConversation(convId)}
               onClose={() => closeConversation(convId)}
@@ -144,6 +147,7 @@ function PaneLayer({
             <Pane
               title={`Spelletje \u2013 ${getDisplayName(game.contactName)}`}
               type="game"
+              chromeVariant={chromeVariant}
               isMaximized={game.isMaximized}
               onMaximize={() => toggleMaximizeGamePane(gameId)}
               onClose={() => closeGamePane(gameId)}

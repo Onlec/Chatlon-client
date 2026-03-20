@@ -19,7 +19,8 @@ const paneConfig = {
     defaultSize: { width: 280, height: 520 },
     minSize: { width: 280, height: 400 },
     desktopIcon: 'favicon.ico',
-    desktopLabel: 'Chatlon Messenger'
+    desktopLabel: 'Chatlon Messenger',
+    startMenu: { section: 'pinned', order: 30 }
   },
   chat: {
     title: 'Chatlon Messenger',
@@ -39,7 +40,8 @@ const paneConfig = {
     defaultSize: { width: 500, height: 400 },
     minSize: { width: 300, height: 250 },
     desktopIcon: '📝',
-    desktopLabel: 'Kladblok'
+    desktopLabel: 'Kladblok',
+    startMenu: { section: 'programs', order: 10 }
   },
   calculator: {
     title: 'Rekenmachine',
@@ -49,7 +51,8 @@ const paneConfig = {
     defaultSize: { width: 280, height: 320 },
     minSize: { width: 280, height: 320 },
     desktopIcon: '🔢',
-    desktopLabel: 'Rekenmachine'
+    desktopLabel: 'Rekenmachine',
+    startMenu: { section: 'programs', order: 20 }
   },
   paint: {
     title: 'Naamloos - Macrohard PaneT',
@@ -59,7 +62,8 @@ const paneConfig = {
     defaultSize: { width: 700, height: 550 },
     minSize: { width: 500, height: 400 },
     desktopIcon: '🎨',
-    desktopLabel: 'Macrohard PaneT'
+    desktopLabel: 'Macrohard PaneT',
+    startMenu: { section: 'programs', order: 30 }
   },
   browser: {
     title: 'Internet Adventurer',
@@ -69,7 +73,8 @@ const paneConfig = {
     defaultSize: { width: 800, height: 600 },
     minSize: { width: 600, height: 450 },
     desktopIcon: '🌐',
-    desktopLabel: 'Internet Adventurer'
+    desktopLabel: 'Internet Adventurer',
+    startMenu: { section: 'pinned', order: 10 }
   },
   media: {
     title: 'Panes Media Player',
@@ -79,7 +84,8 @@ const paneConfig = {
     defaultSize: { width: 850, height: 600 },
     minSize: { width: 600, height: 500 },
     desktopIcon: '🎵',
-    desktopLabel: 'Panes Media Player'
+    desktopLabel: 'Panes Media Player',
+    startMenu: { section: 'pinned', order: 20 }
   },
   teamtalk: {
     title: 'TeamTalk',
@@ -87,7 +93,8 @@ const paneConfig = {
     icon: '🎧',
     desktopIcon: '🎧',
     desktopLabel: 'TeamTalk',
-    label: 'TeamTalk'
+    label: 'TeamTalk',
+    startMenu: { section: 'programs', order: 40 }
   },/*,
   pinball: {
     title: '3D Flipperkast',
@@ -107,7 +114,8 @@ const paneConfig = {
     icon: '⚙️',
     component: ControlPane,
     defaultSize: { width: 600, height: 500 },
-    minSize: { width: 500, height: 400 }
+    minSize: { width: 500, height: 400 },
+    startMenu: { section: 'programs', order: 50 }
   },
 };
 

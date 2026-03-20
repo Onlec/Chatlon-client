@@ -6,7 +6,8 @@ function DesktopShortcuts({
   onShortcutContextMenu,
   onRenameShortcut,
   onMoveShortcut,
-  gridConfig
+  gridConfig,
+  layoutVariant = 'dx'
 }) {
   const [renamingId, setRenamingId] = useState(null);
   const [draftLabel, setDraftLabel] = useState('');
@@ -22,6 +23,7 @@ function DesktopShortcuts({
     itemHeight: gridConfig?.itemHeight ?? 72,
     bottomReserved: gridConfig?.bottomReserved ?? 30
   }), [gridConfig]);
+  const isLigerLayout = layoutVariant === 'liger';
 
   const commitRename = (shortcutId) => {
     const nextLabel = draftLabel.trim();
@@ -43,22 +45,31 @@ function DesktopShortcuts({
     };
   };
 
+  const resolveRenderLeft = (position) =>
+    isLigerLayout
+      ? window.innerWidth - resolvedGrid.itemWidth - position.x
+      : position.x;
+
   const startDrag = (event, shortcut) => {
     if (event.button !== 0) return;
     if (renamingId === shortcut.id) return;
     event.preventDefault();
     event.stopPropagation();
     const basePosition = shortcut.position || { x: resolvedGrid.marginLeft, y: resolvedGrid.marginTop };
+    const baseLeft = resolveRenderLeft(basePosition);
     pointerOffsetRef.current = {
-      x: event.clientX - basePosition.x,
+      x: event.clientX - baseLeft,
       y: event.clientY - basePosition.y
     };
     const threshold = 4;
     let dragged = false;
 
     const onMouseMove = (moveEvent) => {
-      const rawX = moveEvent.clientX - pointerOffsetRef.current.x;
+      const rawLeft = moveEvent.clientX - pointerOffsetRef.current.x;
       const rawY = moveEvent.clientY - pointerOffsetRef.current.y;
+      const rawX = isLigerLayout
+        ? window.innerWidth - resolvedGrid.itemWidth - rawLeft
+        : rawLeft;
       const clamped = clampPosition(rawX, rawY);
       const delta = Math.abs(moveEvent.clientX - event.clientX) + Math.abs(moveEvent.clientY - event.clientY);
       if (!dragged && delta >= threshold) {
@@ -99,17 +110,20 @@ function DesktopShortcuts({
   };
 
   return (
-    <div className="shortcuts-area">
+    <div className={`shortcuts-area shortcuts-area--${layoutVariant}`} data-layout={layoutVariant}>
       {shortcuts.map((shortcut) => {
         const isDragging = dragState?.id === shortcut.id;
         const position = isDragging
           ? { x: dragState.x, y: dragState.y }
           : (shortcut.position || { x: resolvedGrid.marginLeft, y: resolvedGrid.marginTop });
+        const positionStyle = isLigerLayout
+          ? { right: position.x, top: position.y }
+          : { left: position.x, top: position.y };
         return (
         <div
           key={shortcut.id}
-          className={`shortcut ${isDragging ? 'shortcut--dragging' : ''}`}
-          style={{ left: position.x, top: position.y }}
+          className={`shortcut shortcut--${layoutVariant} ${isDragging ? 'shortcut--dragging' : ''}`}
+          style={positionStyle}
           onMouseDown={(event) => startDrag(event, shortcut)}
           onDoubleClick={() => {
             if (Date.now() < suppressOpenUntilRef.current) return;

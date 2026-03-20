@@ -10,6 +10,14 @@
   box-shadow: inset 1px 1px 0 #FFFFFF, inset -1px -1px 0 #404040, 2px 2px 0 #000;
 }
 
+[data-theme="klassiek"] .pane-inner-container {
+  background: transparent;
+}
+
+[data-theme="klassiek"] .pane-body {
+  padding: 0;
+}
+
 /* Titelbalk: horizontaal gradient zoals Win98 */
 [data-theme="klassiek"] .pane-header {
   background: linear-gradient(to right, var(--win-titlebar-a), var(--win-titlebar-b));
@@ -554,5 +562,4 @@
     var(--tab-notify-b) 100%
   ) !important;
 }
-
 

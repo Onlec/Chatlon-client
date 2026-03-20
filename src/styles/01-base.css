@@ -115,7 +115,7 @@ body, html {
   top: 0;
   left: 0;
   width: 100%;
-  height: calc(100vh - 30px);
+  height: calc(100vh - var(--taskbar-height));
   pointer-events: none;
   cursor: default;
   caret-color: transparent;

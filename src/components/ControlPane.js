@@ -7,12 +7,19 @@ import WallpaperPickerModal from './modals/WallpaperPickerModal';
 import ChangePasswordModal from './modals/ChangePasswordModal';
 import { clearAllCaches } from '../utils/cacheCleanup';
 import { log } from '../utils/debug';
+import {
+  DEFAULT_LUNA_CUSTOM_SEED,
+  isValidHexColor,
+  LUNA_CUSTOM_THEME_ID,
+  normalizeCustomLunaTheme,
+  normalizeHexColor
+} from '../utils/lunaCustomTheme';
 
 const PRESET_AVATARS = ['cat.jpg', 'egg.jpg', 'crab.jpg', 'blocks.jpg', 'pug.jpg'];
 
 function ControlPane() {
   const { scanlinesEnabled, toggleScanlines } = useScanlinesPreference();
-  const { settings, updateSetting, resetSettings } = useSettings();
+  const { settings, updateSetting, resetSettings, appearanceVariant } = useSettings();
   const { confirm, alert } = useDialog();
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [showResetSuccess, setShowResetSuccess] = useState(false);
@@ -63,8 +70,37 @@ function ControlPane() {
     debugMode,
     fontSize,
     colorScheme,
-    systemSounds
+    systemSounds,
+    customLunaTheme
   } = settings;
+  const normalizedCustomLunaTheme = normalizeCustomLunaTheme(customLunaTheme);
+  const [customSeedInput, setCustomSeedInput] = useState(normalizedCustomLunaTheme.seed);
+
+  useEffect(() => {
+    setCustomSeedInput(normalizedCustomLunaTheme.seed);
+  }, [normalizedCustomLunaTheme.seed]);
+
+  const commitCustomLunaSeed = (rawValue, fallbackValue = normalizedCustomLunaTheme.seed) => {
+    const nextSeed = normalizeHexColor(rawValue, fallbackValue);
+    setCustomSeedInput(nextSeed);
+    updateSetting('customLunaTheme', { seed: nextSeed });
+  };
+
+  const handleCustomLunaSeedInputChange = (event) => {
+    const nextValue = event.target.value;
+    setCustomSeedInput(nextValue);
+    if (!isValidHexColor(nextValue)) return;
+    updateSetting('customLunaTheme', {
+      seed: normalizeHexColor(nextValue, normalizedCustomLunaTheme.seed),
+    });
+  };
+
+  const getOptionLabel = (settingId, option) => {
+    if (settingId === 'colorScheme' && option === LUNA_CUSTOM_THEME_ID) {
+      return 'Luna Custom';
+    }
+    return option;
+  };
   
   const categories =  [
     {
@@ -100,7 +136,7 @@ function ControlPane() {
           id: 'colorScheme', 
           label: 'Kleurenschema', 
           type: 'select',
-          options: ['blauw', 'olijfgroen', 'zilver', 'royale', 'zune', 'royale-noir', 'energy-blue', 'klassiek'],
+          options: ['blauw', 'olijfgroen', 'zilver', 'royale', 'zune', 'royale-noir', 'energy-blue', 'klassiek', LUNA_CUSTOM_THEME_ID],
           value: colorScheme,
           description: 'Kleur van vensters en knoppen'
         },
@@ -298,6 +334,14 @@ function ControlPane() {
           )}
 
           {!selectedCategory.customRender && <div className="cp-settings-list">
+            {selectedCategory.id === 'appearance' && (
+              <div className="cp-setting-item">
+                <div className="cp-setting-description">
+                  Deze thema-instellingen gelden voor {appearanceVariant === 'liger' ? 'Liger OS' : 'Panes dX'}.
+                </div>
+              </div>
+            )}
+
             {selectedCategory.settings.map(setting => (
               <div key={setting.id} className="cp-setting-item">
                 <div className="cp-setting-main">
@@ -328,7 +372,7 @@ function ControlPane() {
                       >
                         {setting.options.map(option => (
                           <option key={option} value={option}>
-                            {option}
+                            {getOptionLabel(setting.id, option)}
                           </option>
                         ))}
                       </select>
@@ -372,6 +416,56 @@ function ControlPane() {
                 )}
               </div>
             ))}
+
+            {selectedCategory.id === 'appearance' && colorScheme === LUNA_CUSTOM_THEME_ID && (
+              <div className="cp-setting-item cp-setting-item--theme-editor">
+                <div className="cp-setting-main">
+                  <div className="cp-select-row cp-theme-custom-row">
+                    <label htmlFor="cp-luna-custom-seed-input">Luna seedkleur</label>
+                    <div className="cp-theme-custom-controls">
+                      <span
+                        className="cp-theme-custom-swatch"
+                        style={{ backgroundColor: normalizedCustomLunaTheme.seed }}
+                        aria-hidden="true"
+                      />
+                      <input
+                        id="cp-luna-custom-seed-picker"
+                        aria-label="Luna Custom seedkleur"
+                        className="cp-theme-color-input"
+                        type="color"
+                        value={normalizedCustomLunaTheme.seed}
+                        onChange={(event) => commitCustomLunaSeed(event.target.value)}
+                      />
+                      <input
+                        id="cp-luna-custom-seed-input"
+                        aria-label="Luna Custom seed hex"
+                        className="cp-text-input cp-theme-hex-input"
+                        type="text"
+                        inputMode="text"
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        value={customSeedInput}
+                        onChange={handleCustomLunaSeedInputChange}
+                        onBlur={() => commitCustomLunaSeed(customSeedInput)}
+                        placeholder={DEFAULT_LUNA_CUSTOM_SEED}
+                      />
+                      <button
+                        type="button"
+                        className="dx-button cp-action-button"
+                        onClick={() => commitCustomLunaSeed(DEFAULT_LUNA_CUSTOM_SEED, DEFAULT_LUNA_CUSTOM_SEED)}
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="cp-setting-description">
+                  Kies een seedkleur voor het Luna Custom thema. Titelbalken, taakbalk, systray,
+                  contextmenu&apos;s en startmenu-oppervlakken worden hier automatisch van afgeleid.
+                </div>
+              </div>
+            )}
           </div>}
         </div>
       )}

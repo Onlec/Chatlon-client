@@ -57,5 +57,25 @@ describe('DesktopShortcuts', () => {
     fireEvent.doubleClick(shortcutNode);
     expect(onOpenShortcut).toHaveBeenCalledWith('contacts');
   });
-});
 
+  test('supports the liger layout variant using right-aligned positioning', () => {
+    const { container } = render(
+      <DesktopShortcuts
+        shortcuts={shortcuts}
+        onOpenShortcut={() => {}}
+        onRenameShortcut={() => {}}
+        onShortcutContextMenu={() => {}}
+        onMoveShortcut={() => {}}
+        gridConfig={{ marginLeft: 20, marginTop: 20, itemWidth: 80, itemHeight: 72, bottomReserved: 30 }}
+        layoutVariant="liger"
+      />
+    );
+
+    const shortcutsArea = container.querySelector('.shortcuts-area');
+    const shortcutNode = container.querySelector('.shortcut');
+
+    expect(shortcutsArea).toHaveAttribute('data-layout', 'liger');
+    expect(shortcutNode).toHaveClass('shortcut--liger');
+    expect(shortcutNode.style.right).toBe('20px');
+  });
+});
