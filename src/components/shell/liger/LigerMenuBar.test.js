@@ -5,21 +5,34 @@ import LigerMenuBar from './LigerMenuBar';
 function buildProps(overrides = {}) {
   return {
     activeAppName: 'Chatlon Messenger',
+    menus: [
+      {
+        label: 'Archief',
+        items: [
+          { label: 'Sluiten', action: 'closeActive' },
+          { label: 'Afmelden', action: 'logoff' },
+          { label: 'Afsluiten', action: 'shutdown' },
+          { label: 'Niet beschikbaar', disabled: true }
+        ]
+      },
+      {
+        label: 'Venster',
+        items: [
+          {
+            label: 'Alice - Gesprek',
+            icon: '\u{1F4AC}',
+            isActive: false,
+            onSelect: jest.fn()
+          }
+        ]
+      }
+    ],
+    onMenuAction: jest.fn(),
     currentUser: 'alice@coldmail.com',
     relayStatus: { anyOnline: true },
     isSuperpeer: false,
     connectedSuperpeers: 0,
     currentStatusOption: { label: 'Online', color: '#00aa00' },
-    windowItems: [
-      {
-        id: 'conv_alice',
-        icon: '💬',
-        label: 'Alice - Gesprek',
-        isActive: false,
-        isMinimized: true,
-        onSelect: jest.fn()
-      }
-    ],
     onOpenContacts: jest.fn(),
     onLogoff: jest.fn(),
     onShutdown: jest.fn(),
@@ -28,14 +41,40 @@ function buildProps(overrides = {}) {
 }
 
 describe('LigerMenuBar', () => {
-  test('shows the window list and selects an item', () => {
+  test('dispatches app menu actions', () => {
+    const props = buildProps();
+    render(<LigerMenuBar {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sluiten' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Archief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Afmelden' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Archief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Afsluiten' }));
+
+    expect(props.onMenuAction).toHaveBeenNthCalledWith(1, 'closeActive');
+    expect(props.onMenuAction).toHaveBeenNthCalledWith(2, 'logoff');
+    expect(props.onMenuAction).toHaveBeenNthCalledWith(3, 'shutdown');
+  });
+
+  test('does not invoke disabled menu items', () => {
+    const props = buildProps();
+    render(<LigerMenuBar {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archief' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Niet beschikbaar' }));
+
+    expect(props.onMenuAction).not.toHaveBeenCalled();
+  });
+
+  test('selects window items through the generic menu API', () => {
     const props = buildProps();
     render(<LigerMenuBar {...props} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Venster' }));
-    fireEvent.click(screen.getByText('Alice - Gesprek'));
+    fireEvent.click(screen.getByRole('button', { name: 'Alice - Gesprek' }));
 
-    expect(props.windowItems[0].onSelect).toHaveBeenCalledTimes(1);
+    expect(props.menus[1].items[0].onSelect).toHaveBeenCalledTimes(1);
   });
 
   test('opens the system menu and exposes launcher actions', () => {
@@ -43,7 +82,7 @@ describe('LigerMenuBar', () => {
     render(<LigerMenuBar {...props} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Liger-menu' }));
-    fireEvent.click(screen.getByText('Chatlon openen'));
+    fireEvent.click(screen.getByRole('button', { name: 'Chatlon openen' }));
 
     expect(props.onOpenContacts).toHaveBeenCalledTimes(1);
   });

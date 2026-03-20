@@ -69,12 +69,13 @@ function LigerDesktopShell({ shellProps }) {
 
       <LigerMenuBar
         activeAppName={windows.activeAppName}
+        menus={windows.menus}
+        onMenuAction={windows.onMenuAction}
         currentUser={session.currentUser}
         relayStatus={status.relayStatus}
         isSuperpeer={status.isSuperpeer}
         connectedSuperpeers={status.connectedSuperpeers}
         currentStatusOption={status.currentStatusOption}
-        windowItems={windows.windowItems}
         onOpenContacts={navigation.onOpenContacts}
         onLogoff={session.onLogoff}
         onShutdown={session.onShutdown}
@@ -92,7 +93,10 @@ function LigerDesktopShell({ shellProps }) {
 
       <PaneLayer {...windows.paneLayerProps} chromeVariant={windows.chromeVariant} />
 
-      <LigerDock items={navigation.dockItems} />
+      <LigerDock
+        appItems={navigation.dockAppItems}
+        minimizedItems={navigation.dockMinimizedItems}
+      />
 
       <div className="toast-container">
         {notifications.toasts.map((toast) => (

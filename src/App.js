@@ -60,6 +60,14 @@ import { FEATURE_FLAGS } from './config/featureFlags';
 import { removeScoped } from './utils/storageScope';
 import { readUserPrefOnce, PREF_KEYS } from './utils/userPrefsGun';
 import { buildLunaCustomThemeStyle } from './utils/lunaCustomTheme';
+import {
+  LIGER_MENU_ACTIONS,
+  buildLigerActiveAppName,
+  buildLigerDockAppItems,
+  buildLigerMenus,
+  buildLigerMinimizedDockItems,
+  buildLigerWindowItemsModel
+} from './utils/ligerShell';
 
 
 // Helper: lees lokale naam uit chatlon_users localStorage
@@ -964,6 +972,31 @@ const onTaskbarClick = React.useCallback((paneId) => {
     focusPane(paneId);
   }, [conversations, games, panes, openConversation, openGamePane, focusPane, desktopCommandBus]);
 
+  const handleLigerMenuAction = React.useCallback((action) => {
+    switch (action) {
+      case LIGER_MENU_ACTIONS.CLOSE_ACTIVE:
+        if (!activePane) return;
+        if (activePane.startsWith('conv_')) {
+          closeConversation(activePane);
+          return;
+        }
+        if (activePane.startsWith('game_')) {
+          closeGamePane(activePane);
+          return;
+        }
+        closePane(activePane);
+        return;
+      case LIGER_MENU_ACTIONS.LOGOFF:
+        handleLogoff();
+        return;
+      case LIGER_MENU_ACTIONS.SHUTDOWN:
+        handleShutdown();
+        return;
+      default:
+        return;
+    }
+  }, [activePane, closeConversation, closeGamePane, closePane, handleLogoff, handleShutdown]);
+
   const activeAppName = useMemo(() => {
     if (!activePane) {
       return osVariant === OS_LIGER ? 'Liger' : 'Chatlon';
@@ -1058,6 +1091,70 @@ const onTaskbarClick = React.useCallback((paneId) => {
     }))
   ), [activePane, panes, desktopCommandBus]);
 
+  const ligerActiveAppName = useMemo(() => buildLigerActiveAppName({
+    activePane,
+    paneConfig
+  }), [activePane]);
+
+  const ligerWindowItemsModel = useMemo(() => buildLigerWindowItemsModel({
+    activePane,
+    paneOrder,
+    panes,
+    conversations,
+    games,
+    paneConfig,
+    getDisplayName
+  }), [activePane, conversations, games, getDisplayName, paneOrder, panes]);
+
+  const ligerWindowItems = useMemo(() => (
+    ligerWindowItemsModel.map((item) => ({
+      ...item,
+      onSelect: () => focusWindowItem(item.id)
+    }))
+  ), [focusWindowItem, ligerWindowItemsModel]);
+
+  const ligerMenusModel = useMemo(() => buildLigerMenus({
+    activePane,
+    paneConfig,
+    windowItems: ligerWindowItemsModel
+  }), [activePane, ligerWindowItemsModel]);
+
+  const ligerMenus = useMemo(() => (
+    ligerMenusModel.map((menu) => ({
+      ...menu,
+      items: (menu.items || []).map((item) => (
+        item.windowId
+          ? {
+              ...item,
+              onSelect: () => focusWindowItem(item.windowId)
+            }
+          : item
+      ))
+    }))
+  ), [focusWindowItem, ligerMenusModel]);
+
+  const dockAppItemsModel = useMemo(() => buildLigerDockAppItems({
+    paneConfig,
+    panes,
+    activePane
+  }), [activePane, panes]);
+
+  const dockAppItems = useMemo(() => (
+    dockAppItemsModel.map((item) => ({
+      ...item,
+      onClick: () => desktopCommandBus.openPane(item.key)
+    }))
+  ), [desktopCommandBus, dockAppItemsModel]);
+
+  const dockMinimizedItemsModel = useMemo(() => buildLigerMinimizedDockItems(ligerWindowItemsModel), [ligerWindowItemsModel]);
+
+  const dockMinimizedItems = useMemo(() => (
+    dockMinimizedItemsModel.map((item) => ({
+      ...item,
+      onClick: () => focusWindowItem(item.key)
+    }))
+  ), [dockMinimizedItemsModel, focusWindowItem]);
+
   const paneLayerProps = {
     paneConfig,
     panes,
@@ -1143,8 +1240,10 @@ const onTaskbarClick = React.useCallback((paneId) => {
     windows: {
       chromeVariant: osVariant,
       paneLayerProps,
-      activeAppName,
-      windowItems
+      activeAppName: osVariant === OS_LIGER ? ligerActiveAppName : activeAppName,
+      menus: ligerMenus,
+      onMenuAction: handleLigerMenuAction,
+      windowItems: osVariant === OS_LIGER ? ligerWindowItems : windowItems
     },
     navigation: {
       startMenuProps: {
@@ -1175,7 +1274,8 @@ const onTaskbarClick = React.useCallback((paneId) => {
         getDisplayName,
         systrayProps
       },
-      dockItems,
+      dockAppItems: osVariant === OS_LIGER ? dockAppItems : dockItems,
+      dockMinimizedItems,
       onOpenContacts: desktopCommandBus.openContacts
     },
     notifications: {

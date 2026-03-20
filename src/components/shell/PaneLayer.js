@@ -2,6 +2,7 @@ import React from 'react';
 import Pane from '../Pane';
 import ConversationPane from '../panes/ConversationPane';
 import GamePane from '../panes/GamePane';
+import { resolvePaneTitle } from '../../utils/ligerShell';
 
 function PaneLayer({
   paneConfig,
@@ -54,7 +55,7 @@ function PaneLayer({
         return (
           <div key={paneName} onMouseDown={() => focusPane(paneName)} style={{ display: pane.isMinimized ? 'none' : 'block', zIndex: getZIndex(paneName), position: 'absolute' }}>
             <Pane
-              title={config.title}
+              title={resolvePaneTitle(config, chromeVariant)}
               type={paneName}
               chromeVariant={chromeVariant}
               isMaximized={pane.isMaximized}

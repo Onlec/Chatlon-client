@@ -636,13 +636,30 @@
   gap: 12px;
 }
 
+.liger-menubar__menu-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .liger-menubar__trigger {
   border: none;
   background: transparent;
   color: inherit;
   font: inherit;
   cursor: pointer;
-  padding: 0;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.liger-menubar__trigger:hover:not(:disabled),
+.liger-menubar__menu-group--open .liger-menubar__trigger {
+  background: rgba(0,0,0,0.08);
+}
+
+.liger-menubar__trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .liger-menubar__trigger--logo {
@@ -670,22 +687,27 @@
 
 .liger-menu {
   position: absolute;
-  top: 30px;
-  min-width: 220px;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 240px;
+  max-width: min(340px, calc(100vw - 24px));
   padding: 8px;
   border-radius: 14px;
   background: rgba(247,247,247,0.95);
+  border: 1px solid rgba(255,255,255,0.55);
   box-shadow: 0 22px 40px rgba(0,0,0,0.22);
+  backdrop-filter: blur(18px);
 }
 
-.liger-menu--system {
-  left: 8px;
-}
-
-.liger-menu--window {
-  left: 110px;
+.liger-menu--app {
   max-height: min(420px, calc(100vh - 60px));
   overflow-y: auto;
+}
+
+.liger-menu__separator {
+  height: 1px;
+  margin: 6px 4px;
+  background: rgba(0,0,0,0.12);
 }
 
 .liger-menu__item {
@@ -695,26 +717,69 @@
   padding: 10px 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
   background: transparent;
   text-align: left;
   cursor: pointer;
 }
 
-.liger-menu__item:hover,
+.liger-menu__item:hover:not(:disabled),
 .liger-menu__item--active {
   background: rgba(0,0,0,0.08);
 }
 
-.liger-menu__meta {
+.liger-menu__item:disabled {
+  cursor: default;
+}
+
+.liger-menu__item--disabled {
+  color: rgba(0,0,0,0.48);
+}
+
+.liger-menu__main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.liger-menu__icon {
+  width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.liger-menu__icon img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.liger-menu__label {
+  min-width: 0;
+}
+
+.liger-menu__meta-group {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(0,0,0,0.55);
+  font-size: 11px;
+  flex: 0 0 auto;
+}
+
+.liger-menu__meta {
   color: rgba(0,0,0,0.55);
   font-size: 11px;
 }
 
-.liger-menu__empty {
-  padding: 12px;
-  color: rgba(0,0,0,0.6);
+.liger-menu__shortcut {
+  font-size: 11px;
+  letter-spacing: 0.02em;
 }
 
 .shortcuts-area--liger {
@@ -758,6 +823,13 @@
   cursor: pointer;
 }
 
+.liger-dock__item--active .liger-dock__icon {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    0 8px 18px rgba(0,0,0,0.18),
+    0 0 0 2px rgba(255,255,255,0.46);
+}
+
 .liger-dock__icon {
   width: 56px;
   height: 56px;
@@ -768,6 +840,14 @@
   background: rgba(255,255,255,0.42);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 8px 18px rgba(0,0,0,0.18);
   font-size: 26px;
+}
+
+.liger-dock__item--minimized .liger-dock__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.34);
+  font-size: 22px;
 }
 
 .liger-dock__icon img {
@@ -811,6 +891,10 @@
   width: 1px;
   align-self: stretch;
   background: rgba(0,0,0,0.14);
+}
+
+.liger-dock__separator--minimized {
+  margin: 0 2px;
 }
 
 /* ============================================

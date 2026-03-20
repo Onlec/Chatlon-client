@@ -7,29 +7,59 @@ function renderIcon(icon, label) {
   return <span>{icon}</span>;
 }
 
-function LigerDock({ items = [] }) {
+function DockItem({ item, itemKey, onHover, onLeave, hovered }) {
+  return (
+    <button
+      key={item.key}
+      type="button"
+      className={`liger-dock__item${hovered ? ' liger-dock__item--hovered' : ''}${item.isRunning ? ' liger-dock__item--running' : ''}${item.isActive ? ' liger-dock__item--active' : ''}${item.isMinimized ? ' liger-dock__item--minimized' : ''}`}
+      onMouseEnter={() => onHover(itemKey)}
+      onMouseLeave={onLeave}
+      onClick={item.onClick}
+      title={item.label}
+    >
+      <div className="liger-dock__icon">
+        {renderIcon(item.icon, item.label)}
+      </div>
+      <div className="liger-dock__label">{item.label}</div>
+      {item.isRunning && <div className="liger-dock__dot" />}
+    </button>
+  );
+}
+
+function LigerDock({ appItems = [], minimizedItems = [] }) {
   const [hovered, setHovered] = useState(null);
+  const hasMinimizedItems = minimizedItems.length > 0;
 
   return (
     <div className="liger-dock-container">
       <div className="liger-dock">
-        {items.map((item, index) => (
-          <button
+        {appItems.map((item) => (
+          <DockItem
             key={item.key}
-            type="button"
-            className={`liger-dock__item${hovered === index ? ' liger-dock__item--hovered' : ''}${item.isRunning ? ' liger-dock__item--running' : ''}${item.isActive ? ' liger-dock__item--active' : ''}`}
-            onMouseEnter={() => setHovered(index)}
-            onMouseLeave={() => setHovered(null)}
-            onClick={item.onClick}
-            title={item.label}
-          >
-            <div className="liger-dock__icon">
-              {renderIcon(item.icon, item.label)}
-            </div>
-            <div className="liger-dock__label">{item.label}</div>
-            {item.isRunning && <div className="liger-dock__dot" />}
-          </button>
+            item={item}
+            itemKey={`app-${item.key}`}
+            hovered={hovered === `app-${item.key}`}
+            onHover={setHovered}
+            onLeave={() => setHovered(null)}
+          />
         ))}
+
+        {hasMinimizedItems && (
+          <>
+            <div className="liger-dock__separator liger-dock__separator--minimized" />
+            {minimizedItems.map((item) => (
+              <DockItem
+                key={item.key}
+                item={{ ...item, isMinimized: true }}
+                itemKey={`min-${item.key}`}
+                hovered={hovered === `min-${item.key}`}
+                onHover={setHovered}
+                onLeave={() => setHovered(null)}
+              />
+            ))}
+          </>
+        )}
 
         <div className="liger-dock__separator" />
 
