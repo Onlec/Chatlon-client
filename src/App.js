@@ -14,6 +14,7 @@ import LigerBootSequence from './components/screens/liger/LigerBootSequence';
 import LigerLoginScreen from './components/screens/liger/LigerLoginScreen';
 import DesktopShell from './components/shell/DesktopShell';
 import LigerDesktopShell from './components/shell/liger/LigerDesktopShell';
+import MonitorBezel from './components/MonitorBezel';
 import { user } from './gun';
 import { paneConfig } from './paneConfig';
 import './App.css';
@@ -1351,11 +1352,13 @@ const onTaskbarClick = React.useCallback((paneId) => {
 
   return (
     <>
-      {selectedOS === OS_LIGER ? (
-        <LigerDesktopShell shellProps={shellProps} />
-      ) : (
-        <DesktopShell shellProps={shellProps} />
-      )}
+      <MonitorBezel os={selectedOS}>
+        {selectedOS === OS_LIGER ? (
+          <LigerDesktopShell shellProps={shellProps} />
+        ) : (
+          <DesktopShell shellProps={shellProps} />
+        )}
+      </MonitorBezel>
       {showPostLoginWelcome && (
         <SystemTransitionScreen
           variant={osVariant}

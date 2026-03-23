@@ -8,7 +8,10 @@ export const PREF_KEYS = {
   DESKTOP_SHORTCUTS: 'desktopShortcuts',
   AUTO_SIGNIN: 'autoSignin',
   REMEMBER_ME: 'rememberMe',
-  META: '_meta'
+  META: '_meta',
+  BEZEL_ENABLED: 'bezelEnabled',
+  CRT_CURVE: 'crtCurve',
+  CRT_SCANLINES: 'crtScanlines',
 };
 
 function normalizeUserKey(userKey) {

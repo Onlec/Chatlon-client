@@ -3,7 +3,7 @@
    ================================================ */
 
 .toast-container {
-  position: fixed;
+  position: absolute;
   bottom: 40px;
   right: 20px;
   z-index: 10002;

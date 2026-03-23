@@ -176,10 +176,6 @@
 
 div.pane-frame.maximized,
 div.pane-frame.pane-frame--maximized {
-  width: 100vw !important;
-  height: calc(100vh - var(--taskbar-height)) !important;
-  top: 0 !important;
-  left: 0 !important;
   transform: none !important;
   border-radius: 0;
   border: none;
@@ -614,9 +610,10 @@ div.pane-frame.pane-frame--maximized .pane-body {
    ================================================ */
 
 .taskbar {
-  position: fixed;
+  position: absolute;
+  left: 0;
+  right: 0;
   bottom: 0;
-  width: 100%;
   height: var(--taskbar-height);
   background: var(--xp-taskbar-gradient, linear-gradient(to bottom, var(--taskbar-a) 0%, var(--taskbar-b) 9%, var(--taskbar-c) 18%, var(--taskbar-c) 92%, var(--taskbar-d) 100%));
   display: flex; 

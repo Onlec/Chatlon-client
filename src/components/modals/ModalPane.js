@@ -91,7 +91,19 @@ function ModalPane({ title, onClose, children, icon = '🖥️', width, appearan
             title="Sluiten"
             aria-label="Sluiten"
           >
-            &times;
+            {isLigerAppearance ? (
+              <svg
+                className="liger-stoplight-symbol liger-stoplight-symbol--close"
+                viewBox="0 0 8 8"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <line className="liger-stoplight-symbol__mark liger-stoplight-symbol__line" x1="1.6" y1="1.6" x2="6.4" y2="6.4" />
+                <line className="liger-stoplight-symbol__mark liger-stoplight-symbol__line" x1="6.4" y1="1.6" x2="1.6" y2="6.4" />
+              </svg>
+            ) : (
+              <>&times;</>
+            )}
           </button>
         </div>
 

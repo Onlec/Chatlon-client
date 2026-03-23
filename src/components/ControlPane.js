@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useScanlinesPreference } from '../contexts/ScanlinesContext';
+import { useBezel } from '../contexts/BezelContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { useDialog } from '../contexts/DialogContext';
 import { user } from '../gun';
@@ -24,6 +25,7 @@ function matchesQuery(values, query) {
 
 function ControlPane() {
   const { scanlinesEnabled, toggleScanlines } = useScanlinesPreference();
+  const { bezel, updateBezel } = useBezel();
   const { settings, updateSetting, resetSettings, appearanceVariant } = useSettings();
   const { confirm, alert } = useDialog();
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -139,6 +141,30 @@ function ControlPane() {
           value: scanlinesEnabled,
           onChange: toggleScanlines,
           description: 'Retro CRT monitor effect met scanlines'
+        },
+        {
+          id: 'bezelEnabled',
+          label: 'Monitor bezel weergeven',
+          type: 'checkbox',
+          value: bezel.bezelEnabled,
+          onChange: () => updateBezel('bezelEnabled', !bezel.bezelEnabled),
+          description: 'Simuleert een 4:3 CRT-monitor rondom het bureaublad'
+        },
+        {
+          id: 'crtCurve',
+          label: 'Schermcurvatuur',
+          type: 'checkbox',
+          value: bezel.crtCurve,
+          onChange: () => updateBezel('crtCurve', !bezel.crtCurve),
+          description: 'Lichte bolling van het CRT-scherm'
+        },
+        {
+          id: 'crtScanlines',
+          label: 'Bezel scanlines',
+          type: 'checkbox',
+          value: bezel.crtScanlines,
+          onChange: () => updateBezel('crtScanlines', !bezel.crtScanlines),
+          description: 'Extra subtiele scanlines binnen de bezel'
         },
         {
           id: 'fontSize',

@@ -49,6 +49,8 @@ describe('ModalPane', () => {
     expect(container.querySelector('.modal-pane-overlay--liger')).toBeInTheDocument();
     expect(container.querySelector('.modal-pane-window--liger')).toBeInTheDocument();
     expect(container.querySelector('.modal-pane-titlebar--liger')).toBeInTheDocument();
+    expect(container.querySelectorAll('.liger-stoplight-symbol')).toHaveLength(1);
+    expect(container.querySelectorAll('.liger-stoplight-symbol__mark')).toHaveLength(2);
   });
 
   test('flashes the titlebar when the overlay is clicked', () => {

@@ -31,6 +31,24 @@ function buildProps(overrides = {}) {
   };
 }
 
+function appendWorkspaceRect(rect) {
+  const workspace = document.createElement('div');
+  workspace.className = 'pane-layer';
+  workspace.getBoundingClientRect = () => ({
+    x: rect.left,
+    y: rect.top,
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height,
+    right: rect.left + rect.width,
+    bottom: rect.top + rect.height,
+    toJSON: () => ({}),
+  });
+  document.body.appendChild(workspace);
+  return workspace;
+}
+
 describe('Pane', () => {
   test('renders pane-body between header and content', () => {
     const { container } = render(
@@ -52,6 +70,7 @@ describe('Pane', () => {
   });
 
   test('keeps maximized positioning while rendering the pane body wrapper', () => {
+    const workspace = appendWorkspaceRect({ left: 24, top: 16, width: 640, height: 360 });
     const { container } = render(
       <Pane {...buildProps({ isMaximized: true })}>
         <div>Child</div>
@@ -63,9 +82,12 @@ describe('Pane', () => {
 
     expect(frame).toHaveClass('pane-frame--maximized');
     expect(frame.style.position).toBe('fixed');
-    expect(frame.style.width).toBe('100vw');
-    expect(frame.style.height).toBe('');
+    expect(frame.style.left).toBe('24px');
+    expect(frame.style.top).toBe('16px');
+    expect(frame.style.width).toBe('640px');
+    expect(frame.style.height).toBe('360px');
     expect(body).not.toBeNull();
+    workspace.remove();
   });
 
   test('renders the liger chrome variant with stoplight controls', () => {
@@ -78,6 +100,8 @@ describe('Pane', () => {
     expect(container.querySelector('.pane-frame--liger')).toBeTruthy();
     expect(container.querySelector('.pane-controls--liger')).toBeTruthy();
     expect(container.querySelector('.pane-title-section--liger')).toBeTruthy();
+    expect(container.querySelectorAll('.liger-stoplight-symbol')).toHaveLength(3);
+    expect(container.querySelectorAll('.liger-stoplight-symbol__mark')).toHaveLength(5);
   });
 
   test('adds inactive state classes for liger panes', () => {

@@ -1,0 +1,286 @@
+/* ================================================
+   10-bezel.css — Monitor Bezel
+
+   Desktop rendert binnenin .monitor-screen.
+   De monitorbehuizing is één shell met een
+   verzonken schermopening en decoratieve
+   overlay-elementen voor brand/led/knoppen.
+   ================================================ */
+
+.monitor-surround {
+  position: fixed;
+  inset: 0;
+  --monitor-frame-width: min(100vw, calc(100vh * 4 / 3));
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.monitor-shell {
+  position: relative;
+  width: var(--monitor-frame-width);
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: var(--monitor-top-thickness) var(--monitor-side-thickness) var(--monitor-bottom-thickness);
+  border-radius: var(--monitor-shell-radius);
+}
+
+.monitor-brand {
+  position: absolute;
+  top: var(--monitor-brand-top);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.monitor-bottom-decor {
+  position: absolute;
+  left: var(--monitor-bottom-inset);
+  right: var(--monitor-bottom-inset);
+  bottom: var(--monitor-bottom-pad);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.monitor-screen-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #050505;
+  --monitor-screen-inset: 7px;
+  --monitor-inset-border-width: 5px;
+  --monitor-glass-mask-width: 0px;
+}
+
+.monitor-screen-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+  border-style: solid;
+  border-width: var(--monitor-inset-border-width);
+  border-top-color: var(--monitor-inset-border-top);
+  border-left-color: var(--monitor-inset-border-left);
+  border-bottom-color: var(--monitor-inset-border-bottom);
+  border-right-color: var(--monitor-inset-border-right);
+  box-shadow:
+    inset 0 1px 0 var(--monitor-inset-border-top-glow),
+    inset 0 -1px 0 var(--monitor-inset-border-bottom-glow);
+}
+
+.monitor-screen-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: inherit;
+  background:
+    linear-gradient(to bottom, var(--monitor-cavity-top), transparent 14px) top / 100% 16px no-repeat,
+    linear-gradient(to top, var(--monitor-cavity-bottom), transparent 16px) bottom / 100% 20px no-repeat,
+    linear-gradient(to right, var(--monitor-cavity-left), transparent 12px) left / 14px 100% no-repeat,
+    linear-gradient(to left, var(--monitor-cavity-right), transparent 12px) right / 14px 100% no-repeat;
+  box-shadow:
+    inset 0 1px 0 var(--monitor-cavity-lip-highlight),
+    inset 0 -8px 14px -10px var(--monitor-cavity-shadow-bottom),
+    inset 6px 0 10px -8px var(--monitor-cavity-shadow-left),
+    inset -6px 0 10px -8px var(--monitor-cavity-shadow-right);
+}
+
+.bezel-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.04) 0px,
+    rgba(0, 0, 0, 0.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.monitor-screen {
+  position: absolute;
+  inset: var(--monitor-screen-inset);
+  z-index: 1;
+  overflow: hidden;
+  background: var(--monitor-glass-mask-color, #000000);
+}
+
+.monitor-screen-content {
+  position: absolute;
+  inset: var(--monitor-glass-mask-width);
+  overflow: hidden;
+}
+
+.crt-curve .monitor-screen {
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 30px rgba(0, 0, 0, 0.5),
+    inset 0 0 6px rgba(0, 0, 0, 0.4);
+}
+
+.monitor-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.monitor-btn {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.monitor-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ================================================
+   dX stijl: beige CRT (Dell/HP ~2001)
+   ================================================ */
+
+.monitor-dx {
+  background: radial-gradient(ellipse at 50% 0%, #2a2a2a 0%, #111 100%);
+}
+
+.monitor-dx .monitor-shell {
+  --monitor-shell-radius: 8px;
+  --monitor-top-thickness: 30px;
+  --monitor-side-thickness: 30px;
+  --monitor-bottom-thickness: 30px;
+  --monitor-bottom-inset: 22px;
+  --monitor-bottom-pad: 8px;
+  --monitor-brand-top: 8px;
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.28), transparent 14px) top / 100% 16px no-repeat,
+    linear-gradient(to top, rgba(0, 0, 0, 0.16), transparent 18px) bottom / 100% 22px no-repeat,
+    linear-gradient(to right, rgba(0, 0, 0, 0.12), transparent 12px) left / 16px 100% no-repeat,
+    linear-gradient(to left, rgba(255, 255, 255, 0.1), transparent 12px) right / 16px 100% no-repeat,
+    linear-gradient(to bottom, #d9d2c5 0%, #d2cabd 10%, #c8c0b3 22%, #bfb6a8 72%, #aaa091 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(116, 107, 93, 0.28),
+    0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.monitor-dx .monitor-brand {
+  left: 22px;
+  transform: none;
+  font-family: 'Tahoma', sans-serif;
+  font-size: 10px;
+  color: #7a7060;
+  letter-spacing: 1px;
+}
+
+.monitor-dx .monitor-screen-wrap {
+  --monitor-screen-inset: 7px;
+  --monitor-inset-border-top: rgba(36, 30, 24, 0.85);
+  --monitor-inset-border-left: rgba(76, 66, 56, 0.72);
+  --monitor-inset-border-bottom: rgba(216, 204, 188, 0.42);
+  --monitor-inset-border-right: rgba(170, 158, 144, 0.48);
+  --monitor-glass-mask-width: 10px;
+  --monitor-glass-mask-color: #040404;
+  --monitor-inset-border-top-glow: rgba(255, 247, 231, 0.06);
+  --monitor-inset-border-bottom-glow: rgba(255, 244, 228, 0.14);
+  --monitor-cavity-top: rgba(0, 0, 0, 0.14);
+  --monitor-cavity-bottom: rgba(255, 248, 234, 0.05);
+  --monitor-cavity-left: rgba(0, 0, 0, 0.08);
+  --monitor-cavity-right: rgba(255, 255, 255, 0.04);
+  --monitor-cavity-lip-highlight: rgba(255, 248, 236, 0.05);
+  --monitor-cavity-shadow-bottom: rgba(0, 0, 0, 0.16);
+  --monitor-cavity-shadow-left: rgba(0, 0, 0, 0.1);
+  --monitor-cavity-shadow-right: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 6px #1a1a1a, inset 0 0 0 7px #333;
+}
+
+.monitor-dx .monitor-led {
+  background: #00cc44;
+  box-shadow: 0 0 6px #00cc44;
+}
+
+.monitor-dx .monitor-btn {
+  background: linear-gradient(to bottom, #c8c0b0, #a8a090);
+  border: 1px solid #888;
+}
+
+/* ================================================
+   Liger OS stijl: wit Apple Studio Display
+   ================================================ */
+
+.monitor-liger {
+  background: radial-gradient(ellipse at 50% 30%, #d8d8d8 0%, #c0c0c0 100%);
+}
+
+.monitor-liger .monitor-shell {
+  --monitor-shell-radius: 10px;
+  --monitor-top-thickness: 20px;
+  --monitor-side-thickness: 12px;
+  --monitor-bottom-thickness: 32px;
+  --monitor-bottom-inset: 20px;
+  --monitor-bottom-pad: 8px;
+  --monitor-brand-top: 8px;
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent 16px) top / 100% 18px no-repeat,
+    linear-gradient(to top, rgba(0, 0, 0, 0.08), transparent 18px) bottom / 100% 20px no-repeat,
+    linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent 10px) left / 12px 100% no-repeat,
+    linear-gradient(to left, rgba(255, 255, 255, 0.16), transparent 10px) right / 12px 100% no-repeat,
+    linear-gradient(to bottom, #fafafa 0%, #f2f2f2 12%, #e6e6e6 34%, #d9d9d9 74%, #c9c9c9 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    inset 0 -1px 0 rgba(150, 150, 150, 0.18),
+    0 18px 42px rgba(0, 0, 0, 0.18);
+}
+
+.monitor-liger .monitor-brand {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: 10px;
+  color: #aaa;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.monitor-liger .monitor-bottom-decor {
+  justify-content: center;
+}
+
+.monitor-liger .monitor-screen-wrap {
+  --monitor-screen-inset: 6px;
+  --monitor-inset-border-top: rgba(42, 42, 42, 0.72);
+  --monitor-inset-border-left: rgba(92, 92, 92, 0.54);
+  --monitor-inset-border-bottom: rgba(255, 255, 255, 0.54);
+  --monitor-inset-border-right: rgba(214, 214, 214, 0.48);
+  --monitor-glass-mask-width: 5px;
+  --monitor-glass-mask-color: #070707;
+  --monitor-inset-border-top-glow: rgba(255, 255, 255, 0.08);
+  --monitor-inset-border-bottom-glow: rgba(255, 255, 255, 0.16);
+  --monitor-cavity-top: rgba(0, 0, 0, 0.1);
+  --monitor-cavity-bottom: rgba(255, 255, 255, 0.07);
+  --monitor-cavity-left: rgba(0, 0, 0, 0.05);
+  --monitor-cavity-right: rgba(255, 255, 255, 0.06);
+  --monitor-cavity-lip-highlight: rgba(255, 255, 255, 0.08);
+  --monitor-cavity-shadow-bottom: rgba(0, 0, 0, 0.12);
+  --monitor-cavity-shadow-left: rgba(0, 0, 0, 0.08);
+  --monitor-cavity-shadow-right: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 5px #333, inset 0 0 0 6px #555;
+}
+
+.monitor-liger .monitor-led {
+  background: radial-gradient(circle at 35% 35%, #88ff88, #00aa44);
+  box-shadow: 0 0 4px rgba(0, 200, 80, 0.6);
+}
