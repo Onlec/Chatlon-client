@@ -86,6 +86,8 @@ function PaneLayer({
                 />
               ) : paneName === 'media' ? (
                 <Component onNowPlayingChange={setNowPlaying} />
+              ) : paneName === 'browser' ? (
+                <Component currentUser={currentUser} />
               ) : (
                 <Component />
               )}

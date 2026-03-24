@@ -631,6 +631,11 @@
   cursor: default;
 }
 
+.browser-content--page,
+.browser-content--error {
+  overflow: hidden;
+}
+
 .browser-status-bar {
   background: var(--toolbar-bg);
   border-top: 1px solid var(--toolbar-border);
@@ -660,13 +665,31 @@
   height: 100%;
   min-height: 100%;
   background: #f6f7f9;
+  overflow: hidden;
+}
+
+.browser-remote-surface {
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(180deg, #eef2f8, #dfe6f1);
+  cursor: default;
+  outline: none;
+}
+
+.browser-remote-surface:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(41, 93, 170, 0.28);
 }
 
 .browser-page-frame {
+  display: block;
   width: 100%;
   height: 100%;
   border: 0;
   background: white;
+  object-fit: fill;
+  user-select: none;
+  pointer-events: none;
 }
 
 .browser-loading-overlay {

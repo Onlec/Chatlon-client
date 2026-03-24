@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 export const BROWSER_HOME_URL = 'yoctol://home';
-export const BROWSER_LOAD_TIMEOUT_MS = 4500;
 export const BROWSER_SEARCH_BASE_URL = 'https://duckduckgo.com/?q=';
+export const BROWSER_STATE_POLL_MS = 1200;
 
 const HOME_ALIASES = new Set([
   '',
@@ -17,6 +17,7 @@ const HOME_ALIASES = new Set([
 const DOMAIN_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?::\d+)?(?:[/?#].*)?$/i;
 const LOCALHOST_PATTERN = /^(?:localhost|127(?:\.\d{1,3}){3})(?::\d+)?(?:[/?#].*)?$/i;
 const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:[/?#].*)?$/;
+const DEFAULT_VIEWPORT = { width: 1280, height: 720 };
 
 const BOOKMARKS = [
   { name: 'Yoctol Home', mode: 'home', url: BROWSER_HOME_URL },
@@ -27,20 +28,8 @@ const BOOKMARKS = [
   { name: 'Archive.org', url: 'https://archive.org/' }
 ];
 
-function createHomeEntry() {
-  return { mode: 'home', url: BROWSER_HOME_URL };
-}
-
-function createPageEntry(url) {
-  return { mode: 'page', url };
-}
-
 function buildSearchUrl(query) {
   return `${BROWSER_SEARCH_BASE_URL}${encodeURIComponent(query)}`;
-}
-
-function getAddressValue(entry) {
-  return entry?.url || BROWSER_HOME_URL;
 }
 
 function looksLikeUrlWithoutScheme(value) {
@@ -54,13 +43,12 @@ function getDefaultProtocol(value) {
   return 'https://';
 }
 
-function isInspectableIframeUrl(url) {
-  if (typeof window === 'undefined') return false;
-  try {
-    return new URL(url, window.location.href).origin === window.location.origin;
-  } catch {
-    return false;
-  }
+function stripGunSuffix(value) {
+  return value.replace(/\/gun\/?$/i, '').replace(/\/+$/, '');
+}
+
+function createClientError(title, message) {
+  return { title, message };
 }
 
 function getOriginLabel(url) {
@@ -73,7 +61,7 @@ function getOriginLabel(url) {
 }
 
 function getConnectionLabel(url) {
-  if (!url || url === BROWSER_HOME_URL) return 'Offline startpagina';
+  if (!url || url === BROWSER_HOME_URL) return 'Remote browser gereed';
   try {
     return new URL(url).protocol === 'https:' ? 'Veilige verbinding' : 'Onbeveiligde verbinding';
   } catch {
@@ -81,166 +69,342 @@ function getConnectionLabel(url) {
   }
 }
 
-function createLoadError(type, url) {
-  if (type === 'blank') {
-    return {
-      type,
-      url,
-      title: 'Pagina lijkt geblokkeerd',
-      message: 'Deze site laadde een lege pagina in Internet Adventurer. De site blokkeert mogelijk weergave in een iframe.'
-    };
-  }
-
-  if (type === 'failed') {
-    return {
-      type,
-      url,
-      title: 'Pagina kon niet laden',
-      message: 'Internet Adventurer kon geen bruikbare respons krijgen van deze site.'
-    };
-  }
-
+function getDefaultBrowserState() {
   return {
-    type: 'timeout',
-    url,
-    title: 'Pagina reageert niet op tijd',
-    message: 'De site laadde niet op tijd, of blokkeert ingebedde weergave. Probeer opnieuw of open de pagina extern.'
+    sessionId: null,
+    url: BROWSER_HOME_URL,
+    title: 'Yoctol Startpagina',
+    canGoBack: false,
+    canGoForward: false,
+    isLoading: false,
+    lastError: null,
+    viewportWidth: DEFAULT_VIEWPORT.width,
+    viewportHeight: DEFAULT_VIEWPORT.height
   };
+}
+
+function isPrintableKey(event) {
+  return (
+    event.key.length === 1
+    && !event.ctrlKey
+    && !event.metaKey
+    && !event.altKey
+  );
+}
+
+function normalizeRemoteKey(key) {
+  if (key === ' ') return 'Space';
+  if (key === 'Esc') return 'Escape';
+  return key;
+}
+
+export function resolveBrowserApiBaseUrl() {
+  const configuredUrl = process.env.REACT_APP_BROWSER_SERVER_URL || process.env.REACT_APP_GUN_URL;
+  if (configuredUrl) {
+    return stripGunSuffix(configuredUrl);
+  }
+
+  if (typeof window !== 'undefined') {
+    return stripGunSuffix(window.location.origin);
+  }
+
+  return '';
 }
 
 export function normalizeBrowserInput(rawValue) {
   const trimmed = (rawValue || '').trim();
 
   if (HOME_ALIASES.has(trimmed.toLowerCase())) {
-    return createHomeEntry();
+    return {
+      mode: 'home',
+      url: BROWSER_HOME_URL
+    };
   }
 
   if (/^[a-z][a-z\d+.-]*:\/\//i.test(trimmed)) {
     try {
       const parsed = new URL(trimmed);
       if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        return createPageEntry(parsed.toString());
+        return {
+          mode: 'page',
+          url: parsed.toString()
+        };
       }
     } catch {
-      return createPageEntry(buildSearchUrl(trimmed));
+      return {
+        mode: 'page',
+        url: buildSearchUrl(trimmed)
+      };
     }
 
-    return createPageEntry(buildSearchUrl(trimmed));
+    return {
+      mode: 'page',
+      url: buildSearchUrl(trimmed)
+    };
   }
 
   if (looksLikeUrlWithoutScheme(trimmed)) {
-    return createPageEntry(new URL(`${getDefaultProtocol(trimmed)}${trimmed}`).toString());
+    return {
+      mode: 'page',
+      url: new URL(`${getDefaultProtocol(trimmed)}${trimmed}`).toString()
+    };
   }
 
-  return createPageEntry(buildSearchUrl(trimmed));
+  return {
+    mode: 'page',
+    url: buildSearchUrl(trimmed)
+  };
 }
 
-function BrowserPane() {
-  const initialEntry = createHomeEntry();
-  const iframeRef = useRef(null);
-  const loadTimeoutRef = useRef(null);
-  const [history, setHistory] = useState([initialEntry]);
-  const [historyIndex, setHistoryIndex] = useState(0);
-  const [currentUrl, setCurrentUrl] = useState(initialEntry.url);
-  const [inputUrl, setInputUrl] = useState(initialEntry.url);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadError, setLoadError] = useState(null);
-  const [frameNonce, setFrameNonce] = useState(0);
+function BrowserPane({ currentUser = 'guest' }) {
+  const apiBaseUrl = resolveBrowserApiBaseUrl();
+  const contentRef = useRef(null);
+  const addressEditingRef = useRef(false);
+  const [browserState, setBrowserState] = useState(getDefaultBrowserState);
+  const [sessionId, setSessionId] = useState(null);
+  const [inputUrl, setInputUrl] = useState(BROWSER_HOME_URL);
+  const [clientError, setClientError] = useState(null);
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
+  const [frameVersion, setFrameVersion] = useState(0);
+  const [contentSize, setContentSize] = useState(DEFAULT_VIEWPORT);
 
-  const currentEntry = history[historyIndex] || initialEntry;
-  const contentState = loadError ? 'error' : currentEntry.mode;
-  const canGoBack = historyIndex > 0;
-  const canGoForward = historyIndex < history.length - 1;
+  const currentUrl = browserState.url || BROWSER_HOME_URL;
+  const contentState = clientError || browserState.lastError
+    ? 'error'
+    : (currentUrl === BROWSER_HOME_URL ? 'home' : 'page');
+  const visibleError = clientError || (browserState.lastError
+    ? createClientError('Pagina kan niet worden weergegeven', browserState.lastError)
+    : null);
 
-  const clearLoadTimeout = () => {
-    if (loadTimeoutRef.current) {
-      window.clearTimeout(loadTimeoutRef.current);
-      loadTimeoutRef.current = null;
+  const updateFromRemoteState = (nextState, options = {}) => {
+    const { bumpFrame = false } = options;
+    setClientError(null);
+    setBrowserState(nextState);
+    setSessionId(nextState.sessionId || null);
+    if (!addressEditingRef.current) {
+      setInputUrl(nextState.url || BROWSER_HOME_URL);
+    }
+    if (bumpFrame && nextState.url !== BROWSER_HOME_URL) {
+      setFrameVersion((value) => value + 1);
     }
   };
 
-  const syncEntryState = (entry, options = {}) => {
-    const { reloadFrame = false } = options;
-    clearLoadTimeout();
-    setCurrentUrl(entry.url);
-    setInputUrl(getAddressValue(entry));
-    setLoadError(null);
-    if (entry.mode === 'page') {
-      setIsLoading(true);
-      if (reloadFrame) {
-        setFrameNonce((value) => value + 1);
+  const requestJson = async (path, options = {}) => {
+    const response = await fetch(`${apiBaseUrl}${path}`, {
+      method: options.method || 'GET',
+      headers: options.body
+        ? { 'Content-Type': 'application/json' }
+        : undefined,
+      body: options.body ? JSON.stringify(options.body) : undefined
+    });
+
+    const text = await response.text();
+    let payload = {};
+
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = { error: text };
       }
-    } else {
-      setIsLoading(false);
+    }
+
+    if (!response.ok) {
+      throw new Error(payload.error || `Browser request failed (${response.status}).`);
+    }
+
+    return payload;
+  };
+
+  const handleTransportError = (error) => {
+    setClientError(createClientError(
+      'Browserserver niet bereikbaar',
+      error?.message || 'De remote browser kon niet worden bereikt.'
+    ));
+  };
+
+  const performAction = async (path, body = {}, options = {}) => {
+    const { bumpFrame = true } = options;
+
+    if (!sessionId) return;
+
+    try {
+      const nextState = await requestJson(path, {
+        method: 'POST',
+        body: {
+          sessionId,
+          ...body
+        }
+      });
+      updateFromRemoteState(nextState, { bumpFrame });
+    } catch (error) {
+      handleTransportError(error);
     }
   };
 
-  const pushEntry = (entry) => {
-    const nextHistory = [...history.slice(0, historyIndex + 1), entry];
-    setHistory(nextHistory);
-    setHistoryIndex(nextHistory.length - 1);
-    syncEntryState(entry, { reloadFrame: entry.mode === 'page' });
+  const sendInput = async (payload, options = {}) => {
+    const { captureState = false, bumpFrame = true } = options;
+
+    if (!sessionId) return;
+
+    try {
+      const nextState = await requestJson('/browser/input', {
+        method: 'POST',
+        body: {
+          sessionId,
+          ...payload
+        }
+      });
+
+      if (captureState) {
+        updateFromRemoteState(nextState, { bumpFrame });
+      } else {
+        setClientError(null);
+        if (bumpFrame && currentUrl !== BROWSER_HOME_URL) {
+          setFrameVersion((value) => value + 1);
+        }
+      }
+    } catch (error) {
+      handleTransportError(error);
+    }
   };
 
-  const openHistoryEntry = (nextIndex) => {
-    const entry = history[nextIndex];
-    if (!entry) return;
-    setHistoryIndex(nextIndex);
-    syncEntryState(entry, { reloadFrame: entry.mode === 'page' });
+  useEffect(() => {
+    let cancelled = false;
+
+    const bootSession = async () => {
+      try {
+        const nextState = await requestJson('/browser/session', {
+          method: 'POST',
+          body: {
+            userKey: currentUser || 'guest',
+            sessionScope: 'browser',
+            viewportWidth: contentSize.width,
+            viewportHeight: contentSize.height
+          }
+        });
+
+        if (!cancelled) {
+          updateFromRemoteState(nextState, { bumpFrame: true });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          handleTransportError(error);
+        }
+      }
+    };
+
+    bootSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl, currentUser]);
+
+  useEffect(() => {
+    const element = contentRef.current;
+    if (!element) return undefined;
+
+    const updateSize = () => {
+      const rect = element.getBoundingClientRect();
+      const nextSize = {
+        width: Math.max(320, Math.round(rect.width) || DEFAULT_VIEWPORT.width),
+        height: Math.max(240, Math.round(rect.height) || DEFAULT_VIEWPORT.height)
+      };
+
+      setContentSize((previous) => (
+        previous.width === nextSize.width && previous.height === nextSize.height
+          ? previous
+          : nextSize
+      ));
+    };
+
+    updateSize();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(() => {
+        updateSize();
+      });
+      observer.observe(element);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId) return undefined;
+
+    let cancelled = false;
+
+    const syncState = async () => {
+      try {
+        const nextState = await requestJson(`/browser/state/${sessionId}`);
+        if (!cancelled) {
+          updateFromRemoteState(nextState, { bumpFrame: true });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          handleTransportError(error);
+        }
+      }
+    };
+
+    syncState();
+    const timer = window.setInterval(syncState, BROWSER_STATE_POLL_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [apiBaseUrl, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    sendInput({
+      type: 'resize',
+      viewportWidth: contentSize.width,
+      viewportHeight: contentSize.height
+    }, {
+      captureState: true,
+      bumpFrame: false
+    });
+  }, [contentSize.height, contentSize.width, sessionId]);
+
+  const navigateEntry = (entry) => {
+    if (entry.mode === 'home') {
+      performAction('/browser/home');
+      return;
+    }
+
+    performAction('/browser/navigate', { url: entry.url });
   };
 
   const navigateFromInput = (rawValue) => {
-    pushEntry(normalizeBrowserInput(rawValue));
-  };
-
-  const navigateHome = () => {
-    pushEntry(createHomeEntry());
+    const entry = normalizeBrowserInput(rawValue);
+    addressEditingRef.current = false;
+    setInputUrl(entry.url);
+    navigateEntry(entry);
   };
 
   const refreshCurrentPage = () => {
-    if (currentEntry.mode === 'home') {
-      syncEntryState(currentEntry);
-      return;
-    }
-    syncEntryState(currentEntry, { reloadFrame: true });
+    performAction('/browser/reload');
   };
 
   const retryCurrentPage = () => {
-    if (currentEntry.mode !== 'page') return;
-    syncEntryState(currentEntry, { reloadFrame: true });
+    performAction('/browser/reload');
   };
 
   const stopLoading = () => {
-    clearLoadTimeout();
-    setIsLoading(false);
+    performAction('/browser/stop', {}, { bumpFrame: false });
   };
 
   const openExternally = () => {
     if (!currentUrl || currentUrl === BROWSER_HOME_URL || typeof window === 'undefined') return;
     window.open(currentUrl, '_blank', 'noopener,noreferrer');
   };
-
-  useEffect(() => () => {
-    clearLoadTimeout();
-  }, []);
-
-  useEffect(() => {
-    if (currentEntry.mode !== 'page' || !isLoading || loadError) {
-      clearLoadTimeout();
-      return undefined;
-    }
-
-    loadTimeoutRef.current = window.setTimeout(() => {
-      setLoadError(createLoadError('timeout', currentUrl));
-      setIsLoading(false);
-      loadTimeoutRef.current = null;
-    }, BROWSER_LOAD_TIMEOUT_MS);
-
-    return () => {
-      clearLoadTimeout();
-    };
-  }, [currentEntry.mode, currentUrl, isLoading, loadError, frameNonce]);
 
   const handleAddressSubmit = (event) => {
     event.preventDefault();
@@ -253,26 +417,81 @@ function BrowserPane() {
     navigateFromInput(homeSearchQuery);
   };
 
-  const handleIframeLoad = () => {
-    clearLoadTimeout();
+  const mapPointerPosition = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const viewportWidth = browserState.viewportWidth || DEFAULT_VIEWPORT.width;
+    const viewportHeight = browserState.viewportHeight || DEFAULT_VIEWPORT.height;
+    const x = Math.round(((event.clientX - rect.left) / Math.max(rect.width, 1)) * viewportWidth);
+    const y = Math.round(((event.clientY - rect.top) / Math.max(rect.height, 1)) * viewportHeight);
 
-    if (isInspectableIframeUrl(currentUrl)) {
-      const href = iframeRef.current?.contentWindow?.location?.href;
-      if (!href || href === 'about:blank') {
-        setLoadError(createLoadError('blank', currentUrl));
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    setLoadError(null);
-    setIsLoading(false);
+    return {
+      x: Math.max(0, Math.min(viewportWidth - 1, x)),
+      y: Math.max(0, Math.min(viewportHeight - 1, y))
+    };
   };
 
-  const handleIframeError = () => {
-    clearLoadTimeout();
-    setLoadError(createLoadError('failed', currentUrl));
-    setIsLoading(false);
+  const mapMouseButton = (button) => {
+    if (button === 1) return 'middle';
+    if (button === 2) return 'right';
+    return 'left';
+  };
+
+  const handlePointerAction = (type, event) => {
+    if (!sessionId) return;
+
+    if (type === 'wheel') {
+      event.preventDefault();
+      sendInput({
+        type,
+        ...mapPointerPosition(event),
+        deltaX: event.deltaX,
+        deltaY: event.deltaY
+      });
+      return;
+    }
+
+    sendInput({
+      type,
+      ...mapPointerPosition(event),
+      button: mapMouseButton(event.button)
+    });
+  };
+
+  const handleKeyDown = (event) => {
+    if (!sessionId) return;
+
+    if (isPrintableKey(event)) {
+      event.preventDefault();
+      sendInput({
+        type: 'type',
+        text: event.key
+      });
+      return;
+    }
+
+    const supportedKeys = new Set([
+      'Enter',
+      'Backspace',
+      'Tab',
+      'Escape',
+      'Delete',
+      'ArrowUp',
+      'ArrowDown',
+      'ArrowLeft',
+      'ArrowRight',
+      'Home',
+      'End',
+      'PageUp',
+      'PageDown'
+    ]);
+
+    if (!supportedKeys.has(event.key)) return;
+
+    event.preventDefault();
+    sendInput({
+      type: 'keydown',
+      key: normalizeRemoteKey(event.key)
+    });
   };
 
   const renderHomePage = () => (
@@ -331,13 +550,9 @@ function BrowserPane() {
             key={bookmark.name}
             type="button"
             className="yoctol-service-box"
-            onClick={() => {
-              if (bookmark.mode === 'home') {
-                navigateHome();
-                return;
-              }
-              navigateFromInput(bookmark.url);
-            }}
+            onClick={() => navigateEntry(bookmark.mode === 'home'
+              ? { mode: 'home', url: BROWSER_HOME_URL }
+              : { mode: 'page', url: bookmark.url })}
           >
             <strong>{bookmark.name}</strong>
             <span>{bookmark.mode === 'home' ? 'Lokale startpagina' : bookmark.url}</span>
@@ -346,7 +561,7 @@ function BrowserPane() {
       </div>
 
       <div className="yoctol-footer">
-        Yoctol Startpagina - rustig, bruikbaar en zonder spam.
+        Yoctol Startpagina - lokaal voor jou, met een echte remote browser erachter.
       </div>
     </div>
   );
@@ -355,17 +570,24 @@ function BrowserPane() {
     <div className="browser-error-page">
       <div className="browser-error-card">
         <div className="browser-error-badge">!</div>
-        <h2>{loadError?.title || 'Pagina kan niet worden weergegeven'}</h2>
-        <p>{loadError?.message || 'Internet Adventurer kon deze pagina niet laden.'}</p>
-        <div className="browser-error-url">{currentUrl}</div>
+        <h2>{visibleError?.title || 'Pagina kan niet worden weergegeven'}</h2>
+        <p>{visibleError?.message || 'Internet Adventurer kon deze pagina niet laden.'}</p>
+        {currentUrl !== BROWSER_HOME_URL && (
+          <div className="browser-error-url">{currentUrl}</div>
+        )}
         <div className="browser-error-actions">
           <button type="button" className="yoctol-btn" onClick={retryCurrentPage}>
             Opnieuw proberen
           </button>
-          <button type="button" className="browser-secondary-btn" onClick={openExternally}>
+          <button
+            type="button"
+            className="browser-secondary-btn"
+            onClick={openExternally}
+            disabled={currentUrl === BROWSER_HOME_URL}
+          >
             Extern openen
           </button>
-          <button type="button" className="browser-secondary-btn" onClick={navigateHome}>
+          <button type="button" className="browser-secondary-btn" onClick={() => performAction('/browser/home')}>
             Startpagina
           </button>
         </div>
@@ -375,21 +597,40 @@ function BrowserPane() {
 
   const renderPage = () => (
     <div className="browser-page-view">
-      <iframe
-        key={`${currentUrl}-${frameNonce}`}
-        ref={iframeRef}
-        src={currentUrl}
-        className="browser-page-frame"
-        title={`Internet Adventurer - ${currentUrl}`}
-        sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads"
-        referrerPolicy="strict-origin-when-cross-origin"
-        onLoad={handleIframeLoad}
-        onError={handleIframeError}
-      />
-      {isLoading && (
+      <div
+        className="browser-remote-surface"
+        role="application"
+        tabIndex={0}
+        aria-label="Remote browser oppervlak"
+        onFocus={() => sendInput({ type: 'focus' }, { bumpFrame: false })}
+        onClick={(event) => handlePointerAction('click', event)}
+        onDoubleClick={(event) => handlePointerAction('dblclick', event)}
+        onWheel={(event) => handlePointerAction('wheel', event)}
+        onMouseMove={(event) => {
+          if (event.buttons !== 0) {
+            sendInput({
+              type: 'move',
+              ...mapPointerPosition(event)
+            }, {
+              bumpFrame: false
+            });
+          }
+        }}
+        onKeyDown={handleKeyDown}
+      >
+        {sessionId && (
+          <img
+            src={`${apiBaseUrl}/browser/frame/${sessionId}?v=${frameVersion}`}
+            className="browser-page-frame"
+            alt={`Internet Adventurer - ${currentUrl}`}
+            draggable="false"
+          />
+        )}
+      </div>
+      {browserState.isLoading && (
         <div className="browser-loading-overlay">
           <div className="browser-loading-card">
-            <div className="browser-loading-title">Pagina laden...</div>
+            <div className="browser-loading-title">Remote pagina laden...</div>
             <div className="browser-loading-url">{currentUrl}</div>
           </div>
         </div>
@@ -397,9 +638,9 @@ function BrowserPane() {
     </div>
   );
 
-  const statusText = loadError
+  const statusText = visibleError
     ? 'Pagina kan niet worden weergegeven'
-    : (isLoading ? 'Laden...' : 'Gereed');
+    : (browserState.isLoading ? 'Laden...' : 'Gereed');
 
   return (
     <div className="browser-container">
@@ -416,20 +657,20 @@ function BrowserPane() {
         <button
           type="button"
           className="browser-nav-btn"
-          onClick={() => openHistoryEntry(historyIndex - 1)}
+          onClick={() => performAction('/browser/back')}
           title="Terug"
           aria-label="Terug"
-          disabled={!canGoBack}
+          disabled={!browserState.canGoBack}
         >
           &lt;
         </button>
         <button
           type="button"
           className="browser-nav-btn"
-          onClick={() => openHistoryEntry(historyIndex + 1)}
+          onClick={() => performAction('/browser/forward')}
           title="Vooruit"
           aria-label="Vooruit"
-          disabled={!canGoForward}
+          disabled={!browserState.canGoForward}
         >
           &gt;
         </button>
@@ -439,7 +680,7 @@ function BrowserPane() {
           onClick={stopLoading}
           title="Stop"
           aria-label="Stop"
-          disabled={!isLoading}
+          disabled={!browserState.isLoading}
         >
           X
         </button>
@@ -449,15 +690,17 @@ function BrowserPane() {
           onClick={refreshCurrentPage}
           title="Vernieuwen"
           aria-label="Vernieuwen"
+          disabled={!sessionId}
         >
           R
         </button>
         <button
           type="button"
           className="browser-nav-btn"
-          onClick={navigateHome}
+          onClick={() => performAction('/browser/home')}
           title="Startpagina"
           aria-label="Startpagina"
+          disabled={!sessionId}
         >
           H
         </button>
@@ -469,9 +712,16 @@ function BrowserPane() {
             className="browser-address-input"
             value={inputUrl}
             onChange={(event) => setInputUrl(event.target.value)}
+            onFocus={() => {
+              addressEditingRef.current = true;
+            }}
+            onBlur={() => {
+              addressEditingRef.current = false;
+              setInputUrl(currentUrl);
+            }}
             aria-label="Adresbalk"
           />
-          <button type="submit" className="browser-go-btn">
+          <button type="submit" className="browser-go-btn" disabled={!sessionId}>
             Start
           </button>
         </form>
@@ -484,20 +734,17 @@ function BrowserPane() {
             key={bookmark.name}
             type="button"
             className="browser-bookmark-btn"
-            onClick={() => {
-              if (bookmark.mode === 'home') {
-                navigateHome();
-                return;
-              }
-              navigateFromInput(bookmark.url);
-            }}
+            onClick={() => navigateEntry(bookmark.mode === 'home'
+              ? { mode: 'home', url: BROWSER_HOME_URL }
+              : { mode: 'page', url: bookmark.url })}
+            disabled={!sessionId}
           >
             {bookmark.name}
           </button>
         ))}
       </div>
 
-      <div className={`browser-content browser-content--${contentState}`}>
+      <div ref={contentRef} className={`browser-content browser-content--${contentState}`}>
         {contentState === 'home' && renderHomePage()}
         {contentState === 'page' && renderPage()}
         {contentState === 'error' && renderErrorPage()}
