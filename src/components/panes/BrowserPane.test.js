@@ -2,26 +2,89 @@ import React from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import BrowserPane, {
   BROWSER_HOME_URL,
-  BROWSER_IDLE_POLL_MS,
-  BROWSER_INTERACTIVE_POLL_MS,
-  BROWSER_INTERACTIVE_WINDOW_MS,
   BROWSER_RESIZE_DEBOUNCE_MS,
   BROWSER_WHEEL_COALESCE_MS,
   normalizeBrowserInput
 } from './BrowserPane';
+import {
+  CLIENT_BINARY_OPCODE,
+  FRAME_MIME_CODE,
+  SERVER_BINARY_OPCODE
+} from './browser/browserProtocol';
 
-function createJsonResponse(payload, status = 200) {
+function createStatePayload(state) {
+  const currentEntry = state.history[state.historyIndex];
   return {
-    ok: status >= 200 && status < 300,
-    status,
-    headers: {
-      get: () => 'application/json'
-    },
-    text: async () => JSON.stringify(payload)
+    sessionId: state.sessionId,
+    url: currentEntry.url,
+    title: currentEntry.title,
+    canGoBack: state.historyIndex > 0,
+    canGoForward: state.historyIndex < state.history.length - 1,
+    isLoading: state.isLoading,
+    lastError: state.lastError,
+    viewportWidth: state.viewportWidth,
+    viewportHeight: state.viewportHeight,
+    frameVersion: state.frameVersion,
+    frameMimeType: state.frameMimeType,
+    hasFreshFrame: state.hasFreshFrame
   };
 }
 
-function createBrowserApiMock() {
+function decodeClientPacket(packet) {
+  const bytes = packet instanceof ArrayBuffer ? packet : packet.buffer.slice(
+    packet.byteOffset,
+    packet.byteOffset + packet.byteLength
+  );
+  const view = new DataView(bytes);
+  const opcode = view.getUint8(0);
+  const payloadLength = view.getUint16(1, true);
+
+  if (opcode === CLIENT_BINARY_OPCODE.MOVE) {
+    return {
+      opcode,
+      payloadLength,
+      type: 'move',
+      x: view.getUint16(3, true),
+      y: view.getUint16(5, true)
+    };
+  }
+
+  if (opcode === CLIENT_BINARY_OPCODE.WHEEL) {
+    return {
+      opcode,
+      payloadLength,
+      type: 'wheel',
+      deltaX: view.getInt16(3, true),
+      deltaY: view.getInt16(5, true)
+    };
+  }
+
+  return {
+    opcode,
+    payloadLength,
+    type: opcode === CLIENT_BINARY_OPCODE.CLICK ? 'click' : 'dblclick',
+    x: view.getUint16(3, true),
+    y: view.getUint16(5, true),
+    button: view.getUint8(7)
+  };
+}
+
+function encodeFramePacket(frameVersion, label) {
+  const payload = Uint8Array.from(Buffer.from(label));
+  const bytes = new Uint8Array(6 + payload.length);
+  const view = new DataView(bytes.buffer);
+  view.setUint8(0, SERVER_BINARY_OPCODE.FRAME);
+  view.setUint32(1, frameVersion, true);
+  view.setUint8(5, FRAME_MIME_CODE.JPEG);
+  bytes.set(payload, 6);
+  return bytes.buffer;
+}
+
+function createBrowserSocketMock() {
+  const instances = [];
+  const textMessages = [];
+  const binaryPackets = [];
+
   const state = {
     sessionId: 'session-1',
     history: [
@@ -41,199 +104,203 @@ function createBrowserApiMock() {
     hasFreshFrame: true,
     nextNavigateError: null
   };
-  const inputCalls = [];
-  const requestLog = [];
-  const queuedStateMutations = [];
-
-  const getCurrentEntry = () => state.history[state.historyIndex];
-
-  const createStatePayload = () => ({
-    sessionId: state.sessionId,
-    url: getCurrentEntry().url,
-    title: getCurrentEntry().title,
-    canGoBack: state.historyIndex > 0,
-    canGoForward: state.historyIndex < state.history.length - 1,
-    isLoading: state.isLoading,
-    lastError: state.lastError,
-    viewportWidth: state.viewportWidth,
-    viewportHeight: state.viewportHeight,
-    frameVersion: state.frameVersion,
-    frameMimeType: state.frameMimeType,
-    hasFreshFrame: state.hasFreshFrame
-  });
 
   const pushEntry = (entry) => {
     state.history = [...state.history.slice(0, state.historyIndex + 1), entry];
     state.historyIndex = state.history.length - 1;
   };
 
-  const bumpFrame = () => {
+  const emitState = (socket, type = 'browser.state') => {
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type,
+        payload: createStatePayload(state)
+      })
+    });
+  };
+
+  const emitFrame = (socket, label = `frame-${state.frameVersion}`) => {
+    socket.onmessage?.({
+      data: encodeFramePacket(state.frameVersion, label)
+    });
+  };
+
+  const bumpFrame = (socket, label) => {
     state.frameVersion += 1;
     state.hasFreshFrame = true;
+    emitState(socket);
+    emitFrame(socket, label);
   };
 
-  const applyQueuedStateMutation = () => {
-    const nextMutation = queuedStateMutations.shift();
-    if (!nextMutation) return;
-    if (typeof nextMutation === 'function') {
-      nextMutation(state);
-      return;
-    }
-    Object.assign(state, nextMutation);
-  };
+  class MockWebSocket {
+    static CONNECTING = 0;
+    static OPEN = 1;
+    static CLOSING = 2;
+    static CLOSED = 3;
 
-  const fetchMock = jest.fn(async (input, init = {}) => {
-    const url = typeof input === 'string' ? input : input.url;
-    const parsedUrl = new URL(url, 'http://localhost');
-    const pathname = parsedUrl.pathname;
-    const method = (init.method || 'GET').toUpperCase();
-    const body = init.body ? JSON.parse(init.body) : null;
-
-    requestLog.push({ pathname, method, body });
-
-    if (method === 'POST' && pathname === '/browser/session') {
-      if (body?.viewportWidth) state.viewportWidth = body.viewportWidth;
-      if (body?.viewportHeight) state.viewportHeight = body.viewportHeight;
-      return createJsonResponse(createStatePayload());
-    }
-
-    if (method === 'GET' && pathname === `/browser/state/${state.sessionId}`) {
-      applyQueuedStateMutation();
-      return createJsonResponse(createStatePayload());
-    }
-
-    if (method === 'POST' && pathname === '/browser/navigate') {
-      pushEntry({
-        mode: 'page',
-        url: body.url,
-        title: `Title ${body.url}`
-      });
-      state.lastError = state.nextNavigateError;
-      state.nextNavigateError = null;
-      if (!state.lastError) {
-        bumpFrame();
-      }
-      return createJsonResponse(createStatePayload());
-    }
-
-    if (method === 'POST' && pathname === '/browser/home') {
-      pushEntry({
-        mode: 'home',
-        url: BROWSER_HOME_URL,
-        title: 'Yoctol Startpagina'
-      });
-      state.lastError = null;
-      bumpFrame();
-      return createJsonResponse(createStatePayload());
-    }
-
-    if (method === 'POST' && pathname === '/browser/back') {
-      if (state.historyIndex > 0) {
-        state.historyIndex -= 1;
-      }
-      state.lastError = null;
-      bumpFrame();
-      return createJsonResponse(createStatePayload());
-    }
-
-    if (method === 'POST' && pathname === '/browser/forward') {
-      if (state.historyIndex < state.history.length - 1) {
-        state.historyIndex += 1;
-      }
-      state.lastError = null;
-      bumpFrame();
-      return createJsonResponse(createStatePayload());
-    }
-
-    if (method === 'POST' && pathname === '/browser/reload') {
-      state.lastError = null;
-      bumpFrame();
-      return createJsonResponse(createStatePayload());
-    }
-
-    if (method === 'POST' && pathname === '/browser/stop') {
-      state.isLoading = false;
-      return createJsonResponse(createStatePayload());
-    }
-
-    if (method === 'POST' && pathname === '/browser/input') {
-      inputCalls.push(body);
-      if (body.type === 'resize') {
-        state.viewportWidth = body.viewportWidth;
-        state.viewportHeight = body.viewportHeight;
-        bumpFrame();
-      }
-      return createJsonResponse(createStatePayload());
-    }
-
-    return createJsonResponse({ error: 'Unknown route' }, 404);
-  });
-
-  return {
-    fetchMock,
-    inputCalls,
-    requestLog,
-    queueStateMutation(mutation) {
-      queuedStateMutations.push(mutation);
-    },
-    setNextNavigateError(message) {
-      state.nextNavigateError = message;
-    }
-  };
-}
-
-function createEventSourceMock() {
-  const instances = [];
-
-  class MockEventSource {
     constructor(url) {
       this.url = url;
-      this.listeners = new Map();
-      this.closed = false;
+      this.readyState = MockWebSocket.CONNECTING;
+      this.binaryType = 'blob';
       this.onopen = null;
-      this.onerror = null;
       this.onmessage = null;
+      this.onerror = null;
+      this.onclose = null;
       instances.push(this);
+
+      Promise.resolve().then(() => {
+        if (this.readyState !== MockWebSocket.CONNECTING) return;
+        this.readyState = MockWebSocket.OPEN;
+        this.onopen?.({});
+      });
     }
 
-    addEventListener(type, callback) {
-      const callbacks = this.listeners.get(type) || new Set();
-      callbacks.add(callback);
-      this.listeners.set(type, callbacks);
-    }
+    send(data) {
+      if (typeof data === 'string') {
+        const message = JSON.parse(data);
+        textMessages.push(message);
 
-    removeEventListener(type, callback) {
-      const callbacks = this.listeners.get(type);
-      callbacks?.delete(callback);
-    }
+        if (message.type === 'session.ensure') {
+          state.viewportWidth = message.payload.viewportWidth;
+          state.viewportHeight = message.payload.viewportHeight;
+          this.onmessage?.({
+            data: JSON.stringify({
+              type: 'session.ready',
+              payload: {
+                state: createStatePayload(state)
+              }
+            })
+          });
+          emitFrame(this, 'home-1');
+          return;
+        }
 
-    emit(type, payload) {
-      const event = {
-        data: JSON.stringify(payload)
-      };
-      const callbacks = this.listeners.get(type);
-      callbacks?.forEach((callback) => callback(event));
-      if (type === 'message' && typeof this.onmessage === 'function') {
-        this.onmessage(event);
+        if (message.type === 'browser.command') {
+          if (message.payload.action === 'navigate') {
+            pushEntry({
+              mode: 'page',
+              url: message.payload.url,
+              title: `Title ${message.payload.url}`
+            });
+            state.lastError = state.nextNavigateError;
+            state.nextNavigateError = null;
+            if (state.lastError) {
+              emitState(this);
+            } else {
+              bumpFrame(this, `navigate-${state.frameVersion}`);
+            }
+            return;
+          }
+
+          if (message.payload.action === 'home') {
+            pushEntry({
+              mode: 'home',
+              url: BROWSER_HOME_URL,
+              title: 'Yoctol Startpagina'
+            });
+            state.lastError = null;
+            bumpFrame(this, `home-${state.frameVersion}`);
+            return;
+          }
+
+          if (message.payload.action === 'back') {
+            if (state.historyIndex > 0) {
+              state.historyIndex -= 1;
+            }
+            state.lastError = null;
+            bumpFrame(this, `back-${state.frameVersion}`);
+            return;
+          }
+
+          if (message.payload.action === 'forward') {
+            if (state.historyIndex < state.history.length - 1) {
+              state.historyIndex += 1;
+            }
+            state.lastError = null;
+            bumpFrame(this, `forward-${state.frameVersion}`);
+            return;
+          }
+
+          if (message.payload.action === 'reload') {
+            state.lastError = null;
+            bumpFrame(this, `reload-${state.frameVersion}`);
+            return;
+          }
+
+          if (message.payload.action === 'stop') {
+            state.isLoading = false;
+            emitState(this);
+          }
+          return;
+        }
+
+        if (message.type === 'browser.input.resize') {
+          state.viewportWidth = message.payload.viewportWidth;
+          state.viewportHeight = message.payload.viewportHeight;
+          bumpFrame(this, `resize-${state.frameVersion}`);
+          return;
+        }
+
+        if (message.type === 'browser.input.key') {
+          bumpFrame(this, `key-${state.frameVersion}`);
+          return;
+        }
+
+        if (message.type === 'browser.input.text') {
+          bumpFrame(this, `text-${state.frameVersion}`);
+          return;
+        }
+
+        if (message.type === 'browser.input.paste') {
+          bumpFrame(this, `paste-${state.frameVersion}`);
+          return;
+        }
+
+        return;
       }
-    }
 
-    open() {
-      this.onopen?.();
-    }
+      const decoded = decodeClientPacket(data);
+      binaryPackets.push(decoded);
 
-    fail() {
-      this.onerror?.(new Event('error'));
+      if (decoded.type === 'click' || decoded.type === 'dblclick' || decoded.type === 'wheel') {
+        bumpFrame(this, `${decoded.type}-${state.frameVersion}`);
+      }
     }
 
     close() {
-      this.closed = true;
+      this.readyState = MockWebSocket.CLOSED;
+      this.onclose?.({});
     }
   }
 
   return {
-    MockEventSource,
-    instances
+    MockWebSocket,
+    instances,
+    textMessages,
+    binaryPackets,
+    setNextNavigateError(message) {
+      state.nextNavigateError = message;
+    },
+    closeFromServer(index = 0) {
+      const socket = instances[index];
+      if (!socket) return;
+      socket.readyState = MockWebSocket.CLOSED;
+      socket.onclose?.({});
+    },
+    emitServerError(message, code = 'BROWSER_SOCKET_ERROR', index = 0) {
+      const socket = instances[index];
+      if (!socket) return;
+      socket.onmessage?.({
+        data: JSON.stringify({
+          type: 'browser.error',
+          payload: {
+            code,
+            message,
+            recoverable: true
+          }
+        })
+      });
+    }
   };
 }
 
@@ -253,12 +320,18 @@ async function advance(ms) {
 describe('BrowserPane', () => {
   const originalFetch = global.fetch;
   const originalResizeObserver = global.ResizeObserver;
+  const originalWebSocket = global.WebSocket;
   const originalEventSource = global.EventSource;
+  const originalCreateObjectURL = URL.createObjectURL;
+  const originalRevokeObjectURL = URL.revokeObjectURL;
 
   afterEach(() => {
     global.fetch = originalFetch;
     global.ResizeObserver = originalResizeObserver;
+    global.WebSocket = originalWebSocket;
     global.EventSource = originalEventSource;
+    URL.createObjectURL = originalCreateObjectURL;
+    URL.revokeObjectURL = originalRevokeObjectURL;
     jest.useRealTimers();
     jest.restoreAllMocks();
   });
@@ -277,9 +350,48 @@ describe('BrowserPane', () => {
     });
   });
 
-  test('supports single-tab remote history, bookmarks, home and refresh', async () => {
-    const api = createBrowserApiMock();
-    global.fetch = api.fetchMock;
+  test('keeps the local home alias available for the start page', () => {
+    expect(normalizeBrowserInput('startpagina')).toEqual({
+      mode: 'home',
+      url: BROWSER_HOME_URL
+    });
+  });
+
+  test('uses websocket transport only and keeps the browser surface free of iframe spam', async () => {
+    const socketMock = createBrowserSocketMock();
+    const fetchSpy = jest.fn(() => Promise.reject(new Error('fetch should not be called')));
+    const eventSourceSpy = jest.fn(() => {
+      throw new Error('EventSource should not be constructed');
+    });
+
+    let objectUrlCounter = 0;
+    URL.createObjectURL = jest.fn(() => `blob:frame-${++objectUrlCounter}`);
+    URL.revokeObjectURL = jest.fn();
+    global.fetch = fetchSpy;
+    global.WebSocket = socketMock.MockWebSocket;
+    global.EventSource = eventSourceSpy;
+
+    const { container } = render(<BrowserPane />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
+    });
+
+    expect(socketMock.instances).toHaveLength(1);
+    expect(socketMock.instances[0].url).toMatch(/\/browser\/socket$/);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(eventSourceSpy).not.toHaveBeenCalled();
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(container.querySelector('.browser-popup')).toBeNull();
+  });
+
+  test('supports remote history, bookmarks, home and refresh over websocket', async () => {
+    const socketMock = createBrowserSocketMock();
+
+    let objectUrlCounter = 0;
+    URL.createObjectURL = jest.fn(() => `blob:frame-${++objectUrlCounter}`);
+    URL.revokeObjectURL = jest.fn();
+    global.WebSocket = socketMock.MockWebSocket;
 
     const { container } = render(<BrowserPane />);
 
@@ -291,63 +403,55 @@ describe('BrowserPane', () => {
     await act(async () => {
       fireEvent.change(addressBar, { target: { value: 'example.com' } });
       fireEvent.submit(addressBar.closest('form'));
+      await Promise.resolve();
     });
 
     await screen.findByAltText('Internet Adventurer - https://example.com/');
     expect(addressBar).toHaveValue('https://example.com/');
-    expect(container.querySelector('iframe')).toBeNull();
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Startpagina' }));
+      await Promise.resolve();
     });
     await screen.findByText(/Yoctol Startpagina/i);
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Terug' }));
+      await Promise.resolve();
     });
     await screen.findByAltText('Internet Adventurer - https://example.com/');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Vooruit' }));
+      await Promise.resolve();
     });
     await screen.findByText(/Yoctol Startpagina/i);
 
     const bookmarksBar = within(container.querySelector('.browser-bookmarks-bar'));
     await act(async () => {
       fireEvent.click(bookmarksBar.getByRole('button', { name: 'NeverSSL' }));
+      await Promise.resolve();
     });
     await screen.findByAltText('Internet Adventurer - http://neverssl.com/');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Vernieuwen' }));
-    });
-    expect(api.requestLog.some((entry) => entry.pathname === '/browser/reload')).toBe(true);
-  });
-
-  test('removes the legacy spam gag flow and keeps the browser surface clean', async () => {
-    const api = createBrowserApiMock();
-    global.fetch = api.fetchMock;
-
-    const { container } = render(<BrowserPane />);
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
+      await Promise.resolve();
     });
 
-    await act(async () => {
-      fireEvent.click(screen.getAllByRole('button', { name: 'DuckDuckGo' })[0]);
-    });
-    await screen.findByAltText('Internet Adventurer - https://duckduckgo.com/');
-
-    expect(container.querySelector('.browser-popup')).toBeNull();
-    expect(container.querySelector('iframe')).toBeNull();
+    expect(socketMock.textMessages.some((message) => (
+      message.type === 'browser.command' && message.payload.action === 'reload'
+    ))).toBe(true);
   });
 
   test('shows an inline remote error page and opens externally', async () => {
-    const api = createBrowserApiMock();
+    const socketMock = createBrowserSocketMock();
     const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
-    api.setNextNavigateError('Remote timeout while loading page.');
-    global.fetch = api.fetchMock;
+
+    URL.createObjectURL = jest.fn(() => 'blob:frame-1');
+    URL.revokeObjectURL = jest.fn();
+    global.WebSocket = socketMock.MockWebSocket;
+    socketMock.setNextNavigateError('Remote timeout while loading page.');
 
     render(<BrowserPane />);
 
@@ -359,6 +463,7 @@ describe('BrowserPane', () => {
     await act(async () => {
       fireEvent.change(addressBar, { target: { value: 'https://example.com/' } });
       fireEvent.submit(addressBar.closest('form'));
+      await Promise.resolve();
     });
 
     await screen.findByRole('heading', { name: 'Pagina kan niet worden weergegeven' });
@@ -369,153 +474,39 @@ describe('BrowserPane', () => {
     expect(openSpy).toHaveBeenCalledWith('https://example.com/', '_blank', 'noopener,noreferrer');
   });
 
-  test('refreshes the frame image only when the server frameVersion changes', async () => {
-    jest.useFakeTimers();
-    const api = createBrowserApiMock();
-    global.fetch = api.fetchMock;
+  test('preserves a specific server error when the socket closes afterwards', async () => {
+    const socketMock = createBrowserSocketMock();
 
-    render(<BrowserPane />);
-    await flushMicrotasks();
-
-    const addressBar = screen.getByLabelText('Adresbalk');
-    await act(async () => {
-      fireEvent.change(addressBar, { target: { value: 'example.com' } });
-      fireEvent.submit(addressBar.closest('form'));
-      await Promise.resolve();
-    });
-
-    const image = await screen.findByAltText('Internet Adventurer - https://example.com/');
-    expect(image.getAttribute('src')).toContain('v=2');
-
-    api.queueStateMutation((state) => {
-      state.frameVersion = 2;
-    });
-    await advance(BROWSER_IDLE_POLL_MS);
-    expect(screen.getByAltText('Internet Adventurer - https://example.com/').getAttribute('src')).toContain('v=2');
-
-    api.queueStateMutation((state) => {
-      state.frameVersion = 3;
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByLabelText('Remote browser oppervlak'), {
-        clientX: 40,
-        clientY: 40,
-        button: 0
-      });
-      await Promise.resolve();
-    });
-    await advance(BROWSER_INTERACTIVE_POLL_MS);
-
-    expect(screen.getByAltText('Internet Adventurer - https://example.com/').getAttribute('src')).toContain('v=3');
-  });
-
-  test('uses SSE state pushes for immediate frame updates and keeps polling only as fallback', async () => {
-    jest.useFakeTimers();
-    const api = createBrowserApiMock();
-    const eventSource = createEventSourceMock();
-
-    global.fetch = api.fetchMock;
-    global.EventSource = eventSource.MockEventSource;
+    URL.createObjectURL = jest.fn(() => 'blob:frame-1');
+    URL.revokeObjectURL = jest.fn();
+    global.WebSocket = socketMock.MockWebSocket;
 
     render(<BrowserPane />);
     await flushMicrotasks();
 
     await waitFor(() => {
-      expect(eventSource.instances).toHaveLength(1);
+      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
     });
 
-    expect(eventSource.instances[0].url).toContain('/browser/events/session-1');
-
     await act(async () => {
-      eventSource.instances[0].open();
+      socketMock.emitServerError('browserType.launch: spawn EPERM');
+      socketMock.closeFromServer(0);
       await Promise.resolve();
     });
 
-    const addressBar = screen.getByLabelText('Adresbalk');
-    await act(async () => {
-      fireEvent.change(addressBar, { target: { value: 'example.com' } });
-      fireEvent.submit(addressBar.closest('form'));
-      await Promise.resolve();
-    });
-
-    api.requestLog.length = 0;
-
-    await act(async () => {
-      eventSource.instances[0].emit('state', {
-        sessionId: 'session-1',
-        url: 'https://example.com/',
-        title: 'Title https://example.com/',
-        canGoBack: true,
-        canGoForward: false,
-        isLoading: false,
-        lastError: null,
-        viewportWidth: 320,
-        viewportHeight: 240,
-        frameVersion: 3,
-        frameMimeType: 'image/jpeg',
-        hasFreshFrame: true
-      });
-      await Promise.resolve();
-    });
-
-    expect(screen.getByAltText('Internet Adventurer - https://example.com/').getAttribute('src')).toContain('v=3');
-
-    await advance(BROWSER_INTERACTIVE_POLL_MS * 2);
-    expect(api.requestLog.filter((entry) => (
-      entry.method === 'GET' && entry.pathname === '/browser/state/session-1'
-    ))).toHaveLength(0);
-
-    await advance(BROWSER_IDLE_POLL_MS);
-    expect(api.requestLog.filter((entry) => (
-      entry.method === 'GET' && entry.pathname === '/browser/state/session-1'
-    ))).toHaveLength(1);
+    await screen.findByRole('heading', { name: 'Remote browser kan niet opstarten' });
+    expect(screen.getByText(/spawn EPERM/i)).toBeInTheDocument();
+    expect(screen.queryByText(/NetworkError when attempting to reach browser socket/i)).toBeNull();
   });
 
-  test('keeps polling quickly while a page has no fresh frame yet', async () => {
+  test('maps resize, keyboard, paste and binary pointer input onto the websocket transport', async () => {
     jest.useFakeTimers();
-    const api = createBrowserApiMock();
-    global.fetch = api.fetchMock;
-
-    render(<BrowserPane />);
-    await flushMicrotasks();
-
-    const addressBar = screen.getByLabelText('Adresbalk');
-    await act(async () => {
-      fireEvent.change(addressBar, { target: { value: 'example.com' } });
-      fireEvent.submit(addressBar.closest('form'));
-      await Promise.resolve();
-    });
-
-    api.requestLog.length = 0;
-    api.queueStateMutation((state) => {
-      state.isLoading = false;
-      state.hasFreshFrame = false;
-      state.frameVersion = 2;
-    });
-
-    await advance(BROWSER_INTERACTIVE_POLL_MS);
-    expect(api.requestLog.filter((entry) => (
-      entry.method === 'GET' && entry.pathname === '/browser/state/session-1'
-    ))).toHaveLength(1);
-    expect(screen.queryByText(/Remote beeld verversen/i)).toBeNull();
-    expect(screen.getByText('Laden...')).toBeInTheDocument();
-
-    api.queueStateMutation((state) => {
-      state.hasFreshFrame = true;
-      state.frameVersion = 3;
-    });
-    await advance(BROWSER_INTERACTIVE_POLL_MS);
-
-    expect(screen.getByText('Gereed')).toBeInTheDocument();
-    expect(screen.getByAltText('Internet Adventurer - https://example.com/').getAttribute('src')).toContain('v=3');
-  });
-
-  test('debounces resize updates and maps keyboard input into the remote browser API', async () => {
-    jest.useFakeTimers();
-    const api = createBrowserApiMock();
+    const socketMock = createBrowserSocketMock();
     const observers = [];
 
-    global.fetch = api.fetchMock;
+    URL.createObjectURL = jest.fn(() => 'blob:frame-1');
+    URL.revokeObjectURL = jest.fn();
+    global.WebSocket = socketMock.MockWebSocket;
     global.ResizeObserver = class ResizeObserver {
       constructor(callback) {
         this.callback = callback;
@@ -529,6 +520,10 @@ describe('BrowserPane', () => {
 
     const { container } = render(<BrowserPane />);
     await flushMicrotasks();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
+    });
 
     const content = container.querySelector('.browser-content');
     content.getBoundingClientRect = () => ({
@@ -546,16 +541,14 @@ describe('BrowserPane', () => {
       await Promise.resolve();
     });
 
-    expect(api.inputCalls.filter((payload) => payload.type === 'resize')).toHaveLength(0);
-    await advance(BROWSER_RESIZE_DEBOUNCE_MS - 1);
-    expect(api.inputCalls.filter((payload) => payload.type === 'resize')).toHaveLength(0);
-    await advance(1);
-
-    expect(api.inputCalls).toEqual(expect.arrayContaining([
+    await advance(BROWSER_RESIZE_DEBOUNCE_MS);
+    expect(socketMock.textMessages).toEqual(expect.arrayContaining([
       expect.objectContaining({
-        type: 'resize',
-        viewportWidth: 900,
-        viewportHeight: 540
+        type: 'browser.input.resize',
+        payload: expect.objectContaining({
+          viewportWidth: 900,
+          viewportHeight: 540
+        })
       })
     ]));
 
@@ -577,91 +570,101 @@ describe('BrowserPane', () => {
     });
 
     await act(async () => {
+      fireEvent.click(surface, { clientX: 110, clientY: 70, button: 0 });
+      fireEvent.doubleClick(surface, { clientX: 210, clientY: 120, button: 0 });
+      fireEvent.wheel(surface, { clientX: 110, clientY: 70, deltaX: 5, deltaY: 80 });
+      fireEvent.wheel(surface, { clientX: 210, clientY: 120, deltaX: 0, deltaY: 40 });
       fireEvent.keyDown(surface, { key: 'Enter' });
       fireEvent.keyDown(surface, { key: 'a' });
+      fireEvent.paste(surface, {
+        clipboardData: {
+          getData: (type) => (type === 'text/plain' ? 'hunter2' : '')
+        }
+      });
       await Promise.resolve();
     });
 
-    expect(api.inputCalls).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        type: 'keydown',
-        key: 'Enter'
-      }),
-      expect.objectContaining({
-        type: 'type',
-        text: 'a'
-      })
-    ]));
-  });
-
-  test('coalesces wheel input and polls quickly after local interaction before returning to idle', async () => {
-    jest.useFakeTimers();
-    const api = createBrowserApiMock();
-    global.fetch = api.fetchMock;
-
-    render(<BrowserPane />);
-    await flushMicrotasks();
-
-    const addressBar = screen.getByLabelText('Adresbalk');
-    await act(async () => {
-      fireEvent.change(addressBar, { target: { value: 'example.com' } });
-      fireEvent.submit(addressBar.closest('form'));
-      await Promise.resolve();
-    });
-
-    const surface = await screen.findByLabelText('Remote browser oppervlak');
-    surface.getBoundingClientRect = () => ({
-      left: 10,
-      top: 20,
-      width: 400,
-      height: 200,
-      right: 410,
-      bottom: 220
-    });
-
-    api.requestLog.length = 0;
-
-    await act(async () => {
-      fireEvent.wheel(surface, { clientX: 110, clientY: 70, deltaX: 0, deltaY: 40 });
-      fireEvent.wheel(surface, { clientX: 210, clientY: 120, deltaX: 5, deltaY: 80 });
-      await Promise.resolve();
-    });
-
-    expect(api.inputCalls.filter((payload) => payload.type === 'wheel')).toHaveLength(0);
     await advance(BROWSER_WHEEL_COALESCE_MS);
 
-    expect(api.inputCalls).toEqual(expect.arrayContaining([
+    expect(socketMock.binaryPackets).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'click',
+        x: 225,
+        y: 135,
+        button: 0
+      }),
+      expect.objectContaining({
+        type: 'dblclick',
+        x: 450,
+        y: 270,
+        button: 0
+      }),
       expect.objectContaining({
         type: 'wheel',
-        x: 160,
-        y: 120,
         deltaX: 5,
         deltaY: 120
       })
     ]));
 
-    const stateCallCount = () => api.requestLog.filter((entry) => (
-      entry.method === 'GET' && entry.pathname === '/browser/state/session-1'
-    )).length;
-
-    expect(stateCallCount()).toBe(0);
-    await advance(BROWSER_INTERACTIVE_POLL_MS);
-    expect(stateCallCount()).toBe(1);
-    await advance(BROWSER_INTERACTIVE_POLL_MS);
-    expect(stateCallCount()).toBe(2);
-
-    await advance(BROWSER_INTERACTIVE_WINDOW_MS);
-    const countAfterInteractiveWindow = stateCallCount();
-    await advance(BROWSER_IDLE_POLL_MS - 1);
-    expect(stateCallCount()).toBe(countAfterInteractiveWindow);
-    await advance(1);
-    expect(stateCallCount()).toBe(countAfterInteractiveWindow + 1);
+    expect(socketMock.textMessages).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        type: 'browser.input.key',
+        payload: expect.objectContaining({
+          action: 'down',
+          key: 'Enter'
+        })
+      }),
+      expect.objectContaining({
+        type: 'browser.input.text',
+        payload: expect.objectContaining({
+          text: 'a'
+        })
+      }),
+      expect.objectContaining({
+        type: 'browser.input.paste',
+        payload: expect.objectContaining({
+          text: 'hunter2'
+        })
+      })
+    ]));
   });
 
-  test('keeps the local home alias available for the start page', () => {
-    expect(normalizeBrowserInput('startpagina')).toEqual({
-      mode: 'home',
-      url: BROWSER_HOME_URL
+  test('reconnects after a socket drop and revokes replaced frame URLs', async () => {
+    jest.useFakeTimers();
+    const socketMock = createBrowserSocketMock();
+
+    let objectUrlCounter = 0;
+    URL.createObjectURL = jest.fn(() => `blob:frame-${++objectUrlCounter}`);
+    URL.revokeObjectURL = jest.fn();
+    global.WebSocket = socketMock.MockWebSocket;
+
+    render(<BrowserPane />);
+    await flushMicrotasks();
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
     });
+
+    const addressBar = screen.getByLabelText('Adresbalk');
+    await act(async () => {
+      fireEvent.change(addressBar, { target: { value: 'example.com' } });
+      fireEvent.submit(addressBar.closest('form'));
+      await Promise.resolve();
+    });
+
+    const initialImage = await screen.findByAltText('Internet Adventurer - https://example.com/');
+    expect(initialImage.getAttribute('src')).toBe('blob:frame-2');
+
+    socketMock.closeFromServer(0);
+    await advance(250);
+    await flushMicrotasks();
+
+    await waitFor(() => {
+      expect(socketMock.instances).toHaveLength(2);
+    });
+
+    const refreshedImage = await screen.findByAltText('Internet Adventurer - https://example.com/');
+    expect(refreshedImage.getAttribute('src')).toBe('blob:frame-3');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:frame-2');
   });
 });

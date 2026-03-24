@@ -1,942 +1,140 @@
-import React, { useEffect, useRef, useState } from 'react';
-
-export const BROWSER_HOME_URL = 'yoctol://home';
-export const BROWSER_SEARCH_BASE_URL = 'https://duckduckgo.com/?q=';
-export const BROWSER_LOADING_POLL_MS = 120;
-export const BROWSER_INTERACTIVE_POLL_MS = 60;
-export const BROWSER_IDLE_POLL_MS = 1500;
-export const BROWSER_INTERACTIVE_WINDOW_MS = 900;
-export const BROWSER_RESIZE_DEBOUNCE_MS = 100;
-export const BROWSER_WHEEL_COALESCE_MS = 32;
-export const BROWSER_STATE_POLL_MS = BROWSER_IDLE_POLL_MS;
-
-const HOME_ALIASES = new Set([
-  '',
-  'home',
-  'start',
-  'startpagina',
-  'about:home',
-  'yoctol',
-  BROWSER_HOME_URL
-]);
-
-const DOMAIN_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?::\d+)?(?:[/?#].*)?$/i;
-const LOCALHOST_PATTERN = /^(?:localhost|127(?:\.\d{1,3}){3})(?::\d+)?(?:[/?#].*)?$/i;
-const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:[/?#].*)?$/;
-const DEFAULT_VIEWPORT = { width: 1280, height: 720 };
-const MIN_VIEWPORT = { width: 320, height: 240 };
-const DEFAULT_FRAME_MIME_TYPE = 'image/jpeg';
-
-const BOOKMARKS = [
-  { name: 'Yoctol Home', mode: 'home', url: BROWSER_HOME_URL },
-  { name: 'Example', url: 'https://example.com/' },
-  { name: 'DuckDuckGo', url: 'https://duckduckgo.com/' },
-  { name: 'NeverSSL', url: 'http://neverssl.com/' },
-  { name: 'Wikipedia', url: 'https://www.wikipedia.org/' },
-  { name: 'Archive.org', url: 'https://archive.org/' }
-];
-
-function buildSearchUrl(query) {
-  return `${BROWSER_SEARCH_BASE_URL}${encodeURIComponent(query)}`;
-}
-
-function looksLikeUrlWithoutScheme(value) {
-  return DOMAIN_PATTERN.test(value) || LOCALHOST_PATTERN.test(value) || IPV4_PATTERN.test(value);
-}
-
-function getDefaultProtocol(value) {
-  if (LOCALHOST_PATTERN.test(value) || IPV4_PATTERN.test(value)) {
-    return 'http://';
-  }
-  return 'https://';
-}
-
-function stripGunSuffix(value) {
-  return value.replace(/\/gun\/?$/i, '').replace(/\/+$/, '');
-}
-
-function createClientError(title, message) {
-  return { title, message };
-}
-
-function getOriginLabel(url) {
-  if (!url || url === BROWSER_HOME_URL) return 'Lokale startpagina';
-  try {
-    return new URL(url).host;
-  } catch {
-    return 'Onbekende locatie';
-  }
-}
-
-function getConnectionLabel(url) {
-  if (!url || url === BROWSER_HOME_URL) return 'Remote browser gereed';
-  try {
-    return new URL(url).protocol === 'https:' ? 'Veilige verbinding' : 'Onbeveiligde verbinding';
-  } catch {
-    return 'Onbekende verbinding';
-  }
-}
-
-function getDefaultBrowserState() {
-  return {
-    sessionId: null,
-    url: BROWSER_HOME_URL,
-    title: 'Yoctol Startpagina',
-    canGoBack: false,
-    canGoForward: false,
-    isLoading: false,
-    lastError: null,
-    viewportWidth: DEFAULT_VIEWPORT.width,
-    viewportHeight: DEFAULT_VIEWPORT.height,
-    frameVersion: 0,
-    frameMimeType: DEFAULT_FRAME_MIME_TYPE,
-    hasFreshFrame: false
-  };
-}
-
-function normalizeRemoteState(nextState = {}) {
-  return {
-    ...getDefaultBrowserState(),
-    ...nextState,
-    lastError: nextState.lastError || null,
-    frameMimeType: nextState.frameMimeType || DEFAULT_FRAME_MIME_TYPE,
-    hasFreshFrame: Boolean(nextState.hasFreshFrame)
-  };
-}
-
-function isPrintableKey(event) {
-  return (
-    event.key.length === 1
-    && !event.ctrlKey
-    && !event.metaKey
-    && !event.altKey
-  );
-}
-
-function normalizeRemoteKey(key) {
-  if (key === ' ') return 'Space';
-  if (key === 'Esc') return 'Escape';
-  return key;
-}
-
-function measureViewport(element) {
-  const rect = element?.getBoundingClientRect?.() || {};
-  return {
-    width: Math.max(MIN_VIEWPORT.width, Math.round(rect.width) || 0),
-    height: Math.max(MIN_VIEWPORT.height, Math.round(rect.height) || 0)
-  };
-}
-
-function getBrowserPollDelay(isLoading, hasFreshFrame, interactiveUntil, now = Date.now()) {
-  if (interactiveUntil === Number.POSITIVE_INFINITY) {
-    return BROWSER_IDLE_POLL_MS;
-  }
-  if (isLoading) {
-    return BROWSER_LOADING_POLL_MS;
-  }
-  if (!hasFreshFrame) {
-    return BROWSER_INTERACTIVE_POLL_MS;
-  }
-  if (now < interactiveUntil) {
-    return BROWSER_INTERACTIVE_POLL_MS;
-  }
-  return BROWSER_IDLE_POLL_MS;
-}
-
-export function resolveBrowserApiBaseUrl() {
-  const configuredUrl = process.env.REACT_APP_BROWSER_SERVER_URL || process.env.REACT_APP_GUN_URL;
-  if (configuredUrl) {
-    return stripGunSuffix(configuredUrl);
-  }
-
-  if (typeof window !== 'undefined') {
-    return stripGunSuffix(window.location.origin);
-  }
-
-  return '';
-}
-
-export function normalizeBrowserInput(rawValue) {
-  const trimmed = (rawValue || '').trim();
-
-  if (HOME_ALIASES.has(trimmed.toLowerCase())) {
-    return {
-      mode: 'home',
-      url: BROWSER_HOME_URL
-    };
-  }
-
-  if (/^[a-z][a-z\d+.-]*:\/\//i.test(trimmed)) {
-    try {
-      const parsed = new URL(trimmed);
-      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-        return {
-          mode: 'page',
-          url: parsed.toString()
-        };
-      }
-    } catch {
-      return {
-        mode: 'page',
-        url: buildSearchUrl(trimmed)
-      };
-    }
-
-    return {
-      mode: 'page',
-      url: buildSearchUrl(trimmed)
-    };
-  }
-
-  if (looksLikeUrlWithoutScheme(trimmed)) {
-    return {
-      mode: 'page',
-      url: new URL(`${getDefaultProtocol(trimmed)}${trimmed}`).toString()
-    };
-  }
-
-  return {
-    mode: 'page',
-    url: buildSearchUrl(trimmed)
-  };
-}
+import React, { useCallback, useEffect, useRef } from 'react';
+import BrowserChrome from './browser/BrowserChrome';
+import BrowserSurface from './browser/BrowserSurface';
+import {
+  BROWSER_HOME_URL,
+  BROWSER_RESIZE_DEBOUNCE_MS,
+  BROWSER_WHEEL_COALESCE_MS,
+  getConnectionLabel,
+  getOriginLabel,
+  normalizeBrowserInput,
+  resolveBrowserApiBaseUrl
+} from './browser/browserShared';
+import { useBrowserInput } from './browser/useBrowserInput';
+import { useBrowserSession } from './browser/useBrowserSession';
+import { useBrowserTransport } from './browser/useBrowserTransport';
 
 function BrowserPane({ currentUser = 'guest' }) {
   const apiBaseUrl = resolveBrowserApiBaseUrl();
-  const contentRef = useRef(null);
-  const addressEditingRef = useRef(false);
-  const interactiveUntilRef = useRef(0);
-  const resizeSyncTimerRef = useRef(null);
-  const wheelAccumulatorRef = useRef(null);
-  const wheelFlushTimerRef = useRef(null);
+  const {
+    addressEditingRef,
+    browserState,
+    contentState,
+    currentUrl,
+    homeSearchQuery,
+    inputUrl,
+    sessionId,
+    setBrowserState,
+    setHomeSearchQuery,
+    setInputUrl,
+    applyRemoteState,
+    setTransportError,
+    statusText,
+    visibleError
+  } = useBrowserSession({ apiBaseUrl, currentUser });
 
-  const [browserState, setBrowserState] = useState(getDefaultBrowserState);
-  const [sessionId, setSessionId] = useState(null);
-  const [inputUrl, setInputUrl] = useState(BROWSER_HOME_URL);
-  const [clientError, setClientError] = useState(null);
-  const [homeSearchQuery, setHomeSearchQuery] = useState('');
-  const [contentSize, setContentSize] = useState(null);
-  const [pollTick, setPollTick] = useState(0);
-  const [hasLiveUpdates, setHasLiveUpdates] = useState(false);
+  const transportRef = useRef({
+    sendJsonInput: () => false,
+    sendBinaryMessage: () => false
+  });
 
-  const currentUrl = browserState.url || BROWSER_HOME_URL;
-  const contentState = clientError || browserState.lastError
-    ? 'error'
-    : (currentUrl === BROWSER_HOME_URL ? 'home' : 'page');
-  const visibleError = clientError || (browserState.lastError
-    ? createClientError('Pagina kan niet worden weergegeven', browserState.lastError)
-    : null);
+  const {
+    contentRef,
+    contentSize,
+    surfaceHandlers
+  } = useBrowserInput({
+    browserState,
+    sessionId,
+    sendJsonInput: (...args) => transportRef.current.sendJsonInput(...args),
+    sendBinaryMessage: (...args) => transportRef.current.sendBinaryMessage(...args)
+  });
 
-  const updateFromRemoteState = (nextState) => {
-    const normalizedState = normalizeRemoteState(nextState);
-    setClientError(null);
-    setBrowserState(normalizedState);
-    setSessionId(normalizedState.sessionId || null);
-    if (!addressEditingRef.current) {
-      setInputUrl(normalizedState.url || BROWSER_HOME_URL);
-    }
-  };
-
-  const requestJson = async (path, options = {}) => {
-    const response = await fetch(`${apiBaseUrl}${path}`, {
-      method: options.method || 'GET',
-      headers: options.body
-        ? { 'Content-Type': 'application/json' }
-        : undefined,
-      body: options.body ? JSON.stringify(options.body) : undefined
-    });
-
-    const text = await response.text();
-    let payload = {};
-
-    if (text) {
-      try {
-        payload = JSON.parse(text);
-      } catch {
-        payload = { error: text };
-      }
-    }
-
-    if (!response.ok) {
-      throw new Error(payload.error || `Browser request failed (${response.status}).`);
-    }
-
-    return payload;
-  };
-
-  const handleTransportError = (error) => {
-    setClientError(createClientError(
-      'Browserserver niet bereikbaar',
-      error?.message || 'De remote browser kon niet worden bereikt.'
-    ));
-  };
-
-  const noteInteractiveActivity = () => {
-    interactiveUntilRef.current = Date.now() + BROWSER_INTERACTIVE_WINDOW_MS;
-    setPollTick((value) => value + 1);
-  };
-
-  const performAction = async (path, body = {}, options = {}) => {
-    const { noteInteraction = true } = options;
-
-    if (!sessionId) return;
-
-    if (noteInteraction) {
-      noteInteractiveActivity();
-    }
-
-    try {
-      const nextState = await requestJson(path, {
-        method: 'POST',
-        body: {
-          sessionId,
-          ...body
-        }
-      });
-      updateFromRemoteState(nextState);
-    } catch (error) {
-      handleTransportError(error);
-    }
-  };
-
-  const sendInput = async (payload, options = {}) => {
-    const {
-      captureState = false,
-      noteInteraction = true
-    } = options;
-
-    if (!sessionId) return;
-
-    if (noteInteraction) {
-      noteInteractiveActivity();
-    }
-
-    try {
-      const nextState = await requestJson('/browser/input', {
-        method: 'POST',
-        body: {
-          sessionId,
-          ...payload
-        }
-      });
-
-      if (captureState) {
-        updateFromRemoteState(nextState);
-      } else {
-        setClientError(null);
-      }
-    } catch (error) {
-      handleTransportError(error);
-    }
-  };
+  const transport = useBrowserTransport({
+    apiBaseUrl,
+    currentUser,
+    contentSize,
+    browserState,
+    sessionId,
+    applyRemoteState,
+    setTransportError,
+    setBrowserState
+  });
 
   useEffect(() => {
-    setBrowserState(getDefaultBrowserState());
-    setSessionId(null);
-    setInputUrl(BROWSER_HOME_URL);
-    setClientError(null);
-    setHasLiveUpdates(false);
-    interactiveUntilRef.current = 0;
-    setPollTick((value) => value + 1);
-  }, [apiBaseUrl, currentUser]);
-
-  useEffect(() => {
-    if (!sessionId || typeof EventSource === 'undefined') {
-      setHasLiveUpdates(false);
-      return undefined;
-    }
-
-    setHasLiveUpdates(false);
-    let closed = false;
-    const source = new EventSource(`${apiBaseUrl}/browser/events/${sessionId}`);
-
-    const handleStateEvent = (event) => {
-      if (closed) return;
-
-      try {
-        const payload = JSON.parse(event.data);
-        updateFromRemoteState(payload);
-        setHasLiveUpdates(true);
-      } catch {}
+    transportRef.current = {
+      sendJsonInput: transport.sendJsonInput,
+      sendBinaryMessage: transport.sendBinaryMessage
     };
+  }, [transport.sendBinaryMessage, transport.sendJsonInput]);
 
-    source.onopen = () => {
-      if (!closed) {
-        setHasLiveUpdates(true);
-      }
-    };
-
-    source.onerror = () => {
-      if (!closed) {
-        setHasLiveUpdates(false);
-      }
-    };
-
-    if (typeof source.addEventListener === 'function') {
-      source.addEventListener('state', handleStateEvent);
-    } else {
-      source.onmessage = handleStateEvent;
-    }
-
-    return () => {
-      closed = true;
-      if (typeof source.removeEventListener === 'function') {
-        source.removeEventListener('state', handleStateEvent);
-      }
-      source.close();
-    };
-  }, [apiBaseUrl, sessionId]);
-
-  useEffect(() => {
-    const element = contentRef.current;
-    if (!element) return undefined;
-
-    const updateSize = () => {
-      const nextSize = measureViewport(element);
-      setContentSize((previous) => (
-        previous && previous.width === nextSize.width && previous.height === nextSize.height
-          ? previous
-          : nextSize
-      ));
-    };
-
-    updateSize();
-
-    if (typeof ResizeObserver !== 'undefined') {
-      const observer = new ResizeObserver(() => {
-        updateSize();
-      });
-      observer.observe(element);
-      return () => observer.disconnect();
-    }
-
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
-
-  useEffect(() => {
-    if (!contentSize || sessionId) return undefined;
-
-    let cancelled = false;
-
-    const bootSession = async () => {
-      try {
-        const nextState = await requestJson('/browser/session', {
-          method: 'POST',
-          body: {
-            userKey: currentUser || 'guest',
-            sessionScope: 'browser',
-            viewportWidth: contentSize.width,
-            viewportHeight: contentSize.height
-          }
-        });
-
-        if (!cancelled) {
-          updateFromRemoteState(nextState);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          handleTransportError(error);
-        }
-      }
-    };
-
-    bootSession();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [apiBaseUrl, contentSize, currentUser, sessionId]);
-
-  useEffect(() => {
-    if (!sessionId) return undefined;
-
-    let cancelled = false;
-    const delay = getBrowserPollDelay(
-      browserState.isLoading,
-      browserState.hasFreshFrame,
-      hasLiveUpdates ? Number.POSITIVE_INFINITY : interactiveUntilRef.current
-    );
-
-    const timer = window.setTimeout(async () => {
-      try {
-        const nextState = await requestJson(`/browser/state/${sessionId}`);
-        if (!cancelled) {
-          updateFromRemoteState(nextState);
-          setPollTick((value) => value + 1);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          handleTransportError(error);
-        }
-      }
-    }, delay);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [apiBaseUrl, browserState.hasFreshFrame, browserState.isLoading, hasLiveUpdates, pollTick, sessionId]);
-
-  useEffect(() => {
-    if (!sessionId || !contentSize) return undefined;
-    if (
-      browserState.viewportWidth === contentSize.width
-      && browserState.viewportHeight === contentSize.height
-    ) {
-      return undefined;
-    }
-
-    if (resizeSyncTimerRef.current) {
-      window.clearTimeout(resizeSyncTimerRef.current);
-    }
-
-    resizeSyncTimerRef.current = window.setTimeout(() => {
-      sendInput({
-        type: 'resize',
-        viewportWidth: contentSize.width,
-        viewportHeight: contentSize.height
-      }, {
-        captureState: true,
-        noteInteraction: false
-      });
-    }, BROWSER_RESIZE_DEBOUNCE_MS);
-
-    return () => {
-      if (resizeSyncTimerRef.current) {
-        window.clearTimeout(resizeSyncTimerRef.current);
-        resizeSyncTimerRef.current = null;
-      }
-    };
-  }, [browserState.viewportHeight, browserState.viewportWidth, contentSize, sessionId]);
-
-  useEffect(() => () => {
-    if (resizeSyncTimerRef.current) {
-      window.clearTimeout(resizeSyncTimerRef.current);
-    }
-    if (wheelFlushTimerRef.current) {
-      window.clearTimeout(wheelFlushTimerRef.current);
-    }
-  }, []);
-
-  const navigateEntry = (entry) => {
+  const navigateEntry = useCallback((entry) => {
     if (entry.mode === 'home') {
-      performAction('/browser/home');
+      transport.sendCommand('home');
       return;
     }
 
-    performAction('/browser/navigate', { url: entry.url });
-  };
+    transport.sendCommand('navigate', { url: entry.url });
+  }, [transport]);
 
-  const navigateFromInput = (rawValue) => {
+  const navigateFromInput = useCallback((rawValue) => {
     const entry = normalizeBrowserInput(rawValue);
     addressEditingRef.current = false;
     setInputUrl(entry.url);
     navigateEntry(entry);
-  };
+  }, [addressEditingRef, navigateEntry, setInputUrl]);
 
-  const refreshCurrentPage = () => {
-    performAction('/browser/reload');
-  };
-
-  const retryCurrentPage = () => {
-    performAction('/browser/reload');
-  };
-
-  const stopLoading = () => {
-    performAction('/browser/stop', {}, { noteInteraction: false });
-  };
-
-  const openExternally = () => {
-    if (!currentUrl || currentUrl === BROWSER_HOME_URL || typeof window === 'undefined') return;
-    window.open(currentUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleAddressSubmit = (event) => {
+  const handleAddressSubmit = useCallback((event) => {
     event.preventDefault();
     navigateFromInput(inputUrl);
-  };
+  }, [inputUrl, navigateFromInput]);
 
-  const handleHomeSearchSubmit = (event) => {
+  const handleHomeSearchSubmit = useCallback((event) => {
     event.preventDefault();
     if (!homeSearchQuery.trim()) return;
     navigateFromInput(homeSearchQuery);
-  };
+  }, [homeSearchQuery, navigateFromInput]);
 
-  const mapPointerPosition = (event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const viewportWidth = browserState.viewportWidth || DEFAULT_VIEWPORT.width;
-    const viewportHeight = browserState.viewportHeight || DEFAULT_VIEWPORT.height;
-    const x = Math.round(((event.clientX - rect.left) / Math.max(rect.width, 1)) * viewportWidth);
-    const y = Math.round(((event.clientY - rect.top) / Math.max(rect.height, 1)) * viewportHeight);
-
-    return {
-      x: Math.max(0, Math.min(viewportWidth - 1, x)),
-      y: Math.max(0, Math.min(viewportHeight - 1, y))
-    };
-  };
-
-  const mapMouseButton = (button) => {
-    if (button === 1) return 'middle';
-    if (button === 2) return 'right';
-    return 'left';
-  };
-
-  const flushWheelInput = () => {
-    const payload = wheelAccumulatorRef.current;
-    wheelAccumulatorRef.current = null;
-    if (wheelFlushTimerRef.current) {
-      window.clearTimeout(wheelFlushTimerRef.current);
-      wheelFlushTimerRef.current = null;
-    }
-    if (!payload) return;
-
-    sendInput(payload, {
-      captureState: false,
-      noteInteraction: true
-    });
-  };
-
-  const handlePointerAction = (type, event) => {
-    if (!sessionId) return;
-
-    if (type === 'wheel') {
-      event.preventDefault();
-      const position = mapPointerPosition(event);
-      const previous = wheelAccumulatorRef.current;
-      wheelAccumulatorRef.current = previous
-        ? {
-          ...position,
-          type,
-          deltaX: previous.deltaX + (event.deltaX || 0),
-          deltaY: previous.deltaY + (event.deltaY || 0)
-        }
-        : {
-          type,
-          ...position,
-          deltaX: event.deltaX || 0,
-          deltaY: event.deltaY || 0
-        };
-
-      if (!wheelFlushTimerRef.current) {
-        wheelFlushTimerRef.current = window.setTimeout(flushWheelInput, BROWSER_WHEEL_COALESCE_MS);
-      }
-      return;
-    }
-
-    sendInput({
-      type,
-      ...mapPointerPosition(event),
-      button: mapMouseButton(event.button)
-    });
-  };
-
-  const handleKeyDown = (event) => {
-    if (!sessionId) return;
-
-    if (isPrintableKey(event)) {
-      event.preventDefault();
-      sendInput({
-        type: 'type',
-        text: event.key
-      });
-      return;
-    }
-
-    const supportedKeys = new Set([
-      'Enter',
-      'Backspace',
-      'Tab',
-      'Escape',
-      'Delete',
-      'ArrowUp',
-      'ArrowDown',
-      'ArrowLeft',
-      'ArrowRight',
-      'Home',
-      'End',
-      'PageUp',
-      'PageDown'
-    ]);
-
-    if (!supportedKeys.has(event.key)) return;
-
-    event.preventDefault();
-    sendInput({
-      type: 'keydown',
-      key: normalizeRemoteKey(event.key)
-    });
-  };
-
-  const renderHomePage = () => (
-    <div className="yoctol-page">
-      <div className="yoctol-header">
-        <div className="yoctol-logo" aria-label="Yoctol">
-          <span className="yoctol-logo-letter yoctol-logo-letter--blue">Y</span>
-          <span className="yoctol-logo-letter yoctol-logo-letter--red">o</span>
-          <span className="yoctol-logo-letter yoctol-logo-letter--gold">c</span>
-          <span className="yoctol-logo-letter yoctol-logo-letter--blue">t</span>
-          <span className="yoctol-logo-letter yoctol-logo-letter--green">o</span>
-          <span className="yoctol-logo-letter yoctol-logo-letter--red">l</span>
-        </div>
-        <p className="yoctol-tagline">
-          Zoek het web, open een favoriet, of typ meteen een adres in de adresbalk.
-        </p>
-      </div>
-
-      <form className="yoctol-search-form" onSubmit={handleHomeSearchSubmit}>
-        <input
-          type="text"
-          className="yoctol-search-input"
-          placeholder="Zoek met Yoctol"
-          value={homeSearchQuery}
-          onChange={(event) => setHomeSearchQuery(event.target.value)}
-        />
-        <div className="yoctol-buttons">
-          <button type="submit" className="yoctol-btn">Zoeken</button>
-          <button
-            type="button"
-            className="yoctol-btn yoctol-btn--secondary"
-            onClick={() => setHomeSearchQuery('nostalgische websites')}
-          >
-            Inspiratie
-          </button>
-        </div>
-      </form>
-
-      <div className="yoctol-links">
-        <button type="button" className="yoctol-inline-link" onClick={() => navigateFromInput('example.com')}>
-          Naar voorbeeldsite
-        </button>
-        <span className="yoctol-links-separator">|</span>
-        <button type="button" className="yoctol-inline-link" onClick={() => navigateFromInput('https://duckduckgo.com/')}>
-          Open zoekmachine
-        </button>
-        <span className="yoctol-links-separator">|</span>
-        <button type="button" className="yoctol-inline-link" onClick={() => navigateFromInput('web browsers history')}>
-          Zoek nostalgie
-        </button>
-      </div>
-
-      <div className="yoctol-services">
-        {BOOKMARKS.map((bookmark) => (
-          <button
-            key={bookmark.name}
-            type="button"
-            className="yoctol-service-box"
-            onClick={() => navigateEntry(bookmark.mode === 'home'
-              ? { mode: 'home', url: BROWSER_HOME_URL }
-              : { mode: 'page', url: bookmark.url })}
-          >
-            <strong>{bookmark.name}</strong>
-            <span>{bookmark.mode === 'home' ? 'Lokale startpagina' : bookmark.url}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="yoctol-footer">
-        Yoctol Startpagina - lokaal voor jou, met een echte remote browser erachter.
-      </div>
-    </div>
-  );
-
-  const renderErrorPage = () => (
-    <div className="browser-error-page">
-      <div className="browser-error-card">
-        <div className="browser-error-badge">!</div>
-        <h2>{visibleError?.title || 'Pagina kan niet worden weergegeven'}</h2>
-        <p>{visibleError?.message || 'Internet Adventurer kon deze pagina niet laden.'}</p>
-        {currentUrl !== BROWSER_HOME_URL && (
-          <div className="browser-error-url">{currentUrl}</div>
-        )}
-        <div className="browser-error-actions">
-          <button type="button" className="yoctol-btn" onClick={retryCurrentPage}>
-            Opnieuw proberen
-          </button>
-          <button
-            type="button"
-            className="browser-secondary-btn"
-            onClick={openExternally}
-            disabled={currentUrl === BROWSER_HOME_URL}
-          >
-            Extern openen
-          </button>
-          <button type="button" className="browser-secondary-btn" onClick={() => performAction('/browser/home')}>
-            Startpagina
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderPage = () => (
-    <div className="browser-page-view">
-      {(() => {
-        const isRefreshing = browserState.isLoading || !browserState.hasFreshFrame;
-        const showBlockingLoading = isRefreshing && browserState.frameVersion === 0;
-
-        return (
-          <>
-            <div
-              className="browser-remote-surface"
-              role="application"
-              tabIndex={0}
-              aria-label="Remote browser oppervlak"
-              onFocus={() => sendInput({ type: 'focus' }, {
-                captureState: false,
-                noteInteraction: false
-              })}
-              onClick={(event) => handlePointerAction('click', event)}
-              onDoubleClick={(event) => handlePointerAction('dblclick', event)}
-              onWheel={(event) => handlePointerAction('wheel', event)}
-              onMouseMove={(event) => {
-                if (event.buttons !== 0) {
-                  sendInput({
-                    type: 'move',
-                    ...mapPointerPosition(event)
-                  }, {
-                    captureState: false,
-                    noteInteraction: false
-                  });
-                }
-              }}
-              onKeyDown={handleKeyDown}
-            >
-              {sessionId && (
-                <img
-                  src={`${apiBaseUrl}/browser/frame/${sessionId}?v=${browserState.frameVersion}`}
-                  className="browser-page-frame"
-                  alt={`Internet Adventurer - ${currentUrl}`}
-                  draggable="false"
-                  data-frame-mime-type={browserState.frameMimeType}
-                />
-              )}
-            </div>
-            {showBlockingLoading && (
-              <div className="browser-loading-overlay">
-                <div className="browser-loading-card">
-                  <div className="browser-loading-spinner" aria-hidden="true" />
-                  <div className="browser-loading-title">Laden...</div>
-                </div>
-              </div>
-            )}
-          </>
-        );
-      })()}
-    </div>
-  );
-
-  const statusText = visibleError
-    ? 'Pagina kan niet worden weergegeven'
-    : ((browserState.isLoading || !browserState.hasFreshFrame) ? 'Laden...' : 'Gereed');
+  const openExternally = useCallback(() => {
+    if (!currentUrl || currentUrl === BROWSER_HOME_URL || typeof window === 'undefined') return;
+    window.open(currentUrl, '_blank', 'noopener,noreferrer');
+  }, [currentUrl]);
 
   return (
     <div className="browser-container">
-      <div className="browser-menubar" data-decorative-menubar="true">
-        <span className="browser-menu-item">Bestand</span>
-        <span className="browser-menu-item">Bewerken</span>
-        <span className="browser-menu-item">Beeld</span>
-        <span className="browser-menu-item">Favorieten</span>
-        <span className="browser-menu-item">Extra</span>
-        <span className="browser-menu-item">Help</span>
-      </div>
+      <BrowserChrome
+        addressEditingRef={addressEditingRef}
+        browserState={browserState}
+        currentUrl={currentUrl}
+        inputUrl={inputUrl}
+        sessionId={sessionId}
+        setInputUrl={setInputUrl}
+        onAddressSubmit={handleAddressSubmit}
+        onBack={() => transport.sendCommand('back')}
+        onForward={() => transport.sendCommand('forward')}
+        onHome={() => transport.sendCommand('home')}
+        onNavigateEntry={navigateEntry}
+        onRefresh={() => transport.sendCommand('reload')}
+        onStop={() => transport.sendCommand('stop')}
+      />
 
-      <div className="browser-toolbar">
-        <button
-          type="button"
-          className="browser-nav-btn"
-          onClick={() => performAction('/browser/back')}
-          title="Terug"
-          aria-label="Terug"
-          disabled={!browserState.canGoBack}
-        >
-          &lt;
-        </button>
-        <button
-          type="button"
-          className="browser-nav-btn"
-          onClick={() => performAction('/browser/forward')}
-          title="Vooruit"
-          aria-label="Vooruit"
-          disabled={!browserState.canGoForward}
-        >
-          &gt;
-        </button>
-        <button
-          type="button"
-          className="browser-nav-btn"
-          onClick={stopLoading}
-          title="Stop"
-          aria-label="Stop"
-          disabled={!browserState.isLoading}
-        >
-          X
-        </button>
-        <button
-          type="button"
-          className="browser-nav-btn"
-          onClick={refreshCurrentPage}
-          title="Vernieuwen"
-          aria-label="Vernieuwen"
-          disabled={!sessionId}
-        >
-          R
-        </button>
-        <button
-          type="button"
-          className="browser-nav-btn"
-          onClick={() => performAction('/browser/home')}
-          title="Startpagina"
-          aria-label="Startpagina"
-          disabled={!sessionId}
-        >
-          H
-        </button>
-
-        <form className="browser-address-bar" onSubmit={handleAddressSubmit}>
-          <span className="browser-address-label">Adres</span>
-          <input
-            type="text"
-            className="browser-address-input"
-            value={inputUrl}
-            onChange={(event) => setInputUrl(event.target.value)}
-            onFocus={() => {
-              addressEditingRef.current = true;
-            }}
-            onBlur={() => {
-              addressEditingRef.current = false;
-              setInputUrl(currentUrl);
-            }}
-            aria-label="Adresbalk"
-          />
-          <button type="submit" className="browser-go-btn" disabled={!sessionId}>
-            Start
-          </button>
-        </form>
-      </div>
-
-      <div className="browser-bookmarks-bar">
-        <span className="browser-bookmarks-label">Favorieten:</span>
-        {BOOKMARKS.map((bookmark) => (
-          <button
-            key={bookmark.name}
-            type="button"
-            className="browser-bookmark-btn"
-            onClick={() => navigateEntry(bookmark.mode === 'home'
-              ? { mode: 'home', url: BROWSER_HOME_URL }
-              : { mode: 'page', url: bookmark.url })}
-            disabled={!sessionId}
-          >
-            {bookmark.name}
-          </button>
-        ))}
-      </div>
-
-      <div ref={contentRef} className={`browser-content browser-content--${contentState}`}>
-        {contentState === 'home' && renderHomePage()}
-        {contentState === 'page' && renderPage()}
-        {contentState === 'error' && renderErrorPage()}
-      </div>
+      <BrowserSurface
+        browserState={browserState}
+        contentRef={contentRef}
+        contentState={contentState}
+        currentUrl={currentUrl}
+        frameSrc={transport.frameSrc}
+        homeSearchQuery={homeSearchQuery}
+        sessionId={sessionId}
+        setHomeSearchQuery={setHomeSearchQuery}
+        surfaceHandlers={surfaceHandlers}
+        visibleError={visibleError}
+        onGoHome={() => transport.sendCommand('home')}
+        onHomeSearchSubmit={handleHomeSearchSubmit}
+        onNavigateEntry={navigateEntry}
+        onNavigateFromInput={navigateFromInput}
+        onOpenExternally={openExternally}
+        onRetry={() => transport.sendCommand('reload')}
+      />
 
       <div className="browser-status-bar">
         <div className="browser-status-text">{statusText}</div>
@@ -950,4 +148,9 @@ function BrowserPane({ currentUser = 'guest' }) {
 }
 
 export default BrowserPane;
-export { getBrowserPollDelay };
+export {
+  BROWSER_HOME_URL,
+  BROWSER_RESIZE_DEBOUNCE_MS,
+  BROWSER_WHEEL_COALESCE_MS,
+  normalizeBrowserInput
+};
