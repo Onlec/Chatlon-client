@@ -2,7 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 
 export const BROWSER_HOME_URL = 'yoctol://home';
 export const BROWSER_SEARCH_BASE_URL = 'https://duckduckgo.com/?q=';
-export const BROWSER_STATE_POLL_MS = 1200;
+export const BROWSER_LOADING_POLL_MS = 120;
+export const BROWSER_INTERACTIVE_POLL_MS = 60;
+export const BROWSER_IDLE_POLL_MS = 1500;
+export const BROWSER_INTERACTIVE_WINDOW_MS = 900;
+export const BROWSER_RESIZE_DEBOUNCE_MS = 100;
+export const BROWSER_WHEEL_COALESCE_MS = 32;
+export const BROWSER_STATE_POLL_MS = BROWSER_IDLE_POLL_MS;
 
 const HOME_ALIASES = new Set([
   '',
@@ -18,6 +24,8 @@ const DOMAIN_PATTERN = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?:
 const LOCALHOST_PATTERN = /^(?:localhost|127(?:\.\d{1,3}){3})(?::\d+)?(?:[/?#].*)?$/i;
 const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:[/?#].*)?$/;
 const DEFAULT_VIEWPORT = { width: 1280, height: 720 };
+const MIN_VIEWPORT = { width: 320, height: 240 };
+const DEFAULT_FRAME_MIME_TYPE = 'image/jpeg';
 
 const BOOKMARKS = [
   { name: 'Yoctol Home', mode: 'home', url: BROWSER_HOME_URL },
@@ -79,7 +87,20 @@ function getDefaultBrowserState() {
     isLoading: false,
     lastError: null,
     viewportWidth: DEFAULT_VIEWPORT.width,
-    viewportHeight: DEFAULT_VIEWPORT.height
+    viewportHeight: DEFAULT_VIEWPORT.height,
+    frameVersion: 0,
+    frameMimeType: DEFAULT_FRAME_MIME_TYPE,
+    hasFreshFrame: false
+  };
+}
+
+function normalizeRemoteState(nextState = {}) {
+  return {
+    ...getDefaultBrowserState(),
+    ...nextState,
+    lastError: nextState.lastError || null,
+    frameMimeType: nextState.frameMimeType || DEFAULT_FRAME_MIME_TYPE,
+    hasFreshFrame: Boolean(nextState.hasFreshFrame)
   };
 }
 
@@ -96,6 +117,30 @@ function normalizeRemoteKey(key) {
   if (key === ' ') return 'Space';
   if (key === 'Esc') return 'Escape';
   return key;
+}
+
+function measureViewport(element) {
+  const rect = element?.getBoundingClientRect?.() || {};
+  return {
+    width: Math.max(MIN_VIEWPORT.width, Math.round(rect.width) || 0),
+    height: Math.max(MIN_VIEWPORT.height, Math.round(rect.height) || 0)
+  };
+}
+
+function getBrowserPollDelay(isLoading, hasFreshFrame, interactiveUntil, now = Date.now()) {
+  if (interactiveUntil === Number.POSITIVE_INFINITY) {
+    return BROWSER_IDLE_POLL_MS;
+  }
+  if (isLoading) {
+    return BROWSER_LOADING_POLL_MS;
+  }
+  if (!hasFreshFrame) {
+    return BROWSER_INTERACTIVE_POLL_MS;
+  }
+  if (now < interactiveUntil) {
+    return BROWSER_INTERACTIVE_POLL_MS;
+  }
+  return BROWSER_IDLE_POLL_MS;
 }
 
 export function resolveBrowserApiBaseUrl() {
@@ -160,13 +205,19 @@ function BrowserPane({ currentUser = 'guest' }) {
   const apiBaseUrl = resolveBrowserApiBaseUrl();
   const contentRef = useRef(null);
   const addressEditingRef = useRef(false);
+  const interactiveUntilRef = useRef(0);
+  const resizeSyncTimerRef = useRef(null);
+  const wheelAccumulatorRef = useRef(null);
+  const wheelFlushTimerRef = useRef(null);
+
   const [browserState, setBrowserState] = useState(getDefaultBrowserState);
   const [sessionId, setSessionId] = useState(null);
   const [inputUrl, setInputUrl] = useState(BROWSER_HOME_URL);
   const [clientError, setClientError] = useState(null);
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
-  const [frameVersion, setFrameVersion] = useState(0);
-  const [contentSize, setContentSize] = useState(DEFAULT_VIEWPORT);
+  const [contentSize, setContentSize] = useState(null);
+  const [pollTick, setPollTick] = useState(0);
+  const [hasLiveUpdates, setHasLiveUpdates] = useState(false);
 
   const currentUrl = browserState.url || BROWSER_HOME_URL;
   const contentState = clientError || browserState.lastError
@@ -176,16 +227,13 @@ function BrowserPane({ currentUser = 'guest' }) {
     ? createClientError('Pagina kan niet worden weergegeven', browserState.lastError)
     : null);
 
-  const updateFromRemoteState = (nextState, options = {}) => {
-    const { bumpFrame = false } = options;
+  const updateFromRemoteState = (nextState) => {
+    const normalizedState = normalizeRemoteState(nextState);
     setClientError(null);
-    setBrowserState(nextState);
-    setSessionId(nextState.sessionId || null);
+    setBrowserState(normalizedState);
+    setSessionId(normalizedState.sessionId || null);
     if (!addressEditingRef.current) {
-      setInputUrl(nextState.url || BROWSER_HOME_URL);
-    }
-    if (bumpFrame && nextState.url !== BROWSER_HOME_URL) {
-      setFrameVersion((value) => value + 1);
+      setInputUrl(normalizedState.url || BROWSER_HOME_URL);
     }
   };
 
@@ -223,10 +271,19 @@ function BrowserPane({ currentUser = 'guest' }) {
     ));
   };
 
+  const noteInteractiveActivity = () => {
+    interactiveUntilRef.current = Date.now() + BROWSER_INTERACTIVE_WINDOW_MS;
+    setPollTick((value) => value + 1);
+  };
+
   const performAction = async (path, body = {}, options = {}) => {
-    const { bumpFrame = true } = options;
+    const { noteInteraction = true } = options;
 
     if (!sessionId) return;
+
+    if (noteInteraction) {
+      noteInteractiveActivity();
+    }
 
     try {
       const nextState = await requestJson(path, {
@@ -236,16 +293,23 @@ function BrowserPane({ currentUser = 'guest' }) {
           ...body
         }
       });
-      updateFromRemoteState(nextState, { bumpFrame });
+      updateFromRemoteState(nextState);
     } catch (error) {
       handleTransportError(error);
     }
   };
 
   const sendInput = async (payload, options = {}) => {
-    const { captureState = false, bumpFrame = true } = options;
+    const {
+      captureState = false,
+      noteInteraction = true
+    } = options;
 
     if (!sessionId) return;
+
+    if (noteInteraction) {
+      noteInteractiveActivity();
+    }
 
     try {
       const nextState = await requestJson('/browser/input', {
@@ -257,12 +321,9 @@ function BrowserPane({ currentUser = 'guest' }) {
       });
 
       if (captureState) {
-        updateFromRemoteState(nextState, { bumpFrame });
+        updateFromRemoteState(nextState);
       } else {
         setClientError(null);
-        if (bumpFrame && currentUrl !== BROWSER_HOME_URL) {
-          setFrameVersion((value) => value + 1);
-        }
       }
     } catch (error) {
       handleTransportError(error);
@@ -270,50 +331,70 @@ function BrowserPane({ currentUser = 'guest' }) {
   };
 
   useEffect(() => {
-    let cancelled = false;
+    setBrowserState(getDefaultBrowserState());
+    setSessionId(null);
+    setInputUrl(BROWSER_HOME_URL);
+    setClientError(null);
+    setHasLiveUpdates(false);
+    interactiveUntilRef.current = 0;
+    setPollTick((value) => value + 1);
+  }, [apiBaseUrl, currentUser]);
 
-    const bootSession = async () => {
+  useEffect(() => {
+    if (!sessionId || typeof EventSource === 'undefined') {
+      setHasLiveUpdates(false);
+      return undefined;
+    }
+
+    setHasLiveUpdates(false);
+    let closed = false;
+    const source = new EventSource(`${apiBaseUrl}/browser/events/${sessionId}`);
+
+    const handleStateEvent = (event) => {
+      if (closed) return;
+
       try {
-        const nextState = await requestJson('/browser/session', {
-          method: 'POST',
-          body: {
-            userKey: currentUser || 'guest',
-            sessionScope: 'browser',
-            viewportWidth: contentSize.width,
-            viewportHeight: contentSize.height
-          }
-        });
+        const payload = JSON.parse(event.data);
+        updateFromRemoteState(payload);
+        setHasLiveUpdates(true);
+      } catch {}
+    };
 
-        if (!cancelled) {
-          updateFromRemoteState(nextState, { bumpFrame: true });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          handleTransportError(error);
-        }
+    source.onopen = () => {
+      if (!closed) {
+        setHasLiveUpdates(true);
       }
     };
 
-    bootSession();
+    source.onerror = () => {
+      if (!closed) {
+        setHasLiveUpdates(false);
+      }
+    };
+
+    if (typeof source.addEventListener === 'function') {
+      source.addEventListener('state', handleStateEvent);
+    } else {
+      source.onmessage = handleStateEvent;
+    }
 
     return () => {
-      cancelled = true;
+      closed = true;
+      if (typeof source.removeEventListener === 'function') {
+        source.removeEventListener('state', handleStateEvent);
+      }
+      source.close();
     };
-  }, [apiBaseUrl, currentUser]);
+  }, [apiBaseUrl, sessionId]);
 
   useEffect(() => {
     const element = contentRef.current;
     if (!element) return undefined;
 
     const updateSize = () => {
-      const rect = element.getBoundingClientRect();
-      const nextSize = {
-        width: Math.max(320, Math.round(rect.width) || DEFAULT_VIEWPORT.width),
-        height: Math.max(240, Math.round(rect.height) || DEFAULT_VIEWPORT.height)
-      };
-
+      const nextSize = measureViewport(element);
       setContentSize((previous) => (
-        previous.width === nextSize.width && previous.height === nextSize.height
+        previous && previous.width === nextSize.width && previous.height === nextSize.height
           ? previous
           : nextSize
       ));
@@ -334,15 +415,24 @@ function BrowserPane({ currentUser = 'guest' }) {
   }, []);
 
   useEffect(() => {
-    if (!sessionId) return undefined;
+    if (!contentSize || sessionId) return undefined;
 
     let cancelled = false;
 
-    const syncState = async () => {
+    const bootSession = async () => {
       try {
-        const nextState = await requestJson(`/browser/state/${sessionId}`);
+        const nextState = await requestJson('/browser/session', {
+          method: 'POST',
+          body: {
+            userKey: currentUser || 'guest',
+            sessionScope: 'browser',
+            viewportWidth: contentSize.width,
+            viewportHeight: contentSize.height
+          }
+        });
+
         if (!cancelled) {
-          updateFromRemoteState(nextState, { bumpFrame: true });
+          updateFromRemoteState(nextState);
         }
       } catch (error) {
         if (!cancelled) {
@@ -351,27 +441,83 @@ function BrowserPane({ currentUser = 'guest' }) {
       }
     };
 
-    syncState();
-    const timer = window.setInterval(syncState, BROWSER_STATE_POLL_MS);
+    bootSession();
 
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
     };
-  }, [apiBaseUrl, sessionId]);
+  }, [apiBaseUrl, contentSize, currentUser, sessionId]);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId) return undefined;
 
-    sendInput({
-      type: 'resize',
-      viewportWidth: contentSize.width,
-      viewportHeight: contentSize.height
-    }, {
-      captureState: true,
-      bumpFrame: false
-    });
-  }, [contentSize.height, contentSize.width, sessionId]);
+    let cancelled = false;
+    const delay = getBrowserPollDelay(
+      browserState.isLoading,
+      browserState.hasFreshFrame,
+      hasLiveUpdates ? Number.POSITIVE_INFINITY : interactiveUntilRef.current
+    );
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const nextState = await requestJson(`/browser/state/${sessionId}`);
+        if (!cancelled) {
+          updateFromRemoteState(nextState);
+          setPollTick((value) => value + 1);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          handleTransportError(error);
+        }
+      }
+    }, delay);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [apiBaseUrl, browserState.hasFreshFrame, browserState.isLoading, hasLiveUpdates, pollTick, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || !contentSize) return undefined;
+    if (
+      browserState.viewportWidth === contentSize.width
+      && browserState.viewportHeight === contentSize.height
+    ) {
+      return undefined;
+    }
+
+    if (resizeSyncTimerRef.current) {
+      window.clearTimeout(resizeSyncTimerRef.current);
+    }
+
+    resizeSyncTimerRef.current = window.setTimeout(() => {
+      sendInput({
+        type: 'resize',
+        viewportWidth: contentSize.width,
+        viewportHeight: contentSize.height
+      }, {
+        captureState: true,
+        noteInteraction: false
+      });
+    }, BROWSER_RESIZE_DEBOUNCE_MS);
+
+    return () => {
+      if (resizeSyncTimerRef.current) {
+        window.clearTimeout(resizeSyncTimerRef.current);
+        resizeSyncTimerRef.current = null;
+      }
+    };
+  }, [browserState.viewportHeight, browserState.viewportWidth, contentSize, sessionId]);
+
+  useEffect(() => () => {
+    if (resizeSyncTimerRef.current) {
+      window.clearTimeout(resizeSyncTimerRef.current);
+    }
+    if (wheelFlushTimerRef.current) {
+      window.clearTimeout(wheelFlushTimerRef.current);
+    }
+  }, []);
 
   const navigateEntry = (entry) => {
     if (entry.mode === 'home') {
@@ -398,7 +544,7 @@ function BrowserPane({ currentUser = 'guest' }) {
   };
 
   const stopLoading = () => {
-    performAction('/browser/stop', {}, { bumpFrame: false });
+    performAction('/browser/stop', {}, { noteInteraction: false });
   };
 
   const openExternally = () => {
@@ -436,17 +582,45 @@ function BrowserPane({ currentUser = 'guest' }) {
     return 'left';
   };
 
+  const flushWheelInput = () => {
+    const payload = wheelAccumulatorRef.current;
+    wheelAccumulatorRef.current = null;
+    if (wheelFlushTimerRef.current) {
+      window.clearTimeout(wheelFlushTimerRef.current);
+      wheelFlushTimerRef.current = null;
+    }
+    if (!payload) return;
+
+    sendInput(payload, {
+      captureState: false,
+      noteInteraction: true
+    });
+  };
+
   const handlePointerAction = (type, event) => {
     if (!sessionId) return;
 
     if (type === 'wheel') {
       event.preventDefault();
-      sendInput({
-        type,
-        ...mapPointerPosition(event),
-        deltaX: event.deltaX,
-        deltaY: event.deltaY
-      });
+      const position = mapPointerPosition(event);
+      const previous = wheelAccumulatorRef.current;
+      wheelAccumulatorRef.current = previous
+        ? {
+          ...position,
+          type,
+          deltaX: previous.deltaX + (event.deltaX || 0),
+          deltaY: previous.deltaY + (event.deltaY || 0)
+        }
+        : {
+          type,
+          ...position,
+          deltaX: event.deltaX || 0,
+          deltaY: event.deltaY || 0
+        };
+
+      if (!wheelFlushTimerRef.current) {
+        wheelFlushTimerRef.current = window.setTimeout(flushWheelInput, BROWSER_WHEEL_COALESCE_MS);
+      }
       return;
     }
 
@@ -597,50 +771,64 @@ function BrowserPane({ currentUser = 'guest' }) {
 
   const renderPage = () => (
     <div className="browser-page-view">
-      <div
-        className="browser-remote-surface"
-        role="application"
-        tabIndex={0}
-        aria-label="Remote browser oppervlak"
-        onFocus={() => sendInput({ type: 'focus' }, { bumpFrame: false })}
-        onClick={(event) => handlePointerAction('click', event)}
-        onDoubleClick={(event) => handlePointerAction('dblclick', event)}
-        onWheel={(event) => handlePointerAction('wheel', event)}
-        onMouseMove={(event) => {
-          if (event.buttons !== 0) {
-            sendInput({
-              type: 'move',
-              ...mapPointerPosition(event)
-            }, {
-              bumpFrame: false
-            });
-          }
-        }}
-        onKeyDown={handleKeyDown}
-      >
-        {sessionId && (
-          <img
-            src={`${apiBaseUrl}/browser/frame/${sessionId}?v=${frameVersion}`}
-            className="browser-page-frame"
-            alt={`Internet Adventurer - ${currentUrl}`}
-            draggable="false"
-          />
-        )}
-      </div>
-      {browserState.isLoading && (
-        <div className="browser-loading-overlay">
-          <div className="browser-loading-card">
-            <div className="browser-loading-title">Remote pagina laden...</div>
-            <div className="browser-loading-url">{currentUrl}</div>
-          </div>
-        </div>
-      )}
+      {(() => {
+        const isRefreshing = browserState.isLoading || !browserState.hasFreshFrame;
+        const showBlockingLoading = isRefreshing && browserState.frameVersion === 0;
+
+        return (
+          <>
+            <div
+              className="browser-remote-surface"
+              role="application"
+              tabIndex={0}
+              aria-label="Remote browser oppervlak"
+              onFocus={() => sendInput({ type: 'focus' }, {
+                captureState: false,
+                noteInteraction: false
+              })}
+              onClick={(event) => handlePointerAction('click', event)}
+              onDoubleClick={(event) => handlePointerAction('dblclick', event)}
+              onWheel={(event) => handlePointerAction('wheel', event)}
+              onMouseMove={(event) => {
+                if (event.buttons !== 0) {
+                  sendInput({
+                    type: 'move',
+                    ...mapPointerPosition(event)
+                  }, {
+                    captureState: false,
+                    noteInteraction: false
+                  });
+                }
+              }}
+              onKeyDown={handleKeyDown}
+            >
+              {sessionId && (
+                <img
+                  src={`${apiBaseUrl}/browser/frame/${sessionId}?v=${browserState.frameVersion}`}
+                  className="browser-page-frame"
+                  alt={`Internet Adventurer - ${currentUrl}`}
+                  draggable="false"
+                  data-frame-mime-type={browserState.frameMimeType}
+                />
+              )}
+            </div>
+            {showBlockingLoading && (
+              <div className="browser-loading-overlay">
+                <div className="browser-loading-card">
+                  <div className="browser-loading-spinner" aria-hidden="true" />
+                  <div className="browser-loading-title">Laden...</div>
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 
   const statusText = visibleError
     ? 'Pagina kan niet worden weergegeven'
-    : (browserState.isLoading ? 'Laden...' : 'Gereed');
+    : ((browserState.isLoading || !browserState.hasFreshFrame) ? 'Laden...' : 'Gereed');
 
   return (
     <div className="browser-container">
@@ -762,3 +950,4 @@ function BrowserPane({ currentUser = 'guest' }) {
 }
 
 export default BrowserPane;
+export { getBrowserPollDelay };
