@@ -1,0 +1,246 @@
+{
+  "type": "map",
+  "name": "receptie",
+  "width": 10,
+  "height": 7,
+  "tilewidth": 24,
+  "tileheight": 24,
+  "infinite": false,
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "version": "1.10",
+  "tiledversion": "1.11.1",
+  "nextlayerid": 4,
+  "nextobjectid": 12,
+  "properties": [
+    { "name": "id", "type": "string", "value": "receptie" },
+    { "name": "name", "type": "string", "value": "Receptie" },
+    { "name": "description", "type": "string", "value": "De lobby waar iedereen binnenvalt met een dramatische statusboodschap." },
+    { "name": "accent", "type": "string", "value": "#f0c97c" },
+    { "name": "roomScale", "type": "int", "value": 2 }
+  ],
+  "tilesets": [
+    {
+      "firstgid": 1,
+      "name": "chablo-layout",
+      "tilewidth": 24,
+      "tileheight": 24,
+      "tilecount": 6,
+      "columns": 0,
+      "tiles": [
+        { "id": 0, "properties": [{ "name": "code", "type": "string", "value": "." }] },
+        { "id": 1, "properties": [{ "name": "code", "type": "string", "value": "#" }] },
+        { "id": 2, "properties": [{ "name": "code", "type": "string", "value": "T" }] },
+        { "id": 3, "properties": [{ "name": "code", "type": "string", "value": "B" }] },
+        { "id": 4, "properties": [{ "name": "code", "type": "string", "value": "C" }] },
+        { "id": 5, "properties": [{ "name": "code", "type": "string", "value": "P" }] }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": 1,
+      "name": "layout",
+      "type": "tilelayer",
+      "width": 10,
+      "height": 7,
+      "x": 0,
+      "y": 0,
+      "visible": true,
+      "opacity": 1,
+      "data": [
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+        2, 1, 1, 1, 1, 1, 1, 1, 1, 2,
+        2, 1, 1, 2, 2, 1, 1, 1, 1, 2,
+        2, 1, 1, 1, 1, 1, 1, 1, 1, 2,
+        2, 1, 1, 1, 1, 2, 2, 1, 1, 2,
+        2, 1, 1, 1, 1, 1, 1, 1, 1, 2,
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+      ]
+    },
+    {
+      "id": 2,
+      "name": "objects",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 1,
+          "name": "spawn",
+          "type": "spawn",
+          "x": 96,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true
+        },
+        {
+          "id": 2,
+          "name": "Bar",
+          "type": "door",
+          "x": 192,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "bar" },
+            { "name": "label", "type": "string", "value": "Bar" },
+            { "name": "spawnX", "type": "int", "value": 1 },
+            { "name": "spawnY", "type": "int", "value": 3 }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Kelder",
+          "type": "door",
+          "x": 96,
+          "y": 120,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "kelder" },
+            { "name": "label", "type": "string", "value": "Kelder" },
+            { "name": "spawnX", "type": "int", "value": 4 },
+            { "name": "spawnY", "type": "int", "value": 1 }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Parking",
+          "type": "door",
+          "x": 24,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "parking" },
+            { "name": "label", "type": "string", "value": "Parking" },
+            { "name": "spawnX", "type": "int", "value": 8 },
+            { "name": "spawnY", "type": "int", "value": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "decor",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 5,
+          "name": "Lobby",
+          "type": "sign",
+          "x": 96,
+          "y": 0,
+          "width": 48,
+          "height": 24,
+          "properties": [
+            { "name": "text", "type": "string", "value": "Lobby" }
+          ]
+        },
+        {
+          "id": 6,
+          "name": "lobby-rug",
+          "type": "rug",
+          "x": 48,
+          "y": 48,
+          "width": 144,
+          "height": 48,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#536c88" },
+            { "name": "borderColor", "type": "string", "value": "#f0c97c" },
+            { "name": "alpha", "type": "float", "value": 0.28 }
+          ]
+        },
+        {
+          "id": 7,
+          "name": "desk",
+          "type": "counter",
+          "x": 48,
+          "y": 120,
+          "width": 96,
+          "height": 24,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#6b4d3a" },
+            { "name": "topColor", "type": "string", "value": "#d7b38d" }
+          ]
+        },
+        {
+          "id": 8,
+          "name": "sofa",
+          "type": "sofa",
+          "x": 144,
+          "y": 120,
+          "width": 48,
+          "height": 24,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#7e6d92" },
+            { "name": "backColor", "type": "string", "value": "#b39ec4" }
+          ]
+        },
+        {
+          "id": 9,
+          "name": "plant-left",
+          "type": "plant",
+          "x": 24,
+          "y": 120,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#79c196" },
+            { "name": "potColor", "type": "string", "value": "#8b5e40" }
+          ]
+        },
+        {
+          "id": 10,
+          "name": "plant-right",
+          "type": "plant",
+          "x": 192,
+          "y": 120,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#79c196" },
+            { "name": "potColor", "type": "string", "value": "#8b5e40" }
+          ]
+        },
+        {
+          "id": 11,
+          "name": "lamp-left",
+          "type": "lamp",
+          "x": 48,
+          "y": 24,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#ffe9a6" }
+          ]
+        },
+        {
+          "id": 12,
+          "name": "lamp-right",
+          "type": "lamp",
+          "x": 168,
+          "y": 24,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#ffe9a6" }
+          ]
+        }
+      ]
+    }
+  ]
+}

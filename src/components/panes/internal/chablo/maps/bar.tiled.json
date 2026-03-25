@@ -1,0 +1,265 @@
+{
+  "type": "map",
+  "name": "bar",
+  "width": 10,
+  "height": 7,
+  "tilewidth": 24,
+  "tileheight": 24,
+  "infinite": false,
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "version": "1.10",
+  "tiledversion": "1.11.1",
+  "nextlayerid": 4,
+  "nextobjectid": 11,
+  "properties": [
+    { "name": "id", "type": "string", "value": "bar" },
+    { "name": "name", "type": "string", "value": "De Bar" },
+    { "name": "description", "type": "string", "value": "Neon, plakkerige tafels en mensen die doen alsof ze AFK zijn." },
+    { "name": "accent", "type": "string", "value": "#d5765c" },
+    { "name": "roomScale", "type": "int", "value": 2 }
+  ],
+  "tilesets": [
+    {
+      "firstgid": 1,
+      "name": "chablo-layout",
+      "tilewidth": 24,
+      "tileheight": 24,
+      "tilecount": 6,
+      "columns": 0,
+      "tiles": [
+        { "id": 0, "properties": [{ "name": "code", "type": "string", "value": "." }] },
+        { "id": 1, "properties": [{ "name": "code", "type": "string", "value": "#" }] },
+        { "id": 2, "properties": [{ "name": "code", "type": "string", "value": "T" }] },
+        { "id": 3, "properties": [{ "name": "code", "type": "string", "value": "B" }] },
+        { "id": 4, "properties": [{ "name": "code", "type": "string", "value": "C" }] },
+        { "id": 5, "properties": [{ "name": "code", "type": "string", "value": "P" }] }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": 1,
+      "name": "layout",
+      "type": "tilelayer",
+      "width": 10,
+      "height": 7,
+      "x": 0,
+      "y": 0,
+      "visible": true,
+      "opacity": 1,
+      "data": [
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+        2, 1, 1, 3, 3, 1, 1, 1, 1, 2,
+        2, 1, 1, 3, 3, 1, 1, 1, 1, 2,
+        2, 1, 1, 1, 1, 1, 1, 1, 1, 2,
+        2, 1, 1, 1, 1, 4, 4, 1, 1, 2,
+        2, 1, 1, 1, 1, 4, 4, 1, 1, 2,
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+      ]
+    },
+    {
+      "id": 2,
+      "name": "objects",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 1,
+          "name": "spawn",
+          "type": "spawn",
+          "x": 24,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true
+        },
+        {
+          "id": 2,
+          "name": "Receptie",
+          "type": "door",
+          "x": 24,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "receptie" },
+            { "name": "label", "type": "string", "value": "Receptie" },
+            { "name": "spawnX", "type": "int", "value": 7 },
+            { "name": "spawnY", "type": "int", "value": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "decor",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 3,
+          "name": "Neon Bar",
+          "type": "sign",
+          "x": 96,
+          "y": 0,
+          "width": 48,
+          "height": 24,
+          "properties": [
+            { "name": "text", "type": "string", "value": "Neon Bar" }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "bar-counter",
+          "type": "counter",
+          "x": 144,
+          "y": 96,
+          "width": 48,
+          "height": 48,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#69422f" },
+            { "name": "topColor", "type": "string", "value": "#de9d74" }
+          ]
+        },
+        {
+          "id": 5,
+          "name": "table-left",
+          "type": "table",
+          "x": 48,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#86553d" },
+            { "name": "radius", "type": "int", "value": 13 }
+          ]
+        },
+        {
+          "id": 6,
+          "name": "table-right",
+          "type": "table",
+          "x": 96,
+          "y": 96,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#86553d" },
+            { "name": "radius", "type": "int", "value": 13 }
+          ]
+        },
+        {
+          "id": 7,
+          "name": "bar-stools",
+          "type": "stool",
+          "x": 48,
+          "y": 48,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#d48b5d" }
+          ]
+        },
+        {
+          "id": 8,
+          "name": "bar-stools",
+          "type": "stool",
+          "x": 72,
+          "y": 48,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#d48b5d" }
+          ]
+        },
+        {
+          "id": 9,
+          "name": "bar-stools",
+          "type": "stool",
+          "x": 144,
+          "y": 120,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#d48b5d" }
+          ]
+        },
+        {
+          "id": 10,
+          "name": "bar-stools",
+          "type": "stool",
+          "x": 168,
+          "y": 120,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#d48b5d" }
+          ]
+        },
+        {
+          "id": 11,
+          "name": "dance-rug",
+          "type": "rug",
+          "x": 24,
+          "y": 96,
+          "width": 72,
+          "height": 24,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#5e3144" },
+            { "name": "borderColor", "type": "string", "value": "#ff9468" },
+            { "name": "alpha", "type": "float", "value": 0.24 }
+          ]
+        },
+        {
+          "id": 12,
+          "name": "neon-right",
+          "type": "neon",
+          "x": 168,
+          "y": 24,
+          "width": 48,
+          "height": 24,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#ff9468" }
+          ]
+        },
+        {
+          "id": 13,
+          "name": "neon-left",
+          "type": "neon",
+          "x": 48,
+          "y": 24,
+          "width": 48,
+          "height": 24,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#ffb37a" },
+            { "name": "duration", "type": "int", "value": 980 }
+          ]
+        },
+        {
+          "id": 14,
+          "name": "bar-lamp",
+          "type": "lamp",
+          "x": 48,
+          "y": 120,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#ffd2a5" }
+          ]
+        }
+      ]
+    }
+  ]
+}
