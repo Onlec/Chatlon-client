@@ -16,6 +16,35 @@ const POINT_DECOR_TYPES = new Set([
   'lamp'
 ]);
 
+const OBJECT_LAYER_NAME = 'objects';
+const DECOR_LAYER_NAME = 'decor';
+const LAYOUT_LAYER_NAME = 'layout';
+const HOTSPOTS_LAYER_NAME = 'hotspots';
+const SUPPORTED_DECOR_TYPES = new Set([
+  ...AREA_DECOR_TYPES,
+  ...POINT_DECOR_TYPES,
+  'stool'
+]);
+const SUPPORTED_HOTSPOT_ACTION_TYPES = new Set([
+  'bulletin',
+  'feedback',
+  'prefill-chat',
+  'room-jump'
+]);
+
+export const CHABLO_TILED_CONVENTIONS = {
+  layoutLayerName: LAYOUT_LAYER_NAME,
+  objectLayerName: OBJECT_LAYER_NAME,
+  decorLayerName: DECOR_LAYER_NAME,
+  hotspotLayerName: HOTSPOTS_LAYER_NAME,
+  requiredMapProperties: ['id', 'name', 'accent', 'roomScale'],
+  supportedObjectTypes: {
+    objects: ['spawn', 'door'],
+    decor: Array.from(SUPPORTED_DECOR_TYPES),
+    hotspots: ['hotspot']
+  }
+};
+
 function getPropertyMap(properties = []) {
   return properties.reduce((next, property) => {
     if (!property || typeof property.name !== 'string') {
@@ -81,6 +110,21 @@ function scaleDecorItem(item, scale) {
   };
 }
 
+function scaleHotspot(item, scale) {
+  return {
+    ...item,
+    x: scaleAreaCoordinate(item.x, scale),
+    y: scaleAreaCoordinate(item.y, scale),
+    width: typeof item.width === 'number' ? item.width * scale : item.width,
+    height: typeof item.height === 'number' ? item.height * scale : item.height,
+    target: {
+      x: scalePointCoordinate(item.target.x, scale),
+      y: scalePointCoordinate(item.target.y, scale)
+    },
+    renderScale: scale
+  };
+}
+
 function scaleRoom(room, scale) {
   if (scale <= 1) {
     return {
@@ -106,7 +150,8 @@ function scaleRoom(room, scale) {
         y: scalePointCoordinate(door.spawn.y, scale)
       }
     })),
-    decor: (room.decor || []).map((item) => scaleDecorItem(item, scale))
+    decor: (room.decor || []).map((item) => scaleDecorItem(item, scale)),
+    hotspots: (room.hotspots || []).map((item) => scaleHotspot(item, scale))
   };
 }
 
@@ -120,6 +165,163 @@ function flattenLayers(layers = []) {
     }
     return [layer];
   });
+}
+
+function getRequiredLayer(map, layerName, expectedType) {
+  const layer = flattenLayers(map.layers).find(
+    (candidate) => candidate?.name === layerName && candidate?.type === expectedType
+  );
+
+  if (!layer) {
+    throw new Error(`Tiled room "${map.name || 'unknown'}" mist verplichte ${expectedType}-laag "${layerName}".`);
+  }
+
+  return layer;
+}
+
+function getOptionalLayer(map, layerName, expectedType) {
+  return flattenLayers(map.layers).find(
+    (candidate) => candidate?.name === layerName && candidate?.type === expectedType
+  ) || null;
+}
+
+function assertMapProperty(properties, propertyName, mapName) {
+  const value = properties[propertyName];
+  if (value === undefined || value === null || value === '') {
+    throw new Error(`Tiled room "${mapName}" mist verplichte map property "${propertyName}".`);
+  }
+}
+
+function validateObjectsLayer(map, layer) {
+  const spawnObjects = [];
+
+  (layer.objects || []).forEach((object) => {
+    if (!object || typeof object.type !== 'string') {
+      throw new Error(`Tiled room "${map.name}" bevat een object zonder geldig type in laag "${OBJECT_LAYER_NAME}".`);
+    }
+
+    if (object.type === 'spawn') {
+      spawnObjects.push(object);
+      return;
+    }
+
+    if (object.type !== 'door') {
+      throw new Error(
+        `Tiled room "${map.name}" gebruikt ongeldige objecttype "${object.type}" in laag "${OBJECT_LAYER_NAME}".`
+      );
+    }
+
+    const properties = getPropertyMap(object.properties);
+    const to = properties.to || properties.targetRoom;
+    const hasSpawnX = Number.isFinite(Number(properties.spawnX ?? properties.targetSpawnX));
+    const hasSpawnY = Number.isFinite(Number(properties.spawnY ?? properties.targetSpawnY));
+
+    if (typeof to !== 'string' || !to) {
+      throw new Error(`Door "${object.name || 'unnamed'}" in room "${map.name}" mist property "to".`);
+    }
+
+    if (!hasSpawnX || !hasSpawnY) {
+      throw new Error(`Door "${object.name || 'unnamed'}" in room "${map.name}" mist geldige spawnX/spawnY properties.`);
+    }
+  });
+
+  if (spawnObjects.length !== 1) {
+    throw new Error(`Tiled room "${map.name}" moet exact 1 spawn object hebben; gevonden: ${spawnObjects.length}.`);
+  }
+}
+
+function validateDecorLayer(map, layer) {
+  (layer.objects || []).forEach((object) => {
+    if (!object || typeof object.type !== 'string') {
+      throw new Error(`Tiled room "${map.name}" bevat een decorobject zonder geldig type.`);
+    }
+
+    if (!SUPPORTED_DECOR_TYPES.has(object.type)) {
+      throw new Error(`Tiled room "${map.name}" gebruikt niet-ondersteund decor type "${object.type}".`);
+    }
+  });
+}
+
+function validateHotspotsLayer(map, layer) {
+  if (!layer) {
+    return;
+  }
+
+  (layer.objects || []).forEach((object) => {
+    if (!object || object.type !== 'hotspot') {
+      throw new Error(`Tiled room "${map.name}" gebruikt ongeldige hotspot objecttype "${object?.type || 'unknown'}".`);
+    }
+
+    const properties = getPropertyMap(object.properties);
+    const label = properties.label || object.name;
+    const hasTargetX = Number.isFinite(Number(properties.targetX));
+    const hasTargetY = Number.isFinite(Number(properties.targetY));
+    const actionType = properties.actionType;
+
+    if (typeof label !== 'string' || !label) {
+      throw new Error(`Hotspot in room "${map.name}" mist een label of naam.`);
+    }
+
+    if (!hasTargetX || !hasTargetY) {
+      throw new Error(`Hotspot "${label}" in room "${map.name}" mist geldige targetX/targetY properties.`);
+    }
+
+    if (actionType !== undefined && !SUPPORTED_HOTSPOT_ACTION_TYPES.has(actionType)) {
+      throw new Error(`Hotspot "${label}" in room "${map.name}" gebruikt niet-ondersteund actionType "${actionType}".`);
+    }
+
+    if (actionType === 'prefill-chat' && typeof properties.actionText !== 'string') {
+      throw new Error(`Hotspot "${label}" in room "${map.name}" met actionType "prefill-chat" mist property "actionText".`);
+    }
+
+    if (actionType === 'room-jump' && typeof properties.actionRoom !== 'string') {
+      throw new Error(`Hotspot "${label}" in room "${map.name}" met actionType "room-jump" mist property "actionRoom".`);
+    }
+  });
+}
+
+export function validateChabloTiledMap(map) {
+  if (!map || map.type !== 'map') {
+    throw new Error('Expected a Tiled JSON map object.');
+  }
+
+  if (map.orientation !== 'orthogonal') {
+    throw new Error(`Unsupported Tiled map orientation "${map.orientation}".`);
+  }
+
+  if (!Number.isFinite(Number(map.width)) || !Number.isFinite(Number(map.height)) || map.width <= 0 || map.height <= 0) {
+    throw new Error(`Tiled room "${map.name || 'unknown'}" heeft ongeldige width/height.`);
+  }
+
+  if (!Number.isFinite(Number(map.tilewidth)) || !Number.isFinite(Number(map.tileheight)) || map.tilewidth <= 0 || map.tileheight <= 0) {
+    throw new Error(`Tiled room "${map.name || 'unknown'}" heeft ongeldige tilewidth/tileheight.`);
+  }
+
+  const properties = getPropertyMap(map.properties);
+  CHABLO_TILED_CONVENTIONS.requiredMapProperties.forEach((propertyName) => {
+    assertMapProperty(properties, propertyName, map.name || 'unknown');
+  });
+
+  const layoutLayer = getRequiredLayer(map, LAYOUT_LAYER_NAME, 'tilelayer');
+  const objectsLayer = getRequiredLayer(map, OBJECT_LAYER_NAME, 'objectgroup');
+  const decorLayer = getRequiredLayer(map, DECOR_LAYER_NAME, 'objectgroup');
+  const hotspotsLayer = getOptionalLayer(map, HOTSPOTS_LAYER_NAME, 'objectgroup');
+
+  if (!Array.isArray(layoutLayer.data) || layoutLayer.data.length !== map.width * map.height) {
+    throw new Error(`Tiled room "${map.name}" heeft een ongeldige layout data lengte.`);
+  }
+
+  validateObjectsLayer(map, objectsLayer);
+  validateDecorLayer(map, decorLayer);
+  validateHotspotsLayer(map, hotspotsLayer);
+
+  return {
+    properties,
+    layoutLayer,
+    objectsLayer,
+    decorLayer,
+    hotspotsLayer
+  };
 }
 
 function buildTilesetResolver(map) {
@@ -164,27 +366,23 @@ function toTileSpan(pixelValue, tileSize) {
   return Math.max(1, span);
 }
 
-function buildLayoutFromTileLayers(map, resolveTile) {
+function buildLayoutFromTileLayer(map, layoutLayer, resolveTile) {
   const width = Number(map.width) || 0;
   const height = Number(map.height) || 0;
   const layout = Array.from({ length: height }, () => Array.from({ length: width }, () => '.'));
 
-  flattenLayers(map.layers)
-    .filter((layer) => layer.type === 'tilelayer' && Array.isArray(layer.data) && layer.visible !== false)
-    .forEach((layer) => {
-      layer.data.forEach((gid, index) => {
-        const tile = resolveTile(gid);
-        const code = tile?.properties?.code;
-        if (typeof code !== 'string' || !code) {
-          return;
-        }
-        const x = index % width;
-        const y = Math.floor(index / width);
-        if (layout[y]) {
-          layout[y][x] = code;
-        }
-      });
-    });
+  layoutLayer.data.forEach((gid, index) => {
+    const tile = resolveTile(gid);
+    const code = tile?.properties?.code;
+    if (typeof code !== 'string' || !code) {
+      return;
+    }
+    const x = index % width;
+    const y = Math.floor(index / width);
+    if (layout[y]) {
+      layout[y][x] = code;
+    }
+  });
 
   return layout.map((row) => row.join(''));
 }
@@ -238,17 +436,11 @@ function parseDecorObject(object, map) {
   return item;
 }
 
-function parseObjects(map) {
-  const objects = flattenLayers(map.layers)
-    .filter((layer) => layer.type === 'objectgroup' && Array.isArray(layer.objects) && layer.visible !== false)
-    .flatMap((layer) => layer.objects);
-
+function parseObjectsLayer(layer, map) {
   let spawn = null;
   const doors = [];
-  const decor = [];
-  const stoolGroups = new Map();
 
-  objects.forEach((object) => {
+  (layer.objects || []).forEach((object) => {
     if (!object || typeof object.type !== 'string') {
       return;
     }
@@ -261,11 +453,24 @@ function parseObjects(map) {
       return;
     }
 
-    if (object.type === 'door') {
-      const door = parseDoorObject(object, map);
-      if (door) {
-        doors.push(door);
-      }
+    const door = parseDoorObject(object, map);
+    if (door) {
+      doors.push(door);
+    }
+  });
+
+  return {
+    spawn,
+    doors
+  };
+}
+
+function parseDecorLayer(layer, map) {
+  const decor = [];
+  const stoolGroups = new Map();
+
+  (layer.objects || []).forEach((object) => {
+    if (!object || typeof object.type !== 'string') {
       return;
     }
 
@@ -293,25 +498,59 @@ function parseObjects(map) {
     decor.push(group);
   });
 
-  return {
-    spawn,
-    doors,
-    decor
-  };
+  return decor;
+}
+
+function parseHotspotsLayer(layer, map) {
+  if (!layer) {
+    return [];
+  }
+
+  return (layer.objects || []).map((object) => {
+    const properties = getPropertyMap(object.properties);
+    const actionType = properties.actionType;
+    return {
+      id: properties.id || object.name || `hotspot-${object.id}`,
+      kind: properties.kind || 'generic',
+      label: properties.label || object.name || 'Hotspot',
+      description: properties.description || '',
+      feedback: properties.feedback || '',
+      actionLabel: properties.actionLabel || 'Ga erheen',
+      icon: properties.icon || '!',
+      accent: properties.accent || null,
+      x: toTileCoordinate(object.x, map.tilewidth),
+      y: toTileCoordinate(object.y, map.tileheight),
+      width: toTileSpan(object.width, map.tilewidth),
+      height: toTileSpan(object.height, map.tileheight),
+      target: {
+        x: Number(properties.targetX),
+        y: Number(properties.targetY)
+      },
+      action: actionType ? {
+        type: actionType,
+        title: properties.actionTitle || '',
+        text: properties.actionText || '',
+        message: properties.actionMessage || '',
+        buttonLabel: properties.actionButton || '',
+        roomId: properties.actionRoom || '',
+        target: Number.isFinite(Number(properties.actionTargetX)) && Number.isFinite(Number(properties.actionTargetY))
+          ? {
+            x: Number(properties.actionTargetX),
+            y: Number(properties.actionTargetY)
+          }
+          : null
+      } : null
+    };
+  });
 }
 
 export function compileChabloRoomFromTiledMap(map) {
-  if (!map || map.type !== 'map') {
-    throw new Error('Expected a Tiled JSON map object.');
-  }
-
-  if (map.orientation !== 'orthogonal') {
-    throw new Error(`Unsupported Tiled map orientation "${map.orientation}".`);
-  }
-
-  const properties = getPropertyMap(map.properties);
+  const validated = validateChabloTiledMap(map);
+  const { properties, layoutLayer, objectsLayer, decorLayer, hotspotsLayer } = validated;
   const resolveTile = buildTilesetResolver(map);
-  const parsed = parseObjects(map);
+  const parsedObjects = parseObjectsLayer(objectsLayer, map);
+  const decor = parseDecorLayer(decorLayer, map);
+  const hotspots = parseHotspotsLayer(hotspotsLayer, map);
   const scale = Math.max(1, Number(properties.roomScale ?? properties.scale ?? 1) || 1);
 
   const baseRoom = {
@@ -319,10 +558,11 @@ export function compileChabloRoomFromTiledMap(map) {
     name: properties.name || map.name || 'Unnamed room',
     description: properties.description || '',
     accent: properties.accent || '#607894',
-    layout: buildLayoutFromTileLayers(map, resolveTile),
-    spawn: parsed.spawn || { x: 0, y: 0 },
-    doors: parsed.doors,
-    decor: parsed.decor
+    layout: buildLayoutFromTileLayer(map, layoutLayer, resolveTile),
+    spawn: parsedObjects.spawn || { x: 0, y: 0 },
+    doors: parsedObjects.doors,
+    decor,
+    hotspots
   };
 
   if (typeof baseRoom.id !== 'string' || !baseRoom.id) {

@@ -181,6 +181,63 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "name": "hotspots",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 20,
+          "name": "Auto",
+          "type": "hotspot",
+          "x": 144,
+          "y": 48,
+          "width": 48,
+          "height": 48,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "car" },
+            { "name": "label", "type": "string", "value": "Geparkeerde auto" },
+            { "name": "description", "type": "string", "value": "Staat hier al te lang om nog echt functioneel te zijn." },
+            { "name": "feedback", "type": "string", "value": "Je kijkt naar de auto. Hij lijkt vooral emotionele kilometers gemaakt te hebben." },
+            { "name": "actionLabel", "type": "string", "value": "Loop naar de auto" },
+            { "name": "icon", "type": "string", "value": "A" },
+            { "name": "actionType", "type": "string", "value": "bulletin" },
+            { "name": "actionTitle", "type": "string", "value": "Vertrekbord" },
+            { "name": "actionText", "type": "string", "value": "Bestemmingen: nergens dringend, altijd nog één laatste gesprek, misschien straks echt weg." },
+            { "name": "actionButton", "type": "string", "value": "Bekijk het vertrekbord" },
+            { "name": "actionMessage", "type": "string", "value": "Je leest het vertrekbord en beseft dat niemand hier haast heeft." },
+            { "name": "targetX", "type": "int", "value": 5 },
+            { "name": "targetY", "type": "int", "value": 3 }
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Rokersrand",
+          "type": "hotspot",
+          "x": 48,
+          "y": 24,
+          "width": 24,
+          "height": 120,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "parking" },
+            { "name": "label", "type": "string", "value": "Rokersrand" },
+            { "name": "description", "type": "string", "value": "De plek waar zogezegd iedereen echt bijna naar huis gaat." },
+            { "name": "feedback", "type": "string", "value": "Je hangt aan de rand van de parking. Iedereen praat hier alsof het het laatste gesprek van de nacht is." },
+            { "name": "actionLabel", "type": "string", "value": "Ga naar de rand" },
+            { "name": "icon", "type": "string", "value": "R" },
+            { "name": "actionType", "type": "string", "value": "prefill-chat" },
+            { "name": "actionButton", "type": "string", "value": "Zet een laatste-lijn klaar" },
+            { "name": "actionText", "type": "string", "value": "Nog één laatste gesprek en ik ben echt weg." },
+            { "name": "actionMessage", "type": "string", "value": "Je hebt een laatste-lijn klaargezet in de room chat." },
+            { "name": "targetX", "type": "int", "value": 2 },
+            { "name": "targetY", "type": "int", "value": 3 }
+          ]
+        }
+      ]
     }
   ]
 }

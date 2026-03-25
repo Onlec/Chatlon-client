@@ -25,6 +25,13 @@ jest.mock('./chablo/ChabloPhaserStage', () => function MockChabloPhaserStage(pro
       >
         Stage deur naar bar
       </button>
+      <button
+        type="button"
+        aria-label="Stage hotspot"
+        onClick={() => props.onHotspotActivate?.(props.currentRoomMeta.hotspots?.[0] || null)}
+      >
+        Stage hotspot
+      </button>
       {props.otherOccupants.map((occupant) => (
         <button
           key={occupant.username}
@@ -374,6 +381,69 @@ describe('ChabloMotelView', () => {
         }));
       });
       expect(screen.getByText('5, 7')).toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('walks to a room hotspot and shows its interaction copy', async () => {
+    jest.useFakeTimers();
+    try {
+      const now = Date.now();
+      const api = createGunApiMock({
+        positions: {
+          alice: { room: 'receptie', x: 9, y: 7, lastSeen: now }
+        }
+      });
+
+      render(<ChabloMotelView currentUser="alice" gunApi={api.gunApi} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Ga naar de lounge' }));
+
+      act(() => {
+        jest.advanceTimersByTime(1500);
+      });
+
+      expect(screen.getByText('15, 9')).toBeInTheDocument();
+      expect(screen.getAllByText('Loungehoek').length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/sofa om dramatisch te zitten wachten/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('button', { name: 'Hang rond in de lounge' }).length).toBeGreaterThan(0);
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'Hang rond in de lounge' })[0]);
+
+      expect(screen.getByText('Hotspot actie')).toBeInTheDocument();
+      expect(screen.getByText('feedback')).toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('uses a hotspot action to prefill room chat text', async () => {
+    jest.useFakeTimers();
+    try {
+      const now = Date.now();
+      const api = createGunApiMock({
+        positions: {
+          alice: { room: 'receptie', x: 9, y: 7, lastSeen: now }
+        }
+      });
+
+      render(<ChabloMotelView currentUser="alice" gunApi={api.gunApi} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'De Bar' }));
+      expect(await screen.findByRole('heading', { name: 'De Bar' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Ga naar de bar' }));
+
+      act(() => {
+        jest.advanceTimersByTime(1600);
+      });
+
+      expect(screen.getByText('9, 9')).toBeInTheDocument();
+      fireEvent.click(screen.getAllByRole('button', { name: 'Bestel iets aan de bar' })[0]);
+
+      expect(screen.getByPlaceholderText('Zeg iets in De Bar')).toHaveValue('Nog iemand iets van de bar?');
+      expect(screen.getByText('prefill-chat')).toBeInTheDocument();
     } finally {
       jest.useRealTimers();
     }

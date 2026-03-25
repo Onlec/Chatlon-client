@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createChabloPhaserBridge } from './createChabloPhaserBridge';
 
 function getStagePayload({
+  activeHotspotId,
   currentRoomMeta,
   currentUser,
   otherOccupants,
@@ -9,6 +10,7 @@ function getStagePayload({
   selectedAvatar
 }) {
   return {
+    activeHotspotId,
     roomId: currentRoomMeta.id,
     roomAccent: currentRoomMeta.accent,
     currentUser,
@@ -19,10 +21,12 @@ function getStagePayload({
 }
 
 export function ChabloPhaserStage({
+  activeHotspotId,
   currentRoomMeta,
   currentUser,
   onDirectionStart,
   onDirectionStop,
+  onHotspotActivate,
   onTileActivate,
   onSelectAvatar,
   otherOccupants,
@@ -35,9 +39,11 @@ export function ChabloPhaserStage({
   const activeDirectionKeyRef = useRef(null);
   const onSelectAvatarRef = useRef(onSelectAvatar);
   const onTileActivateRef = useRef(onTileActivate);
+  const onHotspotActivateRef = useRef(onHotspotActivate);
   const [engineState, setEngineState] = useState('loading');
 
   worldRef.current = getStagePayload({
+    activeHotspotId,
     currentRoomMeta,
     currentUser,
     otherOccupants,
@@ -48,7 +54,8 @@ export function ChabloPhaserStage({
   useEffect(() => {
     onSelectAvatarRef.current = onSelectAvatar;
     onTileActivateRef.current = onTileActivate;
-  }, [onSelectAvatar, onTileActivate]);
+    onHotspotActivateRef.current = onHotspotActivate;
+  }, [onHotspotActivate, onSelectAvatar, onTileActivate]);
 
   useEffect(() => {
     let disposed = false;
@@ -65,7 +72,8 @@ export function ChabloPhaserStage({
           Phaser: PhaserRuntime,
           container: containerRef.current,
           onSelectAvatar: (username) => onSelectAvatarRef.current?.(username),
-          onTileActivate: (tile) => onTileActivateRef.current?.(tile)
+          onTileActivate: (tile) => onTileActivateRef.current?.(tile),
+          onHotspotActivate: (hotspot) => onHotspotActivateRef.current?.(hotspot)
         });
         bridgeRef.current.updateWorld(worldRef.current);
         setEngineState('ready');
@@ -87,13 +95,14 @@ export function ChabloPhaserStage({
   useEffect(() => {
     if (!bridgeRef.current) return;
     bridgeRef.current.updateWorld(getStagePayload({
+      activeHotspotId,
       currentRoomMeta,
       currentUser,
       otherOccupants,
       position,
       selectedAvatar
     }));
-  }, [currentRoomMeta, currentUser, otherOccupants, position, selectedAvatar]);
+  }, [activeHotspotId, currentRoomMeta, currentUser, otherOccupants, position, selectedAvatar]);
 
   useEffect(() => {
     const element = containerRef.current;

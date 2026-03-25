@@ -414,8 +414,87 @@ function addDoorMarkers(scene, layer, room) {
   });
 }
 
-export function drawChabloRoom(scene, layer, room, onTileActivate) {
+function addHotspotMarkers(scene, layer, room, activeHotspotId, onHotspotActivate) {
+  (room.hotspots || []).forEach((hotspot) => {
+    const width = (hotspot.width || 1) * TILE_SIZE - 12;
+    const height = (hotspot.height || 1) * TILE_SIZE - 12;
+    const centerX = toStageUnit(hotspot.x) + (hotspot.width || 1) * TILE_SIZE / 2;
+    const centerY = toStageUnit(hotspot.y) + (hotspot.height || 1) * TILE_SIZE / 2;
+    const isActive = hotspot.id === activeHotspotId;
+    const accent = parseColor(hotspot.accent || room.accent, 0x90b8ff);
+
+    const container = scene.add.container(centerX, centerY);
+    const pulse = scene.add.rectangle(0, 0, width + 8, height + 8, accent, isActive ? 0.18 : 0.08);
+    const marker = scene.add.rectangle(0, 0, width, height, accent, isActive ? 0.22 : 0.08);
+    marker.setStrokeStyle(2, 0xf4f8ff, isActive ? 0.5 : 0.18);
+
+    const label = scene.add.text(
+      0,
+      -Math.max(14, height / 2 + 12),
+      hotspot.label,
+      {
+        fontFamily: 'Tahoma, Arial, sans-serif',
+        fontSize: '10px',
+        fontStyle: 'bold',
+        color: '#f6fbff',
+        backgroundColor: 'rgba(12,18,28,0.72)',
+        padding: { left: 6, right: 6, top: 3, bottom: 3 }
+      }
+    ).setOrigin(0.5);
+    label.setAlpha(isActive ? 0.98 : 0.82);
+
+    const icon = scene.add.text(
+      0,
+      0,
+      hotspot.icon || '!',
+      {
+        fontFamily: 'Tahoma, Arial, sans-serif',
+        fontSize: '15px',
+        fontStyle: 'bold',
+        color: '#f6fbff'
+      }
+    ).setOrigin(0.5);
+
+    container.add([pulse, marker, icon, label]);
+    container.setSize(width + 8, height + 8);
+    container.setInteractive();
+
+    scene.tweens.add({
+      targets: pulse,
+      alpha: { from: isActive ? 0.18 : 0.08, to: isActive ? 0.28 : 0.16 },
+      scaleX: { from: 0.98, to: 1.03 },
+      scaleY: { from: 0.98, to: 1.03 },
+      duration: 1200,
+      yoyo: true,
+      repeat: -1
+    });
+
+    container.on('pointerover', () => {
+      marker.setAlpha(isActive ? 0.3 : 0.18);
+      label.setAlpha(1);
+      container.setScale(1.02);
+    });
+    container.on('pointerout', () => {
+      marker.setAlpha(isActive ? 0.22 : 0.08);
+      label.setAlpha(isActive ? 0.98 : 0.82);
+      container.setScale(1);
+    });
+    container.on('pointerdown', (pointer, localX, localY, event) => {
+      event?.stopPropagation?.();
+      onHotspotActivate?.(hotspot);
+    });
+
+    layer.add(container);
+  });
+}
+
+export function drawChabloRoom(scene, layer, room, handlers = {}) {
   layer.removeAll(true);
+  const {
+    activeHotspotId = null,
+    onHotspotActivate,
+    onTileActivate
+  } = handlers;
   scene.onTileActivate = onTileActivate;
 
   const roomWidth = room.layout[0].length * TILE_SIZE;
@@ -466,6 +545,7 @@ export function drawChabloRoom(scene, layer, room, onTileActivate) {
 
   addDecor(scene, layer, room);
   addDoorMarkers(scene, layer, room);
+  addHotspotMarkers(scene, layer, room, activeHotspotId, onHotspotActivate);
 
   return {
     width: roomWidth + STAGE_PADDING * 2,

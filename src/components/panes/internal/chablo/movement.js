@@ -60,6 +60,23 @@ export function getDoorAtPosition(roomId, position) {
   };
 }
 
+export function getHotspotAtPosition(roomId, position) {
+  const room = getChabloRoom(roomId);
+  const nextPosition = normalizeRoomPosition(roomId, position);
+  return room.hotspots?.find((hotspot) => (
+    (
+      nextPosition.x === hotspot.target.x
+      && nextPosition.y === hotspot.target.y
+    )
+    || (
+      nextPosition.x >= hotspot.x
+      && nextPosition.x < hotspot.x + hotspot.width
+      && nextPosition.y >= hotspot.y
+      && nextPosition.y < hotspot.y + hotspot.height
+    )
+  )) || null;
+}
+
 export function resolveRoomMovement(roomId, currentPosition, deltaX, deltaY) {
   const origin = normalizeRoomPosition(roomId, currentPosition);
   const proposed = {

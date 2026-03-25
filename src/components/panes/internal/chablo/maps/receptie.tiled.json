@@ -241,6 +241,62 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "name": "hotspots",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 20,
+          "name": "Balie",
+          "type": "hotspot",
+          "x": 48,
+          "y": 120,
+          "width": 96,
+          "height": 24,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "receptie" },
+            { "name": "label", "type": "string", "value": "Balie" },
+            { "name": "description", "type": "string", "value": "De klassieke motelbalie: half administratie, half roddelpunt." },
+            { "name": "feedback", "type": "string", "value": "Je leunt tegen de receptiebalie. Er ligt een bel die niemand ooit hoort." },
+            { "name": "actionLabel", "type": "string", "value": "Leun tegen de balie" },
+            { "name": "icon", "type": "string", "value": "B" },
+            { "name": "actionType", "type": "string", "value": "bulletin" },
+            { "name": "actionTitle", "type": "string", "value": "Motelbord" },
+            { "name": "actionText", "type": "string", "value": "Welkom in Chablo Motel. Receptie voor drama, bar voor performances, kelder voor gefluister en parking voor afscheid dat nooit echt doorgaat." },
+            { "name": "actionButton", "type": "string", "value": "Bekijk het motelbord" },
+            { "name": "actionMessage", "type": "string", "value": "Je leest het motelbord alsof het persoonlijk over jou gaat." },
+            { "name": "targetX", "type": "int", "value": 4 },
+            { "name": "targetY", "type": "int", "value": 4 }
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Loungehoek",
+          "type": "hotspot",
+          "x": 144,
+          "y": 120,
+          "width": 48,
+          "height": 24,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "lounge" },
+            { "name": "label", "type": "string", "value": "Loungehoek" },
+            { "name": "description", "type": "string", "value": "Een sofa om dramatisch te zitten wachten tot iemand jouw status opmerkt." },
+            { "name": "feedback", "type": "string", "value": "Je ploft in de loungehoek en doet alsof je toevallig hier bent." },
+            { "name": "actionLabel", "type": "string", "value": "Ga naar de lounge" },
+            { "name": "icon", "type": "string", "value": "L" },
+            { "name": "actionType", "type": "string", "value": "feedback" },
+            { "name": "actionButton", "type": "string", "value": "Hang rond in de lounge" },
+            { "name": "actionText", "type": "string", "value": "Je ploft in de loungehoek en doet alsof je toevallig hier bent." },
+            { "name": "targetX", "type": "int", "value": 7 },
+            { "name": "targetY", "type": "int", "value": 4 }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -202,6 +202,63 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "name": "hotspots",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 20,
+          "name": "Ketelruimte",
+          "type": "hotspot",
+          "x": 24,
+          "y": 24,
+          "width": 24,
+          "height": 120,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "utility" },
+            { "name": "label", "type": "string", "value": "Ketelruimte" },
+            { "name": "description", "type": "string", "value": "De leidingen brommen hier harder dan de room chat hierboven." },
+            { "name": "feedback", "type": "string", "value": "Je blijft bij de leidingen staan. Alles klinkt hier alsof het een geheim bewaart." },
+            { "name": "actionLabel", "type": "string", "value": "Loop naar de leidingen" },
+            { "name": "icon", "type": "string", "value": "K" },
+            { "name": "actionType", "type": "string", "value": "bulletin" },
+            { "name": "actionTitle", "type": "string", "value": "Onderhoudslog" },
+            { "name": "actionText", "type": "string", "value": "Onderhoud: één lamp flikkert, twee buizen zingen, en niemand weet wie de krat met mysterieuze inhoud heeft achtergelaten." },
+            { "name": "actionButton", "type": "string", "value": "Lees het onderhoudslog" },
+            { "name": "actionMessage", "type": "string", "value": "Je bestudeert het onderhoudslog alsof het een aanwijzing is." },
+            { "name": "targetX", "type": "int", "value": 2 },
+            { "name": "targetY", "type": "int", "value": 3 }
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Whisperhoek",
+          "type": "hotspot",
+          "x": 72,
+          "y": 120,
+          "width": 48,
+          "height": 24,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "whisper" },
+            { "name": "label", "type": "string", "value": "Whisperhoek" },
+            { "name": "description", "type": "string", "value": "Een donker hoekje waar alles meteen belangrijker klinkt." },
+            { "name": "feedback", "type": "string", "value": "Je zoekt de whisperhoek op. Hier voelt elke zin meteen verboden." },
+            { "name": "actionLabel", "type": "string", "value": "Ga naar de whisperhoek" },
+            { "name": "icon", "type": "string", "value": "W" },
+            { "name": "actionType", "type": "string", "value": "prefill-chat" },
+            { "name": "actionButton", "type": "string", "value": "Zet een fluisterlijn klaar" },
+            { "name": "actionText", "type": "string", "value": "psst... iemand nog beneden?" },
+            { "name": "actionMessage", "type": "string", "value": "Je hebt een fluisterlijn klaargezet in de room chat." },
+            { "name": "targetX", "type": "int", "value": 4 },
+            { "name": "targetY", "type": "int", "value": 5 }
+          ]
+        }
+      ]
     }
   ]
 }

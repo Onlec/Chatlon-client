@@ -1,6 +1,7 @@
 import {
   findRoomPath,
   getDoorAtPosition,
+  getHotspotAtPosition,
   getRoomSpawnPosition,
   getTileFromStagePoint,
   isWalkableRoomPosition,
@@ -28,6 +29,16 @@ describe('Chablo movement helpers', () => {
       label: 'Bar',
       spawnPosition: { x: 3, y: 7 }
     }));
+  });
+
+  test('finds scaled room hotspots by occupied tile', () => {
+    expect(getHotspotAtPosition('receptie', { x: 9, y: 9 })).toEqual(expect.objectContaining({
+      id: 'Balie',
+      label: 'Balie',
+      target: { x: 9, y: 9 }
+    }));
+
+    expect(getHotspotAtPosition('bar', { x: 4, y: 4 })).toBeNull();
   });
 
   test('moves across walkable tiles and returns door metadata when crossing a door', () => {

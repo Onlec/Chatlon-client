@@ -260,6 +260,61 @@
           ]
         }
       ]
+    },
+    {
+      "id": 4,
+      "name": "hotspots",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 20,
+          "name": "Bar",
+          "type": "hotspot",
+          "x": 144,
+          "y": 96,
+          "width": 48,
+          "height": 48,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "bar" },
+            { "name": "label", "type": "string", "value": "Bartoog" },
+            { "name": "description", "type": "string", "value": "Hier bestel je pixelcocktails en hoor je halve gesprekken." },
+            { "name": "feedback", "type": "string", "value": "Je hangt tegen de bar en bestelt iets dat licht geeft in het donker." },
+            { "name": "actionLabel", "type": "string", "value": "Ga naar de bar" },
+            { "name": "icon", "type": "string", "value": "B" },
+            { "name": "actionType", "type": "string", "value": "prefill-chat" },
+            { "name": "actionButton", "type": "string", "value": "Bestel iets aan de bar" },
+            { "name": "actionText", "type": "string", "value": "Nog iemand iets van de bar?" },
+            { "name": "actionMessage", "type": "string", "value": "Je hebt een barlijn klaargezet in de room chat." },
+            { "name": "targetX", "type": "int", "value": 4 },
+            { "name": "targetY", "type": "int", "value": 4 }
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Dansvloer",
+          "type": "hotspot",
+          "x": 24,
+          "y": 96,
+          "width": 72,
+          "height": 24,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "dance" },
+            { "name": "label", "type": "string", "value": "Dansvloer" },
+            { "name": "description", "type": "string", "value": "Niet groot, wel genoeg om te doen alsof je de kamer bezit." },
+            { "name": "feedback", "type": "string", "value": "Je stapt de dansvloer op. Niemand weet of dit dansen is, maar het telt." },
+            { "name": "actionLabel", "type": "string", "value": "Stap de dansvloer op" },
+            { "name": "icon", "type": "string", "value": "D" },
+            { "name": "actionType", "type": "string", "value": "feedback" },
+            { "name": "actionButton", "type": "string", "value": "Claim de dansvloer" },
+            { "name": "actionText", "type": "string", "value": "Je stapt de dansvloer op. Niemand weet of dit dansen is, maar het telt." },
+            { "name": "targetX", "type": "int", "value": 2 },
+            { "name": "targetY", "type": "int", "value": 4 }
+          ]
+        }
+      ]
     }
   ]
 }

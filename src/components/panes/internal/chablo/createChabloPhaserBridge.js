@@ -13,6 +13,7 @@ function getAvatarPosition(tile) {
 export function createChabloPhaserBridge({
   Phaser,
   container,
+  onHotspotActivate,
   onSelectAvatar,
   onTileActivate
 }) {
@@ -28,6 +29,7 @@ export function createChabloPhaserBridge({
       this.avatarLayer = null;
       this.avatarManager = null;
       this.renderedRoomId = null;
+      this.renderedHotspotId = null;
       this.selectedAvatar = null;
       this.currentBounds = null;
     }
@@ -53,11 +55,17 @@ export function createChabloPhaserBridge({
 
       const room = getChabloRoom(world.roomId);
       this.selectedAvatar = world.selectedAvatar || null;
+      const activeHotspotId = world.activeHotspotId || null;
 
-      if (this.renderedRoomId !== room.id) {
-        this.currentBounds = drawChabloRoom(this, this.worldLayer, room, onTileActivate);
+      if (this.renderedRoomId !== room.id || this.renderedHotspotId !== activeHotspotId) {
+        this.currentBounds = drawChabloRoom(this, this.worldLayer, room, {
+          activeHotspotId,
+          onHotspotActivate,
+          onTileActivate
+        });
         this.cameras.main.setBounds(0, 0, this.currentBounds.width, this.currentBounds.height);
         this.renderedRoomId = room.id;
+        this.renderedHotspotId = activeHotspotId;
       }
 
       const everyone = [

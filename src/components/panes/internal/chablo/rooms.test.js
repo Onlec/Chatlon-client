@@ -27,6 +27,15 @@ describe('Chablo room decor config', () => {
           });
         }
       });
+
+      (room.hotspots || []).forEach((hotspot) => {
+        expect(isIntegerLike(hotspot.x)).toBe(true);
+        expect(isIntegerLike(hotspot.y)).toBe(true);
+        expect(isIntegerLike(hotspot.width)).toBe(true);
+        expect(isIntegerLike(hotspot.height)).toBe(true);
+        expect(isIntegerLike(hotspot.target.x)).toBe(true);
+        expect(isIntegerLike(hotspot.target.y)).toBe(true);
+      });
     });
   });
 });
