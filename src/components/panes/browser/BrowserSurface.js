@@ -1,14 +1,20 @@
 import React from 'react';
+import { getInternalBrowserSiteById } from './browserInternalSites';
+import PixelsView, { InternalSitePlaceholder } from '../internal/PixelsView';
+import MyspaceView from '../internal/MyspaceView';
+import ChabloMotelView from '../internal/ChabloMotelView';
 import { BROWSER_HOME_URL, BOOKMARKS } from './browserShared';
 
 function BrowserSurface({
   browserState,
   contentRef,
   contentState,
+  currentEntry,
+  currentInternalSite,
   currentUrl,
+  currentUser,
   frameSrc,
   homeSearchQuery,
-  sessionId,
   setHomeSearchQuery,
   surfaceHandlers,
   visibleError,
@@ -17,6 +23,7 @@ function BrowserSurface({
   onNavigateEntry,
   onNavigateFromInput,
   onOpenExternally,
+  onOpenConversation,
   onRetry
 }) {
   const renderHomePage = () => (
@@ -75,18 +82,21 @@ function BrowserSurface({
             key={bookmark.name}
             type="button"
             className="yoctol-service-box"
-            onClick={() => onNavigateEntry(bookmark.mode === 'home'
-              ? { mode: 'home', url: BROWSER_HOME_URL }
-              : { mode: 'page', url: bookmark.url })}
+            onClick={() => onNavigateEntry(bookmark)}
           >
             <strong>{bookmark.name}</strong>
-            <span>{bookmark.mode === 'home' ? 'Lokale startpagina' : bookmark.url}</span>
+            <span>{bookmark.kind === 'home'
+              ? 'Lokale startpagina'
+              : (bookmark.kind === 'internal'
+                ? 'Lokale Chatlon-pagina'
+                : bookmark.url)}
+            </span>
           </button>
         ))}
       </div>
 
       <div className="yoctol-footer">
-        Yoctol Startpagina - lokaal voor jou, met een echte remote browser erachter.
+        Yoctol Startpagina - lokaal voor jou, met interne Chatlon-sites en een remote browser voor het open web.
       </div>
     </div>
   );
@@ -132,7 +142,7 @@ function BrowserSurface({
           aria-label="Remote browser oppervlak"
           {...surfaceHandlers}
         >
-          {sessionId && frameSrc && (
+          {frameSrc && (
             <img
               src={frameSrc}
               className="browser-page-frame"
@@ -154,10 +164,37 @@ function BrowserSurface({
     );
   };
 
+  const renderInternalPage = () => {
+    const site = currentInternalSite || getInternalBrowserSiteById(currentEntry?.internalSiteId);
+    let pageContent = null;
+
+    if (site?.id === 'myspace') {
+      pageContent = <MyspaceView currentUser={currentUser} />;
+    } else if (site?.id === 'pixels') {
+      pageContent = <PixelsView currentUser={currentUser} />;
+    } else if (site?.id === 'chablo') {
+      pageContent = <ChabloMotelView currentUser={currentUser} onOpenConversation={onOpenConversation} />;
+    } else {
+      pageContent = (
+        <InternalSitePlaceholder
+          title={site?.title || 'Interne pagina'}
+          description={site?.description || 'Deze lokale browserpagina volgt in een volgende fase.'}
+        />
+      );
+    }
+
+    return (
+      <div className="browser-internal-page">
+        {pageContent}
+      </div>
+    );
+  };
+
   return (
     <div ref={contentRef} className={`browser-content browser-content--${contentState}`}>
       {contentState === 'home' && renderHomePage()}
       {contentState === 'page' && renderPage()}
+      {contentState === 'internal' && renderInternalPage()}
       {contentState === 'error' && renderErrorPage()}
     </div>
   );

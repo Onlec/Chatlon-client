@@ -30,6 +30,7 @@ function closeSocket(socket) {
 
 export function useBrowserTransport({
   apiBaseUrl,
+  enabled,
   sessionId,
   currentUser,
   contentSize,
@@ -48,6 +49,7 @@ export function useBrowserTransport({
   const currentFrameUrlRef = useRef('');
   const currentFrameVersionRef = useRef(0);
   const previousSessionIdRef = useRef(null);
+  const pendingNavigationUrlRef = useRef(null);
 
   const [frameSrc, setFrameSrc] = useState('');
   const hasInitialContentSize = Boolean(contentSize);
@@ -116,17 +118,38 @@ export function useBrowserTransport({
   }, []);
 
   const sendCommand = useCallback((action, payload = {}) => {
-    if (!latestSessionIdRef.current) return false;
+    if (!enabled || !latestSessionIdRef.current) return false;
     return sendTextMessage('browser.command', { action, ...payload });
-  }, [sendTextMessage]);
+  }, [enabled, sendTextMessage]);
 
   const sendJsonInput = useCallback((type, payload = {}) => {
-    if (!latestSessionIdRef.current) return false;
+    if (!enabled || !latestSessionIdRef.current) return false;
     return sendTextMessage(type, payload);
-  }, [sendTextMessage]);
+  }, [enabled, sendTextMessage]);
+
+  const navigateToUrl = useCallback((url, { resetFrame = true } = {}) => {
+    if (!url) return false;
+
+    pendingNavigationUrlRef.current = url;
+
+    if (resetFrame) {
+      currentFrameVersionRef.current = 0;
+      replaceFrameUrl('');
+      setBrowserState((previousState) => ({
+        ...previousState,
+        frameVersion: 0,
+        hasFreshFrame: false,
+        lastError: null,
+        isLoading: true,
+        url
+      }));
+    }
+
+    return sendTextMessage('browser.command', { action: 'navigate', url });
+  }, [replaceFrameUrl, sendTextMessage, setBrowserState]);
 
   useEffect(() => {
-    if (!hasInitialContentSize) return undefined;
+    if (!enabled || !hasInitialContentSize) return undefined;
     if (typeof WebSocket === 'undefined') {
       setTransportError(new Error('WebSocket wordt niet ondersteund in deze browser.'));
       return undefined;
@@ -200,7 +223,23 @@ export function useBrowserTransport({
       if (message.type === 'session.ready') {
         receivedReadyRef.current = true;
         reconnectAttemptRef.current = 0;
-        applyRemoteState(message.payload?.state || {});
+        const readyState = message.payload?.state || {};
+        if (pendingNavigationUrlRef.current) {
+          applyRemoteState({
+            ...readyState,
+            url: pendingNavigationUrlRef.current,
+            title: readyState.title || pendingNavigationUrlRef.current,
+            isLoading: true,
+            hasFreshFrame: false,
+            lastError: null
+          });
+          sendTextMessage('browser.command', {
+            action: 'navigate',
+            url: pendingNavigationUrlRef.current
+          });
+          return;
+        }
+        applyRemoteState(readyState);
         return;
       }
 
@@ -291,6 +330,7 @@ export function useBrowserTransport({
     apiBaseUrl,
     applyRemoteState,
     currentUser,
+    enabled,
     hasInitialContentSize,
     replaceFrameUrl,
     sendTextMessage,
@@ -321,6 +361,7 @@ export function useBrowserTransport({
     browserState.viewportHeight,
     browserState.viewportWidth,
     contentSize,
+    enabled,
     sendJsonInput,
     sessionId
   ]);
@@ -330,11 +371,13 @@ export function useBrowserTransport({
       window.clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
+    pendingNavigationUrlRef.current = null;
     replaceFrameUrl('');
   }, [replaceFrameUrl]);
 
   return {
     frameSrc,
+    navigateToUrl,
     sendCommand,
     sendJsonInput,
     sendBinaryMessage

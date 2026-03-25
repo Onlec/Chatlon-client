@@ -1,7 +1,6 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import BrowserPane, {
-  BROWSER_HOME_URL,
   BROWSER_RESIZE_DEBOUNCE_MS,
   BROWSER_WHEEL_COALESCE_MS,
   normalizeBrowserInput
@@ -12,14 +11,86 @@ import {
   SERVER_BINARY_OPCODE
 } from './browser/browserProtocol';
 
+var mockPixelListeners = [];
+var mockPixelStore = {};
+var mockPixelBlockNodes = new Map();
+var mockPixelsMapNode = {
+  on: jest.fn((callback) => {
+    mockPixelListeners.push(callback);
+    Object.entries(mockPixelStore).forEach(([blockId, data]) => callback(data, blockId));
+  }),
+  off: jest.fn()
+};
+var mockPixelsRootNode = {
+  get: jest.fn((blockId) => {
+    if (!mockPixelBlockNodes.has(blockId)) {
+      mockPixelBlockNodes.set(blockId, { put: jest.fn() });
+    }
+    return mockPixelBlockNodes.get(blockId);
+  }),
+  map: jest.fn(() => mockPixelsMapNode),
+  off: jest.fn()
+};
+var mockGenericNode = {
+  get: jest.fn(() => mockGenericNode),
+  map: jest.fn(() => ({ on: jest.fn(), off: jest.fn() })),
+  on: jest.fn(),
+  off: jest.fn(),
+  put: jest.fn()
+};
+var mockGun = {
+  get: jest.fn((key) => (key === 'PIXELS_GRID' ? mockPixelsRootNode : mockGenericNode))
+};
+
+function mockEmitPixelBlock(blockId, data) {
+  if (data) {
+    mockPixelStore[blockId] = data;
+  } else {
+    delete mockPixelStore[blockId];
+  }
+  mockPixelListeners.forEach((listener) => listener(data, blockId));
+}
+
+jest.mock('../../gun', () => {
+  return {
+    gun: {
+      get: (...args) => mockGun.get(...args)
+    },
+    user: {
+      is: { alias: 'alice@example.com' },
+      get: jest.fn(() => mockGenericNode)
+    },
+    __pixelsMock: {
+      emitPixelBlock: mockEmitPixelBlock,
+      getBlockNode(blockId) {
+        return mockPixelsRootNode.get(blockId);
+      },
+      reset() {
+        Object.keys(mockPixelStore).forEach((blockId) => delete mockPixelStore[blockId]);
+        mockPixelListeners.splice(0, mockPixelListeners.length);
+        mockPixelBlockNodes.clear();
+        mockGun.get.mockClear();
+        mockPixelsMapNode.on.mockClear();
+        mockPixelsMapNode.off.mockClear();
+        mockPixelsRootNode.get.mockClear();
+        mockPixelsRootNode.map.mockClear();
+        mockPixelsRootNode.off.mockClear();
+      }
+    }
+  };
+});
+
+jest.mock('./internal/chablo/ChabloPhaserStage', () => function MockChabloPhaserStage(props) {
+  return <div data-testid="mock-chablo-phaser-stage">{props.currentRoomMeta.name}</div>;
+});
+
 function createStatePayload(state) {
-  const currentEntry = state.history[state.historyIndex];
   return {
     sessionId: state.sessionId,
-    url: currentEntry.url,
-    title: currentEntry.title,
-    canGoBack: state.historyIndex > 0,
-    canGoForward: state.historyIndex < state.history.length - 1,
+    url: state.url,
+    title: state.title,
+    canGoBack: false,
+    canGoForward: false,
     isLoading: state.isLoading,
     lastError: state.lastError,
     viewportWidth: state.viewportWidth,
@@ -87,27 +158,16 @@ function createBrowserSocketMock() {
 
   const state = {
     sessionId: 'session-1',
-    history: [
-      {
-        mode: 'home',
-        url: BROWSER_HOME_URL,
-        title: 'Yoctol Startpagina'
-      }
-    ],
-    historyIndex: 0,
+    url: 'yoctol://home',
+    title: 'Yoctol Startpagina',
     viewportWidth: 320,
     viewportHeight: 240,
     lastError: null,
     isLoading: false,
-    frameVersion: 1,
+    frameVersion: 0,
     frameMimeType: 'image/jpeg',
-    hasFreshFrame: true,
+    hasFreshFrame: false,
     nextNavigateError: null
-  };
-
-  const pushEntry = (entry) => {
-    state.history = [...state.history.slice(0, state.historyIndex + 1), entry];
-    state.historyIndex = state.history.length - 1;
   };
 
   const emitState = (socket, type = 'browser.state') => {
@@ -125,11 +185,19 @@ function createBrowserSocketMock() {
     });
   };
 
-  const bumpFrame = (socket, label) => {
+  const completeNavigation = (socket, url, title) => {
+    state.url = url;
+    state.title = title;
+    state.isLoading = false;
+    state.lastError = state.nextNavigateError;
+    state.nextNavigateError = null;
     state.frameVersion += 1;
-    state.hasFreshFrame = true;
+    state.hasFreshFrame = !state.lastError;
+
     emitState(socket);
-    emitFrame(socket, label);
+    if (!state.lastError) {
+      emitFrame(socket, `navigate-${state.frameVersion}`);
+    }
   };
 
   class MockWebSocket {
@@ -171,59 +239,22 @@ function createBrowserSocketMock() {
               }
             })
           });
-          emitFrame(this, 'home-1');
           return;
         }
 
         if (message.type === 'browser.command') {
           if (message.payload.action === 'navigate') {
-            pushEntry({
-              mode: 'page',
-              url: message.payload.url,
-              title: `Title ${message.payload.url}`
-            });
-            state.lastError = state.nextNavigateError;
-            state.nextNavigateError = null;
-            if (state.lastError) {
-              emitState(this);
-            } else {
-              bumpFrame(this, `navigate-${state.frameVersion}`);
-            }
-            return;
-          }
-
-          if (message.payload.action === 'home') {
-            pushEntry({
-              mode: 'home',
-              url: BROWSER_HOME_URL,
-              title: 'Yoctol Startpagina'
-            });
-            state.lastError = null;
-            bumpFrame(this, `home-${state.frameVersion}`);
-            return;
-          }
-
-          if (message.payload.action === 'back') {
-            if (state.historyIndex > 0) {
-              state.historyIndex -= 1;
-            }
-            state.lastError = null;
-            bumpFrame(this, `back-${state.frameVersion}`);
-            return;
-          }
-
-          if (message.payload.action === 'forward') {
-            if (state.historyIndex < state.history.length - 1) {
-              state.historyIndex += 1;
-            }
-            state.lastError = null;
-            bumpFrame(this, `forward-${state.frameVersion}`);
+            completeNavigation(this, message.payload.url, `Title ${message.payload.url}`);
             return;
           }
 
           if (message.payload.action === 'reload') {
             state.lastError = null;
-            bumpFrame(this, `reload-${state.frameVersion}`);
+            state.isLoading = false;
+            state.hasFreshFrame = true;
+            state.frameVersion += 1;
+            emitState(this);
+            emitFrame(this, `reload-${state.frameVersion}`);
             return;
           }
 
@@ -237,25 +268,19 @@ function createBrowserSocketMock() {
         if (message.type === 'browser.input.resize') {
           state.viewportWidth = message.payload.viewportWidth;
           state.viewportHeight = message.payload.viewportHeight;
-          bumpFrame(this, `resize-${state.frameVersion}`);
+          state.frameVersion += 1;
+          state.hasFreshFrame = true;
+          emitState(this);
+          emitFrame(this, `resize-${state.frameVersion}`);
           return;
         }
 
-        if (message.type === 'browser.input.key') {
-          bumpFrame(this, `key-${state.frameVersion}`);
-          return;
+        if (message.type === 'browser.input.key' || message.type === 'browser.input.text' || message.type === 'browser.input.paste') {
+          state.frameVersion += 1;
+          state.hasFreshFrame = true;
+          emitState(this);
+          emitFrame(this, `input-${state.frameVersion}`);
         }
-
-        if (message.type === 'browser.input.text') {
-          bumpFrame(this, `text-${state.frameVersion}`);
-          return;
-        }
-
-        if (message.type === 'browser.input.paste') {
-          bumpFrame(this, `paste-${state.frameVersion}`);
-          return;
-        }
-
         return;
       }
 
@@ -263,7 +288,10 @@ function createBrowserSocketMock() {
       binaryPackets.push(decoded);
 
       if (decoded.type === 'click' || decoded.type === 'dblclick' || decoded.type === 'wheel') {
-        bumpFrame(this, `${decoded.type}-${state.frameVersion}`);
+        state.frameVersion += 1;
+        state.hasFreshFrame = true;
+        emitState(this);
+        emitFrame(this, `${decoded.type}-${state.frameVersion}`);
       }
     }
 
@@ -318,133 +346,152 @@ async function advance(ms) {
 }
 
 describe('BrowserPane', () => {
-  const originalFetch = global.fetch;
+  const { __pixelsMock } = require('../../gun');
   const originalResizeObserver = global.ResizeObserver;
   const originalWebSocket = global.WebSocket;
-  const originalEventSource = global.EventSource;
   const originalCreateObjectURL = URL.createObjectURL;
   const originalRevokeObjectURL = URL.revokeObjectURL;
+  let getContextSpy;
+
+  beforeEach(() => {
+    let objectUrlCounter = 0;
+    __pixelsMock.reset();
+    getContextSpy = jest.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => ({
+      clearRect: jest.fn(),
+      fillRect: jest.fn(),
+      beginPath: jest.fn(),
+      moveTo: jest.fn(),
+      lineTo: jest.fn(),
+      stroke: jest.fn(),
+      strokeRect: jest.fn()
+    }));
+    URL.createObjectURL = jest.fn(() => `blob:frame-${++objectUrlCounter}`);
+    URL.revokeObjectURL = jest.fn();
+  });
 
   afterEach(() => {
-    global.fetch = originalFetch;
+    getContextSpy.mockRestore();
     global.ResizeObserver = originalResizeObserver;
     global.WebSocket = originalWebSocket;
-    global.EventSource = originalEventSource;
     URL.createObjectURL = originalCreateObjectURL;
     URL.revokeObjectURL = originalRevokeObjectURL;
     jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
-  test('normalizes bare domains to https', () => {
+  test('normalizes home, internal and external targets', () => {
+    expect(normalizeBrowserInput('startpagina')).toEqual({
+      kind: 'home',
+      title: 'Yoctol Startpagina',
+      url: 'yoctol://home'
+    });
+
+    expect(normalizeBrowserInput('pixels.chatlon')).toEqual({
+      kind: 'internal',
+      internalSiteId: 'pixels',
+      title: 'Pixels.chatlon',
+      url: 'https://pixels.chatlon/'
+    });
+
     expect(normalizeBrowserInput('example.com')).toEqual({
-      mode: 'page',
+      kind: 'external',
+      title: 'https://example.com/',
       url: 'https://example.com/'
     });
   });
 
-  test('turns free text into a DuckDuckGo search URL', () => {
-    expect(normalizeBrowserInput('open source chat')).toEqual({
-      mode: 'page',
-      url: 'https://duckduckgo.com/?q=open%20source%20chat'
-    });
-  });
-
-  test('keeps the local home alias available for the start page', () => {
-    expect(normalizeBrowserInput('startpagina')).toEqual({
-      mode: 'home',
-      url: BROWSER_HOME_URL
-    });
-  });
-
-  test('uses websocket transport only and keeps the browser surface free of iframe spam', async () => {
+  test('keeps home and internal pages local and boots the websocket only for external pages', async () => {
     const socketMock = createBrowserSocketMock();
-    const fetchSpy = jest.fn(() => Promise.reject(new Error('fetch should not be called')));
-    const eventSourceSpy = jest.fn(() => {
-      throw new Error('EventSource should not be constructed');
-    });
-
-    let objectUrlCounter = 0;
-    URL.createObjectURL = jest.fn(() => `blob:frame-${++objectUrlCounter}`);
-    URL.revokeObjectURL = jest.fn();
-    global.fetch = fetchSpy;
-    global.WebSocket = socketMock.MockWebSocket;
-    global.EventSource = eventSourceSpy;
-
-    const { container } = render(<BrowserPane />);
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
-    });
-
-    expect(socketMock.instances).toHaveLength(1);
-    expect(socketMock.instances[0].url).toMatch(/\/browser\/socket$/);
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(eventSourceSpy).not.toHaveBeenCalled();
-    expect(container.querySelector('iframe')).toBeNull();
-    expect(container.querySelector('.browser-popup')).toBeNull();
-  });
-
-  test('supports remote history, bookmarks, home and refresh over websocket', async () => {
-    const socketMock = createBrowserSocketMock();
-
-    let objectUrlCounter = 0;
-    URL.createObjectURL = jest.fn(() => `blob:frame-${++objectUrlCounter}`);
-    URL.revokeObjectURL = jest.fn();
     global.WebSocket = socketMock.MockWebSocket;
 
-    const { container } = render(<BrowserPane />);
+    render(<BrowserPane currentUser="alice" />);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
-    });
+    expect(screen.getByText(/Yoctol Startpagina/i)).toBeInTheDocument();
+    expect(socketMock.instances).toHaveLength(0);
 
     const addressBar = screen.getByLabelText('Adresbalk');
-    await act(async () => {
-      fireEvent.change(addressBar, { target: { value: 'example.com' } });
-      fireEvent.submit(addressBar.closest('form'));
-      await Promise.resolve();
-    });
+    fireEvent.change(addressBar, { target: { value: 'myspace.chatlon' } });
+    fireEvent.submit(addressBar.closest('form'));
 
+    await screen.findByRole('heading', { name: 'alice' });
+    expect(socketMock.instances).toHaveLength(0);
+
+    fireEvent.change(addressBar, { target: { value: 'pixels.chatlon' } });
+    fireEvent.submit(addressBar.closest('form'));
+
+    await screen.findByText('Pixels.chatlon');
+    expect(socketMock.instances).toHaveLength(0);
+
+    fireEvent.change(addressBar, { target: { value: 'chablo.motel' } });
+    fireEvent.submit(addressBar.closest('form'));
+
+    await screen.findByRole('heading', { name: 'Receptie' });
+    expect(socketMock.instances).toHaveLength(0);
+
+    fireEvent.change(addressBar, { target: { value: 'example.com' } });
+    fireEvent.submit(addressBar.closest('form'));
+
+    await waitFor(() => {
+      expect(socketMock.instances).toHaveLength(1);
+    });
     await screen.findByAltText('Internet Adventurer - https://example.com/');
-    expect(addressBar).toHaveValue('https://example.com/');
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Startpagina' }));
-      await Promise.resolve();
-    });
-    await screen.findByText(/Yoctol Startpagina/i);
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Terug' }));
-      await Promise.resolve();
-    });
-    await screen.findByAltText('Internet Adventurer - https://example.com/');
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Vooruit' }));
-      await Promise.resolve();
-    });
-    await screen.findByText(/Yoctol Startpagina/i);
-
-    const bookmarksBar = within(container.querySelector('.browser-bookmarks-bar'));
-    await act(async () => {
-      fireEvent.click(bookmarksBar.getByRole('button', { name: 'NeverSSL' }));
-      await Promise.resolve();
-    });
-    await screen.findByAltText('Internet Adventurer - http://neverssl.com/');
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Vernieuwen' }));
-      await Promise.resolve();
-    });
-
-    expect(socketMock.textMessages.some((message) => (
-      message.type === 'browser.command' && message.payload.action === 'reload'
-    ))).toBe(true);
   });
 
-  test('shows an inline remote error page and opens externally', async () => {
+  test('uses hybrid history for home, internal and external pages', async () => {
+    const socketMock = createBrowserSocketMock();
+
+    URL.createObjectURL = jest.fn(() => 'blob:frame-1');
+    URL.revokeObjectURL = jest.fn();
+    global.WebSocket = socketMock.MockWebSocket;
+
+    render(<BrowserPane currentUser="alice" />);
+
+    const addressBar = screen.getByLabelText('Adresbalk');
+
+    fireEvent.change(addressBar, { target: { value: 'pixels.chatlon' } });
+    fireEvent.submit(addressBar.closest('form'));
+    await screen.findByText('Pixels.chatlon');
+
+    fireEvent.change(addressBar, { target: { value: 'example.com' } });
+    fireEvent.submit(addressBar.closest('form'));
+    await screen.findByAltText('Internet Adventurer - https://example.com/');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Terug' }));
+    await screen.findByText('Pixels.chatlon');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Terug' }));
+    await screen.findByText(/Yoctol Startpagina/i);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vooruit' }));
+    await screen.findByText('Pixels.chatlon');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vooruit' }));
+    await screen.findByAltText('Internet Adventurer - https://example.com/');
+
+    const navigateMessages = socketMock.textMessages.filter((message) => (
+      message.type === 'browser.command'
+      && message.payload.action === 'navigate'
+      && message.payload.url === 'https://example.com/'
+    ));
+    expect(navigateMessages).toHaveLength(2);
+  });
+
+  test('keeps internal pages usable even when the browser socket is unavailable', async () => {
+    global.WebSocket = class FailingSocket {
+      constructor() {
+        throw new Error('socket should not boot for local pages');
+      }
+    };
+
+    render(<BrowserPane currentUser="alice" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pixels' }));
+
+    await screen.findByText('Pixels.chatlon');
+    expect(screen.queryByRole('heading', { name: 'Browserserver niet bereikbaar' })).toBeNull();
+  });
+
+  test('shows an inline remote error page and opens externally for external pages', async () => {
     const socketMock = createBrowserSocketMock();
     const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
 
@@ -453,23 +500,14 @@ describe('BrowserPane', () => {
     global.WebSocket = socketMock.MockWebSocket;
     socketMock.setNextNavigateError('Remote timeout while loading page.');
 
-    render(<BrowserPane />);
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
-    });
+    render(<BrowserPane currentUser="alice" />);
 
     const addressBar = screen.getByLabelText('Adresbalk');
-    await act(async () => {
-      fireEvent.change(addressBar, { target: { value: 'https://example.com/' } });
-      fireEvent.submit(addressBar.closest('form'));
-      await Promise.resolve();
-    });
+    fireEvent.change(addressBar, { target: { value: 'https://example.com/' } });
+    fireEvent.submit(addressBar.closest('form'));
 
     await screen.findByRole('heading', { name: 'Pagina kan niet worden weergegeven' });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Extern openen' }));
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'Extern openen' }));
 
     expect(openSpy).toHaveBeenCalledWith('https://example.com/', '_blank', 'noopener,noreferrer');
   });
@@ -481,12 +519,13 @@ describe('BrowserPane', () => {
     URL.revokeObjectURL = jest.fn();
     global.WebSocket = socketMock.MockWebSocket;
 
-    render(<BrowserPane />);
-    await flushMicrotasks();
+    render(<BrowserPane currentUser="alice" />);
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
-    });
+    const addressBar = screen.getByLabelText('Adresbalk');
+    fireEvent.change(addressBar, { target: { value: 'example.com' } });
+    fireEvent.submit(addressBar.closest('form'));
+
+    await screen.findByAltText('Internet Adventurer - https://example.com/');
 
     await act(async () => {
       socketMock.emitServerError('browserType.launch: spawn EPERM');
@@ -518,12 +557,7 @@ describe('BrowserPane', () => {
       disconnect() {}
     };
 
-    const { container } = render(<BrowserPane />);
-    await flushMicrotasks();
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
-    });
+    const { container } = render(<BrowserPane currentUser="alice" />);
 
     const content = container.querySelector('.browser-content');
     content.getBoundingClientRect = () => ({
@@ -535,8 +569,15 @@ describe('BrowserPane', () => {
       bottom: 540
     });
 
+    fireEvent.change(screen.getByLabelText('Adresbalk'), { target: { value: 'example.com' } });
+    fireEvent.submit(screen.getByLabelText('Adresbalk').closest('form'));
+
+    await flushMicrotasks();
+    await waitFor(() => {
+      expect(screen.getByAltText('Internet Adventurer - https://example.com/')).toBeInTheDocument();
+    });
+
     await act(async () => {
-      observers.forEach((observer) => observer.callback([]));
       observers.forEach((observer) => observer.callback([]));
       await Promise.resolve();
     });
@@ -552,14 +593,7 @@ describe('BrowserPane', () => {
       })
     ]));
 
-    const addressBar = screen.getByLabelText('Adresbalk');
-    await act(async () => {
-      fireEvent.change(addressBar, { target: { value: 'example.com' } });
-      fireEvent.submit(addressBar.closest('form'));
-      await Promise.resolve();
-    });
-
-    const surface = await screen.findByLabelText('Remote browser oppervlak');
+    const surface = screen.getByLabelText('Remote browser oppervlak');
     surface.getBoundingClientRect = () => ({
       left: 10,
       top: 20,
@@ -638,22 +672,14 @@ describe('BrowserPane', () => {
     URL.revokeObjectURL = jest.fn();
     global.WebSocket = socketMock.MockWebSocket;
 
-    render(<BrowserPane />);
+    render(<BrowserPane currentUser="alice" />);
+
+    fireEvent.change(screen.getByLabelText('Adresbalk'), { target: { value: 'example.com' } });
+    fireEvent.submit(screen.getByLabelText('Adresbalk').closest('form'));
     await flushMicrotasks();
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start' })).not.toBeDisabled();
-    });
-
-    const addressBar = screen.getByLabelText('Adresbalk');
-    await act(async () => {
-      fireEvent.change(addressBar, { target: { value: 'example.com' } });
-      fireEvent.submit(addressBar.closest('form'));
-      await Promise.resolve();
-    });
-
     const initialImage = await screen.findByAltText('Internet Adventurer - https://example.com/');
-    expect(initialImage.getAttribute('src')).toBe('blob:frame-2');
+    expect(initialImage.getAttribute('src')).toBe('blob:frame-1');
 
     socketMock.closeFromServer(0);
     await advance(250);
@@ -664,7 +690,7 @@ describe('BrowserPane', () => {
     });
 
     const refreshedImage = await screen.findByAltText('Internet Adventurer - https://example.com/');
-    expect(refreshedImage.getAttribute('src')).toBe('blob:frame-3');
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:frame-2');
+    expect(refreshedImage.getAttribute('src')).toBe('blob:frame-2');
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:frame-1');
   });
 });

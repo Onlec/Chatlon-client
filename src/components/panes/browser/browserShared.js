@@ -1,3 +1,9 @@
+import {
+  createInternalBrowserEntry,
+  getInternalBrowserSiteByHost,
+  getInternalBrowserSiteById
+} from './browserInternalSites';
+
 export const BROWSER_HOME_URL = 'yoctol://home';
 export const BROWSER_SEARCH_BASE_URL = 'https://duckduckgo.com/?q=';
 export const BROWSER_RESIZE_DEBOUNCE_MS = 100;
@@ -21,12 +27,15 @@ const LOCALHOST_PATTERN = /^(?:localhost|127(?:\.\d{1,3}){3})(?::\d+)?(?:[/?#].*
 const IPV4_PATTERN = /^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:[/?#].*)?$/;
 
 export const BOOKMARKS = [
-  { name: 'Yoctol Home', mode: 'home', url: BROWSER_HOME_URL },
-  { name: 'Example', url: 'https://example.com/' },
-  { name: 'DuckDuckGo', url: 'https://duckduckgo.com/' },
-  { name: 'NeverSSL', url: 'http://neverssl.com/' },
-  { name: 'Wikipedia', url: 'https://www.wikipedia.org/' },
-  { name: 'Archive.org', url: 'https://archive.org/' }
+  { name: 'Yoctol Home', kind: 'home', title: 'Yoctol Startpagina', url: BROWSER_HOME_URL },
+  { name: 'MySpace', ...createInternalBrowserEntry('myspace') },
+  { name: 'Chablo Motel', ...createInternalBrowserEntry('chablo') },
+  { name: 'Pixels', ...createInternalBrowserEntry('pixels') },
+  { name: 'Example', kind: 'external', url: 'https://example.com/', title: 'Example Domain' },
+  { name: 'DuckDuckGo', kind: 'external', url: 'https://duckduckgo.com/', title: 'DuckDuckGo' },
+  { name: 'NeverSSL', kind: 'external', url: 'http://neverssl.com/', title: 'NeverSSL' },
+  { name: 'Wikipedia', kind: 'external', url: 'https://www.wikipedia.org/', title: 'Wikipedia' },
+  { name: 'Archive.org', kind: 'external', url: 'https://archive.org/', title: 'Internet Archive' }
 ];
 
 function buildSearchUrl(query) {
@@ -52,7 +61,16 @@ export function createClientError(title, message) {
   return { title, message };
 }
 
-export function getOriginLabel(url) {
+export function getOriginLabel(target) {
+  if (!target || target === BROWSER_HOME_URL) return 'Lokale startpagina';
+  if (typeof target === 'object') {
+    if (target.kind === 'home') return 'Lokale startpagina';
+    if (target.kind === 'internal') {
+      return getInternalBrowserSiteById(target.internalSiteId)?.host || 'Lokale Chatlon-pagina';
+    }
+  }
+
+  const url = typeof target === 'string' ? target : target.url;
   if (!url || url === BROWSER_HOME_URL) return 'Lokale startpagina';
   try {
     return new URL(url).host;
@@ -61,8 +79,15 @@ export function getOriginLabel(url) {
   }
 }
 
-export function getConnectionLabel(url) {
-  if (!url || url === BROWSER_HOME_URL) return 'Remote browser gereed';
+export function getConnectionLabel(target) {
+  if (!target || target === BROWSER_HOME_URL) return 'Geen netwerk nodig';
+  if (typeof target === 'object') {
+    if (target.kind === 'home') return 'Geen netwerk nodig';
+    if (target.kind === 'internal') return 'Lokale Chatlon-pagina';
+  }
+
+  const url = typeof target === 'string' ? target : target.url;
+  if (!url || url === BROWSER_HOME_URL) return 'Geen netwerk nodig';
   try {
     return new URL(url).protocol === 'https:' ? 'Veilige verbinding' : 'Onbeveiligde verbinding';
   } catch {
@@ -84,6 +109,14 @@ export function getDefaultBrowserState() {
     frameVersion: 0,
     frameMimeType: DEFAULT_FRAME_MIME_TYPE,
     hasFreshFrame: false
+  };
+}
+
+export function createHomeEntry() {
+  return {
+    kind: 'home',
+    title: 'Yoctol Startpagina',
+    url: BROWSER_HOME_URL
   };
 }
 
@@ -150,43 +183,55 @@ export function normalizeBrowserInput(rawValue) {
   const trimmed = (rawValue || '').trim();
 
   if (HOME_ALIASES.has(trimmed.toLowerCase())) {
-    return {
-      mode: 'home',
-      url: BROWSER_HOME_URL
-    };
+    return createHomeEntry();
   }
 
   if (/^[a-z][a-z\d+.-]*:\/\//i.test(trimmed)) {
     try {
       const parsed = new URL(trimmed);
+      const internalSite = getInternalBrowserSiteByHost(parsed.host);
+      if (internalSite) {
+        return createInternalBrowserEntry(internalSite);
+      }
       if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
         return {
-          mode: 'page',
+          kind: 'external',
+          title: parsed.toString(),
           url: parsed.toString()
         };
       }
     } catch {
       return {
-        mode: 'page',
+        kind: 'external',
+        title: trimmed,
         url: buildSearchUrl(trimmed)
       };
     }
 
     return {
-      mode: 'page',
+      kind: 'external',
+      title: trimmed,
       url: buildSearchUrl(trimmed)
     };
   }
 
   if (looksLikeUrlWithoutScheme(trimmed)) {
+    const internalSite = getInternalBrowserSiteByHost(trimmed.replace(/[/?#].*$/, ''));
+    if (internalSite) {
+      return createInternalBrowserEntry(internalSite);
+    }
+
+    const url = new URL(`${getDefaultProtocol(trimmed)}${trimmed}`).toString();
     return {
-      mode: 'page',
-      url: new URL(`${getDefaultProtocol(trimmed)}${trimmed}`).toString()
+      kind: 'external',
+      title: url,
+      url
     };
   }
 
   return {
-    mode: 'page',
+    kind: 'external',
+    title: trimmed,
     url: buildSearchUrl(trimmed)
   };
 }

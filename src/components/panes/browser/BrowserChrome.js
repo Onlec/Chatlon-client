@@ -1,14 +1,13 @@
 import React from 'react';
 import {
-  BROWSER_HOME_URL,
   BOOKMARKS
 } from './browserShared';
 
 function BrowserChrome({
   browserState,
+  currentEntry,
   currentUrl,
   inputUrl,
-  sessionId,
   setInputUrl,
   onAddressSubmit,
   onBack,
@@ -67,7 +66,7 @@ function BrowserChrome({
           onClick={onRefresh}
           title="Vernieuwen"
           aria-label="Vernieuwen"
-          disabled={!sessionId}
+          disabled={!currentEntry}
         >
           R
         </button>
@@ -77,7 +76,7 @@ function BrowserChrome({
           onClick={onHome}
           title="Startpagina"
           aria-label="Startpagina"
-          disabled={!sessionId}
+          disabled={currentEntry?.kind === 'home'}
         >
           H
         </button>
@@ -98,7 +97,7 @@ function BrowserChrome({
             }}
             aria-label="Adresbalk"
           />
-          <button type="submit" className="browser-go-btn" disabled={!sessionId}>
+          <button type="submit" className="browser-go-btn">
             Start
           </button>
         </form>
@@ -111,10 +110,7 @@ function BrowserChrome({
             key={bookmark.name}
             type="button"
             className="browser-bookmark-btn"
-            onClick={() => onNavigateEntry(bookmark.mode === 'home'
-              ? { mode: 'home', url: BROWSER_HOME_URL }
-              : { mode: 'page', url: bookmark.url })}
-            disabled={!sessionId}
+            onClick={() => onNavigateEntry(bookmark)}
           >
             {bookmark.name}
           </button>

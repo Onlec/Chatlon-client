@@ -461,6 +461,11 @@ The shell command bus supports these command types:
 
 ## Games Architecture
 
+### Phaser.js exception
+- Phaser.js is allowed exclusively for `ChabloMotelView`.
+- Reason: tile-stage rendering, avatar interaction, and room-scene behavior are materially simpler there than in plain DOM or canvas wiring.
+- This is not a blanket precedent for other panes or games; simple game and app panes should still prefer the existing React/canvas approach.
+
 ### Invite Protocol
 - Invites are request-scoped:
   - `GAME_INVITES_{pairId}/{requestId}`
@@ -488,4 +493,3 @@ The shell command bus supports these command types:
 - Current product behavior enforces one active/pending flow per contact+gameType.
 - Stale pending invite guard is 5 minutes.
 - Messenger sign-out/close must close conversation and game panes.
-

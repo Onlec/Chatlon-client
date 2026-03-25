@@ -14,15 +14,24 @@ import { useBrowserInput } from './browser/useBrowserInput';
 import { useBrowserSession } from './browser/useBrowserSession';
 import { useBrowserTransport } from './browser/useBrowserTransport';
 
-function BrowserPane({ currentUser = 'guest' }) {
+function BrowserPane({ currentUser = 'guest', onOpenConversation }) {
   const apiBaseUrl = resolveBrowserApiBaseUrl();
   const {
     addressEditingRef,
     browserState,
     contentState,
+    currentEntry,
+    currentInternalSite,
     currentUrl,
+    goBack,
+    goForward,
+    historyIndex,
+    historyLength,
     homeSearchQuery,
     inputUrl,
+    isExternalPage,
+    navigateHome,
+    navigateToEntry,
     sessionId,
     setBrowserState,
     setHomeSearchQuery,
@@ -44,13 +53,14 @@ function BrowserPane({ currentUser = 'guest' }) {
     surfaceHandlers
   } = useBrowserInput({
     browserState,
-    sessionId,
+    sessionId: isExternalPage ? sessionId : null,
     sendJsonInput: (...args) => transportRef.current.sendJsonInput(...args),
     sendBinaryMessage: (...args) => transportRef.current.sendBinaryMessage(...args)
   });
 
   const transport = useBrowserTransport({
     apiBaseUrl,
+    enabled: isExternalPage,
     currentUser,
     contentSize,
     browserState,
@@ -60,21 +70,32 @@ function BrowserPane({ currentUser = 'guest' }) {
     setBrowserState
   });
 
+  const {
+    frameSrc,
+    navigateToUrl,
+    sendBinaryMessage,
+    sendCommand,
+    sendJsonInput
+  } = transport;
+
   useEffect(() => {
     transportRef.current = {
-      sendJsonInput: transport.sendJsonInput,
-      sendBinaryMessage: transport.sendBinaryMessage
+      sendJsonInput,
+      sendBinaryMessage
     };
-  }, [transport.sendBinaryMessage, transport.sendJsonInput]);
+  }, [sendBinaryMessage, sendJsonInput]);
 
   const navigateEntry = useCallback((entry) => {
-    if (entry.mode === 'home') {
-      transport.sendCommand('home');
+    navigateToEntry(entry);
+  }, [navigateToEntry]);
+
+  useEffect(() => {
+    if (!isExternalPage) {
       return;
     }
 
-    transport.sendCommand('navigate', { url: entry.url });
-  }, [transport]);
+    navigateToUrl(currentEntry.url, { resetFrame: true });
+  }, [currentEntry.id, currentEntry.url, isExternalPage, navigateToUrl]);
 
   const navigateFromInput = useCallback((rawValue) => {
     const entry = normalizeBrowserInput(rawValue);
@@ -94,53 +115,83 @@ function BrowserPane({ currentUser = 'guest' }) {
     navigateFromInput(homeSearchQuery);
   }, [homeSearchQuery, navigateFromInput]);
 
+  const handleRefresh = useCallback(() => {
+    if (currentEntry.kind === 'external') {
+      if (!sendCommand('reload')) {
+        navigateToUrl(currentEntry.url, { resetFrame: true });
+      }
+      return;
+    }
+
+    if (currentEntry.kind === 'home') {
+      navigateHome();
+      return;
+    }
+
+    navigateEntry(currentEntry);
+  }, [currentEntry, navigateEntry, navigateHome, navigateToUrl, sendCommand]);
+
+  const handleStop = useCallback(() => {
+    if (currentEntry.kind !== 'external') return;
+    sendCommand('stop');
+  }, [currentEntry.kind, sendCommand]);
+
   const openExternally = useCallback(() => {
-    if (!currentUrl || currentUrl === BROWSER_HOME_URL || typeof window === 'undefined') return;
+    if (currentEntry.kind !== 'external' || !currentUrl || typeof window === 'undefined') return;
     window.open(currentUrl, '_blank', 'noopener,noreferrer');
-  }, [currentUrl]);
+  }, [currentEntry.kind, currentUrl]);
 
   return (
     <div className="browser-container">
       <BrowserChrome
         addressEditingRef={addressEditingRef}
-        browserState={browserState}
+        browserState={{
+          ...browserState,
+          canGoBack: historyIndex > 0,
+          canGoForward: historyIndex < historyLength - 1
+        }}
+        currentEntry={currentEntry}
         currentUrl={currentUrl}
         inputUrl={inputUrl}
         sessionId={sessionId}
         setInputUrl={setInputUrl}
         onAddressSubmit={handleAddressSubmit}
-        onBack={() => transport.sendCommand('back')}
-        onForward={() => transport.sendCommand('forward')}
-        onHome={() => transport.sendCommand('home')}
+        onBack={goBack}
+        onForward={goForward}
+        onHome={navigateHome}
         onNavigateEntry={navigateEntry}
-        onRefresh={() => transport.sendCommand('reload')}
-        onStop={() => transport.sendCommand('stop')}
+        onRefresh={handleRefresh}
+        onStop={handleStop}
       />
 
       <BrowserSurface
         browserState={browserState}
         contentRef={contentRef}
         contentState={contentState}
+        currentEntry={currentEntry}
+        currentInternalSite={currentInternalSite}
         currentUrl={currentUrl}
-        frameSrc={transport.frameSrc}
+        frameSrc={frameSrc}
         homeSearchQuery={homeSearchQuery}
+        currentUser={currentUser}
+        onOpenConversation={onOpenConversation}
         sessionId={sessionId}
         setHomeSearchQuery={setHomeSearchQuery}
         surfaceHandlers={surfaceHandlers}
         visibleError={visibleError}
-        onGoHome={() => transport.sendCommand('home')}
+        onGoHome={navigateHome}
         onHomeSearchSubmit={handleHomeSearchSubmit}
         onNavigateEntry={navigateEntry}
         onNavigateFromInput={navigateFromInput}
         onOpenExternally={openExternally}
-        onRetry={() => transport.sendCommand('reload')}
+        onRetry={handleRefresh}
       />
 
       <div className="browser-status-bar">
         <div className="browser-status-text">{statusText}</div>
         <div className="browser-status-zone">
-          <span>{getOriginLabel(currentUrl)}</span>
-          <span>{getConnectionLabel(currentUrl)}</span>
+          <span>{getOriginLabel(currentEntry)}</span>
+          <span>{getConnectionLabel(currentEntry)}</span>
         </div>
       </div>
     </div>
