@@ -18,6 +18,13 @@ function parseColor(color, fallback) {
   return Number.isNaN(parsed) ? fallback : parsed;
 }
 
+function truncateStageLabel(text, maxLength = 18) {
+  if (typeof text !== 'string' || text.length <= maxLength) {
+    return text || '';
+  }
+  return `${text.slice(0, maxLength - 1)}...`;
+}
+
 function getTileFill(room, tileCode) {
   const accent = parseColor(room.accent, 0x607894);
   if (tileCode === '#') return 0x233249;
@@ -414,19 +421,23 @@ function addDoorMarkers(scene, layer, room) {
   });
 }
 
-function addHotspotMarkers(scene, layer, room, activeHotspotId, onHotspotActivate) {
+function addHotspotMarkers(scene, layer, room, activeHotspotId, roomStateByHotspotId, onHotspotActivate) {
   (room.hotspots || []).forEach((hotspot) => {
     const width = (hotspot.width || 1) * TILE_SIZE - 12;
     const height = (hotspot.height || 1) * TILE_SIZE - 12;
     const centerX = toStageUnit(hotspot.x) + (hotspot.width || 1) * TILE_SIZE / 2;
     const centerY = toStageUnit(hotspot.y) + (hotspot.height || 1) * TILE_SIZE / 2;
     const isActive = hotspot.id === activeHotspotId;
+    const roomState = roomStateByHotspotId?.[hotspot.id] || null;
     const accent = parseColor(hotspot.accent || room.accent, 0x90b8ff);
+    const stateAccent = roomState
+      ? parseColor(hotspot.accent || room.accent, 0xf2cd7b)
+      : accent;
 
     const container = scene.add.container(centerX, centerY);
-    const pulse = scene.add.rectangle(0, 0, width + 8, height + 8, accent, isActive ? 0.18 : 0.08);
-    const marker = scene.add.rectangle(0, 0, width, height, accent, isActive ? 0.22 : 0.08);
-    marker.setStrokeStyle(2, 0xf4f8ff, isActive ? 0.5 : 0.18);
+    const pulse = scene.add.rectangle(0, 0, width + 8, height + 8, stateAccent, isActive ? 0.18 : (roomState ? 0.12 : 0.08));
+    const marker = scene.add.rectangle(0, 0, width, height, stateAccent, isActive ? 0.22 : (roomState ? 0.14 : 0.08));
+    marker.setStrokeStyle(2, 0xf4f8ff, isActive ? 0.5 : (roomState ? 0.28 : 0.18));
 
     const label = scene.add.text(
       0,
@@ -443,6 +454,21 @@ function addHotspotMarkers(scene, layer, room, activeHotspotId, onHotspotActivat
     ).setOrigin(0.5);
     label.setAlpha(isActive ? 0.98 : 0.82);
 
+    const stateLabel = roomState ? scene.add.text(
+      0,
+      Math.max(14, height / 2 + 12),
+      truncateStageLabel(roomState.title || roomState.kind || 'Live'),
+      {
+        fontFamily: 'Tahoma, Arial, sans-serif',
+        fontSize: '9px',
+        fontStyle: 'bold',
+        color: '#f6fbff',
+        backgroundColor: 'rgba(32,52,82,0.76)',
+        padding: { left: 6, right: 6, top: 2, bottom: 2 }
+      }
+    ).setOrigin(0.5) : null;
+    stateLabel?.setAlpha(isActive ? 0.96 : 0.84);
+
     const icon = scene.add.text(
       0,
       0,
@@ -455,28 +481,52 @@ function addHotspotMarkers(scene, layer, room, activeHotspotId, onHotspotActivat
       }
     ).setOrigin(0.5);
 
-    container.add([pulse, marker, icon, label]);
+    const liveDot = roomState
+      ? scene.add.circle(width / 2 - 4, -height / 2 + 4, 4, 0xf6fbff, 0.95)
+      : null;
+
+    const children = [pulse, marker, icon, label];
+    if (stateLabel) {
+      children.push(stateLabel);
+    }
+    if (liveDot) {
+      children.push(liveDot);
+    }
+    container.add(children);
     container.setSize(width + 8, height + 8);
     container.setInteractive();
 
     scene.tweens.add({
       targets: pulse,
-      alpha: { from: isActive ? 0.18 : 0.08, to: isActive ? 0.28 : 0.16 },
-      scaleX: { from: 0.98, to: 1.03 },
-      scaleY: { from: 0.98, to: 1.03 },
-      duration: 1200,
+      alpha: { from: isActive ? 0.18 : (roomState ? 0.12 : 0.08), to: isActive ? 0.28 : (roomState ? 0.22 : 0.16) },
+      scaleX: { from: 0.98, to: roomState ? 1.05 : 1.03 },
+      scaleY: { from: 0.98, to: roomState ? 1.05 : 1.03 },
+      duration: roomState ? 980 : 1200,
       yoyo: true,
       repeat: -1
     });
 
+    if (liveDot) {
+      scene.tweens.add({
+        targets: liveDot,
+        alpha: { from: 0.68, to: 1 },
+        scale: { from: 0.92, to: 1.14 },
+        duration: 900,
+        yoyo: true,
+        repeat: -1
+      });
+    }
+
     container.on('pointerover', () => {
-      marker.setAlpha(isActive ? 0.3 : 0.18);
+      marker.setAlpha(isActive ? 0.3 : (roomState ? 0.22 : 0.18));
       label.setAlpha(1);
+      stateLabel?.setAlpha(1);
       container.setScale(1.02);
     });
     container.on('pointerout', () => {
-      marker.setAlpha(isActive ? 0.22 : 0.08);
+      marker.setAlpha(isActive ? 0.22 : (roomState ? 0.14 : 0.08));
       label.setAlpha(isActive ? 0.98 : 0.82);
+      stateLabel?.setAlpha(isActive ? 0.96 : 0.84);
       container.setScale(1);
     });
     container.on('pointerdown', (pointer, localX, localY, event) => {
@@ -492,6 +542,7 @@ export function drawChabloRoom(scene, layer, room, handlers = {}) {
   layer.removeAll(true);
   const {
     activeHotspotId = null,
+    roomStateByHotspotId = {},
     onHotspotActivate,
     onTileActivate
   } = handlers;
@@ -545,7 +596,7 @@ export function drawChabloRoom(scene, layer, room, handlers = {}) {
 
   addDecor(scene, layer, room);
   addDoorMarkers(scene, layer, room);
-  addHotspotMarkers(scene, layer, room, activeHotspotId, onHotspotActivate);
+  addHotspotMarkers(scene, layer, room, activeHotspotId, roomStateByHotspotId, onHotspotActivate);
 
   return {
     width: roomWidth + STAGE_PADDING * 2,

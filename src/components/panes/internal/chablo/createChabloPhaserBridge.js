@@ -3,6 +3,8 @@ import { drawChabloRoom, STAGE_PADDING, TILE_SIZE } from './graphics';
 import { getChabloRoom } from './rooms';
 import { STEP_TWEEN_MS } from './useChabloMovementController';
 
+const ROOM_TRANSITION_MS = 220;
+
 function getAvatarPosition(tile) {
   return {
     x: STAGE_PADDING + (tile.x * TILE_SIZE) + TILE_SIZE / 2,
@@ -10,9 +12,17 @@ function getAvatarPosition(tile) {
   };
 }
 
+function getRoomStateKey(roomStateByHotspotId = {}) {
+  return Object.values(roomStateByHotspotId)
+    .map((entry) => `${entry.hotspotId}:${entry.updatedAt || 0}:${entry.text || ''}`)
+    .sort()
+    .join('|');
+}
+
 export function createChabloPhaserBridge({
   Phaser,
   container,
+  onInitialRender,
   onHotspotActivate,
   onSelectAvatar,
   onTileActivate
@@ -30,8 +40,12 @@ export function createChabloPhaserBridge({
       this.avatarManager = null;
       this.renderedRoomId = null;
       this.renderedHotspotId = null;
+      this.renderedRoomStateKey = '';
       this.selectedAvatar = null;
       this.currentBounds = null;
+      this.pendingWorld = null;
+      this.isTransitioning = false;
+      this.hasRenderedInitialWorld = false;
     }
 
     create() {
@@ -44,28 +58,34 @@ export function createChabloPhaserBridge({
         Phaser,
         layer: this.avatarLayer,
         onSelectAvatar,
-        tweenMs: STEP_TWEEN_MS
+        tweenMs: STEP_TWEEN_MS,
+        remoteTweenMs: 170
       });
     }
 
-    updateWorld(world) {
-      if (!world) {
-        return;
-      }
-
+    renderWorld(world, forceRoomRedraw = false) {
       const room = getChabloRoom(world.roomId);
       this.selectedAvatar = world.selectedAvatar || null;
       const activeHotspotId = world.activeHotspotId || null;
+      const roomStateKey = getRoomStateKey(world.roomStateByHotspotId);
 
-      if (this.renderedRoomId !== room.id || this.renderedHotspotId !== activeHotspotId) {
+      if (
+        forceRoomRedraw
+        ||
+        this.renderedRoomId !== room.id
+        || this.renderedHotspotId !== activeHotspotId
+        || this.renderedRoomStateKey !== roomStateKey
+      ) {
         this.currentBounds = drawChabloRoom(this, this.worldLayer, room, {
           activeHotspotId,
+          roomStateByHotspotId: world.roomStateByHotspotId || {},
           onHotspotActivate,
           onTileActivate
         });
         this.cameras.main.setBounds(0, 0, this.currentBounds.width, this.currentBounds.height);
         this.renderedRoomId = room.id;
         this.renderedHotspotId = activeHotspotId;
+        this.renderedRoomStateKey = roomStateKey;
       }
 
       const everyone = [
@@ -73,11 +93,68 @@ export function createChabloPhaserBridge({
         ...world.otherOccupants.map((occupant) => ({ ...occupant, isSelf: false }))
       ];
 
-      this.avatarManager?.sync(everyone, this.selectedAvatar, getAvatarPosition);
+      this.avatarManager?.sync(everyone, this.selectedAvatar, getAvatarPosition, {
+        forceImmediate: forceRoomRedraw
+      });
       const localAvatar = this.avatarManager?.get?.(world.currentUser);
       if (localAvatar?.container) {
         this.cameras.main.startFollow(localAvatar.container, true, 0.14, 0.14);
       }
+
+      if (!this.hasRenderedInitialWorld) {
+        this.hasRenderedInitialWorld = true;
+        onInitialRender?.();
+      }
+    }
+
+    playRoomTransition(nextWorld) {
+      this.pendingWorld = nextWorld;
+      if (this.isTransitioning) {
+        return;
+      }
+
+      this.isTransitioning = true;
+      const camera = this.cameras.main;
+      camera.stopFollow();
+      camera.removeAllListeners('camerafadeoutcomplete');
+      camera.removeAllListeners('camerafadeincomplete');
+      camera.once('camerafadeoutcomplete', () => {
+        const worldToRender = this.pendingWorld;
+        this.pendingWorld = null;
+        if (worldToRender) {
+          this.renderWorld(worldToRender, true);
+        }
+
+        camera.once('camerafadeincomplete', () => {
+          this.isTransitioning = false;
+          if (this.pendingWorld) {
+            const pendingRoomId = this.pendingWorld.roomId;
+            if (pendingRoomId !== this.renderedRoomId) {
+              this.playRoomTransition(this.pendingWorld);
+            } else {
+              const pendingWorld = this.pendingWorld;
+              this.pendingWorld = null;
+              this.renderWorld(pendingWorld);
+            }
+          }
+        });
+
+        camera.fadeIn(ROOM_TRANSITION_MS, 8, 16, 24);
+      });
+      camera.fadeOut(ROOM_TRANSITION_MS, 8, 16, 24);
+    }
+
+    updateWorld(world) {
+      if (!world) {
+        return;
+      }
+
+      if (this.renderedRoomId && this.renderedRoomId !== world.roomId) {
+        this.playRoomTransition(world);
+        return;
+      }
+
+      this.renderWorld(world);
     }
   }
 
@@ -129,6 +206,8 @@ export function createChabloPhaserBridge({
     },
     resize,
     destroy() {
+      bridgeState.scene?.cameras?.main?.removeAllListeners?.('camerafadeoutcomplete');
+      bridgeState.scene?.cameras?.main?.removeAllListeners?.('camerafadeincomplete');
       bridgeState.scene?.avatarManager?.clear?.();
       bridgeState.game?.destroy(true);
       bridgeState.scene = null;

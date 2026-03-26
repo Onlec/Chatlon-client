@@ -2,49 +2,59 @@ import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ChabloMotelView from './ChabloMotelView';
 
+let mockStageEngineState = 'ready';
+
 jest.mock('../../../gun', () => ({
   gun: {
     get: jest.fn(() => undefined)
   }
 }));
 
-jest.mock('./chablo/ChabloPhaserStage', () => function MockChabloPhaserStage(props) {
-  return (
-    <div data-testid="mock-chablo-phaser-stage">
-      <button
-        type="button"
-        aria-label="Stage tegel 5 7"
-        onClick={() => props.onTileActivate?.({ x: 5, y: 7 })}
-      >
-        Stage tegel 5 7
-      </button>
-      <button
-        type="button"
-        aria-label="Stage deur naar bar"
-        onClick={() => props.onTileActivate?.({ x: 17, y: 7 })}
-      >
-        Stage deur naar bar
-      </button>
-      <button
-        type="button"
-        aria-label="Stage hotspot"
-        onClick={() => props.onHotspotActivate?.(props.currentRoomMeta.hotspots?.[0] || null)}
-      >
-        Stage hotspot
-      </button>
-      {props.otherOccupants.map((occupant) => (
+jest.mock('./chablo/ChabloPhaserStage', () => {
+  const React = require('react');
+
+  return function MockChabloPhaserStage(props) {
+    React.useEffect(() => {
+      props.onEngineStateChange?.(mockStageEngineState);
+    }, [props.onEngineStateChange]);
+
+    return (
+      <div data-testid="mock-chablo-phaser-stage">
         <button
-          key={occupant.username}
           type="button"
-          aria-label={`Avatar van ${occupant.username}`}
-          onClick={() => props.onSelectAvatar(occupant.username)}
+          aria-label="Stage tegel 5 7"
+          onClick={() => props.onTileActivate?.({ x: 5, y: 7 })}
         >
-          Avatar van {occupant.username}
+          Stage tegel 5 7
         </button>
-      ))}
-      <span>{props.currentRoomMeta.name}</span>
-    </div>
-  );
+        <button
+          type="button"
+          aria-label="Stage deur naar bar"
+          onClick={() => props.onTileActivate?.({ x: 17, y: 7 })}
+        >
+          Stage deur naar bar
+        </button>
+        <button
+          type="button"
+          aria-label="Stage hotspot"
+          onClick={() => props.onHotspotActivate?.(props.currentRoomMeta.hotspots?.[0] || null)}
+        >
+          Stage hotspot
+        </button>
+        {props.otherOccupants.map((occupant) => (
+          <button
+            key={occupant.username}
+            type="button"
+            aria-label={`Avatar van ${occupant.username}`}
+            onClick={() => props.onSelectAvatar(occupant.username)}
+          >
+            Avatar van {occupant.username}
+          </button>
+        ))}
+        <span>{props.currentRoomMeta.name}</span>
+      </div>
+    );
+  };
 });
 
 function cloneNestedMap(value = {}) {
@@ -66,15 +76,33 @@ function createGunApiMock(initialState = {}) {
     roomChat: Object.entries(initialState.roomChat || {}).reduce((next, [roomId, chatMap]) => {
       next[roomId] = cloneNestedMap(chatMap);
       return next;
+    }, {}),
+    hotspotPresence: Object.entries(initialState.hotspotPresence || {}).reduce((next, [roomId, presenceMap]) => {
+      next[roomId] = cloneNestedMap(presenceMap);
+      return next;
+    }, {}),
+    roomActivity: Object.entries(initialState.roomActivity || {}).reduce((next, [roomId, activityMap]) => {
+      next[roomId] = cloneNestedMap(activityMap);
+      return next;
+    }, {}),
+    roomState: Object.entries(initialState.roomState || {}).reduce((next, [roomId, roomStateMap]) => {
+      next[roomId] = cloneNestedMap(roomStateMap);
+      return next;
     }, {})
   };
 
   const positionListeners = [];
   const friendListeners = new Map();
   const roomChatListeners = new Map();
+  const hotspotPresenceListeners = new Map();
+  const roomActivityListeners = new Map();
+  const roomStateListeners = new Map();
   const positionNodes = new Map();
   const friendUserNodes = new Map();
   const roomChatNodes = new Map();
+  const hotspotPresenceNodes = new Map();
+  const roomActivityNodes = new Map();
+  const roomStateNodes = new Map();
 
   function emitPosition(username) {
     const payload = store.positions[username];
@@ -91,6 +119,24 @@ function createGunApiMock(initialState = {}) {
     const payload = store.roomChat[roomId]?.[messageId];
     const listeners = roomChatListeners.get(roomId) || [];
     listeners.forEach((listener) => listener(payload, messageId));
+  }
+
+  function emitHotspotPresence(roomId, username) {
+    const payload = store.hotspotPresence[roomId]?.[username];
+    const listeners = hotspotPresenceListeners.get(roomId) || [];
+    listeners.forEach((listener) => listener(payload, username));
+  }
+
+  function emitRoomActivity(roomId, activityId) {
+    const payload = store.roomActivity[roomId]?.[activityId];
+    const listeners = roomActivityListeners.get(roomId) || [];
+    listeners.forEach((listener) => listener(payload, activityId));
+  }
+
+  function emitRoomState(roomId, hotspotId) {
+    const payload = store.roomState[roomId]?.[hotspotId];
+    const listeners = roomStateListeners.get(roomId) || [];
+    listeners.forEach((listener) => listener(payload, hotspotId));
   }
 
   function getPositionNode(username) {
@@ -180,6 +226,117 @@ function createGunApiMock(initialState = {}) {
     return roomChatNodes.get(roomId);
   }
 
+  function getHotspotPresenceNode(roomId) {
+    if (!hotspotPresenceNodes.has(roomId)) {
+      hotspotPresenceNodes.set(roomId, {
+        get: jest.fn((username) => ({
+          put: jest.fn((payload) => {
+            if (!store.hotspotPresence[roomId]) {
+              store.hotspotPresence[roomId] = {};
+            }
+
+            if (payload === null) {
+              delete store.hotspotPresence[roomId][username];
+            } else {
+              store.hotspotPresence[roomId][username] = payload;
+            }
+
+            emitHotspotPresence(roomId, username);
+          })
+        })),
+        map: jest.fn(() => ({
+          on: jest.fn((callback) => {
+            if (!hotspotPresenceListeners.has(roomId)) {
+              hotspotPresenceListeners.set(roomId, []);
+            }
+            hotspotPresenceListeners.get(roomId).push(callback);
+            Object.entries(store.hotspotPresence[roomId] || {}).forEach(([username, payload]) => {
+              callback(payload, username);
+            });
+          }),
+          off: jest.fn()
+        })),
+        off: jest.fn()
+      });
+    }
+
+    return hotspotPresenceNodes.get(roomId);
+  }
+
+  function getRoomActivityNode(roomId) {
+    if (!roomActivityNodes.has(roomId)) {
+      roomActivityNodes.set(roomId, {
+        get: jest.fn((activityId) => ({
+          put: jest.fn((payload) => {
+            if (!store.roomActivity[roomId]) {
+              store.roomActivity[roomId] = {};
+            }
+
+            if (payload === null) {
+              delete store.roomActivity[roomId][activityId];
+            } else {
+              store.roomActivity[roomId][activityId] = payload;
+            }
+
+            emitRoomActivity(roomId, activityId);
+          })
+        })),
+        map: jest.fn(() => ({
+          on: jest.fn((callback) => {
+            if (!roomActivityListeners.has(roomId)) {
+              roomActivityListeners.set(roomId, []);
+            }
+            roomActivityListeners.get(roomId).push(callback);
+            Object.entries(store.roomActivity[roomId] || {}).forEach(([activityId, payload]) => {
+              callback(payload, activityId);
+            });
+          }),
+          off: jest.fn()
+        })),
+        off: jest.fn()
+      });
+    }
+
+    return roomActivityNodes.get(roomId);
+  }
+
+  function getRoomStateNode(roomId) {
+    if (!roomStateNodes.has(roomId)) {
+      roomStateNodes.set(roomId, {
+        get: jest.fn((hotspotId) => ({
+          put: jest.fn((payload) => {
+            if (!store.roomState[roomId]) {
+              store.roomState[roomId] = {};
+            }
+
+            if (payload === null) {
+              delete store.roomState[roomId][hotspotId];
+            } else {
+              store.roomState[roomId][hotspotId] = payload;
+            }
+
+            emitRoomState(roomId, hotspotId);
+          })
+        })),
+        map: jest.fn(() => ({
+          on: jest.fn((callback) => {
+            if (!roomStateListeners.has(roomId)) {
+              roomStateListeners.set(roomId, []);
+            }
+            roomStateListeners.get(roomId).push(callback);
+            Object.entries(store.roomState[roomId] || {}).forEach(([hotspotId, payload]) => {
+              callback(payload, hotspotId);
+            });
+          }),
+          off: jest.fn()
+        })),
+        off: jest.fn()
+      });
+    }
+
+    return roomStateNodes.get(roomId);
+  }
+
   const positionsRoot = {
     get: jest.fn((username) => getPositionNode(username)),
     map: jest.fn(() => ({
@@ -202,22 +359,59 @@ function createGunApiMock(initialState = {}) {
     get: jest.fn((roomId) => getRoomChatNode(roomId))
   };
 
+  const hotspotPresenceRoot = {
+    get: jest.fn((roomId) => getHotspotPresenceNode(roomId))
+  };
+
+  const roomActivityRoot = {
+    get: jest.fn((roomId) => getRoomActivityNode(roomId))
+  };
+
+  const roomStateRoot = {
+    get: jest.fn((roomId) => getRoomStateNode(roomId))
+  };
+
   return {
     gunApi: {
       get: jest.fn((key) => {
         if (key === 'CHABLO_POSITION') return positionsRoot;
         if (key === 'CHABLO_FRIENDS') return friendsRoot;
         if (key === 'CHABLO_ROOM_CHAT') return roomChatRoot;
+        if (key === 'CHABLO_HOTSPOT_PRESENCE') return hotspotPresenceRoot;
+        if (key === 'CHABLO_ROOM_ACTIVITY') return roomActivityRoot;
+        if (key === 'CHABLO_ROOM_STATE') return roomStateRoot;
         return undefined;
       })
     },
     getPositionNode,
     getFriendUserNode,
-    getRoomChatNode
+    getRoomChatNode,
+    getHotspotPresenceNode,
+    getRoomActivityNode,
+    getRoomStateNode
   };
 }
 
 describe('ChabloMotelView', () => {
+  beforeEach(() => {
+    mockStageEngineState = 'ready';
+  });
+
+  test('shows a branded boot overlay while the Chablo stage is loading', () => {
+    mockStageEngineState = 'loading';
+    const now = Date.now();
+    const api = createGunApiMock({
+      positions: {
+        alice: { room: 'receptie', x: 9, y: 7, lastSeen: now }
+      }
+    });
+
+    render(<ChabloMotelView currentUser="alice" gunApi={api.gunApi} />);
+
+    expect(screen.getByText('Hotel wordt klaargezet...')).toBeInTheDocument();
+    expect(screen.getByText(/De lobbylampen warmen op, de neon springt aan/i)).toBeInTheDocument();
+  });
+
   test('renders room occupants and opens a conversation from an avatar card', async () => {
     const now = Date.now();
     const api = createGunApiMock({
@@ -270,6 +464,7 @@ describe('ChabloMotelView', () => {
       metIn: 'receptie'
     }));
 
+    fireEvent.click(screen.getByRole('tab', { name: 'Sociaal' }));
     fireEvent.click(screen.getByRole('button', { name: 'Accepteer' }));
 
     await waitFor(() => {
@@ -298,9 +493,11 @@ describe('ChabloMotelView', () => {
 
     render(<ChabloMotelView currentUser="alice" gunApi={api.gunApi} />);
 
+    fireEvent.click(screen.getByRole('tab', { name: 'Sociaal' }));
     fireEvent.click(screen.getByRole('button', { name: 'Ga naar kamer' }));
     expect(await screen.findByRole('heading', { name: 'De Bar' })).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('tab', { name: 'Chat' }));
     fireEvent.change(screen.getByPlaceholderText('Zeg iets in De Bar'), {
       target: { value: 'Iedereen hier lijkt AFK.' }
     });
@@ -443,7 +640,130 @@ describe('ChabloMotelView', () => {
       fireEvent.click(screen.getAllByRole('button', { name: 'Bestel iets aan de bar' })[0]);
 
       expect(screen.getByPlaceholderText('Zeg iets in De Bar')).toHaveValue('Nog iemand iets van de bar?');
-      expect(screen.getByText('prefill-chat')).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Chat' })).toHaveAttribute('aria-selected', 'true');
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('shows shared hotspot presence and room activity from Gun', async () => {
+    const now = Date.now();
+    const api = createGunApiMock({
+      positions: {
+        alice: { room: 'receptie', x: 9, y: 7, lastSeen: now },
+        bob: { room: 'receptie', x: 10, y: 9, lastSeen: now },
+        cara: { room: 'receptie', x: 9, y: 9, lastSeen: now }
+      },
+      hotspotPresence: {
+        receptie: {
+          bob: { hotspotId: 'Balie', hotspotLabel: 'Balie', lastSeen: now },
+          cara: { hotspotId: 'Balie', hotspotLabel: 'Balie', lastSeen: now }
+        }
+      },
+      roomActivity: {
+        receptie: {
+          '1': {
+            by: 'bob',
+            room: 'receptie',
+            hotspotId: 'Balie',
+            hotspotLabel: 'Balie',
+            actionType: 'bulletin',
+            summary: 'bob bekijkt balie.',
+            timestamp: now
+          }
+        }
+      },
+      roomState: {
+        receptie: {
+          Balie: {
+            hotspotLabel: 'Balie',
+            title: 'Receptie live',
+            text: 'bob checkt in bij de balie.',
+            detail: 'Het motelbord is weer even het centrum van de lobby.',
+            by: 'bob',
+            kind: 'receptie',
+            updatedAt: now
+          }
+        }
+      }
+    });
+
+    render(<ChabloMotelView currentUser="alice" gunApi={api.gunApi} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Activiteit' }));
+    expect(await screen.findByText('Live room activity')).toBeInTheDocument();
+    expect(screen.getByText('Gedeelde room status')).toBeInTheDocument();
+    expect(screen.getByText('bob bekijkt balie.')).toBeInTheDocument();
+    expect(screen.getByText('Het motelbord is weer even het centrum van de lobby.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Hotspots' }));
+    expect(screen.getAllByText('Nu hier: bob en cara').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Laatste: bob bekijkt balie.').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Status: bob checkt in bij de balie.').length).toBeGreaterThan(0);
+  });
+
+  test('publishes hotspot presence and shared room activity when a hotspot is used', async () => {
+    jest.useFakeTimers();
+    try {
+      const now = Date.now();
+      const api = createGunApiMock({
+        positions: {
+          alice: { room: 'receptie', x: 9, y: 7, lastSeen: now }
+        }
+      });
+
+      render(<ChabloMotelView currentUser="alice" gunApi={api.gunApi} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Ga naar de lounge' }));
+
+      act(() => {
+        jest.advanceTimersByTime(1500);
+      });
+
+      await waitFor(() => {
+        expect(api.getHotspotPresenceNode('receptie').get).toHaveBeenCalledWith('alice');
+      });
+      const hotspotPresencePuts = api.getHotspotPresenceNode('receptie').get.mock.results
+        .map((result) => result.value.put.mock.calls)
+        .flat();
+      expect(hotspotPresencePuts).toEqual(expect.arrayContaining([
+        [expect.objectContaining({
+          hotspotId: 'Loungehoek',
+          hotspotLabel: 'Loungehoek'
+        })]
+      ]));
+
+      fireEvent.click(screen.getAllByRole('button', { name: 'Hang rond in de lounge' })[0]);
+
+      await waitFor(() => {
+        expect(api.getRoomActivityNode('receptie').get).toHaveBeenCalled();
+      });
+      const activityPuts = api.getRoomActivityNode('receptie').get.mock.results
+        .map((result) => result.value.put.mock.calls)
+        .flat();
+      expect(activityPuts).toEqual(expect.arrayContaining([
+        [expect.objectContaining({
+          by: 'alice',
+          hotspotId: 'Loungehoek',
+          actionType: 'feedback',
+          room: 'receptie'
+        })]
+      ]));
+
+      await waitFor(() => {
+        expect(api.getRoomStateNode('receptie').get).toHaveBeenCalledWith('Loungehoek');
+      });
+      const roomStatePuts = api.getRoomStateNode('receptie').get.mock.results
+        .map((result) => result.value.put.mock.calls)
+        .flat();
+      expect(roomStatePuts).toEqual(expect.arrayContaining([
+        [expect.objectContaining({
+          hotspotLabel: 'Loungehoek',
+          title: 'Loungehoek',
+          text: 'alice activeert loungehoek.',
+          kind: 'feedback'
+        })]
+      ]));
     } finally {
       jest.useRealTimers();
     }

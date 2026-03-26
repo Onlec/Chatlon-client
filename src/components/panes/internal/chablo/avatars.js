@@ -95,11 +95,19 @@ function applySelectionStyles(avatar, isSelected, isSelf) {
   avatar.labelBg.setFillStyle(isSelected ? 0x204066 : 0x0c141d, isSelected ? 0.92 : 0.72);
 }
 
-export function createAvatarManager({ scene, Phaser, layer, onSelectAvatar, tweenMs = 140 }) {
+export function createAvatarManager({
+  scene,
+  Phaser,
+  layer,
+  onSelectAvatar,
+  tweenMs = 140,
+  remoteTweenMs = 170
+}) {
   const avatarMap = new Map();
 
   return {
-    sync(occupants, selectedUsername, getAvatarPosition) {
+    sync(occupants, selectedUsername, getAvatarPosition, options = {}) {
+      const forceImmediate = options.forceImmediate === true;
       const nextNames = new Set();
 
       occupants.forEach((occupant) => {
@@ -112,20 +120,38 @@ export function createAvatarManager({ scene, Phaser, layer, onSelectAvatar, twee
         }
 
         const avatarPosition = getAvatarPosition(occupant);
-        const shouldTween = occupant.isSelf && avatar.initialized;
-        avatar.activeTween?.stop?.();
+        const positionChanged = (
+          !avatar.lastPosition
+          || avatar.lastPosition.x !== avatarPosition.x
+          || avatar.lastPosition.y !== avatarPosition.y
+        );
+        const shouldTween = !forceImmediate && avatar.initialized && positionChanged;
         if (shouldTween) {
-          avatar.activeTween = scene.tweens.add({
+          avatar.activeTween?.stop?.();
+          const tween = scene.tweens.add({
             targets: avatar.container,
             x: avatarPosition.x,
             y: avatarPosition.y,
-            duration: tweenMs,
-            ease: 'Quad.Out'
+            duration: occupant.isSelf ? tweenMs : remoteTweenMs,
+            ease: occupant.isSelf ? 'Quad.Out' : 'Sine.Out',
+            onComplete: () => {
+              if (avatar.activeTween === tween) {
+                avatar.activeTween = null;
+              }
+            }
           });
+          avatar.activeTween = tween;
         } else {
-          avatar.container.setPosition(avatarPosition.x, avatarPosition.y);
+          if (forceImmediate) {
+            avatar.activeTween?.stop?.();
+            avatar.activeTween = null;
+          }
+          if (!avatar.activeTween) {
+            avatar.container.setPosition(avatarPosition.x, avatarPosition.y);
+          }
         }
         avatar.initialized = true;
+        avatar.lastPosition = avatarPosition;
         applySelectionStyles(avatar, selectedUsername === occupant.username, occupant.isSelf);
       });
 

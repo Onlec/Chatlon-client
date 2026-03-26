@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import ChabloPhaserStage from './ChabloPhaserStage';
+import ChabloPhaserStage, { getStagePayload } from './ChabloPhaserStage';
 
 const mockBridge = {
   updateWorld: jest.fn(),
@@ -84,5 +84,55 @@ describe('ChabloPhaserStage', () => {
     fireEvent.keyDown(stage, { key: 'ArrowLeft', repeat: false });
     fireEvent.blur(stage);
     expect(onDirectionStop).toHaveBeenCalledTimes(2);
+  });
+
+  test('includes shared room state in the stage world payload', () => {
+    const roomStateByHotspotId = {
+      Balie: {
+        hotspotId: 'Balie',
+        title: 'Receptie live',
+        text: 'alice checkt in bij de balie.',
+        updatedAt: 1234
+      }
+    };
+
+    expect(getStagePayload({
+      activeHotspotId: 'Balie',
+      currentRoomMeta: { id: 'receptie', name: 'Receptie', accent: '#f0c97c' },
+      currentUser: 'alice',
+      onDirectionStart: jest.fn(),
+      onDirectionStop: jest.fn(),
+      onTileActivate: jest.fn(),
+      onSelectAvatar: jest.fn(),
+      otherOccupants: [],
+      position: { x: 4, y: 3 },
+      roomStateByHotspotId,
+      selectedAvatar: null
+    })).toEqual(expect.objectContaining({
+      activeHotspotId: 'Balie',
+      roomStateByHotspotId
+    }));
+  });
+
+  test('notifies the parent when the engine state changes', async () => {
+    const onEngineStateChange = jest.fn();
+
+    render(
+      <ChabloPhaserStage
+        currentRoomMeta={{ id: 'receptie', name: 'Receptie', accent: '#f0c97c' }}
+        currentUser="alice"
+        onDirectionStart={jest.fn()}
+        onDirectionStop={jest.fn()}
+        onEngineStateChange={onEngineStateChange}
+        onTileActivate={jest.fn()}
+        onSelectAvatar={jest.fn()}
+        otherOccupants={[]}
+        position={{ x: 4, y: 3 }}
+        roomStateByHotspotId={{}}
+        selectedAvatar={null}
+      />
+    );
+
+    expect(onEngineStateChange).toHaveBeenCalledWith('loading');
   });
 });

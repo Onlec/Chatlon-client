@@ -15,6 +15,9 @@ import { useChabloMovementController } from './chablo/useChabloMovementControlle
 
 const STALE_POSITION_MS = 30000;
 const HEARTBEAT_MS = 10000;
+const HOTSPOT_PRESENCE_STALE_MS = 15000;
+const ROOM_ACTIVITY_LIMIT = 8;
+const DEFAULT_SIDEBAR_TAB = 'hotspots';
 
 export const DEFAULT_CHABLO_ROOMS = CHABLO_ROOMS;
 
@@ -55,6 +58,99 @@ function normalizeRoomMessages(messageMap) {
     .sort((left, right) => left.timestamp - right.timestamp);
 }
 
+function normalizeHotspotPresenceEntries(presenceMap, currentUser) {
+  return Object.entries(presenceMap)
+    .filter(([username, value]) => (
+      username !== currentUser
+      && value
+      && typeof value === 'object'
+      && typeof value.hotspotId === 'string'
+      && value.hotspotId
+      && (Date.now() - (Number(value.lastSeen) || 0) <= HOTSPOT_PRESENCE_STALE_MS)
+    ))
+    .map(([username, value]) => ({
+      username,
+      hotspotId: value.hotspotId,
+      hotspotLabel: value.hotspotLabel || value.hotspotId,
+      lastSeen: Number(value.lastSeen) || 0
+    }))
+    .sort((left, right) => (
+      left.hotspotId.localeCompare(right.hotspotId)
+      || left.username.localeCompare(right.username)
+    ));
+}
+
+function normalizeRoomActivityEntries(activityMap) {
+  return Object.entries(activityMap)
+    .filter(([, value]) => value && typeof value === 'object')
+    .map(([id, value]) => ({
+      id,
+      by: value.by || 'onbekend',
+      room: value.room || null,
+      hotspotId: value.hotspotId || null,
+      hotspotLabel: value.hotspotLabel || value.hotspotId || 'hotspot',
+      actionType: value.actionType || 'feedback',
+      summary: value.summary || '',
+      timestamp: Number(value.timestamp) || 0
+    }))
+    .sort((left, right) => right.timestamp - left.timestamp)
+    .slice(0, ROOM_ACTIVITY_LIMIT);
+}
+
+function normalizeRoomStateEntries(roomStateMap) {
+  return Object.entries(roomStateMap)
+    .filter(([, value]) => value && typeof value === 'object')
+    .map(([hotspotId, value]) => ({
+      hotspotId,
+      hotspotLabel: value.hotspotLabel || hotspotId,
+      title: value.title || value.hotspotLabel || hotspotId,
+      text: value.text || '',
+      detail: value.detail || '',
+      by: value.by || 'onbekend',
+      kind: value.kind || 'status',
+      updatedAt: Number(value.updatedAt) || 0
+    }))
+    .sort((left, right) => right.updatedAt - left.updatedAt);
+}
+
+function buildSharedRoomStatePayload(hotspot, actionType, currentUser) {
+  const lowerLabel = hotspot.label.toLowerCase();
+
+  if (hotspot.label === 'Balie') {
+    return {
+      title: 'Receptie live',
+      text: `${currentUser} checkt in bij de balie.`,
+      detail: 'Het motelbord is weer even het centrum van de lobby.',
+      kind: 'receptie'
+    };
+  }
+
+  if (hotspot.label === 'Bartoog') {
+    return {
+      title: 'Barstatus',
+      text: `${currentUser} zet de toon aan de bar.`,
+      detail: 'De kamer ruikt ineens naar pixelcocktails en halve gesprekken.',
+      kind: 'bar'
+    };
+  }
+
+  if (hotspot.label === 'Dansvloer') {
+    return {
+      title: 'Dansvloer bezet',
+      text: `${currentUser} claimt de dansvloer.`,
+      detail: 'Zelfs stilstaan telt hier als performance.',
+      kind: 'dance'
+    };
+  }
+
+  return {
+    title: hotspot.label,
+    text: `${currentUser} activeert ${lowerLabel}.`,
+    detail: hotspot.action?.text || hotspot.feedback || hotspot.description || '',
+    kind: actionType || hotspot.kind || 'status'
+  };
+}
+
 export function ChabloMotelView({
   currentUser = 'guest',
   onOpenConversation,
@@ -65,16 +161,25 @@ export function ChabloMotelView({
   const [allPositions, setAllPositions] = useState({});
   const [friendEntries, setFriendEntries] = useState([]);
   const [roomMessages, setRoomMessages] = useState([]);
+  const [hotspotPresenceEntries, setHotspotPresenceEntries] = useState([]);
+  const [roomActivityEntries, setRoomActivityEntries] = useState([]);
+  const [roomStateEntries, setRoomStateEntries] = useState([]);
   const [selectedAvatar, setSelectedAvatar] = useState(null);
   const [selectedHotspotId, setSelectedHotspotId] = useState(null);
   const [roomActionState, setRoomActionState] = useState(null);
   const [roomChatInput, setRoomChatInput] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [stageEngineState, setStageEngineState] = useState('loading');
+  const [activeSidebarTab, setActiveSidebarTab] = useState(DEFAULT_SIDEBAR_TAB);
   const feedbackTimerRef = useRef(null);
   const latestRoomRef = useRef(currentRoom);
   const latestPositionRef = useRef(position);
   const lastHotspotFeedbackRef = useRef('');
   const roomChatInputRef = useRef(null);
+  const publishedHotspotPresenceRef = useRef({
+    roomId: currentRoom,
+    hotspotId: null
+  });
 
   const currentRoomMeta = useMemo(
     () => getChabloRoom(currentRoom),
@@ -116,6 +221,30 @@ export function ChabloMotelView({
     [currentRoomMeta.hotspots, selectedHotspotId]
   );
   const highlightedHotspot = selectedHotspot || activeHotspot || null;
+  const hotspotPresenceById = useMemo(() => (
+    hotspotPresenceEntries.reduce((next, entry) => {
+      if (!next[entry.hotspotId]) {
+        next[entry.hotspotId] = [];
+      }
+      next[entry.hotspotId].push(entry);
+      return next;
+    }, {})
+  ), [hotspotPresenceEntries]);
+  const latestHotspotActivityById = useMemo(() => (
+    roomActivityEntries.reduce((next, entry) => {
+      if (!entry.hotspotId || next[entry.hotspotId]) {
+        return next;
+      }
+      next[entry.hotspotId] = entry;
+      return next;
+    }, {})
+  ), [roomActivityEntries]);
+  const roomStateByHotspotId = useMemo(() => (
+    roomStateEntries.reduce((next, entry) => {
+      next[entry.hotspotId] = entry;
+      return next;
+    }, {})
+  ), [roomStateEntries]);
 
   const setFeedback = useCallback((message) => {
     setFeedbackMessage(message);
@@ -215,6 +344,78 @@ export function ChabloMotelView({
     };
   }, [currentRoom, gunApi]);
 
+  useEffect(() => {
+    const hotspotPresenceNode = gunApi?.get?.('CHABLO_HOTSPOT_PRESENCE')?.get?.(currentRoom);
+    const hotspotPresenceMapNode = hotspotPresenceNode?.map?.();
+    const nextPresenceMap = {};
+
+    if (hotspotPresenceMapNode?.on) {
+      hotspotPresenceMapNode.on((presenceEntry, username) => {
+        if (!presenceEntry || typeof presenceEntry !== 'object') {
+          delete nextPresenceMap[username];
+        } else {
+          nextPresenceMap[username] = sanitizeNode(presenceEntry);
+        }
+        setHotspotPresenceEntries(normalizeHotspotPresenceEntries(nextPresenceMap, currentUser));
+      });
+    } else {
+      setHotspotPresenceEntries([]);
+    }
+
+    return () => {
+      hotspotPresenceMapNode?.off?.();
+      hotspotPresenceNode?.off?.();
+    };
+  }, [currentRoom, currentUser, gunApi]);
+
+  useEffect(() => {
+    const roomActivityNode = gunApi?.get?.('CHABLO_ROOM_ACTIVITY')?.get?.(currentRoom);
+    const roomActivityMapNode = roomActivityNode?.map?.();
+    const nextActivityMap = {};
+
+    if (roomActivityMapNode?.on) {
+      roomActivityMapNode.on((activityEntry, activityId) => {
+        if (!activityEntry || typeof activityEntry !== 'object') {
+          delete nextActivityMap[activityId];
+        } else {
+          nextActivityMap[activityId] = sanitizeNode(activityEntry);
+        }
+        setRoomActivityEntries(normalizeRoomActivityEntries(nextActivityMap));
+      });
+    } else {
+      setRoomActivityEntries([]);
+    }
+
+    return () => {
+      roomActivityMapNode?.off?.();
+      roomActivityNode?.off?.();
+    };
+  }, [currentRoom, gunApi]);
+
+  useEffect(() => {
+    const roomStateNode = gunApi?.get?.('CHABLO_ROOM_STATE')?.get?.(currentRoom);
+    const roomStateMapNode = roomStateNode?.map?.();
+    const nextRoomStateMap = {};
+
+    if (roomStateMapNode?.on) {
+      roomStateMapNode.on((roomStateEntry, hotspotId) => {
+        if (!roomStateEntry || typeof roomStateEntry !== 'object') {
+          delete nextRoomStateMap[hotspotId];
+        } else {
+          nextRoomStateMap[hotspotId] = sanitizeNode(roomStateEntry);
+        }
+        setRoomStateEntries(normalizeRoomStateEntries(nextRoomStateMap));
+      });
+    } else {
+      setRoomStateEntries([]);
+    }
+
+    return () => {
+      roomStateMapNode?.off?.();
+      roomStateNode?.off?.();
+    };
+  }, [currentRoom, gunApi]);
+
   const syncPosition = useCallback((nextRoom, nextPosition) => {
     const positionNode = gunApi?.get?.('CHABLO_POSITION')?.get?.(currentUser);
     const normalizedPosition = normalizeRoomPosition(
@@ -230,6 +431,55 @@ export function ChabloMotelView({
     });
   }, [currentUser, gunApi]);
 
+  const syncHotspotPresence = useCallback((nextRoom, hotspot) => {
+    const presenceNode = gunApi?.get?.('CHABLO_HOTSPOT_PRESENCE')?.get?.(nextRoom)?.get?.(currentUser);
+    presenceNode?.put?.({
+      hotspotId: hotspot?.id || null,
+      hotspotLabel: hotspot?.label || null,
+      lastSeen: Date.now()
+    });
+  }, [currentUser, gunApi]);
+
+  const clearHotspotPresence = useCallback((roomId) => {
+    if (!roomId) {
+      return;
+    }
+    gunApi?.get?.('CHABLO_HOTSPOT_PRESENCE')?.get?.(roomId)?.get?.(currentUser)?.put?.(null);
+  }, [currentUser, gunApi]);
+
+  const publishRoomActivity = useCallback((hotspot, actionType, summary) => {
+    if (!hotspot || !summary) {
+      return;
+    }
+    const timestamp = Date.now();
+    const activityId = `${timestamp}-${currentUser}-${hotspot.id}`;
+    gunApi?.get?.('CHABLO_ROOM_ACTIVITY')?.get?.(currentRoom)?.get?.(activityId)?.put?.({
+      by: currentUser,
+      room: currentRoom,
+      hotspotId: hotspot.id,
+      hotspotLabel: hotspot.label,
+      actionType,
+      summary,
+      timestamp
+    });
+  }, [currentRoom, currentUser, gunApi]);
+
+  const publishRoomState = useCallback((hotspot, actionType) => {
+    if (!hotspot) {
+      return;
+    }
+    const nextState = buildSharedRoomStatePayload(hotspot, actionType, currentUser);
+    gunApi?.get?.('CHABLO_ROOM_STATE')?.get?.(currentRoom)?.get?.(hotspot.id)?.put?.({
+      hotspotLabel: hotspot.label,
+      title: nextState.title,
+      text: nextState.text,
+      detail: nextState.detail,
+      by: currentUser,
+      kind: nextState.kind,
+      updatedAt: Date.now()
+    });
+  }, [currentRoom, currentUser, gunApi]);
+
   useEffect(() => {
     syncPosition(currentRoom, position);
 
@@ -242,6 +492,27 @@ export function ChabloMotelView({
     };
   }, [currentRoom, position, syncPosition]);
 
+  useEffect(() => {
+    const previousPublished = publishedHotspotPresenceRef.current;
+    if (previousPublished.roomId && previousPublished.roomId !== currentRoom) {
+      clearHotspotPresence(previousPublished.roomId);
+    }
+
+    syncHotspotPresence(currentRoom, activeHotspot);
+    publishedHotspotPresenceRef.current = {
+      roomId: currentRoom,
+      hotspotId: activeHotspot?.id || null
+    };
+
+    const heartbeat = window.setInterval(() => {
+      syncHotspotPresence(currentRoom, activeHotspot);
+    }, HEARTBEAT_MS);
+
+    return () => {
+      window.clearInterval(heartbeat);
+    };
+  }, [activeHotspot, clearHotspotPresence, currentRoom, syncHotspotPresence]);
+
   useEffect(() => () => {
     gunApi?.get?.('CHABLO_POSITION')?.get?.(currentUser)?.put?.({
       room: latestRoomRef.current,
@@ -249,7 +520,8 @@ export function ChabloMotelView({
       y: latestPositionRef.current.y,
       lastSeen: 0
     });
-  }, [currentUser, gunApi]);
+    clearHotspotPresence(publishedHotspotPresenceRef.current.roomId);
+  }, [clearHotspotPresence, currentUser, gunApi]);
 
   useEffect(() => {
     if (selectedAvatar && !otherOccupants.find((occupant) => occupant.username === selectedAvatar)) {
@@ -332,13 +604,17 @@ export function ChabloMotelView({
 
     const action = hotspot.action;
     if (!action?.type) {
+      setActiveSidebarTab('hotspots');
       if (hotspot.feedback) {
         setFeedback(hotspot.feedback);
       }
+      publishRoomState(hotspot, 'feedback');
+      publishRoomActivity(hotspot, 'feedback', `${currentUser} hangt rond bij ${hotspot.label.toLowerCase()}.`);
       return;
     }
 
     if (action.type === 'bulletin') {
+      setActiveSidebarTab('hotspots');
       setRoomActionState({
         kind: action.type,
         title: action.title || hotspot.label,
@@ -346,10 +622,17 @@ export function ChabloMotelView({
         source: hotspot.label
       });
       setFeedback(action.message || hotspot.feedback || `${hotspot.label} geopend.`);
+      publishRoomState(hotspot, action.type);
+      publishRoomActivity(
+        hotspot,
+        action.type,
+        `${currentUser} bekijkt ${hotspot.label.toLowerCase()}.`
+      );
       return;
     }
 
     if (action.type === 'prefill-chat') {
+      setActiveSidebarTab('chat');
       const nextText = action.text || '';
       setRoomChatInput(nextText);
       setRoomActionState({
@@ -360,10 +643,17 @@ export function ChabloMotelView({
       });
       focusRoomChatComposer();
       setFeedback(action.message || hotspot.feedback || `${hotspot.label} heeft iets klaargezet in de room chat.`);
+      publishRoomState(hotspot, action.type);
+      publishRoomActivity(
+        hotspot,
+        action.type,
+        `${currentUser} zet een roomlijn klaar bij ${hotspot.label.toLowerCase()}.`
+      );
       return;
     }
 
     if (action.type === 'room-jump' && action.roomId) {
+      setActiveSidebarTab('hotspots');
       const jumpRoom = getChabloRoom(action.roomId).id;
       const jumpPosition = action.target || getChabloRoomSpawnPosition(jumpRoom);
       setRoomActionState({
@@ -373,10 +663,17 @@ export function ChabloMotelView({
         source: hotspot.label
       });
       setFeedback(action.message || `Je gaat naar ${getChabloRoom(jumpRoom).name}.`);
+      publishRoomState(hotspot, action.type);
+      publishRoomActivity(
+        hotspot,
+        action.type,
+        `${currentUser} gebruikt ${hotspot.label.toLowerCase()} richting ${getChabloRoom(jumpRoom).name}.`
+      );
       changeRoom(jumpRoom, jumpPosition);
       return;
     }
 
+    setActiveSidebarTab('hotspots');
     setRoomActionState({
       kind: action.type,
       title: action.title || hotspot.label,
@@ -384,7 +681,13 @@ export function ChabloMotelView({
       source: hotspot.label
     });
     setFeedback(action.message || action.text || hotspot.feedback || `${hotspot.label} actief.`);
-  }, [changeRoom, focusRoomChatComposer, setFeedback]);
+    publishRoomState(hotspot, action.type);
+    publishRoomActivity(
+      hotspot,
+      action.type,
+      `${currentUser} activeert ${hotspot.label.toLowerCase()}.`
+    );
+  }, [changeRoom, currentUser, focusRoomChatComposer, publishRoomActivity, publishRoomState, setFeedback]);
 
   const moveToHotspot = useCallback((hotspot) => {
     if (!hotspot) {
@@ -401,6 +704,7 @@ export function ChabloMotelView({
       return;
     }
 
+    setActiveSidebarTab('hotspots');
     setSelectedAvatar(null);
     setSelectedHotspotId(hotspot.id);
 
@@ -418,6 +722,36 @@ export function ChabloMotelView({
     }
     return hotspot.action?.buttonLabel || hotspot.actionLabel || `Gebruik ${hotspot.label}`;
   }, []);
+
+  const getHotspotPresenceText = useCallback((hotspot) => {
+    const visitors = hotspotPresenceById[hotspot.id] || [];
+    if (!visitors.length) {
+      return null;
+    }
+    if (visitors.length === 1) {
+      return `Nu hier: ${visitors[0].username}`;
+    }
+    if (visitors.length === 2) {
+      return `Nu hier: ${visitors[0].username} en ${visitors[1].username}`;
+    }
+    return `Nu hier: ${visitors[0].username}, ${visitors[1].username} +${visitors.length - 2}`;
+  }, [hotspotPresenceById]);
+
+  const getHotspotActivityText = useCallback((hotspot) => {
+    const latestActivity = latestHotspotActivityById[hotspot.id];
+    if (!latestActivity?.summary) {
+      return null;
+    }
+    return `Laatste: ${latestActivity.summary}`;
+  }, [latestHotspotActivityById]);
+
+  const getHotspotStateText = useCallback((hotspot) => {
+    const latestState = roomStateByHotspotId[hotspot.id];
+    if (!latestState?.text) {
+      return null;
+    }
+    return `Status: ${latestState.text}`;
+  }, [roomStateByHotspotId]);
 
   const createDpadHandlers = useCallback((deltaX, deltaY) => ({
     onPointerDown: (event) => {
@@ -485,6 +819,11 @@ export function ChabloMotelView({
   }, [currentRoom, currentUser, gunApi, roomChatInput]);
 
   const selectedAvatarPosition = otherOccupants.find((occupant) => occupant.username === selectedAvatar) || null;
+  const showStageBootOverlay = stageEngineState === 'loading';
+  const handleSelectAvatar = useCallback((username) => {
+    setSelectedAvatar(username);
+    setActiveSidebarTab('social');
+  }, []);
 
   return (
     <div className="chablo-page">
@@ -536,19 +875,32 @@ export function ChabloMotelView({
             </div>
           </div>
 
-          <ChabloPhaserStage
-            activeHotspotId={highlightedHotspot?.id || null}
-            currentRoomMeta={currentRoomMeta}
-            currentUser={currentUser}
-            onDirectionStart={beginDirectionalMove}
-            onDirectionStop={endDirectionalMove}
-            onHotspotActivate={handleHotspotActivate}
-            onTileActivate={moveToTile}
-            onSelectAvatar={setSelectedAvatar}
-            otherOccupants={otherOccupants}
-            position={position}
-            selectedAvatar={selectedAvatar}
-          />
+          <div className="chablo-stage-frame">
+            {showStageBootOverlay && (
+              <div className="chablo-boot-overlay" aria-live="polite">
+                <div className="chablo-boot-overlay__card">
+                  <div className="chablo-boot-overlay__eyebrow">Chablo Motel</div>
+                  <strong>Hotel wordt klaargezet...</strong>
+                  <p>De lobbylampen warmen op, de neon springt aan en de avatars druppelen binnen.</p>
+                </div>
+              </div>
+            )}
+            <ChabloPhaserStage
+              activeHotspotId={highlightedHotspot?.id || null}
+              currentRoomMeta={currentRoomMeta}
+              currentUser={currentUser}
+              onEngineStateChange={setStageEngineState}
+              onDirectionStart={beginDirectionalMove}
+              onDirectionStop={endDirectionalMove}
+              onHotspotActivate={handleHotspotActivate}
+              onTileActivate={moveToTile}
+              onSelectAvatar={handleSelectAvatar}
+              otherOccupants={otherOccupants}
+              position={position}
+              roomStateByHotspotId={roomStateByHotspotId}
+              selectedAvatar={selectedAvatar}
+            />
+          </div>
         </section>
 
         <aside className="chablo-sidebar">
@@ -591,169 +943,287 @@ export function ChabloMotelView({
             </section>
           )}
 
-          <section className="chablo-card">
-            <div className="chablo-card__title">Room hotspots</div>
-            {highlightedHotspot ? (
-              <div className="chablo-hotspot-feature">
-                <div className="chablo-hotspot-feature__label">
-                  <span className="chablo-pill">{highlightedHotspot.kind}</span>
-                  <strong>{highlightedHotspot.label}</strong>
-                </div>
-                {highlightedHotspot.description && (
-                  <p>{highlightedHotspot.description}</p>
-                )}
-                <div className="chablo-inline-actions">
-                  <button
-                    type="button"
-                    className="yoctol-btn"
-                    onClick={() => handleHotspotActivate(highlightedHotspot)}
-                  >
-                    {getHotspotButtonLabel(highlightedHotspot, activeHotspot?.id === highlightedHotspot.id)}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <p>Klik op een gemarkeerde plek in de kamer om ernaartoe te wandelen en de room-interactie te openen.</p>
-            )}
+          <div className="chablo-sidebar-tabs" role="tablist" aria-label="Chablo zijpanelen">
+            {[
+              { id: 'hotspots', label: 'Hotspots' },
+              { id: 'activity', label: 'Activiteit' },
+              { id: 'social', label: 'Sociaal' },
+              { id: 'chat', label: 'Chat' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                id={`chablo-tab-${tab.id}`}
+                type="button"
+                role="tab"
+                aria-selected={activeSidebarTab === tab.id}
+                aria-controls={`chablo-panel-${tab.id}`}
+                className={`chablo-sidebar-tab ${activeSidebarTab === tab.id ? 'chablo-sidebar-tab--active' : ''}`}
+                onClick={() => setActiveSidebarTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-            {(currentRoomMeta.hotspots || []).length > 0 && (
-              <div className="chablo-hotspot-list">
-                {currentRoomMeta.hotspots.map((hotspot) => (
-                  <div
-                    key={hotspot.id}
-                    className={`chablo-hotspot-row ${highlightedHotspot?.id === hotspot.id ? 'chablo-hotspot-row--active' : ''}`}
-                  >
-                    <div>
-                      <strong>{hotspot.label}</strong>
-                      {hotspot.description && <span>{hotspot.description}</span>}
+          {activeSidebarTab === 'hotspots' && (
+            <div
+              id="chablo-panel-hotspots"
+              role="tabpanel"
+              aria-labelledby="chablo-tab-hotspots"
+              className="chablo-sidebar-stack"
+            >
+              <section className="chablo-card">
+                <div className="chablo-card__title">Room hotspots</div>
+                {highlightedHotspot ? (
+                  <div className="chablo-hotspot-feature">
+                    <div className="chablo-hotspot-feature__label">
+                      <span className="chablo-pill">{highlightedHotspot.kind}</span>
+                      <strong>{highlightedHotspot.label}</strong>
                     </div>
-                    <button
-                      type="button"
-                      className="browser-secondary-btn"
-                      onClick={() => (
-                        activeHotspot?.id === hotspot.id
-                          ? executeHotspotAction(hotspot)
-                          : moveToHotspot(hotspot)
-                      )}
-                    >
-                      {activeHotspot?.id === hotspot.id
-                        ? getHotspotButtonLabel(hotspot, true)
-                        : hotspot.actionLabel || 'Ga erheen'}
-                    </button>
+                    {getHotspotPresenceText(highlightedHotspot) && (
+                      <span className="chablo-hotspot-meta">{getHotspotPresenceText(highlightedHotspot)}</span>
+                    )}
+                    {getHotspotActivityText(highlightedHotspot) && (
+                      <span className="chablo-hotspot-meta">{getHotspotActivityText(highlightedHotspot)}</span>
+                    )}
+                    {getHotspotStateText(highlightedHotspot) && (
+                      <span className="chablo-hotspot-meta">{getHotspotStateText(highlightedHotspot)}</span>
+                    )}
+                    {highlightedHotspot.description && (
+                      <p>{highlightedHotspot.description}</p>
+                    )}
+                    <div className="chablo-inline-actions">
+                      <button
+                        type="button"
+                        className="yoctol-btn"
+                        onClick={() => handleHotspotActivate(highlightedHotspot)}
+                      >
+                        {getHotspotButtonLabel(highlightedHotspot, activeHotspot?.id === highlightedHotspot.id)}
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
+                ) : (
+                  <p>Klik op een gemarkeerde plek in de kamer om ernaartoe te wandelen en de room-interactie te openen.</p>
+                )}
 
-          {roomActionState && (
-            <section className="chablo-card">
-              <div className="chablo-card__title">Hotspot actie</div>
-              <div className="chablo-hotspot-feature">
-                <div className="chablo-hotspot-feature__label">
-                  <span className="chablo-pill">{roomActionState.kind}</span>
-                  <strong>{roomActionState.title}</strong>
-                </div>
-                {roomActionState.source && (
-                  <span>Bron: {roomActionState.source}</span>
+                {(currentRoomMeta.hotspots || []).length > 0 && (
+                  <div className="chablo-hotspot-list">
+                    {currentRoomMeta.hotspots.map((hotspot) => (
+                      <div
+                        key={hotspot.id}
+                        className={`chablo-hotspot-row ${highlightedHotspot?.id === hotspot.id ? 'chablo-hotspot-row--active' : ''}`}
+                      >
+                        <div>
+                          <strong>{hotspot.label}</strong>
+                          {hotspot.description && <span>{hotspot.description}</span>}
+                          {getHotspotPresenceText(hotspot) && (
+                            <span className="chablo-hotspot-row__meta">{getHotspotPresenceText(hotspot)}</span>
+                          )}
+                          {getHotspotActivityText(hotspot) && (
+                            <span className="chablo-hotspot-row__meta">{getHotspotActivityText(hotspot)}</span>
+                          )}
+                          {getHotspotStateText(hotspot) && (
+                            <span className="chablo-hotspot-row__meta">{getHotspotStateText(hotspot)}</span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="browser-secondary-btn"
+                          onClick={() => (
+                            activeHotspot?.id === hotspot.id
+                              ? executeHotspotAction(hotspot)
+                              : moveToHotspot(hotspot)
+                          )}
+                        >
+                          {activeHotspot?.id === hotspot.id
+                            ? getHotspotButtonLabel(hotspot, true)
+                            : hotspot.actionLabel || 'Ga erheen'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
-                {roomActionState.text && (
-                  <p>{roomActionState.text}</p>
-                )}
-              </div>
-            </section>
+              </section>
+
+              {roomActionState && (
+                <section className="chablo-card">
+                  <div className="chablo-card__title">Hotspot actie</div>
+                  <div className="chablo-hotspot-feature">
+                    <div className="chablo-hotspot-feature__label">
+                      <span className="chablo-pill">{roomActionState.kind}</span>
+                      <strong>{roomActionState.title}</strong>
+                    </div>
+                    {roomActionState.source && (
+                      <span>Bron: {roomActionState.source}</span>
+                    )}
+                    {roomActionState.text && (
+                      <p>{roomActionState.text}</p>
+                    )}
+                  </div>
+                </section>
+              )}
+            </div>
           )}
 
-          <section className="chablo-card">
-            <div className="chablo-card__title">Vriendschapsverzoeken</div>
-            {incomingRequests.length === 0 && outgoingRequests.length === 0 && (
-              <p>Nog geen motelvriendschappen in beweging.</p>
-            )}
+          {activeSidebarTab === 'activity' && (
+            <div
+              id="chablo-panel-activity"
+              role="tabpanel"
+              aria-labelledby="chablo-tab-activity"
+              className="chablo-sidebar-stack"
+            >
+              <section className="chablo-card">
+                <div className="chablo-card__title">Gedeelde room status</div>
+                {roomStateEntries.length === 0 ? (
+                  <p>Nog geen gedeelde roomstatus in deze kamer.</p>
+                ) : (
+                  <div className="chablo-room-activity-list">
+                    {roomStateEntries.map((entry) => (
+                      <article key={entry.hotspotId} className="chablo-room-activity-item">
+                        <div className="chablo-room-activity-item__meta">
+                          <strong>{entry.title}</strong>
+                          <span>{entry.updatedAt ? new Date(entry.updatedAt).toLocaleTimeString() : 'nu'}</span>
+                        </div>
+                        <p>{entry.text}</p>
+                        {entry.detail && (
+                          <span className="chablo-hotspot-row__meta">{entry.detail}</span>
+                        )}
+                        <span className="chablo-hotspot-row__meta">Door: {entry.by}</span>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
 
-            {incomingRequests.map((entry) => (
-              <div key={`incoming-${entry.username}`} className="chablo-request">
-                <div>
-                  <strong>{entry.username}</strong>
-                  <span>Wil je ontmoeten in {entry.metIn || 'het motel'}.</span>
-                </div>
-                <div className="chablo-inline-actions">
-                  <button type="button" className="yoctol-btn" onClick={() => acceptFriendRequest(entry.username)}>
-                    Accepteer
-                  </button>
-                  <button type="button" className="browser-secondary-btn" onClick={() => rejectFriendRequest(entry.username)}>
-                    Weiger
-                  </button>
-                </div>
-              </div>
-            ))}
+              <section className="chablo-card">
+                <div className="chablo-card__title">Live room activity</div>
+                {roomActivityEntries.length === 0 ? (
+                  <p>Nog geen gedeelde motelmomenten in deze kamer.</p>
+                ) : (
+                  <div className="chablo-room-activity-list">
+                    {roomActivityEntries.map((entry) => (
+                      <article key={entry.id} className="chablo-room-activity-item">
+                        <div className="chablo-room-activity-item__meta">
+                          <strong>{entry.hotspotLabel}</strong>
+                          <span>{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : 'nu'}</span>
+                        </div>
+                        <p>{entry.summary}</p>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
 
-            {outgoingRequests.map((entry) => (
-              <div key={`outgoing-${entry.username}`} className="chablo-request chablo-request--pending">
-                <div>
-                  <strong>{entry.username}</strong>
-                  <span>Verzoek verstuurd vanuit {entry.metIn || currentRoomMeta.name}.</span>
-                </div>
-              </div>
-            ))}
-          </section>
+          {activeSidebarTab === 'social' && (
+            <div
+              id="chablo-panel-social"
+              role="tabpanel"
+              aria-labelledby="chablo-tab-social"
+              className="chablo-sidebar-stack"
+            >
+              <section className="chablo-card">
+                <div className="chablo-card__title">Vriendschapsverzoeken</div>
+                {incomingRequests.length === 0 && outgoingRequests.length === 0 && (
+                  <p>Nog geen motelvriendschappen in beweging.</p>
+                )}
 
-          <section className="chablo-card">
-            <div className="chablo-card__title">Chablo-vrienden</div>
-            {acceptedFriends.length === 0 && (
-              <p>Je hebt nog geen geaccepteerde motelvrienden.</p>
-            )}
-            <div className="chablo-friends-list">
-              {acceptedFriends.map((entry) => {
-                const friendPosition = allPositions[entry.username];
-                const isOnline = isPositionFresh(friendPosition);
-                return (
-                  <div key={entry.username} className="chablo-friend-row">
+                {incomingRequests.map((entry) => (
+                  <div key={`incoming-${entry.username}`} className="chablo-request">
                     <div>
                       <strong>{entry.username}</strong>
-                      <span>{isOnline ? `Online in ${friendPosition.room}` : 'Offline'}</span>
+                      <span>Wil je ontmoeten in {entry.metIn || 'het motel'}.</span>
                     </div>
-                    <button
-                      type="button"
-                      className="browser-secondary-btn"
-                      disabled={!isOnline}
-                      onClick={() => isOnline && changeRoom(friendPosition.room, friendPosition)}
-                    >
-                      Ga naar kamer
-                    </button>
+                    <div className="chablo-inline-actions">
+                      <button type="button" className="yoctol-btn" onClick={() => acceptFriendRequest(entry.username)}>
+                        Accepteer
+                      </button>
+                      <button type="button" className="browser-secondary-btn" onClick={() => rejectFriendRequest(entry.username)}>
+                        Weiger
+                      </button>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          </section>
+                ))}
 
-          <section className="chablo-card chablo-card--chat">
-            <div className="chablo-card__title">Room chat</div>
-            <form className="chablo-chat-form" onSubmit={sendRoomMessage}>
-              <textarea
-                ref={roomChatInputRef}
-                value={roomChatInput}
-                onChange={(event) => setRoomChatInput(event.target.value)}
-                rows={3}
-                maxLength={100}
-                placeholder={`Zeg iets in ${currentRoomMeta.name}`}
-              />
-              <button type="submit" className="yoctol-btn">Verzend naar kamer</button>
-            </form>
-            <div className="chablo-chat-log">
-              {roomMessages.length === 0 && (
-                <div className="chablo-chat-empty">Nog geen room talk. Jij kan de eerste awkward begroeting posten.</div>
-              )}
-              {roomMessages.map((message) => (
-                <article key={message.id} className="chablo-chat-message">
-                  <div className="chablo-chat-message__meta">
-                    <strong>{message.from}</strong>
-                    <span>{message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'nu'}</span>
+                {outgoingRequests.map((entry) => (
+                  <div key={`outgoing-${entry.username}`} className="chablo-request chablo-request--pending">
+                    <div>
+                      <strong>{entry.username}</strong>
+                      <span>Verzoek verstuurd vanuit {entry.metIn || currentRoomMeta.name}.</span>
+                    </div>
                   </div>
-                  <p>{message.text}</p>
-                </article>
-              ))}
+                ))}
+              </section>
+
+              <section className="chablo-card">
+                <div className="chablo-card__title">Chablo-vrienden</div>
+                {acceptedFriends.length === 0 && (
+                  <p>Je hebt nog geen geaccepteerde motelvrienden.</p>
+                )}
+                <div className="chablo-friends-list">
+                  {acceptedFriends.map((entry) => {
+                    const friendPosition = allPositions[entry.username];
+                    const isOnline = isPositionFresh(friendPosition);
+                    return (
+                      <div key={entry.username} className="chablo-friend-row">
+                        <div>
+                          <strong>{entry.username}</strong>
+                          <span>{isOnline ? `Online in ${friendPosition.room}` : 'Offline'}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="browser-secondary-btn"
+                          disabled={!isOnline}
+                          onClick={() => isOnline && changeRoom(friendPosition.room, friendPosition)}
+                        >
+                          Ga naar kamer
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
             </div>
-          </section>
+          )}
+
+          {activeSidebarTab === 'chat' && (
+            <div
+              id="chablo-panel-chat"
+              role="tabpanel"
+              aria-labelledby="chablo-tab-chat"
+              className="chablo-sidebar-stack"
+            >
+              <section className="chablo-card chablo-card--chat">
+                <div className="chablo-card__title">Room chat</div>
+                <form className="chablo-chat-form" onSubmit={sendRoomMessage}>
+                  <textarea
+                    ref={roomChatInputRef}
+                    value={roomChatInput}
+                    onChange={(event) => setRoomChatInput(event.target.value)}
+                    rows={3}
+                    maxLength={100}
+                    placeholder={`Zeg iets in ${currentRoomMeta.name}`}
+                  />
+                  <button type="submit" className="yoctol-btn">Verzend naar kamer</button>
+                </form>
+                <div className="chablo-chat-log">
+                  {roomMessages.length === 0 && (
+                    <div className="chablo-chat-empty">Nog geen room talk. Jij kan de eerste awkward begroeting posten.</div>
+                  )}
+                  {roomMessages.map((message) => (
+                    <article key={message.id} className="chablo-chat-message">
+                      <div className="chablo-chat-message__meta">
+                        <strong>{message.from}</strong>
+                        <span>{message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'nu'}</span>
+                      </div>
+                      <p>{message.text}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
         </aside>
       </div>
     </div>
