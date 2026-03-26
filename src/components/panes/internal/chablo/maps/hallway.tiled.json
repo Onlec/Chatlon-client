@@ -1,0 +1,332 @@
+{
+  "type": "map",
+  "name": "hallway",
+  "width": 14,
+  "height": 5,
+  "tilewidth": 24,
+  "tileheight": 24,
+  "infinite": false,
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "version": "1.10",
+  "tiledversion": "1.11.1",
+  "nextlayerid": 4,
+  "nextobjectid": 16,
+  "properties": [
+    { "name": "id", "type": "string", "value": "hallway" },
+    { "name": "name", "type": "string", "value": "Motelgang" },
+    { "name": "description", "type": "string", "value": "De lange motelgang waar deuren, geruchten en nachtlicht elkaar kruisen." },
+    { "name": "accent", "type": "string", "value": "#94a8ff" },
+    { "name": "roomScale", "type": "int", "value": 2 }
+  ],
+  "tilesets": [
+    {
+      "firstgid": 1,
+      "name": "chablo-layout",
+      "tilewidth": 24,
+      "tileheight": 24,
+      "tilecount": 6,
+      "columns": 0,
+      "tiles": [
+        { "id": 0, "properties": [{ "name": "code", "type": "string", "value": "." }] },
+        { "id": 1, "properties": [{ "name": "code", "type": "string", "value": "#" }] },
+        { "id": 2, "properties": [{ "name": "code", "type": "string", "value": "T" }] },
+        { "id": 3, "properties": [{ "name": "code", "type": "string", "value": "B" }] },
+        { "id": 4, "properties": [{ "name": "code", "type": "string", "value": "C" }] },
+        { "id": 5, "properties": [{ "name": "code", "type": "string", "value": "P" }] }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": 1,
+      "name": "layout",
+      "type": "tilelayer",
+      "width": 14,
+      "height": 5,
+      "x": 0,
+      "y": 0,
+      "visible": true,
+      "opacity": 1,
+      "data": [
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+        2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
+        2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
+        2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2,
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+      ]
+    },
+    {
+      "id": 2,
+      "name": "objects",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 1,
+          "name": "spawn",
+          "type": "spawn",
+          "x": 168,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true
+        },
+        {
+          "id": 2,
+          "name": "Receptie",
+          "type": "door",
+          "x": 24,
+          "y": 48,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "receptie" },
+            { "name": "label", "type": "string", "value": "Receptie" },
+            { "name": "spawnX", "type": "int", "value": 8 },
+            { "name": "spawnY", "type": "int", "value": 2 }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Arcade",
+          "type": "door",
+          "x": 96,
+          "y": 24,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "arcade" },
+            { "name": "label", "type": "string", "value": "Arcade" },
+            { "name": "spawnX", "type": "int", "value": 8 },
+            { "name": "spawnY", "type": "int", "value": 3 }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Bar",
+          "type": "door",
+          "x": 168,
+          "y": 24,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "bar" },
+            { "name": "label", "type": "string", "value": "Bar" },
+            { "name": "spawnX", "type": "int", "value": 8 },
+            { "name": "spawnY", "type": "int", "value": 3 }
+          ]
+        },
+        {
+          "id": 5,
+          "name": "Kelder",
+          "type": "door",
+          "x": 240,
+          "y": 24,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "kelder" },
+            { "name": "label", "type": "string", "value": "Kelder" },
+            { "name": "spawnX", "type": "int", "value": 8 },
+            { "name": "spawnY", "type": "int", "value": 3 }
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Parking",
+          "type": "door",
+          "x": 288,
+          "y": 48,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "parking" },
+            { "name": "label", "type": "string", "value": "Parking" },
+            { "name": "spawnX", "type": "int", "value": 4 },
+            { "name": "spawnY", "type": "int", "value": 5 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "decor",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 7,
+          "name": "Motelgang",
+          "type": "sign",
+          "x": 168,
+          "y": 0,
+          "width": 72,
+          "height": 24,
+          "properties": [
+            { "name": "text", "type": "string", "value": "Motelgang" }
+          ]
+        },
+        {
+          "id": 8,
+          "name": "runner",
+          "type": "rug",
+          "x": 24,
+          "y": 48,
+          "width": 264,
+          "height": 24,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#313f62" },
+            { "name": "borderColor", "type": "string", "value": "#94a8ff" },
+            { "name": "alpha", "type": "float", "value": 0.2 }
+          ]
+        },
+        {
+          "id": 9,
+          "name": "left-plant",
+          "type": "plant",
+          "x": 48,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#85c5a1" },
+            { "name": "potColor", "type": "string", "value": "#8d6546" }
+          ]
+        },
+        {
+          "id": 10,
+          "name": "right-plant",
+          "type": "plant",
+          "x": 264,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#85c5a1" },
+            { "name": "potColor", "type": "string", "value": "#8d6546" }
+          ]
+        },
+        {
+          "id": 11,
+          "name": "lamp-1",
+          "type": "lamp",
+          "x": 72,
+          "y": 24,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#d9e6ff" }
+          ]
+        },
+        {
+          "id": 12,
+          "name": "lamp-2",
+          "type": "lamp",
+          "x": 144,
+          "y": 24,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#d9e6ff" }
+          ]
+        },
+        {
+          "id": 13,
+          "name": "lamp-3",
+          "type": "lamp",
+          "x": 216,
+          "y": 24,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#d9e6ff" }
+          ]
+        },
+        {
+          "id": 14,
+          "name": "hallway-neon",
+          "type": "neon",
+          "x": 120,
+          "y": 0,
+          "width": 96,
+          "height": 24,
+          "properties": [
+            { "name": "color", "type": "string", "value": "#94a8ff" },
+            { "name": "duration", "type": "int", "value": 1180 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "hotspots",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "visible": true,
+      "opacity": 1,
+      "objects": [
+        {
+          "id": 20,
+          "name": "Kamerbord",
+          "type": "hotspot",
+          "x": 144,
+          "y": 48,
+          "width": 48,
+          "height": 24,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "hallway" },
+            { "name": "label", "type": "string", "value": "Kamerbord" },
+            { "name": "description", "type": "string", "value": "Het bord waar pijlen, kamerlabels en halve plannen elkaar kruisen." },
+            { "name": "feedback", "type": "string", "value": "Je scant het kamerbord alsof iemand er een geheime route op heeft bijgeschreven." },
+            { "name": "actionLabel", "type": "string", "value": "Ga naar het kamerbord" },
+            { "name": "icon", "type": "string", "value": "K" },
+            { "name": "actionType", "type": "string", "value": "bulletin" },
+            { "name": "actionTitle", "type": "string", "value": "Motelbord" },
+            { "name": "actionText", "type": "string", "value": "Receptie links, bar en arcade boven, kelder aan het einde en parking waar iedereen zogezegd al vertrokken is." },
+            { "name": "actionButton", "type": "string", "value": "Lees het motelbord" },
+            { "name": "actionMessage", "type": "string", "value": "Je leest het motelbord en krijgt meteen zin om een andere deur te proberen." },
+            { "name": "targetX", "type": "int", "value": 6 },
+            { "name": "targetY", "type": "int", "value": 2 }
+          ]
+        },
+        {
+          "id": 21,
+          "name": "Sleutelrek",
+          "type": "hotspot",
+          "x": 240,
+          "y": 48,
+          "width": 24,
+          "height": 24,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "hallway" },
+            { "name": "label", "type": "string", "value": "Sleutelrek" },
+            { "name": "description", "type": "string", "value": "Een rij sleutels en tags waarvan niemand zeker weet welke nog echt gebruikt worden." },
+            { "name": "feedback", "type": "string", "value": "Je blijft bij het sleutelrek staan en probeert te raden welke kamer iets verbergt." },
+            { "name": "actionLabel", "type": "string", "value": "Ga naar het sleutelrek" },
+            { "name": "icon", "type": "string", "value": "S" },
+            { "name": "actionType", "type": "string", "value": "feedback" },
+            { "name": "actionButton", "type": "string", "value": "Bekijk de sleutels" },
+            { "name": "actionText", "type": "string", "value": "Er bungelt nog altijd een sleutel voor kamer 09, ook al zweert iedereen dat die allang leeg is." },
+            { "name": "targetX", "type": "int", "value": 10 },
+            { "name": "targetY", "type": "int", "value": 2 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -108,29 +108,83 @@ function normalizeRoomStateEntries(roomStateMap) {
       detail: value.detail || '',
       by: value.by || 'onbekend',
       kind: value.kind || 'status',
+      sceneEffect: value.sceneEffect || 'generic',
+      sceneAccent: value.sceneAccent || null,
+      stageNote: value.stageNote || '',
+      stateBadge: value.stateBadge || 'Live',
+      stateSummary: value.stateSummary || value.text || '',
+      participantCount: Number(value.participantCount) || 0,
+      participantLabel: value.participantLabel || '',
+      prompt: value.prompt || '',
+      spotlight: value.spotlight || '',
       updatedAt: Number(value.updatedAt) || 0
     }))
     .sort((left, right) => right.updatedAt - left.updatedAt);
 }
 
-function buildSharedRoomStatePayload(hotspot, actionType, currentUser) {
+function hashString(text) {
+  let hash = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    hash = ((hash << 5) - hash) + text.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function pickVariant(options, seed) {
+  if (!Array.isArray(options) || options.length === 0) {
+    return '';
+  }
+  return options[hashString(seed) % options.length];
+}
+
+function buildSharedRoomStatePayload(hotspot, actionType, currentUser, context = {}) {
   const lowerLabel = hotspot.label.toLowerCase();
+  const participantCount = Math.max(1, Number(context.participantCount) || 1);
 
   if (hotspot.label === 'Balie') {
     return {
       title: 'Receptie live',
       text: `${currentUser} checkt in bij de balie.`,
       detail: 'Het motelbord is weer even het centrum van de lobby.',
-      kind: 'receptie'
+      kind: 'receptie',
+      sceneEffect: 'lobby-board',
+      sceneAccent: '#f0c97c',
+      stageNote: 'Check-in live',
+      stateBadge: 'Check-in',
+      stateSummary: `${currentUser} houdt de balie even bezet.`,
+      participantCount,
+      participantLabel: 'Lobby aandacht',
+      prompt: 'Vraag aan de balie wie er net is binnengevallen.',
+      spotlight: pickVariant([
+        'Kamer 12 vraagt extra handdoeken.',
+        'De lobbybel blijft hangen.',
+        'Er ligt een nieuw briefje op het motelbord.'
+      ], `${currentUser}:${hotspot.id}:${actionType}`)
     };
   }
 
   if (hotspot.label === 'Bartoog') {
+    const special = pickVariant([
+      'Neon Cola',
+      'Pixel Sour',
+      'After Hours Soda',
+      'Lobby Sunset'
+    ], `${currentUser}:${hotspot.id}:${actionType}`);
     return {
       title: 'Barstatus',
       text: `${currentUser} zet de toon aan de bar.`,
       detail: 'De kamer ruikt ineens naar pixelcocktails en halve gesprekken.',
-      kind: 'bar'
+      kind: 'bar',
+      sceneEffect: 'bar-rush',
+      sceneAccent: '#ff9468',
+      stageNote: 'Last call',
+      stateBadge: 'Bar live',
+      stateSummary: `House special: ${special}.`,
+      participantCount,
+      participantLabel: 'Aan de bar',
+      prompt: 'Drop de volgende bestelling in de room chat.',
+      spotlight: `${currentUser} hangt aan de tap.`
     };
   }
 
@@ -139,7 +193,212 @@ function buildSharedRoomStatePayload(hotspot, actionType, currentUser) {
       title: 'Dansvloer bezet',
       text: `${currentUser} claimt de dansvloer.`,
       detail: 'Zelfs stilstaan telt hier als performance.',
-      kind: 'dance'
+      kind: 'dance',
+      sceneEffect: 'dance-floor',
+      sceneAccent: '#ff78b2',
+      stageNote: 'Floor claimed',
+      stateBadge: 'Dansvloer',
+      stateSummary: `${participantCount} avatar${participantCount === 1 ? '' : 's'} voelen de beat.`,
+      participantCount,
+      participantLabel: 'Op de vloer',
+      prompt: 'De volgende die hier komt, claimt meteen een duet.',
+      spotlight: pickVariant([
+        'De tegellichten slaan roze uit.',
+        'Iedereen doet alsof de DJ terug is.',
+        'Zelfs stilstaan voelt hier luid.'
+      ], `${currentUser}:${hotspot.id}:${actionType}`)
+    };
+  }
+
+  if (hotspot.label === 'Ketelruimte') {
+    return {
+      title: 'Ketelruimte actief',
+      text: `${currentUser} luistert naar de brom van de leidingen.`,
+      detail: 'De hele kelder klinkt alsof hij net iets belangrijks probeert te zeggen.',
+      kind: 'utility',
+      sceneEffect: 'boiler-hum',
+      sceneAccent: '#8f9cff',
+      stageNote: 'Onderhoud live',
+      stateBadge: 'Onderhoud',
+      stateSummary: 'De leidingen brommen harder dan daarnet.',
+      participantCount,
+      participantLabel: 'Beneden',
+      prompt: 'Lees het log en beslis of dit normaal klinkt.',
+      spotlight: pickVariant([
+        'Een buis zingt in F mineur.',
+        'De rechterlamp knippert weer.',
+        'De vloer voelt warmer bij de ketel.'
+      ], `${currentUser}:${hotspot.id}:${actionType}`)
+    };
+  }
+
+  if (hotspot.label === 'Whisperhoek') {
+    return {
+      title: 'Whisperhoek bezet',
+      text: `${currentUser} trekt de kamer mee in fluistermodus.`,
+      detail: 'Zelfs de lampen lijken automatisch zachter te praten.',
+      kind: 'whisper',
+      sceneEffect: 'whisper-mode',
+      sceneAccent: '#a59cff',
+      stageNote: 'Psst... live',
+      stateBadge: 'Whisper',
+      stateSummary: `Fluistermodus actief voor ${participantCount} motelziel${participantCount === 1 ? '' : 'en'}.`,
+      participantCount,
+      participantLabel: 'In de hoek',
+      prompt: 'Alles wat je hier post, klinkt automatisch belangrijker.',
+      spotlight: pickVariant([
+        'De schaduwen kruipen iets dichterbij.',
+        'Zelfs de neon praat zachter.',
+        'De hoek absorbeert halve zinnen.'
+      ], `${currentUser}:${hotspot.id}:${actionType}`)
+    };
+  }
+
+  if (hotspot.label === 'Geparkeerde auto') {
+    return {
+      title: 'Vertrekbord live',
+      text: `${currentUser} bestudeert het vertrekbord bij de auto.`,
+      detail: 'Iedereen doet alsof er straks echt iemand vertrekt.',
+      kind: 'car',
+      sceneEffect: 'parking-board',
+      sceneAccent: '#bdf5d0',
+      stageNote: 'Nog niet weg',
+      stateBadge: 'Vertrekbord',
+      stateSummary: 'De wagen staat nog altijd startklaar te knipperen.',
+      participantCount,
+      participantLabel: 'Buiten',
+      prompt: 'Vraag wie zogezegd bijna vertrekt.',
+      spotlight: pickVariant([
+        'Koplampen weerkaatsen in de regenplas.',
+        'De achterbank ligt vol halve plannen.',
+        'Niemand weet of de sleutel echt in het contact zit.'
+      ], `${currentUser}:${hotspot.id}:${actionType}`)
+    };
+  }
+
+  if (hotspot.label === 'Arcadekast') {
+    return {
+      title: 'Arcade live',
+      text: `${currentUser} hangt aan de arcadekast.`,
+      detail: 'De hele room doet ineens alsof highscores sociaal kapitaal zijn.',
+      kind: 'arcade',
+      sceneEffect: 'arcade-hype',
+      sceneAccent: '#68d8ff',
+      stageNote: 'High score',
+      stateBadge: 'Arcade',
+      stateSummary: pickVariant([
+        'Highscore-jacht in volle gang.',
+        'Iedereen kijkt zogezegd niet mee naar het scorebord.',
+        'De kast piept alsof het persoonlijk wordt.'
+      ], `${currentUser}:${hotspot.id}:${actionType}:summary`),
+      participantCount,
+      participantLabel: 'Bij de kasten',
+      prompt: 'Roep in de chat wie hier zogezegd recordhouder is.',
+      spotlight: pickVariant([
+        'De attract-mode knippert harder dan nodig.',
+        'Iemand mompelt dat het knopje links altijd hapert.',
+        'De scoreteller lijkt één naam te verbergen.'
+      ], `${currentUser}:${hotspot.id}:${actionType}:spot`)
+    };
+  }
+
+  if (hotspot.label === 'Kamerbord') {
+    return {
+      title: 'Gangbord live',
+      text: `${currentUser} volgt het kamerbord met opvallend veel toewijding.`,
+      detail: 'De gang voelt ineens alsof elke deur een eigen verhaallijn verbergt.',
+      kind: 'hallway',
+      sceneEffect: 'hallway-hum',
+      sceneAccent: '#94a8ff',
+      stageNote: 'Wayfinding',
+      stateBadge: 'Gangbord',
+      stateSummary: pickVariant([
+        'Iemand zoekt zogezegd de juiste kamer.',
+        'De pijl naar de kelder krijgt weer aandacht.',
+        'Zelfs de deurlabels voelen ineens belangrijk.'
+      ], `${currentUser}:${hotspot.id}:${actionType}:summary`),
+      participantCount,
+      participantLabel: 'In de gang',
+      prompt: 'Vraag welke deur hier vanavond het meeste drama belooft.',
+      spotlight: pickVariant([
+        'Er hangt een nieuwe pijl naar nergens in het bijzonder.',
+        'De arcadekant flikkert iets harder dan normaal.',
+        'Iemand heeft een kamernummer onderstreept zonder uitleg.'
+      ], `${currentUser}:${hotspot.id}:${actionType}:spot`)
+    };
+  }
+
+  if (hotspot.label === 'Sleutelrek') {
+    return {
+      title: 'Sleutelrek live',
+      text: `${currentUser} rommelt aan het sleutelrek alsof daar antwoorden hangen.`,
+      detail: 'Elke metalen tag klinkt ineens als een gerucht dat nog niet klaar is.',
+      kind: 'hallway',
+      sceneEffect: 'hallway-hum',
+      sceneAccent: '#a7b7ff',
+      stageNote: 'Keys out',
+      stateBadge: 'Sleutels',
+      stateSummary: pickVariant([
+        'Er mist duidelijk weer een sleutel zonder uitleg.',
+        'De tags tikken tegen elkaar bij elke tochtstroom.',
+        'Niemand weet wie kamer 09 nog claimt.'
+      ], `${currentUser}:${hotspot.id}:${actionType}:summary`),
+      participantCount,
+      participantLabel: 'Bij het rek',
+      prompt: 'Perfect moment om te speculeren welke kamer straks openzwaait.',
+      spotlight: pickVariant([
+        'De sleutels rinkelen zonder dat iemand ze aanraakt.',
+        'Een metalen tag draait traag terug naar stilstand.',
+        'Er hangt een extra label zonder kamernummer.'
+      ], `${currentUser}:${hotspot.id}:${actionType}:spot`)
+    };
+  }
+
+  if (hotspot.label === 'Wasmachines') {
+    return {
+      title: 'Laundry live',
+      text: `${currentUser} luistert naar de machines.`,
+      detail: 'De hele laundry voelt even alsof hij op centrifuge draait.',
+      kind: 'laundry',
+      sceneEffect: 'laundry-spin',
+      sceneAccent: '#8ed0ff',
+      stageNote: 'Spin cycle',
+      stateBadge: 'Laundry',
+      stateSummary: pickVariant([
+        'De machines bonken nu synchroon.',
+        'Er draait weer een mysterieuze was zonder eigenaar.',
+        'Iemand heeft duidelijk te veel detergent gebruikt.'
+      ], `${currentUser}:${hotspot.id}:${actionType}:summary`),
+      participantCount,
+      participantLabel: 'Bij de was',
+      prompt: 'Vraag in de chat van wie die ene losse sok is.',
+      spotlight: pickVariant([
+        'Er schuift een muntje onder een machine vandaan.',
+        'De trommel bromt harder dan de ventilatie.',
+        'De vloer trilt net genoeg om gezellig te voelen.'
+      ], `${currentUser}:${hotspot.id}:${actionType}:spot`)
+    };
+  }
+
+  if (hotspot.label === 'Rokersrand') {
+    return {
+      title: 'Rokersrand live',
+      text: `${currentUser} hangt aan de rand van de parking.`,
+      detail: 'Daar waar elk laatste gesprek nog één ronde extra krijgt.',
+      kind: 'parking',
+      sceneEffect: 'smoke-break',
+      sceneAccent: '#a6f4d2',
+      stageNote: 'Laatste praat',
+      stateBadge: 'Smoke break',
+      stateSummary: `${participantCount} avatar${participantCount === 1 ? '' : 's'} rekken het afscheid.`,
+      participantCount,
+      participantLabel: 'Aan de rand',
+      prompt: 'Perfect voor een laatste zin die toch nog doorgaat.',
+      spotlight: pickVariant([
+        'De lucht ruikt naar regen en uitstel.',
+        'Iemand lacht net buiten beeld.',
+        'De parkingrand krijgt weer een extra ronde.'
+      ], `${currentUser}:${hotspot.id}:${actionType}`)
     };
   }
 
@@ -147,7 +406,16 @@ function buildSharedRoomStatePayload(hotspot, actionType, currentUser) {
     title: hotspot.label,
     text: `${currentUser} activeert ${lowerLabel}.`,
     detail: hotspot.action?.text || hotspot.feedback || hotspot.description || '',
-    kind: actionType || hotspot.kind || 'status'
+    kind: actionType || hotspot.kind || 'status',
+    sceneEffect: 'generic',
+    sceneAccent: hotspot.accent || null,
+    stageNote: hotspot.kind || actionType || 'live',
+    stateBadge: 'Live',
+    stateSummary: hotspot.description || `${currentUser} zet ${lowerLabel} in beweging.`,
+    participantCount,
+    participantLabel: 'In de buurt',
+    prompt: hotspot.feedback || '',
+    spotlight: hotspot.action?.text || hotspot.description || ''
   };
 }
 
@@ -468,7 +736,16 @@ export function ChabloMotelView({
     if (!hotspot) {
       return;
     }
-    const nextState = buildSharedRoomStatePayload(hotspot, actionType, currentUser);
+    const visitors = hotspotPresenceById[hotspot.id] || [];
+    const usernames = new Set([currentUser]);
+    visitors.forEach((entry) => {
+      if (entry?.username) {
+        usernames.add(entry.username);
+      }
+    });
+    const nextState = buildSharedRoomStatePayload(hotspot, actionType, currentUser, {
+      participantCount: Math.max(1, usernames.size)
+    });
     gunApi?.get?.('CHABLO_ROOM_STATE')?.get?.(currentRoom)?.get?.(hotspot.id)?.put?.({
       hotspotLabel: hotspot.label,
       title: nextState.title,
@@ -476,9 +753,18 @@ export function ChabloMotelView({
       detail: nextState.detail,
       by: currentUser,
       kind: nextState.kind,
+      sceneEffect: nextState.sceneEffect,
+      sceneAccent: nextState.sceneAccent,
+      stageNote: nextState.stageNote,
+      stateBadge: nextState.stateBadge,
+      stateSummary: nextState.stateSummary,
+      participantCount: nextState.participantCount,
+      participantLabel: nextState.participantLabel,
+      prompt: nextState.prompt,
+      spotlight: nextState.spotlight,
       updatedAt: Date.now()
     });
-  }, [currentRoom, currentUser, gunApi]);
+  }, [currentRoom, currentUser, gunApi, hotspotPresenceById]);
 
   useEffect(() => {
     syncPosition(currentRoom, position);
@@ -753,6 +1039,13 @@ export function ChabloMotelView({
     return `Status: ${latestState.text}`;
   }, [roomStateByHotspotId]);
 
+  const getHotspotStateEntry = useCallback((hotspot) => {
+    if (!hotspot) {
+      return null;
+    }
+    return roomStateByHotspotId[hotspot.id] || null;
+  }, [roomStateByHotspotId]);
+
   const createDpadHandlers = useCallback((deltaX, deltaY) => ({
     onPointerDown: (event) => {
       event.preventDefault();
@@ -992,6 +1285,25 @@ export function ChabloMotelView({
                     {highlightedHotspot.description && (
                       <p>{highlightedHotspot.description}</p>
                     )}
+                    {getHotspotStateEntry(highlightedHotspot)?.stateSummary && (
+                      <div className="chablo-room-state-spotlight">
+                        <div className="chablo-room-state-spotlight__label">
+                          <span className="chablo-pill">{getHotspotStateEntry(highlightedHotspot).stateBadge}</span>
+                          <strong>{getHotspotStateEntry(highlightedHotspot).stateSummary}</strong>
+                        </div>
+                        {getHotspotStateEntry(highlightedHotspot).participantLabel && (
+                          <span className="chablo-hotspot-meta">
+                            {getHotspotStateEntry(highlightedHotspot).participantLabel}: {getHotspotStateEntry(highlightedHotspot).participantCount}
+                          </span>
+                        )}
+                        {getHotspotStateEntry(highlightedHotspot).spotlight && (
+                          <span className="chablo-hotspot-meta">{getHotspotStateEntry(highlightedHotspot).spotlight}</span>
+                        )}
+                        {getHotspotStateEntry(highlightedHotspot).prompt && (
+                          <span className="chablo-hotspot-meta">{getHotspotStateEntry(highlightedHotspot).prompt}</span>
+                        )}
+                      </div>
+                    )}
                     <div className="chablo-inline-actions">
                       <button
                         type="button"
@@ -1074,6 +1386,39 @@ export function ChabloMotelView({
             >
               <section className="chablo-card">
                 <div className="chablo-card__title">Gedeelde room status</div>
+                {roomStateEntries.length === 0 ? (
+                  <p>Nog geen gedeelde roomstatus in deze kamer.</p>
+                ) : (
+                  <div className="chablo-room-state-grid">
+                    {roomStateEntries.map((entry) => (
+                      <article key={entry.hotspotId} className="chablo-room-state-card">
+                        <div className="chablo-room-state-card__badge-row">
+                          <span className="chablo-pill">{entry.stateBadge}</span>
+                          <span>{entry.updatedAt ? new Date(entry.updatedAt).toLocaleTimeString() : 'nu'}</span>
+                        </div>
+                        <strong>{entry.title}</strong>
+                        {entry.stateSummary && (
+                          <p className="chablo-room-state-card__summary">{entry.stateSummary}</p>
+                        )}
+                        {entry.participantLabel && (
+                          <span className="chablo-hotspot-row__meta">
+                            {entry.participantLabel}: {entry.participantCount}
+                          </span>
+                        )}
+                        {entry.spotlight && (
+                          <span className="chablo-hotspot-row__meta">{entry.spotlight}</span>
+                        )}
+                        {entry.prompt && (
+                          <span className="chablo-hotspot-row__meta">{entry.prompt}</span>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="chablo-card">
+                <div className="chablo-card__title">Room state feed</div>
                 {roomStateEntries.length === 0 ? (
                   <p>Nog geen gedeelde roomstatus in deze kamer.</p>
                 ) : (

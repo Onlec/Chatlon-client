@@ -91,6 +91,38 @@
             { "name": "spawnX", "type": "int", "value": 4 },
             { "name": "spawnY", "type": "int", "value": 4 }
           ]
+        },
+        {
+          "id": 3,
+          "name": "Laundry",
+          "type": "door",
+          "x": 192,
+          "y": 120,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "laundry" },
+            { "name": "label", "type": "string", "value": "Laundry" },
+            { "name": "spawnX", "type": "int", "value": 2 },
+            { "name": "spawnY", "type": "int", "value": 3 }
+          ]
+        },
+        {
+          "id": 4,
+          "name": "Motelgang",
+          "type": "door",
+          "x": 192,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "hallway" },
+            { "name": "label", "type": "string", "value": "Motelgang" },
+            { "name": "spawnX", "type": "int", "value": 10 },
+            { "name": "spawnY", "type": "int", "value": 1 }
+          ]
         }
       ]
     },

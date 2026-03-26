@@ -25,6 +25,363 @@ function truncateStageLabel(text, maxLength = 18) {
   return `${text.slice(0, maxLength - 1)}...`;
 }
 
+function getLatestRoomState(roomStateByHotspotId = {}) {
+  return Object.values(roomStateByHotspotId)
+    .sort((left, right) => (right.updatedAt || 0) - (left.updatedAt || 0))[0] || null;
+}
+
+function getHotspotBounds(hotspot) {
+  if (!hotspot) {
+    return null;
+  }
+
+  const width = (hotspot.width || 1) * TILE_SIZE;
+  const height = (hotspot.height || 1) * TILE_SIZE;
+  return {
+    width,
+    height,
+    x: toStageUnit(hotspot.x) + width / 2,
+    y: toStageUnit(hotspot.y) + height / 2
+  };
+}
+
+function addLiveBanner(scene, layer, room, roomState, effectColor) {
+  const roomWidth = room.layout[0].length * TILE_SIZE;
+  const bannerWidth = Math.min(roomWidth - 24, 320);
+  const container = scene.add.container(
+    STAGE_PADDING + roomWidth / 2,
+    STAGE_PADDING + 26
+  );
+  const plate = scene.add.rectangle(0, 0, bannerWidth, 34, effectColor, 0.2);
+  plate.setStrokeStyle(2, 0xf6fbff, 0.16);
+  const title = scene.add.text(
+    -bannerWidth / 2 + 12,
+    -6,
+    roomState.title || roomState.hotspotLabel || 'Room live',
+    {
+      fontFamily: 'Tahoma, Arial, sans-serif',
+      fontSize: '11px',
+      fontStyle: 'bold',
+      color: '#f6fbff'
+    }
+  ).setOrigin(0, 0.5);
+  const note = scene.add.text(
+    bannerWidth / 2 - 12,
+    6,
+    truncateStageLabel(roomState.stageNote || roomState.by || 'live', 16),
+    {
+      fontFamily: 'Tahoma, Arial, sans-serif',
+      fontSize: '10px',
+      color: '#d7e9ff'
+    }
+  ).setOrigin(1, 0.5);
+
+  container.add([plate, title, note]);
+  layer.add(container);
+
+  scene.tweens.add({
+    targets: container,
+    alpha: { from: 0.82, to: 1 },
+    y: { from: container.y - 2, to: container.y + 2 },
+    duration: 1450,
+    yoyo: true,
+    repeat: -1
+  });
+}
+
+function addGenericStatePulse(scene, layer, bounds, effectColor) {
+  const pulse = scene.add.ellipse(bounds.x, bounds.y, bounds.width + 34, bounds.height + 30, effectColor, 0.12);
+  pulse.setStrokeStyle(2, 0xf6fbff, 0.16);
+  layer.add(pulse);
+  scene.tweens.add({
+    targets: pulse,
+    alpha: { from: 0.08, to: 0.18 },
+    scaleX: { from: 0.96, to: 1.06 },
+    scaleY: { from: 0.96, to: 1.08 },
+    duration: 1000,
+    yoyo: true,
+    repeat: -1
+  });
+}
+
+function addRoomStateConsequences(scene, layer, room, roomStateByHotspotId) {
+  const latestState = getLatestRoomState(roomStateByHotspotId);
+  if (!latestState) {
+    return;
+  }
+
+  const effectColor = parseColor(latestState.sceneAccent || room.accent, parseColor(room.accent, 0x90b8ff));
+  const roomWidth = room.layout[0].length * TILE_SIZE;
+  const roomHeight = room.layout.length * TILE_SIZE;
+  const spotlightHotspot = (room.hotspots || []).find((hotspot) => hotspot.id === latestState.hotspotId) || null;
+  const spotlightBounds = getHotspotBounds(spotlightHotspot);
+
+  const roomWash = scene.add.rectangle(
+    STAGE_PADDING + roomWidth / 2,
+    STAGE_PADDING + roomHeight / 2,
+    roomWidth - 8,
+    roomHeight - 8,
+    effectColor,
+    latestState.sceneEffect === 'whisper-mode' ? 0.08 : 0.04
+  );
+  layer.add(roomWash);
+
+  addLiveBanner(scene, layer, room, latestState, effectColor);
+
+  if (spotlightBounds) {
+    addGenericStatePulse(scene, layer, spotlightBounds, effectColor);
+  }
+
+  if (latestState.sceneEffect === 'lobby-board' && spotlightBounds) {
+    const board = scene.add.rectangle(
+      spotlightBounds.x,
+      spotlightBounds.y - spotlightBounds.height / 2 - 24,
+      134,
+      26,
+      0x1b2430,
+      0.8
+    );
+    board.setStrokeStyle(2, effectColor, 0.4);
+    const boardLabel = scene.add.text(
+      board.x,
+      board.y,
+      truncateStageLabel(latestState.text, 28),
+      {
+        fontFamily: 'Tahoma, Arial, sans-serif',
+        fontSize: '10px',
+        color: '#f5f9ff',
+        align: 'center'
+      }
+    ).setOrigin(0.5);
+    layer.add(board);
+    layer.add(boardLabel);
+  }
+
+  if (latestState.sceneEffect === 'hallway-hum') {
+    [0.18, 0.5, 0.82].forEach((ratio, index) => {
+      const hallwayLight = scene.add.rectangle(
+        STAGE_PADDING + (roomWidth * ratio),
+        STAGE_PADDING + 30,
+        56,
+        8,
+        effectColor,
+        0.16
+      );
+      hallwayLight.setStrokeStyle(1, 0xf6fbff, 0.18);
+      layer.add(hallwayLight);
+      scene.tweens.add({
+        targets: hallwayLight,
+        alpha: { from: 0.08, to: 0.22 },
+        duration: 720 + (index * 140),
+        yoyo: true,
+        repeat: -1
+      });
+    });
+  }
+
+  if (latestState.sceneEffect === 'bar-rush') {
+    const neonStrip = scene.add.rectangle(
+      STAGE_PADDING + roomWidth / 2,
+      STAGE_PADDING + 54,
+      roomWidth - 40,
+      10,
+      effectColor,
+      0.16
+    );
+    layer.add(neonStrip);
+    scene.tweens.add({
+      targets: neonStrip,
+      alpha: { from: 0.08, to: 0.24 },
+      duration: 820,
+      yoyo: true,
+      repeat: -1
+    });
+  }
+
+  if (latestState.sceneEffect === 'dance-floor' && spotlightBounds) {
+    const danceSquares = [
+      [-18, -18],
+      [18, -18],
+      [-18, 18],
+      [18, 18]
+    ].map(([offsetX, offsetY], index) => {
+      const square = scene.add.rectangle(
+        spotlightBounds.x + offsetX,
+        spotlightBounds.y + offsetY,
+        18,
+        18,
+        index % 2 === 0 ? effectColor : 0xf6fbff,
+        0.18
+      );
+      layer.add(square);
+      scene.tweens.add({
+        targets: square,
+        alpha: { from: 0.08, to: 0.26 },
+        duration: 480 + (index * 80),
+        yoyo: true,
+        repeat: -1
+      });
+      return square;
+    });
+    danceSquares.forEach(() => {});
+  }
+
+  if (latestState.sceneEffect === 'boiler-hum' && spotlightBounds) {
+    const humBars = [0, 1, 2].map((index) => {
+      const bar = scene.add.rectangle(
+        spotlightBounds.x + 24,
+        spotlightBounds.y - 16 + (index * 14),
+        54,
+        4,
+        effectColor,
+        0.22
+      );
+      layer.add(bar);
+      scene.tweens.add({
+        targets: bar,
+        scaleX: { from: 0.82, to: 1.1 },
+        alpha: { from: 0.1, to: 0.26 },
+        duration: 900 + (index * 120),
+        yoyo: true,
+        repeat: -1
+      });
+      return bar;
+    });
+    humBars.forEach(() => {});
+  }
+
+  if (latestState.sceneEffect === 'whisper-mode' && spotlightBounds) {
+    const hushMask = scene.add.rectangle(
+      STAGE_PADDING + roomWidth / 2,
+      STAGE_PADDING + roomHeight / 2,
+      roomWidth - 6,
+      roomHeight - 6,
+      0x08111b,
+      0.18
+    );
+    const whisperGlow = scene.add.circle(
+      spotlightBounds.x,
+      spotlightBounds.y,
+      56,
+      effectColor,
+      0.14
+    );
+    layer.add(hushMask);
+    layer.add(whisperGlow);
+    scene.tweens.add({
+      targets: whisperGlow,
+      alpha: { from: 0.08, to: 0.18 },
+      scale: { from: 0.94, to: 1.08 },
+      duration: 1100,
+      yoyo: true,
+      repeat: -1
+    });
+  }
+
+  if (latestState.sceneEffect === 'parking-board' && spotlightBounds) {
+    const headlights = scene.add.graphics();
+    headlights.fillStyle(effectColor, 0.12);
+    headlights.fillTriangle(
+      spotlightBounds.x + 18,
+      spotlightBounds.y - 8,
+      spotlightBounds.x + 92,
+      spotlightBounds.y - 30,
+      spotlightBounds.x + 92,
+      spotlightBounds.y + 14
+    );
+    headlights.fillTriangle(
+      spotlightBounds.x + 18,
+      spotlightBounds.y + 8,
+      spotlightBounds.x + 92,
+      spotlightBounds.y + 28,
+      spotlightBounds.x + 92,
+      spotlightBounds.y - 12
+    );
+    layer.add(headlights);
+  }
+
+  if (latestState.sceneEffect === 'arcade-hype' && spotlightBounds) {
+    const marquee = scene.add.rectangle(
+      STAGE_PADDING + roomWidth / 2,
+      STAGE_PADDING + 52,
+      roomWidth - 54,
+      12,
+      effectColor,
+      0.16
+    );
+    layer.add(marquee);
+    scene.tweens.add({
+      targets: marquee,
+      alpha: { from: 0.08, to: 0.24 },
+      duration: 420,
+      yoyo: true,
+      repeat: -1
+    });
+
+    [-20, 0, 20].forEach((offsetX, index) => {
+      const pixel = scene.add.rectangle(
+        spotlightBounds.x + offsetX,
+        spotlightBounds.y - 18 + ((index % 2) * 16),
+        14,
+        14,
+        index % 2 === 0 ? effectColor : 0xf6fbff,
+        0.22
+      );
+      layer.add(pixel);
+      scene.tweens.add({
+        targets: pixel,
+        alpha: { from: 0.08, to: 0.28 },
+        duration: 360 + (index * 90),
+        yoyo: true,
+        repeat: -1
+      });
+    });
+  }
+
+  if (latestState.sceneEffect === 'laundry-spin' && spotlightBounds) {
+    [0, 1, 2].forEach((index) => {
+      const ring = scene.add.ellipse(
+        spotlightBounds.x + 12 + (index * 22),
+        spotlightBounds.y - 4,
+        22,
+        22,
+        effectColor,
+        0.1
+      );
+      ring.setStrokeStyle(2, 0xf6fbff, 0.16);
+      layer.add(ring);
+      scene.tweens.add({
+        targets: ring,
+        angle: 360,
+        alpha: { from: 0.08, to: 0.18 },
+        duration: 900 + (index * 140),
+        repeat: -1
+      });
+    });
+  }
+
+  if (latestState.sceneEffect === 'smoke-break' && spotlightBounds) {
+    [0, 1, 2].forEach((index) => {
+      const puff = scene.add.circle(
+        spotlightBounds.x + 22 + (index * 12),
+        spotlightBounds.y - 12 - (index * 10),
+        8 + (index * 2),
+        0xf6fbff,
+        0.08
+      );
+      layer.add(puff);
+      scene.tweens.add({
+        targets: puff,
+        y: puff.y - 12,
+        alpha: { from: 0.08, to: 0.16 },
+        duration: 1000 + (index * 180),
+        yoyo: true,
+        repeat: -1
+      });
+    });
+  }
+}
+
 function getTileFill(room, tileCode) {
   const accent = parseColor(room.accent, 0x607894);
   if (tileCode === '#') return 0x233249;
@@ -403,12 +760,20 @@ function addDoorMarkers(scene, layer, room) {
       glow.setAlpha(0.32);
       label.setAlpha(1);
       container.setScale(1.04);
+      scene.setInteractionPreview?.({
+        source: 'door',
+        roomId: room.id,
+        target: { x: door.x, y: door.y },
+        label: door.label,
+        accent: parseColor(room.accent, 0x607894)
+      });
     });
     container.on('pointerout', () => {
       marker.setAlpha(0.2);
       glow.setAlpha(0.12);
       label.setAlpha(0.88);
       container.setScale(1);
+      scene.clearInteractionPreview?.('door');
     });
     container.on('pointerdown', (pointer, localX, localY, event) => {
       event?.stopPropagation?.();
@@ -522,12 +887,20 @@ function addHotspotMarkers(scene, layer, room, activeHotspotId, roomStateByHotsp
       label.setAlpha(1);
       stateLabel?.setAlpha(1);
       container.setScale(1.02);
+      scene.setInteractionPreview?.({
+        source: 'hotspot',
+        roomId: room.id,
+        target: hotspot.target,
+        label: hotspot.label,
+        accent: stateAccent
+      });
     });
     container.on('pointerout', () => {
       marker.setAlpha(isActive ? 0.22 : (roomState ? 0.14 : 0.08));
       label.setAlpha(isActive ? 0.98 : 0.82);
       stateLabel?.setAlpha(isActive ? 0.96 : 0.84);
       container.setScale(1);
+      scene.clearInteractionPreview?.('hotspot');
     });
     container.on('pointerdown', (pointer, localX, localY, event) => {
       event?.stopPropagation?.();
@@ -585,6 +958,18 @@ export function drawChabloRoom(scene, layer, room, handlers = {}) {
       tile.setStrokeStyle(1, 0xf2f7ff, tileCode === '.' ? 0.05 : 0.12);
       if (!BLOCKED_TILE_CODES.has(tileCode) && typeof onTileActivate === 'function') {
         tile.setInteractive();
+        tile.on('pointerover', () => {
+          scene.setInteractionPreview?.({
+            source: 'tile',
+            roomId: room.id,
+            target: { x: columnIndex, y: rowIndex },
+            label: 'Route',
+            accent: parseColor(room.accent, 0x90b8ff)
+          });
+        });
+        tile.on('pointerout', () => {
+          scene.clearInteractionPreview?.('tile');
+        });
         tile.on('pointerdown', (pointer, localX, localY, event) => {
           event?.stopPropagation?.();
           onTileActivate({ x: columnIndex, y: rowIndex });
@@ -595,6 +980,7 @@ export function drawChabloRoom(scene, layer, room, handlers = {}) {
   });
 
   addDecor(scene, layer, room);
+  addRoomStateConsequences(scene, layer, room, roomStateByHotspotId);
   addDoorMarkers(scene, layer, room);
   addHotspotMarkers(scene, layer, room, activeHotspotId, roomStateByHotspotId, onHotspotActivate);
 

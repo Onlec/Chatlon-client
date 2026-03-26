@@ -91,6 +91,22 @@
             { "name": "spawnX", "type": "int", "value": 7 },
             { "name": "spawnY", "type": "int", "value": 3 }
           ]
+        },
+        {
+          "id": 15,
+          "name": "Motelgang",
+          "type": "door",
+          "x": 192,
+          "y": 72,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "hallway" },
+            { "name": "label", "type": "string", "value": "Motelgang" },
+            { "name": "spawnX", "type": "int", "value": 7 },
+            { "name": "spawnY", "type": "int", "value": 1 }
+          ]
         }
       ]
     },

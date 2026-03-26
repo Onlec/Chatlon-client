@@ -5,6 +5,10 @@ function isIntegerLike(value) {
 }
 
 describe('Chablo room decor config', () => {
+  test('includes arcade and laundry in the motel room set', () => {
+    expect(CHABLO_ROOMS.map((room) => room.id)).toEqual(expect.arrayContaining(['hallway', 'arcade', 'laundry']));
+  });
+
   test('keeps decor aligned to integer tile coordinates', () => {
     CHABLO_ROOMS.forEach((room) => {
       (room.decor || []).forEach((item) => {

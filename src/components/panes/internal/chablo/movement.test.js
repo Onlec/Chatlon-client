@@ -29,6 +29,13 @@ describe('Chablo movement helpers', () => {
       label: 'Bar',
       spawnPosition: { x: 3, y: 7 }
     }));
+
+    const hallwayDoor = getDoorAtPosition('hallway', { x: 25, y: 5 });
+    expect(hallwayDoor).toEqual(expect.objectContaining({
+      nextRoomId: 'parking',
+      label: 'Parking',
+      spawnPosition: { x: 9, y: 11 }
+    }));
   });
 
   test('finds scaled room hotspots by occupied tile', () => {
@@ -79,5 +86,20 @@ describe('Chablo movement helpers', () => {
     ]);
 
     expect(findRoomPath('bar', { x: 3, y: 7 }, { x: 7, y: 3 })).toEqual([]);
+
+    expect(findRoomPath('hallway', { x: 13, y: 7 }, { x: 21, y: 3 })).toEqual([
+      { x: 13, y: 6 },
+      { x: 13, y: 5 },
+      { x: 13, y: 4 },
+      { x: 13, y: 3 },
+      { x: 14, y: 3 },
+      { x: 15, y: 3 },
+      { x: 16, y: 3 },
+      { x: 17, y: 3 },
+      { x: 18, y: 3 },
+      { x: 19, y: 3 },
+      { x: 20, y: 3 },
+      { x: 21, y: 3 }
+    ]);
   });
 });

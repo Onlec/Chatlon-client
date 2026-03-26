@@ -123,6 +123,38 @@
             { "name": "spawnX", "type": "int", "value": 8 },
             { "name": "spawnY", "type": "int", "value": 3 }
           ]
+        },
+        {
+          "id": 5,
+          "name": "Arcade",
+          "type": "door",
+          "x": 120,
+          "y": 24,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "arcade" },
+            { "name": "label", "type": "string", "value": "Arcade" },
+            { "name": "spawnX", "type": "int", "value": 2 },
+            { "name": "spawnY", "type": "int", "value": 3 }
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Motelgang",
+          "type": "door",
+          "x": 192,
+          "y": 48,
+          "width": 0,
+          "height": 0,
+          "point": true,
+          "properties": [
+            { "name": "to", "type": "string", "value": "hallway" },
+            { "name": "label", "type": "string", "value": "Motelgang" },
+            { "name": "spawnX", "type": "int", "value": 1 },
+            { "name": "spawnY", "type": "int", "value": 2 }
+          ]
         }
       ]
     },

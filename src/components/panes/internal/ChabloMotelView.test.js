@@ -515,6 +515,29 @@ describe('ChabloMotelView', () => {
     ]));
   });
 
+  test('renders and switches to the motelgang, arcade and laundry rooms', async () => {
+    const now = Date.now();
+    const api = createGunApiMock({
+      positions: {
+        alice: { room: 'receptie', x: 9, y: 7, lastSeen: now }
+      }
+    });
+
+    render(<ChabloMotelView currentUser="alice" gunApi={api.gunApi} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Motelgang' }));
+    expect(await screen.findByRole('heading', { name: 'Motelgang' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Ga naar het kamerbord' }).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Arcade' }));
+    expect(await screen.findByRole('heading', { name: 'Arcade' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Bekijk highscores' }).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Laundry' }));
+    expect(await screen.findByRole('heading', { name: 'Laundry' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Ga naar de machines' }).length).toBeGreaterThan(0);
+  });
+
   test('uses door movement and stage callbacks to change room and sync position', async () => {
     jest.useFakeTimers();
     try {
@@ -641,6 +664,26 @@ describe('ChabloMotelView', () => {
 
       expect(screen.getByPlaceholderText('Zeg iets in De Bar')).toHaveValue('Nog iemand iets van de bar?');
       expect(screen.getByRole('tab', { name: 'Chat' })).toHaveAttribute('aria-selected', 'true');
+
+      await waitFor(() => {
+        expect(api.getRoomStateNode('bar').get).toHaveBeenCalledWith('Bar');
+      });
+      const barRoomStatePuts = api.getRoomStateNode('bar').get.mock.results
+        .map((result) => result.value.put.mock.calls)
+        .flat();
+      expect(barRoomStatePuts).toEqual(expect.arrayContaining([
+        [expect.objectContaining({
+          hotspotLabel: 'Bartoog',
+          sceneEffect: 'bar-rush',
+          sceneAccent: '#ff9468',
+          stageNote: 'Last call',
+          stateBadge: 'Bar live',
+          stateSummary: expect.stringMatching(/^House special:/),
+          participantCount: 1,
+          participantLabel: 'Aan de bar',
+          prompt: 'Drop de volgende bestelling in de room chat.'
+        })]
+      ]));
     } finally {
       jest.useRealTimers();
     }
@@ -682,6 +725,12 @@ describe('ChabloMotelView', () => {
             detail: 'Het motelbord is weer even het centrum van de lobby.',
             by: 'bob',
             kind: 'receptie',
+            stateBadge: 'Check-in',
+            stateSummary: 'bob houdt de balie even bezet.',
+            participantCount: 3,
+            participantLabel: 'Lobby aandacht',
+            prompt: 'Vraag aan de balie wie er net is binnengevallen.',
+            spotlight: 'Er ligt een nieuw briefje op het motelbord.',
             updatedAt: now
           }
         }
@@ -695,6 +744,9 @@ describe('ChabloMotelView', () => {
     expect(screen.getByText('Gedeelde room status')).toBeInTheDocument();
     expect(screen.getByText('bob bekijkt balie.')).toBeInTheDocument();
     expect(screen.getByText('Het motelbord is weer even het centrum van de lobby.')).toBeInTheDocument();
+    expect(screen.getByText('bob houdt de balie even bezet.')).toBeInTheDocument();
+    expect(screen.getByText('Lobby aandacht: 3')).toBeInTheDocument();
+    expect(screen.getByText('Vraag aan de balie wie er net is binnengevallen.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Hotspots' }));
     expect(screen.getAllByText('Nu hier: bob en cara').length).toBeGreaterThan(0);
@@ -761,7 +813,11 @@ describe('ChabloMotelView', () => {
           hotspotLabel: 'Loungehoek',
           title: 'Loungehoek',
           text: 'alice activeert loungehoek.',
-          kind: 'feedback'
+          kind: 'feedback',
+          sceneEffect: 'generic',
+          stageNote: 'lounge',
+          stateBadge: 'Live',
+          participantLabel: 'In de buurt'
         })]
       ]));
     } finally {

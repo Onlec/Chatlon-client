@@ -1,5 +1,8 @@
+import arcadeMap from './maps/arcade.tiled.json';
 import barMap from './maps/bar.tiled.json';
+import hallwayMap from './maps/hallway.tiled.json';
 import kelderMap from './maps/kelder.tiled.json';
+import laundryMap from './maps/laundry.tiled.json';
 import parkingMap from './maps/parking.tiled.json';
 import receptieMap from './maps/receptie.tiled.json';
 import { compileChabloRoomFromTiledMap } from './tiledRoomLoader';
@@ -8,8 +11,11 @@ export const DEFAULT_CHABLO_ROOM_ID = 'receptie';
 
 const TILED_CHABLO_ROOM_MAPS = [
   receptieMap,
+  hallwayMap,
+  arcadeMap,
   barMap,
   kelderMap,
+  laundryMap,
   parkingMap
 ];
 
