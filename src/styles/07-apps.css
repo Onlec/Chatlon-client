@@ -1385,6 +1385,9 @@
 }
 
 .chablo-room-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 1px solid rgba(193, 214, 240, 0.22);
   background: rgba(15, 24, 36, 0.48);
   color: #e8f1ff;
@@ -1397,6 +1400,25 @@
 .chablo-room-chip--active {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(111, 153, 210, 0.24));
   border-color: rgba(235, 243, 255, 0.34);
+}
+
+.chablo-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #f0c97c;
+  color: #1a2028;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.chablo-count-badge--tab {
+  margin-left: auto;
 }
 
 .chablo-layout {
@@ -1521,6 +1543,14 @@
   border-bottom: 1px solid rgba(212, 228, 255, 0.08);
 }
 
+.chablo-stage-action-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
 .chablo-dpad {
   display: grid;
   grid-template-columns: repeat(3, 34px);
@@ -1565,6 +1595,23 @@
 .chablo-stage-hint {
   color: #afc6e4;
   line-height: 1.5;
+}
+
+.chablo-emote-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chablo-emote-strip--targeted {
+  padding-top: 2px;
+}
+
+.chablo-emote-button {
+  min-width: 64px;
+  padding-inline: 10px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
 }
 
 .chablo-room-stage {
@@ -1628,6 +1675,10 @@
 }
 
 .chablo-sidebar-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 1px solid rgba(206, 224, 248, 0.14);
   background: rgba(12, 18, 27, 0.22);
   color: #d9e7f8;
@@ -1701,6 +1752,22 @@
   margin: 0;
 }
 
+.chablo-room-state-spotlight {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(242, 205, 123, 0.18);
+  background: rgba(12, 18, 27, 0.22);
+}
+
+.chablo-room-state-spotlight__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .chablo-hotspot-list {
   display: flex;
   flex-direction: column;
@@ -1737,6 +1804,36 @@
   display: block;
   color: #9cb6d6;
   font-size: 12px;
+  line-height: 1.45;
+}
+
+.chablo-room-state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.chablo-room-state-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(206, 224, 248, 0.12);
+  background: rgba(12, 18, 27, 0.24);
+}
+
+.chablo-room-state-card__badge-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  color: #9cb6d6;
+  font-size: 12px;
+}
+
+.chablo-room-state-card__summary {
+  margin: 0;
+  color: #eef5ff;
   line-height: 1.45;
 }
 
@@ -1788,6 +1885,108 @@
   gap: 10px;
 }
 
+.chablo-social-presence-list,
+.chablo-social-invite-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chablo-social-presence-item,
+.chablo-whisper-thread,
+.chablo-whisper-message,
+.chablo-social-setting-row {
+  border: 1px solid rgba(206, 224, 248, 0.12);
+  background: rgba(12, 18, 27, 0.24);
+}
+
+.chablo-social-presence-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.chablo-social-presence-item__meta,
+.chablo-whisper-thread__meta,
+.chablo-whisper-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chablo-social-presence-item p,
+.chablo-whisper-thread span,
+.chablo-whisper-message p {
+  margin: 0;
+  color: #c0d4ec;
+  line-height: 1.5;
+}
+
+.chablo-whisper-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.chablo-whisper-threads,
+.chablo-whisper-log,
+.chablo-social-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chablo-whisper-thread {
+  width: 100%;
+  padding: 12px;
+  color: #eef5ff;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.chablo-whisper-thread--active {
+  border-color: rgba(242, 205, 123, 0.3);
+  background: rgba(92, 69, 24, 0.22);
+}
+
+.chablo-whisper-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chablo-whisper-log {
+  min-height: 140px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.chablo-whisper-message {
+  padding: 12px;
+}
+
+.chablo-whisper-message--self {
+  border-color: rgba(240, 201, 124, 0.26);
+  background: rgba(79, 61, 23, 0.24);
+}
+
+.chablo-social-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+}
+
+.browser-secondary-btn--active {
+  border-color: rgba(242, 205, 123, 0.32);
+  background: rgba(92, 69, 24, 0.22);
+  color: #fff4da;
+}
+
 .chablo-friend-row {
   flex-direction: row;
   justify-content: space-between;
@@ -1809,6 +2008,85 @@
   color: #f2f7ff;
   padding: 10px;
   font: inherit;
+}
+
+.chablo-wardrobe-card,
+.chablo-wardrobe-sections,
+.chablo-wardrobe-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chablo-wardrobe-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(202, 165, 255, 0.2);
+  background: rgba(43, 29, 68, 0.22);
+}
+
+.chablo-wardrobe-preview span {
+  display: block;
+  color: #c6d8ee;
+  line-height: 1.45;
+}
+
+.chablo-wardrobe-section {
+  padding: 12px;
+  border: 1px solid rgba(206, 224, 248, 0.12);
+  background: rgba(12, 18, 27, 0.22);
+}
+
+.chablo-wardrobe-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #dce9f8;
+}
+
+.chablo-wardrobe-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chablo-wardrobe-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(206, 224, 248, 0.14);
+  background: rgba(10, 15, 22, 0.38);
+  color: #eef5ff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.chablo-wardrobe-option:hover {
+  filter: brightness(1.06);
+}
+
+.chablo-wardrobe-option--active {
+  border-color: rgba(242, 205, 123, 0.32);
+  background: rgba(92, 69, 24, 0.22);
+  color: #fff4da;
+}
+
+.chablo-wardrobe-option--color {
+  position: relative;
+}
+
+.chablo-wardrobe-option__swatch {
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: var(--chablo-option-color, #8fd4ff);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
 .chablo-chat-form textarea:focus {
@@ -1853,13 +2131,18 @@
   .chablo-stage-topbar,
   .chablo-stage-actions,
   .chablo-friend-row,
-  .chablo-hotspot-row {
+  .chablo-hotspot-row,
+  .chablo-social-setting-row {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .chablo-sidebar-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chablo-whisper-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1874,13 +2157,18 @@
   .chablo-stage-topbar,
   .chablo-stage-actions,
   .chablo-friend-row,
-  .chablo-hotspot-row {
+  .chablo-hotspot-row,
+  .chablo-social-setting-row {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .chablo-sidebar-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .chablo-whisper-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3574,3 +3862,426 @@
 /* ============================================
    MODALPANE — XP-authentieke modale dialoog
    ============================================ */
+
+/* ============================================
+   CHABLO ROOM-FIRST OVERRIDES
+   ============================================ */
+
+.chablo-page {
+  position: relative;
+  min-height: 100%;
+  padding: 12px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.2), transparent 22%),
+    linear-gradient(180deg, #223042, #121b27 76%);
+}
+
+.chablo-room-first {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 12px;
+  min-height: 0;
+}
+
+.chablo-room-viewport {
+  position: relative;
+  min-height: 620px;
+  border: 1px solid rgba(208, 226, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(39, 57, 79, 0.94), rgba(17, 25, 37, 0.98)),
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.06), transparent 52%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 18px 34px rgba(6, 9, 14, 0.34);
+  overflow: hidden;
+}
+
+.chablo-room-marquee {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 8;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(224, 236, 255, 0.14);
+  background: rgba(8, 13, 20, 0.56);
+  backdrop-filter: blur(3px);
+}
+
+.chablo-room-marquee h2 {
+  margin: 2px 0 4px;
+  color: #f8fbff;
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+.chablo-room-marquee p {
+  margin: 0;
+  max-width: 520px;
+  color: #c6d8ee;
+}
+
+.chablo-room-marquee__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 150px;
+  color: #d6e6f9;
+  text-align: right;
+}
+
+.chablo-room-marquee__meta strong {
+  font-size: 28px;
+  line-height: 1;
+  color: #ffffff;
+}
+
+.chablo-stage-frame--room-first {
+  height: 100%;
+  min-height: 620px;
+}
+
+.chablo-stage-frame--room-first .chablo-room-stage {
+  height: 100%;
+  min-height: 620px;
+  aspect-ratio: auto;
+}
+
+.chablo-feedback--floating {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 30;
+  max-width: 360px;
+}
+
+.chablo-windows-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+}
+
+.chablo-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(215, 231, 255, 0.16);
+  background: linear-gradient(180deg, rgba(55, 73, 97, 0.96), rgba(19, 28, 40, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 14px 28px rgba(4, 7, 12, 0.42);
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.chablo-window__titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(215, 231, 255, 0.12);
+  background: linear-gradient(180deg, rgba(133, 165, 208, 0.36), rgba(58, 82, 114, 0.44));
+  color: #f6fbff;
+  cursor: move;
+  user-select: none;
+}
+
+.chablo-window__close,
+.chablo-avatar-context-card__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(215, 231, 255, 0.2);
+  background: rgba(12, 18, 27, 0.32);
+  color: #eff5ff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: bold;
+}
+
+.chablo-window__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px;
+  overflow: auto;
+}
+
+.chablo-window-stack,
+.chablo-window-list,
+.chablo-placeholder-window {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chablo-window-row,
+.chablo-placeholder-window,
+.chablo-avatar-context-card {
+  border: 1px solid rgba(206, 224, 248, 0.12);
+  background: rgba(10, 16, 24, 0.28);
+  padding: 12px;
+}
+
+.chablo-window-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chablo-window-row strong,
+.chablo-placeholder-window strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.chablo-window-row--active {
+  border-color: rgba(242, 205, 123, 0.32);
+  background: rgba(92, 69, 24, 0.2);
+}
+
+.chablo-window-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chablo-window-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(206, 224, 248, 0.14);
+  background: rgba(12, 18, 27, 0.24);
+  color: #d9e7f8;
+  padding: 8px 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: bold;
+}
+
+.chablo-window-tab--active {
+  border-color: rgba(242, 205, 123, 0.32);
+  background: rgba(92, 69, 24, 0.24);
+  color: #fff4da;
+}
+
+.chablo-avatar-context-card {
+  position: absolute;
+  top: 94px;
+  right: 18px;
+  z-index: 10;
+  width: min(320px, calc(100% - 36px));
+  box-shadow: 0 14px 28px rgba(4, 7, 12, 0.36);
+}
+
+.chablo-avatar-context-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.chablo-avatar-context-card__header span {
+  display: block;
+  margin-top: 4px;
+  color: #bfd2eb;
+}
+
+.chablo-hud {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(210, 228, 255, 0.14);
+  background: linear-gradient(180deg, rgba(43, 59, 80, 0.96), rgba(17, 25, 37, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 12px 24px rgba(9, 13, 19, 0.28);
+}
+
+.chablo-hud__avatar-slot {
+  position: relative;
+}
+
+.chablo-hud__avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid rgba(206, 224, 248, 0.16);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(78, 104, 137, 0.22));
+  color: #eef5ff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: bold;
+}
+
+.chablo-hud__avatar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  min-height: 24px;
+  padding: 2px 8px;
+  border: 1px solid rgba(206, 224, 248, 0.18);
+  background: rgba(12, 18, 27, 0.26);
+  color: #f2cd7b;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.chablo-avatar-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 14;
+  min-width: 180px;
+  border: 1px solid rgba(210, 228, 255, 0.14);
+  background: linear-gradient(180deg, rgba(49, 66, 89, 0.98), rgba(18, 27, 39, 1));
+  box-shadow: 0 14px 28px rgba(4, 7, 12, 0.42);
+  overflow: hidden;
+}
+
+.chablo-avatar-menu__item {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(210, 228, 255, 0.08);
+  background: transparent;
+  color: #eef5ff;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.chablo-avatar-menu__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chablo-hud__controls {
+  display: grid;
+  grid-template-columns: repeat(3, 32px);
+  grid-template-rows: repeat(2, 32px);
+  gap: 6px;
+}
+
+.chablo-hud__controls button {
+  border: 1px solid rgba(206, 224, 248, 0.16);
+  background: rgba(12, 18, 27, 0.3);
+  color: #eff5ff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: bold;
+}
+
+.chablo-hud__controls button:nth-child(1) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.chablo-hud__controls button:nth-child(2) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.chablo-hud__controls button:nth-child(3) {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.chablo-hud__controls button:nth-child(4) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.chablo-chatbar {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.chablo-chatbar__modes {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.chablo-chatbar__mode,
+.chablo-chatbar__target,
+.chablo-hud__launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(206, 224, 248, 0.16);
+  background: rgba(12, 18, 27, 0.28);
+  color: #eef5ff;
+  padding: 8px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.chablo-chatbar__mode--active,
+.chablo-hud__launcher--active {
+  border-color: rgba(242, 205, 123, 0.32);
+  background: rgba(92, 69, 24, 0.24);
+  color: #fff4da;
+}
+
+.chablo-chatbar input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(206, 224, 248, 0.16);
+  background: rgba(8, 12, 18, 0.24);
+  color: #f2f7ff;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.chablo-hud__launchers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@container (max-width: 980px) {
+  .chablo-hud {
+    grid-template-columns: 1fr;
+  }
+
+  .chablo-room-marquee {
+    position: relative;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 12px;
+  }
+
+  .chablo-avatar-context-card {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: auto;
+    margin: 12px;
+  }
+
+  .chablo-room-viewport {
+    min-height: 540px;
+  }
+
+  .chablo-stage-frame--room-first,
+  .chablo-stage-frame--room-first .chablo-room-stage {
+    min-height: 520px;
+  }
+}

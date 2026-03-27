@@ -10,6 +10,10 @@ const PRESENCE_NOTICE_TTL_MS = 1650;
 const PREVIEW_TILE_ALPHA = 0.18;
 const PREVIEW_PATH_COLOR = 0xbde2ff;
 const PREVIEW_TARGET_COLOR = 0xf7fbff;
+const DEFAULT_CAMERA_ZOOM = 1;
+const MIN_CAMERA_ZOOM = 0.72;
+const MAX_CAMERA_ZOOM = 2.4;
+const CAMERA_ZOOM_STEP = 0.14;
 
 function getAvatarPosition(tile) {
   return {
@@ -63,11 +67,13 @@ export function createChabloPhaserBridge({
       this.hasRenderedInitialWorld = false;
       this.noticeEntries = [];
       this.interactionPreview = null;
+      this.currentZoom = DEFAULT_CAMERA_ZOOM;
     }
 
     create() {
       this.cameras.main.setBackgroundColor('#162130');
       this.cameras.main.setRoundPixels(false);
+      this.cameras.main.setZoom(this.currentZoom);
       this.worldLayer = this.add.container(0, 0);
       this.avatarLayer = this.add.container(0, 0);
       this.previewLayer = this.add.container(0, 0);
@@ -230,12 +236,33 @@ export function createChabloPhaserBridge({
     }
 
     emitPresenceEvents(syncResult) {
+      const mutedUsernames = new Set(this.currentWorld?.mutedUsernames || []);
       syncResult.joined.forEach((username) => {
-        this.emitPresenceNotice(`${username} komt binnen`, 0x8cf5c6);
+        if (!mutedUsernames.has(username)) {
+          this.emitPresenceNotice(`${username} komt binnen`, 0x8cf5c6);
+        }
       });
       syncResult.left.forEach((username) => {
-        this.emitPresenceNotice(`${username} glipt weer weg`, 0xf0c97c);
+        if (!mutedUsernames.has(username)) {
+          this.emitPresenceNotice(`${username} glipt weer weg`, 0xf0c97c);
+        }
       });
+    }
+
+    setCameraZoom(nextZoom) {
+      const normalizedZoom = Math.max(MIN_CAMERA_ZOOM, Math.min(MAX_CAMERA_ZOOM, nextZoom));
+      this.currentZoom = normalizedZoom;
+      this.cameras.main.setZoom(normalizedZoom);
+      return normalizedZoom;
+    }
+
+    adjustCameraZoom(direction) {
+      if (!Number.isFinite(direction) || direction === 0) {
+        return this.currentZoom;
+      }
+
+      const zoomDelta = direction > 0 ? CAMERA_ZOOM_STEP : -CAMERA_ZOOM_STEP;
+      return this.setCameraZoom(this.currentZoom + zoomDelta);
     }
 
     renderWorld(world, forceRoomRedraw = false) {
@@ -273,6 +300,9 @@ export function createChabloPhaserBridge({
       ];
 
       const syncResult = this.avatarManager?.sync(everyone, this.selectedAvatar, getAvatarPosition, {
+        activeEmotesByUsername: world.activeEmotesByUsername || {},
+        activeSpeechByUsername: world.activeSpeechByUsername || {},
+        appearanceByUsername: world.appearanceByUsername || {},
         forceImmediate: forceRoomRedraw,
         presenceEventsEnabled: this.hasRenderedInitialWorld && !forceRoomRedraw,
         remoteSnapDistancePx: REMOTE_SNAP_DISTANCE_PX
@@ -390,6 +420,16 @@ export function createChabloPhaserBridge({
       }, 0);
     },
     resize,
+    adjustZoom(deltaY) {
+      const scene = bridgeState.scene || bridgeState.game?.scene?.keys?.['chablo-stage'];
+      if (!scene || !scene.sys?.isActive() || !Number.isFinite(deltaY) || deltaY === 0) {
+        return DEFAULT_CAMERA_ZOOM;
+      }
+
+      bridgeState.scene = scene;
+      const direction = deltaY < 0 ? 1 : -1;
+      return scene.adjustCameraZoom(direction);
+    },
     destroy() {
       bridgeState.scene?.clearInteractionPreview?.();
       bridgeState.scene?.clearPresenceNotices?.();

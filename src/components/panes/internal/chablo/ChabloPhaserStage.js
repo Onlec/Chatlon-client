@@ -3,8 +3,12 @@ import { createChabloPhaserBridge } from './createChabloPhaserBridge';
 
 export function getStagePayload({
   activeHotspotId,
+  activeEmotesByUsername,
+  activeSpeechByUsername,
+  appearanceByUsername,
   currentRoomMeta,
   currentUser,
+  mutedUsernames,
   otherOccupants,
   position,
   roomStateByHotspotId,
@@ -12,9 +16,13 @@ export function getStagePayload({
 }) {
   return {
     activeHotspotId,
+    activeEmotesByUsername,
+    activeSpeechByUsername,
+    appearanceByUsername,
     roomId: currentRoomMeta.id,
     roomAccent: currentRoomMeta.accent,
     currentUser,
+    mutedUsernames,
     otherOccupants,
     position,
     roomStateByHotspotId,
@@ -22,10 +30,21 @@ export function getStagePayload({
   };
 }
 
+export function handleStageWheelZoom(event, bridge) {
+  event.preventDefault();
+  event.stopPropagation();
+  event.currentTarget.focus();
+  bridge?.adjustZoom?.(event.deltaY);
+}
+
 export function ChabloPhaserStage({
   activeHotspotId,
+  activeEmotesByUsername,
+  activeSpeechByUsername,
+  appearanceByUsername,
   currentRoomMeta,
   currentUser,
+  mutedUsernames,
   onEngineStateChange,
   onDirectionStart,
   onDirectionStop,
@@ -48,8 +67,12 @@ export function ChabloPhaserStage({
 
   worldRef.current = getStagePayload({
     activeHotspotId,
+    activeEmotesByUsername,
+    activeSpeechByUsername,
+    appearanceByUsername,
     currentRoomMeta,
     currentUser,
+    mutedUsernames,
     otherOccupants,
     position,
     roomStateByHotspotId,
@@ -109,14 +132,18 @@ export function ChabloPhaserStage({
     if (!bridgeRef.current) return;
     bridgeRef.current.updateWorld(getStagePayload({
       activeHotspotId,
+      activeEmotesByUsername,
+      activeSpeechByUsername,
+      appearanceByUsername,
       currentRoomMeta,
       currentUser,
+      mutedUsernames,
       otherOccupants,
       position,
       roomStateByHotspotId,
       selectedAvatar
     }));
-  }, [activeHotspotId, currentRoomMeta, currentUser, otherOccupants, position, roomStateByHotspotId, selectedAvatar]);
+  }, [activeEmotesByUsername, activeHotspotId, activeSpeechByUsername, appearanceByUsername, currentRoomMeta, currentUser, mutedUsernames, otherOccupants, position, roomStateByHotspotId, selectedAvatar]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -158,6 +185,7 @@ export function ChabloPhaserStage({
       role="application"
       aria-label={`Chablo Motel kamer ${currentRoomMeta.name}`}
       onMouseDown={(event) => event.currentTarget.focus()}
+      onWheel={(event) => handleStageWheelZoom(event, bridgeRef.current)}
       onBlur={() => {
         activeDirectionKeyRef.current = null;
         onDirectionStop?.();

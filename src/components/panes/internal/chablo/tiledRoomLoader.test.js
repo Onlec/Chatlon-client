@@ -1,4 +1,5 @@
 import barMap from './maps/bar.tiled.json';
+import hallwayMap from './maps/hallway.tiled.json';
 import receptieMap from './maps/receptie.tiled.json';
 import { compileChabloRoomFromTiledMap, validateChabloTiledMap } from './tiledRoomLoader';
 
@@ -183,5 +184,18 @@ describe('compileChabloRoomFromTiledMap', () => {
     expect(() => compileChabloRoomFromTiledMap(invalidMap)).toThrow(
       'niet-ondersteund actionType "launch-missiles"'
     );
+  });
+
+  test('parses wardrobe hotspots from hallway maps', () => {
+    const room = compileChabloRoomFromTiledMap(hallwayMap);
+    const wardrobeHotspot = room.hotspots.find((hotspot) => hotspot.label === 'Wardrobe spiegel');
+
+    expect(wardrobeHotspot).toEqual(expect.objectContaining({
+      kind: 'wardrobe',
+      action: expect.objectContaining({
+        type: 'open-wardrobe',
+        title: 'Motel wardrobe'
+      })
+    }));
   });
 });

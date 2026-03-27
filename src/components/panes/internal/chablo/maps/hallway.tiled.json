@@ -11,7 +11,7 @@
   "version": "1.10",
   "tiledversion": "1.11.1",
   "nextlayerid": 4,
-  "nextobjectid": 16,
+  "nextobjectid": 23,
   "properties": [
     { "name": "id", "type": "string", "value": "hallway" },
     { "name": "name", "type": "string", "value": "Motelgang" },
@@ -323,6 +323,30 @@
             { "name": "actionButton", "type": "string", "value": "Bekijk de sleutels" },
             { "name": "actionText", "type": "string", "value": "Er bungelt nog altijd een sleutel voor kamer 09, ook al zweert iedereen dat die allang leeg is." },
             { "name": "targetX", "type": "int", "value": 10 },
+            { "name": "targetY", "type": "int", "value": 2 }
+          ]
+        },
+        {
+          "id": 22,
+          "name": "Wardrobe spiegel",
+          "type": "hotspot",
+          "x": 72,
+          "y": 48,
+          "width": 24,
+          "height": 24,
+          "properties": [
+            { "name": "kind", "type": "string", "value": "wardrobe" },
+            { "name": "label", "type": "string", "value": "Wardrobe spiegel" },
+            { "name": "description", "type": "string", "value": "Een motelspiegel waar outfits ineens serieuzer voelen dan ze horen te zijn." },
+            { "name": "feedback", "type": "string", "value": "De spiegel vraagt subtiel of je look nog meer nachtshift kan gebruiken." },
+            { "name": "actionLabel", "type": "string", "value": "Ga naar de spiegel" },
+            { "name": "icon", "type": "string", "value": "W" },
+            { "name": "actionType", "type": "string", "value": "open-wardrobe" },
+            { "name": "actionTitle", "type": "string", "value": "Motel wardrobe" },
+            { "name": "actionText", "type": "string", "value": "De motelspiegel laat je vorm, outfit en accenten wisselen zonder het hotelritme te breken." },
+            { "name": "actionButton", "type": "string", "value": "Open wardrobe" },
+            { "name": "actionMessage", "type": "string", "value": "Je stapt voor de spiegel en begint aan een nieuwe motel-look." },
+            { "name": "targetX", "type": "int", "value": 3 },
             { "name": "targetY", "type": "int", "value": 2 }
           ]
         }

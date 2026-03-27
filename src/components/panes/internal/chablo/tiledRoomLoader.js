@@ -29,7 +29,8 @@ const SUPPORTED_HOTSPOT_ACTION_TYPES = new Set([
   'bulletin',
   'feedback',
   'prefill-chat',
-  'room-jump'
+  'room-jump',
+  'open-wardrobe'
 ]);
 
 export const CHABLO_TILED_CONVENTIONS = {
