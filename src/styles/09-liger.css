@@ -2159,3 +2159,26 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ─── Liger dock badge ───────────────────────────── */
+
+.liger-dock__icon {
+  position: relative;
+}
+
+.liger-dock__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #cc2222;
+  color: #fff;
+  border-radius: 9px;
+  padding: 0 4px;
+  font-size: 9px;
+  font-weight: bold;
+  line-height: 14px;
+  min-width: 14px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 1;
+}

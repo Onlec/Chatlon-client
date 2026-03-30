@@ -243,14 +243,16 @@ export function buildLigerMenus({
 export function buildLigerDockAppItems({
   paneConfig = {},
   panes = {},
-  activePane
+  activePane,
+  dockBadges = {}
 } = {}) {
   return Object.entries(paneConfig).map(([paneId, config]) => ({
     key: paneId,
     icon: config.desktopIcon || config.icon || '\u{1F9E9}',
     label: resolvePaneTitle(config, 'liger') || config.desktopLabel || paneId,
     isRunning: Boolean(panes[paneId]?.isOpen),
-    isActive: activePane === paneId
+    isActive: activePane === paneId,
+    badge: dockBadges[paneId] || null
   }));
 }
 

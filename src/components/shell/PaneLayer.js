@@ -88,6 +88,12 @@ function PaneLayer({
                 <Component onNowPlayingChange={setNowPlaying} />
               ) : paneName === 'browser' ? (
                 <Component currentUser={currentUser} onOpenConversation={openConversation} />
+              ) : paneName === 'mail' ? (
+                <Component
+                  currentUser={currentUser}
+                  chromeVariant={chromeVariant}
+                  contacts={Object.keys(sharedContactPresence || {})}
+                />
               ) : (
                 <Component />
               )}

@@ -20,6 +20,11 @@ function DockItem({ item, itemKey, onHover, onLeave, hovered }) {
     >
       <div className="liger-dock__icon">
         {renderIcon(item.icon, item.label)}
+        {item.badge && (
+          <div className="liger-dock__badge">
+            {item.badge > 9 ? '9+' : item.badge}
+          </div>
+        )}
       </div>
       <div className="liger-dock__label">{item.label}</div>
       {item.isRunning && <div className="liger-dock__dot" />}

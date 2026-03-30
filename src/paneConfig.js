@@ -7,6 +7,7 @@ import BrowserPane from './components/panes/BrowserPane';
 import MediaPane from './components/panes/MediaPane';
 import TeamTalkPane from './components/panes/TeamTalkPane';
 import ControlPane from './components/ControlPane';
+import MailPane from './components/panes/MailPane';
 
 const paneConfig = {
   contacts: {
@@ -329,6 +330,44 @@ const paneConfig = {
         label: 'Help',
         items: [
           { label: 'Systeemvoorkeuren Help', disabled: true }
+        ]
+      }
+    ]
+  },
+  mail: {
+    title: 'ColdMail',
+    ligerTitle: 'iMail',
+    icon: '\u{1F4E7}',
+    component: MailPane,
+    label: 'ColdMail',
+    defaultSize: { width: 780, height: 540 },
+    minSize: { width: 620, height: 420 },
+    desktopIcon: '\u{1F4E7}',
+    desktopLabel: 'ColdMail',
+    ligerDesktopLabel: 'iMail',
+    startMenu: { section: 'pinned', order: 25 },
+    ligerMenu: [
+      {
+        label: 'Archief',
+        items: [
+          { label: 'Nieuw bericht', shortcut: 'Cmd+N', disabled: true },
+          { type: 'separator' },
+          { label: 'Venster sluiten', shortcut: 'Cmd+W', action: 'closeActive' }
+        ]
+      },
+      {
+        label: 'Bericht',
+        items: [
+          { label: 'Beantwoorden', shortcut: 'Cmd+R', disabled: true },
+          { label: 'Doorsturen', shortcut: 'Cmd+Shift+F', disabled: true },
+          { type: 'separator' },
+          { label: 'Verwijderen', shortcut: 'Delete', disabled: true }
+        ]
+      },
+      {
+        label: 'Help',
+        items: [
+          { label: 'ColdMail Help', disabled: true }
         ]
       }
     ]

@@ -1121,3 +1121,35 @@ div.pane-frame.pane-frame--maximized .pane-body {
   height: 21px;
   flex: 0 0 auto;
 }
+
+/* ─── Systray mail badge ─────────────────────────── */
+
+.systray-mail-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0 3px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.systray-mail-icon:hover {
+  opacity: 0.85;
+}
+
+.systray-mail-badge {
+  position: absolute;
+  top: -5px;
+  right: -4px;
+  background: #cc2222;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0 4px;
+  font-size: 9px;
+  font-weight: bold;
+  line-height: 13px;
+  min-width: 13px;
+  text-align: center;
+  pointer-events: none;
+}

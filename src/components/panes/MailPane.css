@@ -1,0 +1,721 @@
+/* MailPane.css — ColdMail (dX) + iMail (Liger) */
+
+/* ─── Layout ─────────────────────────────────────── */
+
+.mail-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  font-family: Tahoma, Arial, sans-serif;
+  background: #fff;
+  color: #000;
+  position: relative;
+}
+
+.mail-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ─── Toolbar ─────────────────────────────────────── */
+
+.mail-toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 3px 4px;
+  border-bottom: 1px solid #ccc;
+  background: #f0f0f0;
+  flex-shrink: 0;
+}
+
+.mail-toolbar__btn {
+  padding: 2px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  background: #ececec;
+  border: 1px solid #999;
+  border-top-color: #fff;
+  border-left-color: #fff;
+}
+
+.mail-toolbar__btn:active {
+  border-top-color: #999;
+  border-left-color: #999;
+  border-right-color: #fff;
+  border-bottom-color: #fff;
+}
+
+/* ─── Folder list ──────────────────────────────────── */
+
+.mail-folder-list {
+  width: 160px;
+  flex-shrink: 0;
+  border-right: 1px solid #ccc;
+  background: #f4f4f4;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.mail-folder-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.mail-folder-item:hover {
+  background: #dce8f7;
+}
+
+.mail-folder-item--active {
+  background: #3060c8;
+  color: #fff;
+}
+
+.mail-folder-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.mail-folder-label {
+  flex: 1;
+  font-size: 12px;
+}
+
+.mail-folder-badge {
+  background: #cc2222;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 14px;
+}
+
+.mail-folder-item--active .mail-folder-badge {
+  background: #fff;
+  color: #cc2222;
+}
+
+/* ─── Message list ─────────────────────────────────── */
+
+.mail-message-list {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+  background: #fff;
+}
+
+.mail-message-list--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-style: italic;
+}
+
+.mail-message-item {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e8e8e8;
+  cursor: pointer;
+  user-select: none;
+}
+
+.mail-message-item:hover {
+  background: #dce8f7;
+}
+
+.mail-message-item--selected {
+  background: #3060c8;
+  color: #fff;
+}
+
+.mail-message-item--unread .mail-message-item__from,
+.mail-message-item--unread .mail-message-item__subject {
+  font-weight: bold;
+}
+
+.mail-message-item__from {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-message-item__subject {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mail-message-item__date {
+  font-size: 10px;
+  color: #888;
+  text-align: right;
+}
+
+.mail-message-item--selected .mail-message-item__date {
+  color: #cce;
+}
+
+/* ─── Message view ─────────────────────────────────── */
+
+.mail-message-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px;
+}
+
+.mail-message-view--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-style: italic;
+}
+
+.mail-message-view__header {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.mail-message-view__subject {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.mail-message-view__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: #555;
+}
+
+.mail-message-view__body {
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ─── Attachments ──────────────────────────────────── */
+
+.mail-message-view__attachments {
+  margin-top: 14px;
+  border-top: 1px solid #ddd;
+  padding-top: 8px;
+}
+
+.mail-attachment-label {
+  font-size: 11px;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.mail-attachment {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.mail-attachment--compose {
+  background: #eef4ff;
+}
+
+.mail-attachment__icon {
+  font-size: 14px;
+}
+
+.mail-attachment__name {
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.mail-attachment__size {
+  color: #888;
+  font-size: 10px;
+}
+
+.mail-attachment__preview {
+  max-width: 120px;
+  max-height: 80px;
+  border: 1px solid #ccc;
+  display: block;
+  margin-top: 4px;
+}
+
+.mail-attachment__download {
+  font-size: 11px;
+  color: #0000cc;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.mail-attachment__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #888;
+  padding: 0 2px;
+  margin-left: auto;
+  line-height: 1;
+}
+
+.mail-attachment__remove:hover {
+  color: #cc2222;
+}
+
+/* ─── Compose window ──────────────────────────────── */
+
+.mail-compose-window {
+  position: absolute;
+  bottom: 48px;
+  right: 16px;
+  width: 560px;
+  max-width: calc(100% - 32px);
+  z-index: 200;
+  background: #fff;
+  border: 2px solid #9999aa;
+  box-shadow: 4px 4px 12px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.mail-compose-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: linear-gradient(to right, #3060c8, #5a9ae0);
+  color: #fff;
+  font-weight: bold;
+  font-size: 12px;
+  user-select: none;
+}
+
+.mail-compose-titlebar__close {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.mail-compose-titlebar__close:hover {
+  color: #ffd;
+}
+
+/* ─── Compose form ────────────────────────────────── */
+
+.mail-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 8px;
+  background: #fff;
+}
+
+.mail-compose__fields {
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 4px;
+  padding-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mail-compose__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mail-compose__label {
+  width: 68px;
+  font-size: 12px;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.mail-compose__input {
+  flex: 1;
+  font-size: 12px;
+  font-family: inherit;
+  border: 1px solid #aaa;
+  padding: 2px 4px;
+  outline: none;
+}
+
+.mail-compose__input:focus {
+  border-color: #3060c8;
+}
+
+.mail-compose__attachments {
+  min-height: 0;
+  margin-top: 4px;
+}
+
+.mail-compose__error {
+  color: #cc2222;
+  font-size: 11px;
+  padding: 2px 0;
+}
+
+.mail-compose__actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #eee;
+  margin-top: 4px;
+}
+
+.mail-compose__btn {
+  padding: 3px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid #888;
+  background: #ececec;
+  border-top-color: #fff;
+  border-left-color: #fff;
+}
+
+.mail-compose__btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mail-compose__btn--send {
+  font-weight: bold;
+}
+
+.mail-compose__btn--cancel {
+  margin-left: auto;
+}
+
+.mail-compose__ccbcc-toggle {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  background: #ececec;
+  border: 1px solid #999;
+  border-top-color: #fff;
+  border-left-color: #fff;
+  color: #444;
+}
+
+/* ─── Reply/Forward knoppen in message view ──────── */
+
+.mail-message-view__actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+/* ─── Rich text editor ────────────────────────────── */
+
+.rich-editor {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #aaa;
+  background: #fff;
+  flex: 1;
+  min-height: 120px;
+}
+
+.rich-editor__content {
+  flex: 1;
+  min-height: 120px;
+  border: none;
+  outline: none;
+  padding: 6px;
+  font-size: 12px;
+  font-family: Tahoma, Arial, sans-serif;
+  line-height: 1.4;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  cursor: text;
+}
+
+.rich-editor__content--disabled {
+  background: #f4f4f4;
+  cursor: default;
+  color: #888;
+}
+
+/* Placeholder via CSS wanneer de div leeg is */
+.rich-editor__content:empty::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+  pointer-events: none;
+  font-style: italic;
+}
+
+.rich-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 4px;
+  border-bottom: 1px solid #ccc;
+  background: #f0f0f0;
+  flex-wrap: wrap;
+}
+
+.rich-toolbar__btn {
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  background: #ececec;
+  border: 1px solid #999;
+  border-top-color: #fff;
+  border-left-color: #fff;
+  min-width: 22px;
+}
+
+.rich-toolbar__btn--active {
+  background: #d0d8f0;
+  border-top-color: #888;
+  border-left-color: #888;
+  border-right-color: #fff;
+  border-bottom-color: #fff;
+}
+
+.rich-toolbar__color {
+  width: 24px;
+  height: 20px;
+  border: 1px solid #999;
+  padding: 0;
+  cursor: pointer;
+}
+
+.rich-toolbar__select {
+  font-size: 11px;
+  font-family: inherit;
+  border: 1px solid #999;
+  padding: 1px 2px;
+  height: 20px;
+}
+
+.rich-toolbar__select--size {
+  width: 44px;
+}
+
+/* ─── Toolbar search ──────────────────────────────── */
+
+.mail-toolbar__search {
+  flex: 1;
+  min-width: 60px;
+  max-width: 160px;
+  font-size: 12px;
+  font-family: inherit;
+  border: 1px solid #aaa;
+  padding: 2px 4px;
+  outline: none;
+  height: 20px;
+  margin-left: auto;
+}
+
+.mail-toolbar__search:focus {
+  border-color: #3060c8;
+}
+
+/* ─── Sorteerbare kolomkoppen ─────────────────────── */
+
+.mail-list-header {
+  display: flex;
+  border-bottom: 2px solid #aaa;
+  background: #e8e8e8;
+  flex-shrink: 0;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.mail-list-header__col {
+  font-size: 11px;
+  font-weight: bold;
+  padding: 3px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-right: 1px solid #ccc;
+}
+
+.mail-list-header__col:hover {
+  background: #d0dce8;
+}
+
+.mail-list-header__col--from    { flex: 0 0 32%; min-width: 0; }
+.mail-list-header__col--subject { flex: 1; min-width: 0; }
+.mail-list-header__col--date    { flex: 0 0 44px; border-right: none; }
+
+/* ─── Paperclip ───────────────────────────────────── */
+
+.mail-message-item__clip {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* ─── Handtekening editor (floating panel) ────────── */
+
+.mail-sig-editor {
+  position: absolute;
+  top: 32px; /* onder de toolbar */
+  right: 8px;
+  width: 320px;
+  background: #fff;
+  border: 2px solid #9999aa;
+  box-shadow: 4px 4px 12px rgba(0,0,0,0.25);
+  z-index: 210;
+  display: flex;
+  flex-direction: column;
+}
+
+.mail-sig-editor__titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: linear-gradient(to right, #3060c8, #5a9ae0);
+  color: #fff;
+  font-weight: bold;
+  font-size: 12px;
+  user-select: none;
+}
+
+.mail-sig-editor__close {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.mail-sig-editor__close:hover {
+  color: #ffd;
+}
+
+.mail-sig-editor__body {
+  padding: 8px;
+}
+
+.mail-sig-editor__input {
+  width: 100%;
+  font-size: 12px;
+  font-family: inherit;
+  border: 1px solid #aaa;
+  padding: 3px 4px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  min-height: 60px;
+}
+
+.mail-sig-editor__input:focus {
+  border-color: #3060c8;
+}
+
+.mail-sig-editor__actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+/* ─── Adresboek-picker ────────────────────────────── */
+
+.mail-compose__addr-btn {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  background: #ececec;
+  border: 1px solid #999;
+  border-top-color: #fff;
+  border-left-color: #fff;
+  line-height: 1;
+}
+
+.mail-compose__addr-picker {
+  position: absolute;
+  top: 100%;
+  left: 68px; /* align met het inputveld */
+  right: 0;
+  background: #fff;
+  border: 1px solid #888;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+  z-index: 300;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.mail-compose__addr-picker-item {
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mail-compose__addr-picker-item:hover {
+  background: #dce8f7;
+}
+
+/* ─── Liger (iMail) overrides ─────────────────────── */
+
+.mail-pane--liger {
+  font-family: -apple-system, 'Lucida Grande', Arial, sans-serif;
+  font-size: 13px;
+  background: #f6f6f6;
+}
+
+.mail-pane--liger .mail-toolbar {
+  background: linear-gradient(to bottom, #e8e8e8, #d0d0d0);
+  border-bottom-color: #bbb;
+}
+
+.mail-pane--liger .mail-folder-list {
+  background: #e8edf4;
+  border-right-color: #bbb;
+}
+
+.mail-pane--liger .mail-folder-item--active {
+  background: #4a88d8;
+}
+
+.mail-pane--liger .mail-compose-titlebar {
+  background: linear-gradient(to bottom, #b8b8b8, #888);
+  font-family: -apple-system, 'Lucida Grande', Arial, sans-serif;
+}

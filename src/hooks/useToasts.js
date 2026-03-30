@@ -70,6 +70,9 @@ export function useToasts(options = {}) {
       const timeBucket = Math.floor(Date.now() / 5000);
       return `presence_${toastData.contactName}_${timeBucket}`;
     }
+    if (toastData.type === 'mail') {
+      return `mail_${toastData.mailId}`;
+    }
     return `toast_${Date.now()}_${Math.random()}`;
   }, []);
 

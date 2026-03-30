@@ -20,7 +20,9 @@ function Systray({
   onStatusChange,
   onOpenContacts,
   onSignOut,
-  onCloseMessenger
+  onCloseMessenger,
+  unreadMailCount,
+  onOpenMail
 }) {
   return (
     <div className="systray">
@@ -46,6 +48,16 @@ function Systray({
         >
           <span className="systray-chatlon-figure">{'\u{1F4AC}'}</span>
           <span className="systray-status-dot" style={{ backgroundColor: currentStatusOption.color }}></span>
+        </span>
+      )}
+      {isLoggedIn && unreadMailCount > 0 && (
+        <span
+          className="systray-mail-icon"
+          onClick={onOpenMail}
+          title={`${unreadMailCount} ongelezen bericht${unreadMailCount !== 1 ? 'en' : ''}`}
+        >
+          {'\u{1F4EC}'}
+          <span className="systray-mail-badge">{unreadMailCount > 9 ? '9+' : unreadMailCount}</span>
         </span>
       )}
       {showSystrayMenu && (

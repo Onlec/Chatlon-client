@@ -34,6 +34,8 @@ import { useDesktopManager } from './hooks/useDesktopManager';
 import { useDesktopCommandBus } from './hooks/useDesktopCommandBus';
 import { useContextMenuManager } from './hooks/useContextMenuManager';
 import { usePresenceCoordinator } from './hooks/usePresenceCoordinator';
+import { useMailInbox } from './components/mail/useMailInbox';
+import { useMailNotifier } from './components/mail/useMailNotifier';
 
 import { runFullCleanup } from './utils/gunCleanup';
 import { clearEncryptionCache } from './utils/encryption';
@@ -192,12 +194,18 @@ function App() {
   
   // Toast notifications
   const {
-    toasts, 
-    showToast, 
-    removeToast, 
+    toasts,
+    showToast,
+    removeToast,
     shownToastsRef,
-    resetShownToasts 
+    resetShownToasts
   } = useToasts();
+
+  // Mail inbox state (early — alleen currentUser nodig)
+  const {
+    unreadCount: mailUnreadCount,
+    newMailSinceLastSeen
+  } = useMailInbox(currentUser);
 
   // Pane/window management
   const {
@@ -246,6 +254,13 @@ function App() {
     closePane,
     toggleStartMenu
   });
+
+  // Mail notifier (na desktopCommandBus zodat openPane beschikbaar is)
+  const onOpenMail = React.useCallback(
+    () => desktopCommandBus.openPane('mail'),
+    [desktopCommandBus]
+  );
+  useMailNotifier({ newMailSinceLastSeen, showToast, getAvatar, onOpenMail });
 
   // Presence management
   const {
@@ -1137,8 +1152,9 @@ const onTaskbarClick = React.useCallback((paneId) => {
   const dockAppItemsModel = useMemo(() => buildLigerDockAppItems({
     paneConfig,
     panes,
-    activePane
-  }), [activePane, panes]);
+    activePane,
+    dockBadges: { mail: mailUnreadCount > 0 ? mailUnreadCount : null }
+  }), [activePane, panes, mailUnreadCount]);
 
   const dockAppItems = useMemo(() => (
     dockAppItemsModel.map((item) => ({
@@ -1215,7 +1231,9 @@ const onTaskbarClick = React.useCallback((paneId) => {
     onStatusChange: systrayManager.onStatusChange,
     onOpenContacts: systrayManager.onOpenContacts,
     onSignOut: systrayManager.onSignOut,
-    onCloseMessenger: systrayManager.onCloseMessenger
+    onCloseMessenger: systrayManager.onCloseMessenger,
+    unreadMailCount: mailUnreadCount,
+    onOpenMail
   };
 
   const shellProps = {
