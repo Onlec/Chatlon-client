@@ -1,9 +1,51 @@
-// src/components/mail/useMailInbox.js
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { gun, user } from '../../gun';
 
-const LAST_SEEN_KEY = (u) => `chatlon_mail_last_seen_${u}`;
+const LAST_SEEN_KEY = (currentUser) => `chatlon_mail_last_seen_${currentUser}`;
+const LAST_SEEN_SYNC_EVENT = 'chatlon:mail-last-seen';
+
+function readLastSeen(currentUser) {
+  if (!currentUser) return 0;
+  const value = parseInt(localStorage.getItem(LAST_SEEN_KEY(currentUser)) || '0', 10);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function isValidMailRecord(data) {
+  return Boolean(data && data.timestamp && (data.from || data.to));
+}
+
+function buildMailRecord(data, mailId, mailbox) {
+  return { ...data, id: mailId, mailbox };
+}
+
+function upsertMailRecord(prev, data, mailId, mailbox) {
+  if (!data) {
+    return prev.filter((mail) => mail.id !== mailId);
+  }
+  if (!isValidMailRecord(data)) return prev;
+
+  const nextRecord = buildMailRecord(data, mailId, mailbox);
+  const exists = prev.some((mail) => mail.id === mailId);
+  if (!exists) return [...prev, nextRecord];
+  return prev.map((mail) => (mail.id === mailId ? nextRecord : mail));
+}
+
+function updateMailProperty(prev, mailId, changes) {
+  return prev.map((mail) => (mail.id === mailId ? { ...mail, ...changes } : mail));
+}
+
+function resolveMailTarget(target) {
+  if (!target) return null;
+  if (typeof target === 'string') {
+    return { id: target, mailbox: 'inbox' };
+  }
+  if (!target.id) return null;
+
+  return {
+    id: target.id,
+    mailbox: target.mailbox || 'inbox',
+  };
+}
 
 /**
  * Hook voor mail inbox + sent + trash folders.
@@ -14,53 +56,64 @@ const LAST_SEEN_KEY = (u) => `chatlon_mail_last_seen_${u}`;
  */
 export function useMailInbox(currentUser) {
   const [inboxRaw, setInboxRaw] = useState([]);
-  const [sent, setSent] = useState([]);
+  const [sentRaw, setSentRaw] = useState([]);
+  const [lastSeen, setLastSeen] = useState(() => readLastSeen(currentUser));
   const nodeRef = useRef(null);
   const sentNodeRef = useRef(null);
 
-  const lastSeen = useMemo(
-    () => parseInt(localStorage.getItem(LAST_SEEN_KEY(currentUser)) || '0', 10),
-    [currentUser]
-  );
+  const markAllSeen = useCallback((timestamp = Date.now()) => {
+    if (!currentUser) return;
+    localStorage.setItem(LAST_SEEN_KEY(currentUser), timestamp.toString());
+    setLastSeen(timestamp);
+    window.dispatchEvent(new CustomEvent(LAST_SEEN_SYNC_EVENT, {
+      detail: { user: currentUser, timestamp }
+    }));
+  }, [currentUser]);
 
-  const markAllSeen = useCallback(() => {
-    localStorage.setItem(LAST_SEEN_KEY(currentUser), Date.now().toString());
+  useEffect(() => {
+    setLastSeen(readLastSeen(currentUser));
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) return undefined;
+
+    const handleSeenSync = (event) => {
+      if (event.detail?.user !== currentUser) return;
+      setLastSeen(Number(event.detail?.timestamp) || 0);
+    };
+
+    const handleStorage = (event) => {
+      if (event.key !== LAST_SEEN_KEY(currentUser)) return;
+      setLastSeen(Number(event.newValue) || 0);
+    };
+
+    window.addEventListener(LAST_SEEN_SYNC_EVENT, handleSeenSync);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener(LAST_SEEN_SYNC_EVENT, handleSeenSync);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [currentUser]);
 
   useEffect(() => {
     if (!currentUser) {
       setInboxRaw([]);
-      setSent([]);
+      setSentRaw([]);
       return;
     }
 
-    // Inbox listener
     const inboxNode = gun.get('MAIL_INBOX').get(currentUser).map();
     nodeRef.current = inboxNode;
     inboxNode.on((data, mailId) => {
-      if (!data || !data.from || !data.timestamp) return;
-      setInboxRaw(prev => {
-        const exists = prev.find(m => m.id === mailId);
-        if (exists) {
-          return prev.map(m => m.id === mailId ? { ...data, id: mailId } : m);
-        }
-        return [...prev, { ...data, id: mailId }];
-      });
+      setInboxRaw((prev) => upsertMailRecord(prev, data, mailId, 'inbox'));
     });
 
-    // Sent listener (privé per gebruiker)
     if (user.is) {
       const sentNode = user.get('mailSent').map();
       sentNodeRef.current = sentNode;
       sentNode.on((data, mailId) => {
-        if (!data || !data.to || !data.timestamp) return;
-        setSent(prev => {
-          const exists = prev.find(m => m.id === mailId);
-          if (exists) {
-            return prev.map(m => m.id === mailId ? { ...data, id: mailId } : m);
-          }
-          return [...prev, { ...data, id: mailId }];
-        });
+        setSentRaw((prev) => upsertMailRecord(prev, data, mailId, 'sent'));
       });
     }
 
@@ -74,57 +127,87 @@ export function useMailInbox(currentUser) {
         sentNodeRef.current = null;
       }
       setInboxRaw([]);
-      setSent([]);
+      setSentRaw([]);
     };
   }, [currentUser]);
 
-  // Inbox = niet-verwijderde berichten
   const inbox = useMemo(
-    () => inboxRaw.filter(m => m.deleted !== true),
+    () => inboxRaw.filter((mail) => mail.deleted !== true),
     [inboxRaw]
   );
 
-  // Prullenbak = verwijderde berichten
+  const sent = useMemo(
+    () => sentRaw.filter((mail) => mail.deleted !== true),
+    [sentRaw]
+  );
+
   const trash = useMemo(
-    () => inboxRaw.filter(m => m.deleted === true),
-    [inboxRaw]
+    () => [...inboxRaw.filter((mail) => mail.deleted === true), ...sentRaw.filter((mail) => mail.deleted === true)],
+    [inboxRaw, sentRaw]
   );
 
   const unreadCount = useMemo(
-    () => inbox.filter(m => !m.read).length,
+    () => inbox.filter((mail) => !mail.read).length,
     [inbox]
   );
 
   const newMailSinceLastSeen = useMemo(
-    () => inbox.filter(m => m.timestamp > lastSeen && !m.read),
+    () => inbox.filter((mail) => mail.timestamp > lastSeen && !mail.read),
     [inbox, lastSeen]
   );
 
-  const markRead = useCallback((mailId) => {
+  const markRead = useCallback((target) => {
     if (!currentUser) return;
-    gun.get('MAIL_INBOX').get(currentUser).get(mailId).get('read').put(true);
-    setInboxRaw(prev => prev.map(m => m.id === mailId ? { ...m, read: true } : m));
+    const mail = resolveMailTarget(target);
+    if (!mail || mail.mailbox !== 'inbox') return;
+
+    gun.get('MAIL_INBOX').get(currentUser).get(mail.id).get('read').put(true);
+    setInboxRaw((prev) => updateMailProperty(prev, mail.id, { read: true }));
   }, [currentUser]);
 
-  // Soft delete: verplaats naar prullenbak
-  const markDeleted = useCallback((mailId) => {
+  const markDeleted = useCallback((target) => {
+    const mail = resolveMailTarget(target);
+    if (!mail) return;
+
+    if (mail.mailbox === 'sent') {
+      user.get('mailSent').get(mail.id).get('deleted').put(true);
+      setSentRaw((prev) => updateMailProperty(prev, mail.id, { deleted: true }));
+      return;
+    }
+
     if (!currentUser) return;
-    gun.get('MAIL_INBOX').get(currentUser).get(mailId).get('deleted').put(true);
-    setInboxRaw(prev => prev.map(m => m.id === mailId ? { ...m, deleted: true } : m));
+    gun.get('MAIL_INBOX').get(currentUser).get(mail.id).get('deleted').put(true);
+    setInboxRaw((prev) => updateMailProperty(prev, mail.id, { deleted: true }));
   }, [currentUser]);
 
-  // Definitief verwijderen
-  const permanentDelete = useCallback((mailId) => {
+  const permanentDelete = useCallback((target) => {
+    const mail = resolveMailTarget(target);
+    if (!mail) return;
+
+    if (mail.mailbox === 'sent') {
+      user.get('mailSent').get(mail.id).put(null);
+      setSentRaw((prev) => prev.filter((entry) => entry.id !== mail.id));
+      return;
+    }
+
     if (!currentUser) return;
-    gun.get('MAIL_INBOX').get(currentUser).get(mailId).put(null);
-    setInboxRaw(prev => prev.filter(m => m.id !== mailId));
+    gun.get('MAIL_INBOX').get(currentUser).get(mail.id).put(null);
+    setInboxRaw((prev) => prev.filter((entry) => entry.id !== mail.id));
   }, [currentUser]);
 
-  // Herstel uit prullenbak
-  const restoreFromTrash = useCallback((mailId) => {
+  const restoreFromTrash = useCallback((target) => {
+    const mail = resolveMailTarget(target);
+    if (!mail) return;
+
+    if (mail.mailbox === 'sent') {
+      user.get('mailSent').get(mail.id).get('deleted').put(false);
+      setSentRaw((prev) => updateMailProperty(prev, mail.id, { deleted: false }));
+      return;
+    }
+
     if (!currentUser) return;
-    gun.get('MAIL_INBOX').get(currentUser).get(mailId).get('deleted').put(false);
-    setInboxRaw(prev => prev.map(m => m.id === mailId ? { ...m, deleted: false } : m));
+    gun.get('MAIL_INBOX').get(currentUser).get(mail.id).get('deleted').put(false);
+    setInboxRaw((prev) => updateMailProperty(prev, mail.id, { deleted: false }));
   }, [currentUser]);
 
   return {
@@ -140,3 +223,5 @@ export function useMailInbox(currentUser) {
     restoreFromTrash,
   };
 }
+
+export default useMailInbox;

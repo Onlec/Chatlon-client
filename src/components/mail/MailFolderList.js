@@ -2,7 +2,14 @@
 
 import React from 'react';
 
-function MailFolderList({ activeFolder, onSelectFolder, unreadCount, draftsCount }) {
+function MailFolderList({
+  activeFolder,
+  onSelectFolder,
+  unreadCount,
+  draftsCount,
+  onFolderContextMenu,
+  onBackgroundContextMenu,
+}) {
   const folders = [
     { id: 'inbox',  label: 'Postvak IN',        icon: '📥' },
     { id: 'sent',   label: 'Verzonden items',    icon: '📤' },
@@ -11,12 +18,20 @@ function MailFolderList({ activeFolder, onSelectFolder, unreadCount, draftsCount
   ];
 
   return (
-    <div className="mail-folder-list">
+    <div
+      className="mail-folder-list"
+      onContextMenu={onBackgroundContextMenu}
+      data-testid="mail-folder-list"
+    >
       {folders.map(folder => (
         <div
           key={folder.id}
           className={`mail-folder-item${activeFolder === folder.id ? ' mail-folder-item--active' : ''}`}
           onClick={() => onSelectFolder(folder.id)}
+          onContextMenu={(event) => {
+            event.stopPropagation();
+            onFolderContextMenu?.(event, folder);
+          }}
         >
           <span className="mail-folder-icon">{folder.icon}</span>
           <span className="mail-folder-label">{folder.label}</span>

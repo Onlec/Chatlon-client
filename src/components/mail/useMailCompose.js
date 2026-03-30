@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { gun, user } from '../../gun';
-import { MAX_ATTACHMENT_SIZE } from './mailAttachments';
+import { MAX_ATTACHMENT_SIZE, parseMailAttachments, serializeMailAttachments } from './mailAttachments';
 
 /**
  * Valideer of een ontvanger bestaat in Chatlon via Gun.
@@ -58,9 +58,10 @@ export function useMailCompose(currentUser) {
 
     const ccAddresses = parseAddresses(cc);
     const bccAddresses = parseAddresses(bcc);
+    const normalizedAttachments = parseMailAttachments(attachments);
 
     // Bijlage grootte check
-    for (const att of attachments) {
+    for (const att of normalizedAttachments) {
       if (att.size > MAX_ATTACHMENT_SIZE) {
         setError(`Bijlage "${att.name}" is te groot (max 500 KB).`);
         return false;
@@ -91,7 +92,7 @@ export function useMailCompose(currentUser) {
 
     const mailId = `mail_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
     const timestamp = Date.now();
-    const attachmentsJson = attachments.length > 0 ? JSON.stringify(attachments) : null;
+    const attachmentsJson = serializeMailAttachments(normalizedAttachments);
 
     const baseData = {
       from: currentUser,

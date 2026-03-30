@@ -1,6 +1,13 @@
 // src/components/shared/RichTextEditor.js
 
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useCallback,
+  useImperativeHandle,
+  forwardRef
+} from 'react';
 import { serializeRich, deserializeRich } from '../../utils/richText';
 import RichTextToolbar from './RichTextToolbar';
 
@@ -93,7 +100,19 @@ function extractSpansFromDOM(container) {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-function RichTextEditor({ value, onChange, placeholder, disabled }) {
+function selectEditorContents(element) {
+  if (!element) return false;
+  const selection = window.getSelection?.();
+  if (!selection) return false;
+
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  return true;
+}
+
+const RichTextEditor = forwardRef(function RichTextEditor({ value, onChange, placeholder, disabled }, ref) {
   const editorRef     = useRef(null);
   const lastValueRef  = useRef(value);
   const fromUserRef   = useRef(false);
@@ -146,12 +165,26 @@ function RichTextEditor({ value, onChange, placeholder, disabled }) {
     onChange(serialized);
   }, [onChange]);
 
-  // Toolbar actie: focus editor, voer execCommand uit, sync
-  const handleFormat = useCallback((key, val) => {
+  const executeEditorCommand = useCallback((key, val) => {
     if (!editorRef.current || disabled) return;
     editorRef.current.focus();
 
     switch (key) {
+      case 'undo':
+        document.execCommand('undo', false, null);
+        break;
+      case 'redo':
+        document.execCommand('redo', false, null);
+        break;
+      case 'cut':
+        document.execCommand('cut', false, null);
+        break;
+      case 'copy':
+        document.execCommand('copy', false, null);
+        break;
+      case 'paste':
+        document.execCommand('paste', false, null);
+        break;
       case 'bold':
         document.execCommand('bold', false, null);
         break;
@@ -183,10 +216,40 @@ function RichTextEditor({ value, onChange, placeholder, disabled }) {
       default:
         break;
     }
+  }, [disabled]);
 
+  // Toolbar actie: focus editor, voer execCommand uit, sync
+  const handleFormat = useCallback((key, val) => {
+    executeEditorCommand(key, val);
     syncActiveFormat();
     handleInput();
-  }, [disabled, handleInput, syncActiveFormat]);
+  }, [executeEditorCommand, handleInput, syncActiveFormat]);
+
+  const runCommand = useCallback((command) => {
+    if (!editorRef.current || disabled) return false;
+
+    if (command === 'selectAll') {
+      editorRef.current.focus();
+      return selectEditorContents(editorRef.current);
+    }
+
+    executeEditorCommand(command);
+    syncActiveFormat();
+
+    if (['cut', 'paste', 'undo', 'redo', 'bold', 'italic', 'underline'].includes(command)) {
+      handleInput();
+    }
+
+    return true;
+  }, [disabled, executeEditorCommand, handleInput, syncActiveFormat]);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      editorRef.current?.focus();
+    },
+    runCommand,
+    getElement: () => editorRef.current,
+  }), [runCommand]);
 
   return (
     <div className="rich-editor">
@@ -201,6 +264,6 @@ function RichTextEditor({ value, onChange, placeholder, disabled }) {
       />
     </div>
   );
-}
+});
 
 export default RichTextEditor;

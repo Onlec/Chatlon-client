@@ -1,12 +1,18 @@
 // src/components/mail/MailCompose.js
 
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import RichTextEditor from '../shared/RichTextEditor';
 import { useMailCompose } from './useMailCompose';
-import { readFileAsBase64, formatFileSize, mimeIcon, MAX_ATTACHMENT_SIZE } from './mailAttachments';
+import {
+  readFileAsBase64,
+  formatFileSize,
+  mimeIcon,
+  MAX_ATTACHMENT_SIZE,
+  parseMailAttachments
+} from './mailAttachments';
 import { serializeRich } from '../../utils/richText';
 
-function MailCompose({
+const MailCompose = forwardRef(function MailCompose({
   currentUser,
   onSend,
   onClose,
@@ -15,24 +21,56 @@ function MailCompose({
   initialBody = null,
   initialCc = '',
   initialBcc = '',
+  initialAttachments = null,
   contacts = [],
   draftId: initialDraftId = null,
   onSaveDraft,
   onDeleteDraft,
-}) {
+  onComposeContextMenu,
+  onFieldContextMenu,
+  onBodyContextMenu,
+  onAttachmentsContextMenu,
+  onAttachmentContextMenu,
+}, ref) {
   const [to, setTo]         = useState(initialTo);
   const [cc, setCc]         = useState(initialCc);
   const [bcc, setBcc]       = useState(initialBcc);
   const [showCcBcc, setShowCcBcc] = useState(!!(initialCc || initialBcc));
   const [subject, setSubject] = useState(initialSubject);
   const [body, setBody]     = useState(initialBody ?? serializeRich([{ text: '' }]));
-  const [attachments, setAttachments] = useState([]);
+  const [attachments, setAttachments] = useState(() => parseMailAttachments(initialAttachments));
   const [attachError, setAttachError] = useState('');
   const [draftId, setDraftId] = useState(initialDraftId);
   const [showPicker, setShowPicker] = useState(null); // 'to' | 'cc' | 'bcc' | null
+  const [isDirty, setIsDirty] = useState(false);
   const fileInputRef = useRef(null);
+  const editorRef = useRef(null);
 
   const { sendMail, isSending, error, clearError } = useMailCompose(currentUser);
+
+  useEffect(() => {
+    setTo(initialTo);
+    setCc(initialCc);
+    setBcc(initialBcc);
+    setShowCcBcc(Boolean(initialCc || initialBcc));
+    setSubject(initialSubject);
+    setBody(initialBody ?? serializeRich([{ text: '' }]));
+    setAttachments(parseMailAttachments(initialAttachments));
+    setAttachError('');
+    setDraftId(initialDraftId);
+    setShowPicker(null);
+    setIsDirty(false);
+  }, [
+    initialTo,
+    initialCc,
+    initialBcc,
+    initialSubject,
+    initialBody,
+    initialAttachments,
+    initialDraftId,
+  ]);
+
+  const markDirty = () => setIsDirty(true);
 
   const handleAttachFile = async (e) => {
     const file = e.target.files[0];
@@ -52,17 +90,21 @@ function MailCompose({
       mimeType: file.type,
       dataUrl,
     }]);
+    markDirty();
     e.target.value = '';
   };
 
   const removeAttachment = (index) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
+    markDirty();
   };
 
   const handleSaveDraft = () => {
     if (!onSaveDraft) return;
     const id = onSaveDraft({ draftId, to, cc, bcc, subject, body, attachments });
     if (id && id !== draftId) setDraftId(id);
+    setIsDirty(false);
+    return id;
   };
 
   const handleSend = async () => {
@@ -72,15 +114,67 @@ function MailCompose({
       if (draftId && onDeleteDraft) onDeleteDraft(draftId);
       if (onSend) onSend();
     }
+    return success;
   };
 
   const addToField = (setter, value) => {
     setter(prev => prev ? `${prev}, ${value}` : value);
     setShowPicker(null);
+    markDirty();
   };
 
+  const handleComposeContextMenu = (event) => {
+    event.stopPropagation();
+    onComposeContextMenu?.(event);
+  };
+
+  const handleFieldContextMenu = (field) => (event) => {
+    event.stopPropagation();
+    onFieldContextMenu?.(event, { field, target: event.currentTarget });
+  };
+
+  const handleBodyContextMenu = (event) => {
+    event.stopPropagation();
+    onBodyContextMenu?.(event, { target: event.target });
+  };
+
+  const handleAttachmentsContextMenu = (event) => {
+    event.stopPropagation();
+    onAttachmentsContextMenu?.(event);
+  };
+
+  const handleAttachmentContextMenu = (attachment, index) => (event) => {
+    event.stopPropagation();
+    onAttachmentContextMenu?.(event, { attachment, index });
+  };
+
+  // Stel huidige waarden + dirty-flag beschikbaar aan de ouder via ref
+  useImperativeHandle(ref, () => ({
+    getValues: () => ({ draftId, to, cc, bcc, subject, body, attachments }),
+    isDirty: () => isDirty,
+    isSending: () => isSending,
+    send: handleSend,
+    saveDraft: handleSaveDraft,
+    openFilePicker: () => fileInputRef.current?.click(),
+    removeAttachment,
+    runBodyCommand: (command) => editorRef.current?.runCommand?.(command),
+  }), [
+    attachments,
+    bcc,
+    body,
+    cc,
+    draftId,
+    handleSend,
+    handleSaveDraft,
+    isDirty,
+    isSending,
+    removeAttachment,
+    subject,
+    to,
+  ]);
+
   return (
-    <div className="mail-compose">
+    <div className="mail-compose" onContextMenu={handleComposeContextMenu}>
       <div className="mail-compose__fields">
 
         {/* Aan */}
@@ -90,9 +184,11 @@ function MailCompose({
             type="text"
             className="mail-compose__input"
             value={to}
-            onChange={e => setTo(e.target.value)}
+            onChange={e => { setTo(e.target.value); markDirty(); }}
             placeholder="ontvanger@coldmail.com"
             disabled={isSending}
+            aria-label="Aan"
+            onContextMenu={handleFieldContextMenu('to')}
           />
           {contacts.length > 0 && (
             <button
@@ -129,9 +225,11 @@ function MailCompose({
                 type="text"
                 className="mail-compose__input"
                 value={cc}
-                onChange={e => setCc(e.target.value)}
+                onChange={e => { setCc(e.target.value); markDirty(); }}
                 placeholder="cc@coldmail.com (kommagescheiden)"
                 disabled={isSending}
+                aria-label="CC"
+                onContextMenu={handleFieldContextMenu('cc')}
               />
               {contacts.length > 0 && (
                 <button
@@ -159,9 +257,11 @@ function MailCompose({
                 type="text"
                 className="mail-compose__input"
                 value={bcc}
-                onChange={e => setBcc(e.target.value)}
+                onChange={e => { setBcc(e.target.value); markDirty(); }}
                 placeholder="bcc@coldmail.com (kommagescheiden)"
                 disabled={isSending}
+                aria-label="BCC"
+                onContextMenu={handleFieldContextMenu('bcc')}
               />
               {contacts.length > 0 && (
                 <button
@@ -192,23 +292,35 @@ function MailCompose({
             type="text"
             className="mail-compose__input"
             value={subject}
-            onChange={e => setSubject(e.target.value)}
+            onChange={e => { setSubject(e.target.value); markDirty(); }}
             placeholder="Onderwerp"
             disabled={isSending}
+            aria-label="Onderwerp"
+            onContextMenu={handleFieldContextMenu('subject')}
           />
         </div>
       </div>
 
-      <RichTextEditor
-        value={body}
-        onChange={setBody}
-        placeholder="Schrijf hier je bericht..."
-        disabled={isSending}
-      />
+      <div className="mail-compose__body" onContextMenu={handleBodyContextMenu}>
+        <RichTextEditor
+          ref={editorRef}
+          value={body}
+          onChange={v => { setBody(v); markDirty(); }}
+          placeholder="Schrijf hier je bericht..."
+          disabled={isSending}
+        />
+      </div>
 
-      <div className="mail-compose__attachments">
+      <div
+        className="mail-compose__attachments"
+        onContextMenu={handleAttachmentsContextMenu}
+      >
         {attachments.map((att, i) => (
-          <div key={i} className="mail-attachment mail-attachment--compose">
+          <div
+            key={i}
+            className="mail-attachment mail-attachment--compose"
+            onContextMenu={handleAttachmentContextMenu(att, i)}
+          >
             <span className="mail-attachment__icon">{mimeIcon(att.mimeType)}</span>
             <span className="mail-attachment__name">{att.name}</span>
             <span className="mail-attachment__size">{formatFileSize(att.size)}</span>
@@ -261,6 +373,6 @@ function MailCompose({
       </div>
     </div>
   );
-}
+});
 
 export default MailCompose;

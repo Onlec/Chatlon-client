@@ -13,7 +13,14 @@ function formatDate(timestamp) {
   return d.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
-function MailMessageList({ messages, selectedId, onSelect, folder }) {
+function MailMessageList({
+  messages,
+  selectedId,
+  onSelect,
+  folder,
+  onMessageContextMenu,
+  onBackgroundContextMenu,
+}) {
   const [sort, setSort] = useState({ field: 'timestamp', dir: 'desc' });
 
   const toggleSort = (field) => {
@@ -47,14 +54,22 @@ function MailMessageList({ messages, selectedId, onSelect, folder }) {
 
   if (sorted.length === 0) {
     return (
-      <div className="mail-message-list mail-message-list--empty">
+      <div
+        className="mail-message-list mail-message-list--empty"
+        onContextMenu={onBackgroundContextMenu}
+        data-testid="mail-message-list"
+      >
         <span>Geen berichten</span>
       </div>
     );
   }
 
   return (
-    <div className="mail-message-list">
+    <div
+      className="mail-message-list"
+      onContextMenu={onBackgroundContextMenu}
+      data-testid="mail-message-list"
+    >
       <div className="mail-list-header">
         <span
           className="mail-list-header__col mail-list-header__col--from"
@@ -84,6 +99,10 @@ function MailMessageList({ messages, selectedId, onSelect, folder }) {
             !mail.read && folder === 'inbox' ? 'mail-message-item--unread' : '',
           ].filter(Boolean).join(' ')}
           onClick={() => onSelect(mail)}
+          onContextMenu={(event) => {
+            event.stopPropagation();
+            onMessageContextMenu?.(event, mail);
+          }}
         >
           <div className="mail-message-item__from">
             {showTo ? mail.to : mail.from}

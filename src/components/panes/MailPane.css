@@ -693,6 +693,48 @@
   background: #dce8f7;
 }
 
+/* ─── Inline compose panel ────────────────────────── */
+
+.mail-compose-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.mail-compose-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  border-bottom: 1px solid #ccc;
+  background: #f0f0f0;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+}
+
+.mail-compose-panel__close {
+  background: none;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  color: #666;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.mail-compose-panel__close:hover {
+  color: #cc2222;
+}
+
+.mail-compose-panel .mail-compose {
+  flex: 1;
+  overflow-y: auto;
+}
+
 /* ─── Liger (iMail) overrides ─────────────────────── */
 
 .mail-pane--liger {

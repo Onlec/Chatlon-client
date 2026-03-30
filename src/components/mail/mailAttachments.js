@@ -3,6 +3,34 @@
 export const MAX_ATTACHMENT_SIZE = 500 * 1024; // 500 KB
 
 /**
+ * Normaliseer een attachment-lijst uit legacy string-opslag of moderne arrays.
+ * @param {string|Array|null|undefined} value
+ * @returns {Array}
+ */
+export function parseMailAttachments(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value !== 'string') return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Serialiseer attachment-data compatibel met bestaande Gun-opslag.
+ * @param {string|Array|null|undefined} value
+ * @returns {string|null}
+ */
+export function serializeMailAttachments(value) {
+  const attachments = parseMailAttachments(value);
+  return attachments.length > 0 ? JSON.stringify(attachments) : null;
+}
+
+/**
  * Lees een bestand als base64 data URL.
  * @param {File} file
  * @returns {Promise<string>} data URL

@@ -1209,7 +1209,8 @@ const onTaskbarClick = React.useCallback((paneId) => {
     unreadMetadata,
     clearNotificationTime,
     sharedContactPresence,
-    getDisplayName
+    getDisplayName,
+    contextMenu: contextMenuManager
   };
 
   const systrayProps = {

@@ -42,6 +42,7 @@ function PaneLayer({
   clearNotificationTime,
   sharedContactPresence,
   getDisplayName,
+  contextMenu,
   chromeVariant = 'dx'
 }) {
   return (
@@ -92,7 +93,7 @@ function PaneLayer({
                 <Component
                   currentUser={currentUser}
                   chromeVariant={chromeVariant}
-                  contacts={Object.keys(sharedContactPresence || {})}
+                  contextMenu={contextMenu}
                 />
               ) : (
                 <Component />

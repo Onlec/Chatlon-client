@@ -17,10 +17,10 @@ export function DialogProvider({ children }) {
   const settingsContext = useContext(SettingsContext);
   const appearanceVariant = settingsContext?.appearanceVariant || 'dx';
 
-  const openDialog = useCallback((type, message, title) => {
+  const openDialog = useCallback((type, message, title, options = {}) => {
     return new Promise((resolve) => {
       const id = ++dialogIdCounter;
-      setDialogs((prev) => [...prev, { id, type, message, title, resolve }]);
+      setDialogs((prev) => [...prev, { id, type, message, title, options, resolve }]);
     });
   }, []);
 
@@ -40,8 +40,19 @@ export function DialogProvider({ children }) {
     return openDialog('alert', message, title);
   }, [openDialog]);
 
+  /**
+   * Toont een modal met aangepaste knoppen.
+   * @param {string} message
+   * @param {string} title
+   * @param {{ label: string, value: string, primary?: boolean }[]} buttons
+   * @returns {Promise<string>} de value van de geklikte knop
+   */
+  const choices = useCallback((message, title, buttons) => {
+    return openDialog('choices', message, title, { buttons });
+  }, [openDialog]);
+
   return (
-    <DialogContext.Provider value={{ confirm, alert }}>
+    <DialogContext.Provider value={{ confirm, alert, choices }}>
       {children}
       {dialogs.map((dialog) => (
         <ModalPane
@@ -55,17 +66,29 @@ export function DialogProvider({ children }) {
           <div className={`xp-dialog xp-dialog--${appearanceVariant}`}>
             <div className="xp-dialog-message">{dialog.message}</div>
             <div className="xp-dialog-actions">
-              {dialog.type === 'confirm' && (
-                <button className="dx-button primary" onClick={() => closeDialog(dialog.id, true)}>
-                  OK
-                </button>
+              {dialog.type === 'choices' ? (
+                dialog.options?.buttons?.map(btn => (
+                  <button
+                    key={btn.value}
+                    className={`dx-button${btn.primary ? ' primary' : ''}`}
+                    onClick={() => closeDialog(dialog.id, btn.value)}
+                  >{btn.label}</button>
+                ))
+              ) : (
+                <>
+                  {dialog.type === 'confirm' && (
+                    <button className="dx-button primary" onClick={() => closeDialog(dialog.id, true)}>
+                      OK
+                    </button>
+                  )}
+                  <button
+                    className="dx-button"
+                    onClick={() => closeDialog(dialog.id, false)}
+                  >
+                    {dialog.type === 'confirm' ? 'Annuleren' : 'OK'}
+                  </button>
+                </>
               )}
-              <button
-                className="dx-button"
-                onClick={() => closeDialog(dialog.id, false)}
-              >
-                {dialog.type === 'confirm' ? 'Annuleren' : 'OK'}
-              </button>
             </div>
           </div>
         </ModalPane>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { user } from '../../gun';
+import { serializeMailAttachments } from './mailAttachments';
 
 /**
  * Hook voor mail-concepten (privé per gebruiker via Gun user-node).
@@ -57,7 +58,7 @@ export function useMailDrafts() {
       bcc: bcc || '',
       subject: subject || '',
       body: body || '',
-      attachments: attachments?.length ? JSON.stringify(attachments) : null,
+      attachments: serializeMailAttachments(attachments),
       timestamp: Date.now(),
     });
     return id;
