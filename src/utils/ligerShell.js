@@ -221,7 +221,8 @@ export function buildLigerWindowItemsModel({
 export function buildLigerMenus({
   activePane,
   paneConfig = {},
-  windowItems = []
+  windowItems = [],
+  menuOverrides = {}
 } = {}) {
   if (activePane?.startsWith('conv_')) {
     return injectWindowMenu(getConversationMenus(), windowItems);
@@ -231,10 +232,13 @@ export function buildLigerMenus({
     return injectWindowMenu(getGameMenus(), windowItems);
   }
 
+  const overrideMenus = activePane ? menuOverrides?.[activePane] : null;
   const baseMenus = activePane
-    ? Array.isArray(paneConfig[activePane]?.ligerMenu)
-      ? paneConfig[activePane].ligerMenu
-      : []
+    ? Array.isArray(overrideMenus)
+      ? overrideMenus
+      : Array.isArray(paneConfig[activePane]?.ligerMenu)
+        ? paneConfig[activePane].ligerMenu
+        : []
     : [];
 
   return injectWindowMenu(baseMenus, windowItems);

@@ -43,6 +43,7 @@ function PaneLayer({
   sharedContactPresence,
   getDisplayName,
   contextMenu,
+  onPaneLigerMenuChange,
   chromeVariant = 'dx'
 }) {
   return (
@@ -94,6 +95,10 @@ function PaneLayer({
                   currentUser={currentUser}
                   chromeVariant={chromeVariant}
                   contextMenu={contextMenu}
+                  onClosePane={() => closePane('mail')}
+                  onLigerMenuChange={chromeVariant === 'liger'
+                    ? (menus) => onPaneLigerMenuChange?.('mail', menus)
+                    : undefined}
                 />
               ) : (
                 <Component />

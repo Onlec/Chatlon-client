@@ -111,6 +111,9 @@ function MailPaneHarness() {
 describe('MailPane', () => {
   const markAllSeen = jest.fn();
   const markRead = jest.fn();
+  const markUnread = jest.fn();
+  const markAllRead = jest.fn();
+  const markAllUnread = jest.fn();
   const markDeleted = jest.fn();
   const permanentDelete = jest.fn();
   const restoreFromTrash = jest.fn();
@@ -138,6 +141,9 @@ describe('MailPane', () => {
       newMailSinceLastSeen: [],
       markAllSeen,
       markRead,
+      markUnread,
+      markAllRead,
+      markAllUnread,
       markDeleted,
       permanentDelete,
       restoreFromTrash,
@@ -205,6 +211,75 @@ describe('MailPane', () => {
     expect(choices).not.toHaveBeenCalled();
   });
 
+  test('open draft can be deleted from compose and its context menu', async () => {
+    const contextMenu = createFakeContextMenu();
+
+    useMailDrafts.mockReturnValue({
+      drafts: [{
+        id: 'draft-1',
+        to: 'accepted@example.com',
+        subject: 'Draft subject',
+        body: 'Draft body',
+        timestamp: 100
+      }],
+      saveDraft,
+      deleteDraft,
+    });
+
+    render(<MailPane currentUser="alice@example.com" contextMenu={contextMenu} />);
+
+    fireEvent.click(screen.getByText('Concepten'));
+    fireEvent.click(screen.getByText('Draft subject'));
+
+    expect(screen.getByRole('button', { name: /^Verwijderen$/i })).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.contextMenu(screen.getByLabelText('Rich text editor'));
+    });
+
+    expect(getMenuLabels(contextMenu.openMenu)).toContain('Concept verwijderen');
+
+    await invokeMenuAction(contextMenu.openMenu, 'Concept verwijderen');
+
+    expect(deleteDraft).toHaveBeenCalledWith('draft-1');
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Rich text editor')).toBeNull();
+    });
+  });
+
+  test('renders the DX menubar, moves search above the list, and opens signature editor from Extra', async () => {
+    render(<MailPane currentUser="alice@example.com" />);
+
+    expect(document.querySelector('[data-functional-menubar="true"]')).not.toBeNull();
+    expect(screen.getByPlaceholderText('Zoeken in huidige map...')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Extra'));
+    fireEvent.click(screen.getByText('Handtekening...'));
+
+    expect(await screen.findByLabelText('Handtekening')).toBeInTheDocument();
+  });
+
+  test('publishes live ColdMail menus for the Liger app menubar', async () => {
+    const onLigerMenuChange = jest.fn();
+
+    render(<MailPane currentUser="alice@example.com" onLigerMenuChange={onLigerMenuChange} />);
+
+    await waitFor(() => {
+      expect(onLigerMenuChange).toHaveBeenCalled();
+    });
+
+    const latestMenus = onLigerMenuChange.mock.calls[onLigerMenuChange.mock.calls.length - 1][0];
+    expect(latestMenus.map((menu) => menu.label)).toEqual([
+      'Bestand',
+      'Bewerken',
+      'Beeld',
+      'Map',
+      'Bericht',
+      'Extra',
+      'Help',
+    ]);
+  });
+
   test('shows only forward and delete actions for sent mail', async () => {
     useMailInbox.mockReturnValue({
       inbox: [],
@@ -222,6 +297,9 @@ describe('MailPane', () => {
       newMailSinceLastSeen: [],
       markAllSeen,
       markRead,
+      markUnread,
+      markAllRead,
+      markAllUnread,
       markDeleted,
       permanentDelete,
       restoreFromTrash,
@@ -236,6 +314,61 @@ describe('MailPane', () => {
     expect(screen.queryByRole('button', { name: /Allen beantwoorden/i })).toBeNull();
     expect(screen.getByRole('button', { name: /Doorsturen/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Verwijderen$/i })).toBeInTheDocument();
+  });
+
+  test('DX menubar actions can toggle selected and folder read state in inbox', async () => {
+    useMailInbox.mockReturnValue({
+      inbox: [
+        {
+          id: 'mail-1',
+          mailbox: 'inbox',
+          from: 'bob@example.com',
+          to: 'alice@example.com',
+          subject: 'Unread mail',
+          body: 'Body',
+          timestamp: 100,
+          read: false
+        },
+        {
+          id: 'mail-2',
+          mailbox: 'inbox',
+          from: 'carol@example.com',
+          to: 'alice@example.com',
+          subject: 'Read mail',
+          body: 'Body',
+          timestamp: 101,
+          read: true
+        }
+      ],
+      sent: [],
+      trash: [],
+      unreadCount: 1,
+      newMailSinceLastSeen: [],
+      markAllSeen,
+      markRead,
+      markUnread,
+      markAllRead,
+      markAllUnread,
+      markDeleted,
+      permanentDelete,
+      restoreFromTrash,
+    });
+
+    render(<MailPane currentUser="alice@example.com" />);
+
+    fireEvent.click(screen.getByText('Read mail'));
+
+    fireEvent.click(screen.getByText('Bericht'));
+    fireEvent.click(screen.getByText('Markeer als ongelezen'));
+    expect(markUnread).toHaveBeenCalledWith(expect.objectContaining({ id: 'mail-2' }));
+
+    fireEvent.click(screen.getByText('Map'));
+    fireEvent.click(screen.getByText('Alles als gelezen markeren'));
+    expect(markAllRead).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByText('Map'));
+    fireEvent.click(screen.getByText('Alles als ongelezen markeren'));
+    expect(markAllUnread).toHaveBeenCalledTimes(1);
   });
 
   test('right click selects a sent row and opens only sent actions', async () => {
@@ -257,6 +390,9 @@ describe('MailPane', () => {
       newMailSinceLastSeen: [],
       markAllSeen,
       markRead,
+      markUnread,
+      markAllRead,
+      markAllUnread,
       markDeleted,
       permanentDelete,
       restoreFromTrash,
@@ -411,6 +547,9 @@ describe('MailPane', () => {
       newMailSinceLastSeen: [],
       markAllSeen,
       markRead,
+      markUnread,
+      markAllRead,
+      markAllUnread,
       markDeleted,
       permanentDelete,
       restoreFromTrash,

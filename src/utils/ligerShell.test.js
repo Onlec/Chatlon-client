@@ -105,6 +105,33 @@ describe('ligerShell selectors', () => {
     }));
   });
 
+  test('buildLigerMenus prefers live menu overrides for the active pane', () => {
+    const menus = buildLigerMenus({
+      activePane: 'control',
+      paneConfig: basePaneConfig,
+      windowItems: [],
+      menuOverrides: {
+        control: [
+          {
+            label: 'Bestand',
+            items: [
+              { label: 'Nieuw bericht', onSelect: jest.fn() }
+            ]
+          },
+          {
+            label: 'Help',
+            items: [
+              { label: 'ColdMail Help', disabled: true }
+            ]
+          }
+        ]
+      }
+    });
+
+    expect(menus.map((menu) => menu.label)).toEqual(['Bestand', 'Venster', 'Help']);
+    expect(menus[0].items[0]).toEqual(expect.objectContaining({ label: 'Nieuw bericht' }));
+  });
+
   test('buildLigerMenus returns a conversation fallback menu', () => {
     const menus = buildLigerMenus({
       activePane: 'conv_alice',

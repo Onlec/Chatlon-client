@@ -28,7 +28,9 @@ const MailCompose = forwardRef(function MailCompose({
   onDeleteDraft,
   onComposeContextMenu,
   onFieldContextMenu,
+  onFieldFocus,
   onBodyContextMenu,
+  onBodyFocus,
   onAttachmentsContextMenu,
   onAttachmentContextMenu,
 }, ref) {
@@ -107,6 +109,17 @@ const MailCompose = forwardRef(function MailCompose({
     return id;
   };
 
+  const handleDeleteDraft = () => {
+    if (!draftId || !onDeleteDraft) return false;
+    onDeleteDraft(draftId);
+    setDraftId(null);
+    setIsDirty(false);
+    if (onClose) {
+      return onClose();
+    }
+    return true;
+  };
+
   const handleSend = async () => {
     clearError();
     const success = await sendMail({ to, cc, bcc, subject, body, attachments });
@@ -133,6 +146,10 @@ const MailCompose = forwardRef(function MailCompose({
     onFieldContextMenu?.(event, { field, target: event.currentTarget });
   };
 
+  const handleFieldFocus = (field) => (event) => {
+    onFieldFocus?.({ field, target: event.currentTarget });
+  };
+
   const handleBodyContextMenu = (event) => {
     event.stopPropagation();
     onBodyContextMenu?.(event, { target: event.target });
@@ -155,6 +172,7 @@ const MailCompose = forwardRef(function MailCompose({
     isSending: () => isSending,
     send: handleSend,
     saveDraft: handleSaveDraft,
+    deleteDraft: handleDeleteDraft,
     openFilePicker: () => fileInputRef.current?.click(),
     removeAttachment,
     runBodyCommand: (command) => editorRef.current?.runCommand?.(command),
@@ -164,6 +182,7 @@ const MailCompose = forwardRef(function MailCompose({
     body,
     cc,
     draftId,
+    handleDeleteDraft,
     handleSend,
     handleSaveDraft,
     isDirty,
@@ -189,6 +208,7 @@ const MailCompose = forwardRef(function MailCompose({
             disabled={isSending}
             aria-label="Aan"
             onContextMenu={handleFieldContextMenu('to')}
+            onFocus={handleFieldFocus('to')}
           />
           {contacts.length > 0 && (
             <button
@@ -230,6 +250,7 @@ const MailCompose = forwardRef(function MailCompose({
                 disabled={isSending}
                 aria-label="CC"
                 onContextMenu={handleFieldContextMenu('cc')}
+                onFocus={handleFieldFocus('cc')}
               />
               {contacts.length > 0 && (
                 <button
@@ -262,6 +283,7 @@ const MailCompose = forwardRef(function MailCompose({
                 disabled={isSending}
                 aria-label="BCC"
                 onContextMenu={handleFieldContextMenu('bcc')}
+                onFocus={handleFieldFocus('bcc')}
               />
               {contacts.length > 0 && (
                 <button
@@ -297,6 +319,7 @@ const MailCompose = forwardRef(function MailCompose({
             disabled={isSending}
             aria-label="Onderwerp"
             onContextMenu={handleFieldContextMenu('subject')}
+            onFocus={handleFieldFocus('subject')}
           />
         </div>
       </div>
@@ -308,6 +331,7 @@ const MailCompose = forwardRef(function MailCompose({
           onChange={v => { setBody(v); markDirty(); }}
           placeholder="Schrijf hier je bericht..."
           disabled={isSending}
+          onFocus={() => onBodyFocus?.({ target: editorRef.current?.getElement?.() || null })}
         />
       </div>
 
@@ -357,6 +381,15 @@ const MailCompose = forwardRef(function MailCompose({
             disabled={isSending}
             title={draftId ? 'Concept bijwerken' : 'Opslaan als concept'}
           >💾 Concept</button>
+        )}
+        {draftId && onDeleteDraft && (
+          <button
+            type="button"
+            className="mail-compose__btn mail-compose__btn--delete"
+            onClick={handleDeleteDraft}
+            disabled={isSending}
+            title="Concept verwijderen"
+          >Verwijderen</button>
         )}
         <button
           type="button"

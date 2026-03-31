@@ -148,6 +148,7 @@ function App() {
   const [sessionNotice, setSessionNotice] = useState(() => loadSessionNotice());
   const [unreadChats, setUnreadChats] = React.useState(new Set());
   const [nowPlaying, setNowPlaying] = useState(null);
+  const [ligerMenuOverrides, setLigerMenuOverrides] = useState({});
   const [messengerSignedIn, setMessengerSignedIn] = useState(false);
   const messengerSignedInRef = useRef(false); // ref voor gebruik in callbacks
   messengerSignedInRef.current = messengerSignedIn; // altijd in sync
@@ -988,6 +989,22 @@ const onTaskbarClick = React.useCallback((paneId) => {
     focusPane(paneId);
   }, [conversations, games, panes, openConversation, openGamePane, focusPane, desktopCommandBus]);
 
+  const handlePaneLigerMenuChange = React.useCallback((paneId, menus) => {
+    if (!paneId) return;
+
+    setLigerMenuOverrides((current) => {
+      const next = { ...current };
+
+      if (Array.isArray(menus) && menus.length > 0) {
+        next[paneId] = menus;
+      } else {
+        delete next[paneId];
+      }
+
+      return next;
+    });
+  }, []);
+
   const handleLigerMenuAction = React.useCallback((action) => {
     switch (action) {
       case LIGER_MENU_ACTIONS.CLOSE_ACTIVE:
@@ -1132,8 +1149,9 @@ const onTaskbarClick = React.useCallback((paneId) => {
   const ligerMenusModel = useMemo(() => buildLigerMenus({
     activePane,
     paneConfig,
-    windowItems: ligerWindowItemsModel
-  }), [activePane, ligerWindowItemsModel]);
+    windowItems: ligerWindowItemsModel,
+    menuOverrides: ligerMenuOverrides
+  }), [activePane, ligerMenuOverrides, ligerWindowItemsModel]);
 
   const ligerMenus = useMemo(() => (
     ligerMenusModel.map((menu) => ({
@@ -1210,7 +1228,8 @@ const onTaskbarClick = React.useCallback((paneId) => {
     clearNotificationTime,
     sharedContactPresence,
     getDisplayName,
-    contextMenu: contextMenuManager
+    contextMenu: contextMenuManager,
+    onPaneLigerMenuChange: handlePaneLigerMenuChange
   };
 
   const systrayProps = {

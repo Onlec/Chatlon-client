@@ -20,6 +20,10 @@
   overflow: hidden;
 }
 
+.mail-menubar {
+  border-bottom: 1px solid #c8c8c8;
+}
+
 /* ─── Toolbar ─────────────────────────────────────── */
 
 .mail-toolbar {
@@ -29,6 +33,14 @@
   border-bottom: 1px solid #ccc;
   background: #f0f0f0;
   flex-shrink: 0;
+}
+
+.mail-command-strip {
+  justify-content: flex-start;
+}
+
+.mail-command-strip--hidden {
+  display: none;
 }
 
 .mail-toolbar__btn {
@@ -106,16 +118,45 @@
 
 /* ─── Message list ─────────────────────────────────── */
 
-.mail-message-list {
+.mail-message-column {
   width: 220px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid #ccc;
+  background: #fff;
+}
+
+.mail-message-search {
+  padding: 6px;
+  border-bottom: 1px solid #d8d8d8;
+  background: #f4f4f4;
+}
+
+.mail-message-search__input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-family: inherit;
+  border: 1px solid #aaa;
+  padding: 3px 5px;
+  outline: none;
+}
+
+.mail-message-search__input:focus {
+  border-color: #3060c8;
+}
+
+.mail-message-list {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   background: #fff;
 }
 
 .mail-message-list--empty {
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
   color: #999;
@@ -412,6 +453,10 @@
   font-weight: bold;
 }
 
+.mail-compose__btn--delete {
+  color: #8a2020;
+}
+
 .mail-compose__btn--cancel {
   margin-left: auto;
 }
@@ -589,7 +634,7 @@
 
 .mail-sig-editor {
   position: absolute;
-  top: 32px; /* onder de toolbar */
+  top: 58px;
   right: 8px;
   width: 320px;
   background: #fff;
@@ -748,6 +793,15 @@
   border-bottom-color: #bbb;
 }
 
+.mail-pane--liger .mail-menubar {
+  display: none;
+}
+
+.mail-pane--liger .mail-message-search {
+  background: #e9edf3;
+  border-bottom-color: #bcc7d6;
+}
+
 .mail-pane--liger .mail-folder-list {
   background: #e8edf4;
   border-right-color: #bbb;
@@ -760,4 +814,8 @@
 .mail-pane--liger .mail-compose-titlebar {
   background: linear-gradient(to bottom, #b8b8b8, #888);
   font-family: -apple-system, 'Lucida Grande', Arial, sans-serif;
+}
+
+.mail-pane--liger .mail-sig-editor {
+  top: 12px;
 }

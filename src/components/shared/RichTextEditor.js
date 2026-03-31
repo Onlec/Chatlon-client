@@ -112,7 +112,13 @@ function selectEditorContents(element) {
   return true;
 }
 
-const RichTextEditor = forwardRef(function RichTextEditor({ value, onChange, placeholder, disabled }, ref) {
+const RichTextEditor = forwardRef(function RichTextEditor({
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  onFocus,
+}, ref) {
   const editorRef     = useRef(null);
   const lastValueRef  = useRef(value);
   const fromUserRef   = useRef(false);
@@ -260,6 +266,7 @@ const RichTextEditor = forwardRef(function RichTextEditor({ value, onChange, pla
         contentEditable={disabled ? 'false' : 'true'}
         suppressContentEditableWarning
         onInput={handleInput}
+        onFocus={onFocus}
         data-placeholder={placeholder}
       />
     </div>

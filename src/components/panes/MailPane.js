@@ -6,6 +6,7 @@ import MailFolderList from '../mail/MailFolderList';
 import MailMessageList from '../mail/MailMessageList';
 import MailMessageView from '../mail/MailMessageView';
 import MailCompose from '../mail/MailCompose';
+import DropdownMenu from '../DropdownMenu';
 import { useMailInbox } from '../mail/useMailInbox';
 import { useMailContacts } from '../mail/useMailContacts';
 import { useMailDrafts } from '../mail/useMailDrafts';
@@ -48,8 +49,12 @@ function buildMenuAction(id, label, onClick, options = {}) {
     id,
     label,
     onClick,
+    onSelect: onClick,
     disabled: Boolean(options.disabled),
     bold: Boolean(options.bold),
+    checked: Boolean(options.checked),
+    shortcut: options.shortcut,
+    meta: options.meta,
   };
 }
 
@@ -120,7 +125,7 @@ function executeTextFieldCommand(target, command) {
 }
 
 function buildTextFieldActions({ target, prefix, extraActions = [] }) {
-  const disabled = Boolean(target?.disabled);
+  const disabled = !target || Boolean(target?.disabled);
   const hasValue = Boolean(target?.value);
   const hasSelection = hasFieldSelection(target);
 
@@ -154,12 +159,39 @@ function hasSelectionInsideElement(element) {
   );
 }
 
-function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
+function mapMenuItemsToDropdown(items = []) {
+  return items.map((item) => {
+    if (item?.type === 'separator') {
+      return { separator: true };
+    }
+
+    return {
+      label: item.label,
+      onClick: item.onClick || item.onSelect,
+      disabled: item.disabled,
+      checked: item.checked,
+    };
+  });
+}
+
+function MailPane({
+  currentUser,
+  chromeVariant = 'dx',
+  contextMenu = null,
+  onClosePane,
+  onLigerMenuChange,
+}) {
   const [activeFolder, setActiveFolder] = useState('inbox');
   const [selectedMail, setSelectedMail]   = useState(null);
   const [composeMode, setComposeMode]     = useState(null);
   const [composeInitial, setComposeInitial] = useState({});
   const composeRef = useRef(null);
+  const searchInputRef = useRef(null);
+  const onClosePaneRef = useRef(onClosePane);
+  const onLigerMenuChangeRef = useRef(onLigerMenuChange);
+  const lastEditTargetRef = useRef(null);
+  const [openMenu, setOpenMenu] = useState(null);
+  const [editContextVersion, setEditContextVersion] = useState(0);
   const [searchQuery, setSearchQuery]     = useState('');
 
   // Handtekening
@@ -171,7 +203,7 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
 
   const {
     inbox, sent, trash, unreadCount,
-    markAllSeen, markRead,
+    markAllSeen, markRead, markUnread, markAllRead, markAllUnread,
     markDeleted, permanentDelete, restoreFromTrash,
   } = useMailInbox(currentUser);
 
@@ -214,6 +246,14 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     }
   }, [activeFolder, markAllSeen]);
 
+  useEffect(() => {
+    onClosePaneRef.current = onClosePane;
+  }, [onClosePane]);
+
+  useEffect(() => {
+    onLigerMenuChangeRef.current = onLigerMenuChange;
+  }, [onLigerMenuChange]);
+
   // Laad handtekening uit Gun user-node
   useEffect(() => {
     if (!user.is) return;
@@ -225,13 +265,37 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const clearEditTargetForScope = useCallback((scope) => {
+    if (lastEditTargetRef.current?.scope !== scope) return;
+    lastEditTargetRef.current = null;
+    setEditContextVersion((value) => value + 1);
+  }, []);
+
   const handleSaveSig = useCallback(() => {
     if (!user.is) return false;
     user.get('mailSignature').put(sigEditorValue);
     setSignature(sigEditorValue);
     setShowSigEditor(false);
+    clearEditTargetForScope('signature');
     return true;
-  }, [sigEditorValue]);
+  }, [clearEditTargetForScope, sigEditorValue]);
+
+  const openSignatureEditor = useCallback(() => {
+    setSigEditorValue(signature);
+    setShowSigEditor(true);
+    return true;
+  }, [signature]);
+
+  const closeSignatureEditor = useCallback(() => {
+    setShowSigEditor(false);
+    clearEditTargetForScope('signature');
+    return true;
+  }, [clearEditTargetForScope]);
+
+  const registerEditTarget = useCallback((nextTarget) => {
+    lastEditTargetRef.current = nextTarget;
+    setEditContextVersion((value) => value + 1);
+  }, []);
 
   const openCompose = useCallback((mode, initial = {}) => {
     let finalInitial = { ...initial };
@@ -249,7 +313,8 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
   const closeCompose = useCallback(() => {
     setComposeMode(null);
     setComposeInitial({});
-  }, []);
+    clearEditTargetForScope('compose');
+  }, [clearEditTargetForScope]);
 
   /**
    * Vraag of het bericht als concept opgeslagen moet worden voordat er
@@ -334,6 +399,30 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     return applyMailSelection(mail, options);
   }, [applyMailSelection, composeMode, leaveCompose]);
 
+  const handleNewMessage = useCallback(async () => {
+    if (composeMode) {
+      const left = await leaveCompose();
+      if (!left) return false;
+    }
+    setSelectedMail(null);
+    openCompose('new');
+    return true;
+  }, [composeMode, leaveCompose, openCompose]);
+
+  const handleCloseMailPane = useCallback(async () => {
+    if (composeMode) {
+      const left = await leaveCompose();
+      if (!left) return false;
+    }
+    onClosePaneRef.current?.();
+    return true;
+  }, [composeMode, leaveCompose]);
+
+  const focusSearch = useCallback(() => {
+    searchInputRef.current?.focus();
+    return true;
+  }, []);
+
   const handleReply = useCallback((mail) => {
     openCompose('reply', {
       initialTo: mail.from,
@@ -380,6 +469,20 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     setSelectedMail(null);
   }, [restoreFromTrash]);
 
+  const handleMarkSelectedRead = useCallback((mail) => {
+    if (!mail || activeFolder !== 'inbox') return false;
+    markRead(mail);
+    setSelectedMail((current) => (current?.id === mail.id ? { ...current, read: true } : current));
+    return true;
+  }, [activeFolder, markRead]);
+
+  const handleMarkSelectedUnread = useCallback((mail) => {
+    if (!mail || activeFolder !== 'inbox') return false;
+    markUnread(mail);
+    setSelectedMail((current) => (current?.id === mail.id ? { ...current, read: false } : current));
+    return true;
+  }, [activeFolder, markUnread]);
+
   // Berichten voor actieve map
   const messages = useMemo(() => {
     if (activeFolder === 'inbox')  return inbox;
@@ -401,18 +504,52 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     );
   }, [messages, searchQuery]);
 
+  const inboxHasUnread = useMemo(
+    () => inbox.some((mail) => !mail.read),
+    [inbox]
+  );
+
+  const inboxHasRead = useMemo(
+    () => inbox.some((mail) => mail.read),
+    [inbox]
+  );
+
   const getComposeState = useCallback(() => ({
     values: composeRef.current?.getValues?.() || {},
     isSending: composeRef.current?.isSending?.() ?? false,
   }), []);
 
   const buildNewMessageAction = useCallback(() => (
-    buildMenuAction('mail-new', 'Nieuw bericht', () => openCompose('new'), { bold: true })
-  ), [openCompose]);
+    buildMenuAction('mail-new', 'Nieuw bericht', () => handleNewMessage(), { bold: true })
+  ), [handleNewMessage]);
 
   const buildMarkAllSeenAction = useCallback(() => (
     buildMenuAction('mail-mark-seen', 'Alles als gezien markeren', () => markAllSeen())
   ), [markAllSeen]);
+
+  const buildMarkAllReadAction = useCallback(() => (
+    buildMenuAction('mail-mark-all-read', 'Alles als gelezen markeren', () => markAllRead(), {
+      disabled: activeFolder !== 'inbox' || !inboxHasUnread,
+    })
+  ), [activeFolder, inboxHasUnread, markAllRead]);
+
+  const buildMarkAllUnreadAction = useCallback(() => (
+    buildMenuAction('mail-mark-all-unread', 'Alles als ongelezen markeren', () => markAllUnread(), {
+      disabled: activeFolder !== 'inbox' || !inboxHasRead,
+    })
+  ), [activeFolder, inboxHasRead, markAllUnread]);
+
+  const buildSelectedMarkReadAction = useCallback((mail) => (
+    buildMenuAction(`mail-mark-read-${mail?.id || 'none'}`, 'Markeer als gelezen', () => handleMarkSelectedRead(mail), {
+      disabled: !mail || activeFolder !== 'inbox' || mail.read,
+    })
+  ), [activeFolder, handleMarkSelectedRead]);
+
+  const buildSelectedMarkUnreadAction = useCallback((mail) => (
+    buildMenuAction(`mail-mark-unread-${mail?.id || 'none'}`, 'Markeer als ongelezen', () => handleMarkSelectedUnread(mail), {
+      disabled: !mail || activeFolder !== 'inbox' || !mail.read,
+    })
+  ), [activeFolder, handleMarkSelectedUnread]);
 
   const buildPassiveMailActions = useCallback(() => {
     const actions = [buildNewMessageAction()];
@@ -424,8 +561,7 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
 
   const buildComposeActions = useCallback(() => {
     const { values, isSending } = getComposeState();
-
-    return [
+    const actions = [
       buildMenuAction('compose-send', 'Verzenden', () => composeRef.current?.send?.(), {
         disabled: isSending || !values.to?.trim(),
         bold: true,
@@ -433,13 +569,26 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
       buildMenuAction('compose-save-draft', 'Opslaan als concept', () => composeRef.current?.saveDraft?.(), {
         disabled: isSending,
       }),
+    ];
+
+    if (values.draftId) {
+      actions.push(
+        buildMenuAction('compose-delete-draft', 'Concept verwijderen', () => composeRef.current?.deleteDraft?.(), {
+          disabled: isSending,
+        })
+      );
+    }
+
+    actions.push(
       buildMenuAction('compose-attach', 'Bijlage toevoegen', () => composeRef.current?.openFilePicker?.(), {
         disabled: isSending,
       }),
       buildMenuAction('compose-close', 'Sluiten', () => leaveCompose(), {
         disabled: isSending,
-      }),
-    ];
+      })
+    );
+
+    return actions;
   }, [getComposeState, leaveCompose]);
 
   const buildFolderMenuActions = useCallback((folderId, options = {}) => {
@@ -464,7 +613,8 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     setSelectedMail((current) => (current?.id === mail.id ? null : current));
   }, [deleteDraft]);
 
-  const buildMailMenuActions = useCallback((mail) => {
+  const buildMailMenuActions = useCallback((mail, options = {}) => {
+    const { includeReadState = false } = options;
     if (!mail) return [];
 
     if (activeFolder === 'drafts') {
@@ -481,13 +631,23 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     ), { bold: true });
 
     if (activeFolder === 'inbox') {
-      return [
+      const actions = [
         openAction,
         buildMenuAction(`mail-reply-${mail.id}`, 'Beantwoorden', () => handleReply(mail)),
         buildMenuAction(`mail-reply-all-${mail.id}`, 'Allen beantwoorden', () => handleReplyAll(mail)),
         buildMenuAction(`mail-forward-${mail.id}`, 'Doorsturen', () => handleForward(mail)),
         buildMenuAction(`mail-delete-${mail.id}`, 'Verwijderen', () => handleDelete(mail)),
       ];
+
+      if (includeReadState) {
+        actions.push(
+          buildSeparator(),
+          buildSelectedMarkReadAction(mail),
+          buildSelectedMarkUnreadAction(mail)
+        );
+      }
+
+      return actions;
     }
 
     if (activeFolder === 'sent') {
@@ -510,6 +670,8 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
   }, [
     activeFolder,
     applyMailSelection,
+    buildSelectedMarkReadAction,
+    buildSelectedMarkUnreadAction,
     handleDelete,
     handleDeleteDraftMail,
     handleForward,
@@ -520,6 +682,28 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     openDraftCompose,
   ]);
 
+  const buildBodyEditActions = useCallback((options = {}) => {
+    const { extraActions = [] } = options;
+    const { isSending } = getComposeState();
+    const disabled = !composeMode || isSending;
+    const command = (name) => () => composeRef.current?.runBodyCommand?.(name);
+
+    const bodyActions = [
+      buildMenuAction('compose-body-undo', 'Ongedaan maken', command('undo'), { disabled }),
+      buildMenuAction('compose-body-redo', 'Opnieuw', command('redo'), { disabled }),
+      buildMenuAction('compose-body-cut', 'Knippen', command('cut'), { disabled }),
+      buildMenuAction('compose-body-copy', 'Kopieren', command('copy'), { disabled }),
+      buildMenuAction('compose-body-paste', 'Plakken', command('paste'), { disabled }),
+      buildMenuAction('compose-body-select-all', 'Alles selecteren', command('selectAll'), { disabled }),
+      buildSeparator(),
+      buildMenuAction('compose-body-bold', 'Vet', command('bold'), { disabled }),
+      buildMenuAction('compose-body-italic', 'Cursief', command('italic'), { disabled }),
+      buildMenuAction('compose-body-underline', 'Onderstrepen', command('underline'), { disabled }),
+    ];
+
+    return appendMenuActions(bodyActions, extraActions);
+  }, [composeMode, getComposeState]);
+
   const buildComposeFieldActions = useCallback((target, field) => (
     buildTextFieldActions({
       target,
@@ -528,25 +712,9 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     })
   ), [buildComposeActions]);
 
-  const buildComposeBodyActions = useCallback(() => {
-    const { isSending } = getComposeState();
-    const command = (name) => () => composeRef.current?.runBodyCommand?.(name);
-
-    const bodyActions = [
-      buildMenuAction('compose-body-undo', 'Ongedaan maken', command('undo'), { disabled: isSending }),
-      buildMenuAction('compose-body-redo', 'Opnieuw', command('redo'), { disabled: isSending }),
-      buildMenuAction('compose-body-cut', 'Knippen', command('cut'), { disabled: isSending }),
-      buildMenuAction('compose-body-copy', 'Kopieren', command('copy'), { disabled: isSending }),
-      buildMenuAction('compose-body-paste', 'Plakken', command('paste'), { disabled: isSending }),
-      buildMenuAction('compose-body-select-all', 'Alles selecteren', command('selectAll'), { disabled: isSending }),
-      buildSeparator(),
-      buildMenuAction('compose-body-bold', 'Vet', command('bold'), { disabled: isSending }),
-      buildMenuAction('compose-body-italic', 'Cursief', command('italic'), { disabled: isSending }),
-      buildMenuAction('compose-body-underline', 'Onderstrepen', command('underline'), { disabled: isSending }),
-    ];
-
-    return appendMenuActions(bodyActions, buildComposeActions());
-  }, [buildComposeActions, getComposeState]);
+  const buildComposeBodyActions = useCallback(() => (
+    buildBodyEditActions({ extraActions: buildComposeActions() })
+  ), [buildBodyEditActions, buildComposeActions]);
 
   const buildAttachmentsActions = useCallback(() => {
     const { isSending } = getComposeState();
@@ -570,8 +738,148 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
 
   const buildSignatureActions = useCallback(() => ([
     buildMenuAction('signature-save', 'Opslaan', handleSaveSig, { bold: true }),
-    buildMenuAction('signature-cancel', 'Annuleren', () => setShowSigEditor(false)),
-  ]), [handleSaveSig]);
+    buildMenuAction('signature-cancel', 'Annuleren', closeSignatureEditor),
+  ]), [closeSignatureEditor, handleSaveSig]);
+
+  const buildEditMenuActions = useCallback((contextVersion = 0) => {
+    void contextVersion;
+    const lastTarget = lastEditTargetRef.current;
+
+    if (lastTarget?.kind === 'compose-body') {
+      return buildBodyEditActions();
+    }
+
+    if (lastTarget?.target) {
+      return buildTextFieldActions({
+        target: lastTarget.target,
+        prefix: lastTarget.field ? `menu-${lastTarget.field}` : 'menu-field',
+      });
+    }
+
+    return buildTextFieldActions({ target: null, prefix: 'menu-edit' });
+  }, [buildBodyEditActions]);
+
+  const buildFileMenuActions = useCallback(() => {
+    const composeActions = composeMode ? buildComposeActions() : [];
+    const sendAction = composeActions.find((item) => item.id === 'compose-send');
+    const saveDraftAction = composeActions.find((item) => item.id === 'compose-save-draft');
+    const deleteDraftAction = composeActions.find((item) => item.id === 'compose-delete-draft');
+    const fileActions = [buildNewMessageAction()];
+
+    if (saveDraftAction) fileActions.push(saveDraftAction);
+    if (deleteDraftAction) fileActions.push(deleteDraftAction);
+    if (sendAction) fileActions.push(sendAction);
+
+    fileActions.push(buildSeparator());
+    fileActions.push(buildMenuAction('mail-close-pane', 'Venster sluiten', () => handleCloseMailPane()));
+
+    return fileActions;
+  }, [buildComposeActions, buildNewMessageAction, composeMode, handleCloseMailPane]);
+
+  const buildViewMenuActions = useCallback(() => ([
+    buildMenuAction('view-inbox', 'Postvak IN', () => handleSelectFolder('inbox'), {
+      disabled: activeFolder === 'inbox',
+    }),
+    buildMenuAction('view-sent', 'Verzonden items', () => handleSelectFolder('sent'), {
+      disabled: activeFolder === 'sent',
+    }),
+    buildMenuAction('view-drafts', 'Concepten', () => handleSelectFolder('drafts'), {
+      disabled: activeFolder === 'drafts',
+    }),
+    buildMenuAction('view-trash', 'Verwijderde items', () => handleSelectFolder('trash'), {
+      disabled: activeFolder === 'trash',
+    }),
+    buildSeparator(),
+    buildMenuAction('view-search', 'Zoeken in huidige map', focusSearch),
+  ]), [activeFolder, focusSearch, handleSelectFolder]);
+
+  const buildMessageMenuFallback = useCallback(() => {
+    if (activeFolder === 'drafts') {
+      return [
+        buildMenuAction('message-open-draft-disabled', 'Concept openen', () => {}, { disabled: true }),
+        buildMenuAction('message-delete-draft-disabled', 'Concept verwijderen', () => {}, { disabled: true }),
+      ];
+    }
+
+    if (activeFolder === 'sent') {
+      return [
+        buildMenuAction('message-open-disabled', 'Openen', () => {}, { disabled: true }),
+        buildMenuAction('message-forward-disabled', 'Doorsturen', () => {}, { disabled: true }),
+        buildMenuAction('message-delete-disabled', 'Verwijderen', () => {}, { disabled: true }),
+      ];
+    }
+
+    if (activeFolder === 'trash') {
+      return [
+        buildMenuAction('message-open-disabled', 'Openen', () => {}, { disabled: true }),
+        buildMenuAction('message-restore-disabled', 'Herstellen', () => {}, { disabled: true }),
+        buildMenuAction('message-delete-permanent-disabled', 'Definitief verwijderen', () => {}, { disabled: true }),
+      ];
+    }
+
+    return [
+      buildMenuAction('message-open-disabled', 'Openen', () => {}, { disabled: true }),
+      buildMenuAction('message-reply-disabled', 'Beantwoorden', () => {}, { disabled: true }),
+      buildMenuAction('message-reply-all-disabled', 'Allen beantwoorden', () => {}, { disabled: true }),
+      buildMenuAction('message-forward-disabled', 'Doorsturen', () => {}, { disabled: true }),
+      buildMenuAction('message-delete-disabled', 'Verwijderen', () => {}, { disabled: true }),
+      buildSeparator(),
+      buildMenuAction('message-mark-read-disabled', 'Markeer als gelezen', () => {}, { disabled: true }),
+      buildMenuAction('message-mark-unread-disabled', 'Markeer als ongelezen', () => {}, { disabled: true }),
+    ];
+  }, [activeFolder]);
+
+  const buildMessageMenuActions = useCallback(() => {
+    if (composeMode) {
+      const composeActions = buildComposeActions();
+      return composeActions.filter((item) => item.id !== 'compose-attach' && item.id !== 'compose-close');
+    }
+
+    if (selectedMail) {
+      return buildMailMenuActions(selectedMail, { includeReadState: true });
+    }
+
+    return buildMessageMenuFallback();
+  }, [buildComposeActions, buildMailMenuActions, buildMessageMenuFallback, composeMode, selectedMail]);
+
+  const editMenuItems = useMemo(
+    () => buildEditMenuActions(editContextVersion),
+    [buildEditMenuActions, editContextVersion]
+  );
+
+  const mailMenus = useMemo(() => ([
+    { key: 'bestand', label: 'Bestand', items: buildFileMenuActions() },
+    { key: 'bewerken', label: 'Bewerken', items: editMenuItems },
+    { key: 'beeld', label: 'Beeld', items: buildViewMenuActions() },
+    { key: 'map', label: 'Map', items: [buildMarkAllReadAction(), buildMarkAllUnreadAction()] },
+    { key: 'bericht', label: 'Bericht', items: buildMessageMenuActions() },
+    { key: 'extra', label: 'Extra', items: [buildMenuAction('mail-signature-open', 'Handtekening...', openSignatureEditor)] },
+    {
+      key: 'help',
+      label: 'Help',
+      items: [
+        buildMenuAction('mail-help-topics', 'ColdMail Help', () => {}, { disabled: true }),
+        buildMenuAction('mail-help-about', 'Over ColdMail...', () => {}, { disabled: true }),
+      ],
+    },
+  ]), [
+    editMenuItems,
+    buildFileMenuActions,
+    buildMarkAllReadAction,
+    buildMarkAllUnreadAction,
+    buildMessageMenuActions,
+    buildViewMenuActions,
+    openSignatureEditor,
+  ]);
+
+  useEffect(() => {
+    if (!onLigerMenuChangeRef.current) return undefined;
+    onLigerMenuChangeRef.current(mailMenus);
+  }, [mailMenus]);
+
+  useEffect(() => (
+    () => onLigerMenuChangeRef.current?.(null)
+  ), []);
 
   const handleFolderContextMenu = useCallback(async (event, folder) => {
     const request = captureMenuRequest(event);
@@ -722,27 +1030,60 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
     );
   }, [buildSignatureActions, captureMenuRequest, openColdMailMenu]);
 
+  const handleComposeFieldFocus = useCallback((context = {}) => {
+    registerEditTarget({
+      kind: 'compose-field',
+      scope: 'compose',
+      field: context.field || null,
+      target: context.target || null,
+    });
+  }, [registerEditTarget]);
+
+  const handleComposeBodyFocus = useCallback(() => {
+    registerEditTarget({
+      kind: 'compose-body',
+      scope: 'compose',
+    });
+  }, [registerEditTarget]);
+
+  const handleSignatureFieldFocus = useCallback((event) => {
+    registerEditTarget({
+      kind: 'signature-field',
+      scope: 'signature',
+      field: 'signature',
+      target: event.currentTarget,
+    });
+  }, [registerEditTarget]);
+
   const isLiger  = chromeVariant === 'liger';
   const appName  = isLiger ? 'iMail' : 'ColdMail';
 
   return (
     <div className={`mail-pane mail-pane--${isLiger ? 'liger' : 'dx'}`}>
+      {!isLiger && (
+        <div className="mail-menubar contacts-menubar" data-functional-menubar="true">
+          {mailMenus.map((menu) => (
+            <DropdownMenu
+              key={menu.key}
+              label={menu.label}
+              items={mapMenuItemsToDropdown(menu.items)}
+              isOpen={openMenu === menu.key}
+              onToggle={() => setOpenMenu((current) => (current === menu.key ? null : menu.key))}
+              onClose={() => setOpenMenu((current) => (current === menu.key ? null : current))}
+              onHover={() => openMenu && setOpenMenu(menu.key)}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Toolbar */}
-      <div className="mail-toolbar">
+      <div className={`mail-toolbar mail-command-strip${isLiger ? ' mail-command-strip--hidden' : ''}`}>
         <button
           type="button"
           className="mail-toolbar__btn"
-          onClick={() => openCompose('new')}
+          onClick={() => handleNewMessage()}
           title="Nieuw bericht"
         >✉️ Nieuw bericht</button>
-
-        <input
-          type="search"
-          className="mail-toolbar__search"
-          placeholder="Zoeken..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-        />
 
         <button
           type="button"
@@ -751,6 +1092,7 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
             if (!showSigEditor) setSigEditorValue(signature);
             setShowSigEditor(v => !v);
           }}
+          hidden
           title="Handtekening instellen"
         >✍️ Handtekening</button>
       </div>
@@ -766,7 +1108,7 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
             <button
               type="button"
               className="mail-sig-editor__close"
-              onClick={() => setShowSigEditor(false)}
+              onClick={closeSignatureEditor}
             >✕</button>
           </div>
           <div className="mail-sig-editor__body">
@@ -781,6 +1123,7 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
                 event.stopPropagation();
                 handleSignatureFieldContextMenu(event);
               }}
+              onFocus={handleSignatureFieldFocus}
             />
             <div className="mail-sig-editor__actions">
               <button
@@ -791,7 +1134,7 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
               <button
                 type="button"
                 className="mail-compose__btn"
-                onClick={() => setShowSigEditor(false)}
+                onClick={closeSignatureEditor}
               >Annuleren</button>
             </div>
           </div>
@@ -808,14 +1151,26 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
           onFolderContextMenu={handleFolderContextMenu}
           onBackgroundContextMenu={handleFolderBackgroundContextMenu}
         />
-        <MailMessageList
-          messages={filteredMessages}
-          selectedId={selectedMail?.id}
-          onSelect={handleSelectMail}
-          folder={activeFolder}
-          onMessageContextMenu={handleMessageContextMenu}
-          onBackgroundContextMenu={handleMessageListBackgroundContextMenu}
-        />
+        <div className="mail-message-column">
+          <div className="mail-message-search">
+            <input
+              ref={searchInputRef}
+              type="search"
+              className="mail-message-search__input"
+              placeholder="Zoeken in huidige map..."
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </div>
+          <MailMessageList
+            messages={filteredMessages}
+            selectedId={selectedMail?.id}
+            onSelect={handleSelectMail}
+            folder={activeFolder}
+            onMessageContextMenu={handleMessageContextMenu}
+            onBackgroundContextMenu={handleMessageListBackgroundContextMenu}
+          />
+        </div>
 
         {composeMode ? (
           <div
@@ -851,7 +1206,9 @@ function MailPane({ currentUser, chromeVariant = 'dx', contextMenu = null }) {
               onDeleteDraft={deleteDraft}
               onComposeContextMenu={handleComposeContextMenu}
               onFieldContextMenu={handleComposeFieldContextMenu}
+              onFieldFocus={handleComposeFieldFocus}
               onBodyContextMenu={handleComposeBodyContextMenu}
+              onBodyFocus={handleComposeBodyFocus}
               onAttachmentsContextMenu={handleComposeAttachmentsContextMenu}
               onAttachmentContextMenu={handleComposeAttachmentContextMenu}
             />

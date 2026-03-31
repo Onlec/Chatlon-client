@@ -168,6 +168,62 @@ describe('useMailInbox', () => {
     ]));
   });
 
+  test('supports read and unread toggles for single inbox messages and the whole inbox', async () => {
+    render(<Harness slot="a" currentUser="alice@example.com" />);
+
+    act(() => {
+      getNode('MAIL_INBOX/alice@example.com').__emitMap({
+        from: 'bob@example.com',
+        to: 'alice@example.com',
+        subject: 'Unread mail',
+        body: 'Hello',
+        timestamp: 100,
+        read: false
+      }, 'inbox-1');
+      getNode('MAIL_INBOX/alice@example.com').__emitMap({
+        from: 'carol@example.com',
+        to: 'alice@example.com',
+        subject: 'Read mail',
+        body: 'Hi',
+        timestamp: 101,
+        read: true
+      }, 'inbox-2');
+    });
+
+    await waitFor(() => {
+      expect(latestA.unreadCount).toBe(1);
+    });
+
+    act(() => {
+      latestA.markUnread(latestA.inbox.find((mail) => mail.id === 'inbox-2'));
+    });
+
+    expect(getNode('MAIL_INBOX/alice@example.com/inbox-2/read').put).toHaveBeenCalledWith(false);
+    expect(latestA.unreadCount).toBe(2);
+
+    act(() => {
+      latestA.markRead(latestA.inbox.find((mail) => mail.id === 'inbox-1'));
+    });
+
+    expect(getNode('MAIL_INBOX/alice@example.com/inbox-1/read').put).toHaveBeenCalledWith(true);
+    expect(latestA.unreadCount).toBe(1);
+
+    act(() => {
+      latestA.markAllRead();
+    });
+
+    expect(getNode('MAIL_INBOX/alice@example.com/inbox-2/read').put).toHaveBeenLastCalledWith(true);
+    expect(latestA.unreadCount).toBe(0);
+
+    act(() => {
+      latestA.markAllUnread();
+    });
+
+    expect(getNode('MAIL_INBOX/alice@example.com/inbox-1/read').put).toHaveBeenLastCalledWith(false);
+    expect(getNode('MAIL_INBOX/alice@example.com/inbox-2/read').put).toHaveBeenLastCalledWith(false);
+    expect(latestA.unreadCount).toBe(2);
+  });
+
   test('synchronizes last-seen state immediately between hook instances in the same tab', async () => {
     render(
       <>

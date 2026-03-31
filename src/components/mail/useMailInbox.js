@@ -34,6 +34,12 @@ function updateMailProperty(prev, mailId, changes) {
   return prev.map((mail) => (mail.id === mailId ? { ...mail, ...changes } : mail));
 }
 
+function updateInboxReadState(prev, nextReadState) {
+  return prev.map((mail) => (
+    mail.deleted === true ? mail : { ...mail, read: nextReadState }
+  ));
+}
+
 function resolveMailTarget(target) {
   if (!target) return null;
   if (typeof target === 'string') {
@@ -52,7 +58,7 @@ function resolveMailTarget(target) {
  * Luistert real-time via Gun.js.
  *
  * @param {string} currentUser - Email/alias van ingelogde gebruiker
- * @returns {{ inbox, sent, trash, unreadCount, newMailSinceLastSeen, markAllSeen, markRead, markDeleted, permanentDelete, restoreFromTrash }}
+ * @returns {{ inbox, sent, trash, unreadCount, newMailSinceLastSeen, markAllSeen, markRead, markUnread, markAllRead, markAllUnread, markDeleted, permanentDelete, restoreFromTrash }}
  */
 export function useMailInbox(currentUser) {
   const [inboxRaw, setInboxRaw] = useState([]);
@@ -165,6 +171,39 @@ export function useMailInbox(currentUser) {
     setInboxRaw((prev) => updateMailProperty(prev, mail.id, { read: true }));
   }, [currentUser]);
 
+  const markUnread = useCallback((target) => {
+    if (!currentUser) return;
+    const mail = resolveMailTarget(target);
+    if (!mail || mail.mailbox !== 'inbox') return;
+
+    gun.get('MAIL_INBOX').get(currentUser).get(mail.id).get('read').put(false);
+    setInboxRaw((prev) => updateMailProperty(prev, mail.id, { read: false }));
+  }, [currentUser]);
+
+  const markAllRead = useCallback(() => {
+    if (!currentUser) return;
+
+    inboxRaw
+      .filter((mail) => mail.deleted !== true && !mail.read)
+      .forEach((mail) => {
+        gun.get('MAIL_INBOX').get(currentUser).get(mail.id).get('read').put(true);
+      });
+
+    setInboxRaw((prev) => updateInboxReadState(prev, true));
+  }, [currentUser, inboxRaw]);
+
+  const markAllUnread = useCallback(() => {
+    if (!currentUser) return;
+
+    inboxRaw
+      .filter((mail) => mail.deleted !== true && mail.read)
+      .forEach((mail) => {
+        gun.get('MAIL_INBOX').get(currentUser).get(mail.id).get('read').put(false);
+      });
+
+    setInboxRaw((prev) => updateInboxReadState(prev, false));
+  }, [currentUser, inboxRaw]);
+
   const markDeleted = useCallback((target) => {
     const mail = resolveMailTarget(target);
     if (!mail) return;
@@ -218,6 +257,9 @@ export function useMailInbox(currentUser) {
     newMailSinceLastSeen,
     markAllSeen,
     markRead,
+    markUnread,
+    markAllRead,
+    markAllUnread,
     markDeleted,
     permanentDelete,
     restoreFromTrash,
